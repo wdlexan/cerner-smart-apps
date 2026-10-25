@@ -1,0 +1,24 @@
+HOSPITAL AT HOME SCREEN - HOW TO CHANGE THE CRITERIA (no code changes)
+=====================================================================
+Three spreadsheets in this folder. Edit in Excel, then File > Save As > "CSV UTF-8 (Comma delimited)", same name.
+Make a backup copy first. Relaunch, and check "Criteria used" at the bottom for any skipped rows.
+
+hah-criteria.csv  - one row per checklist item (the referral form items plus extras)
+  Key                 internal name - do not change existing keys (they link to the boxes on the PDF).
+                      New rows: use any new key; they appear on screen and in "Additional information", not as PDF boxes.
+  Section             Demographics / Other considerations / Clinical characteristics / Extra (not on form)
+  Form item           text shown on screen
+  Favourable answer   Yes, No or Info (Info = shown, never counts for or against)
+  Hard stop           Y = an unfavourable answer makes the result "Probably not suitable right now"
+  How assessed        include the word "Ask" to put the item on the "confirm with patient / family" list
+  Words meaning YES   phrases separated by ;   * = any ending   "a ... b" = both in the same sentence
+  Words meaning NO    phrases that mean the answer is No
+  Ignore when nearby  phrases that cancel a match within ~40 characters (history of; dog)
+  Reference           where the criterion comes from
+  Negatives are handled automatically ("denies falls", "no stroke", "Falls: none").
+
+catchment.csv  - first 3 characters of the postal code: In / Borderline / Out.   ** DRAFT - confirm with the HaH team **
+hah-stability.csv - vital-sign limits for "Clinically stable" (Systolic BP, Heart rate, Respiratory rate, SpO2, Temperature).
+                    ** DRAFT - confirm with the HaH team **
+
+Referring MRP and default site: top of app.js (CONFIG) - currently Dr. Wayne A. Dong, VGH.

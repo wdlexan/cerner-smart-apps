@@ -1,0 +1,6 @@
+﻿Measure,Unstable if,Label
+Systolic BP,< 100,Systolic BP below 100
+Heart rate,> 110,Heart rate above 110
+Respiratory rate,> 24,Respiratory rate above 24
+SpO2,< 92,SpO2 below 92%
+Temperature,>= 39,Temperature 39 C or higher

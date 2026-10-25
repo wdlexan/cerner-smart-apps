@@ -11,6 +11,7 @@ const TOOLS = [
   { key: "meds",  label: "Meds review (Beers)",  path: "tools/meds/index.html" },
   { key: "risk",  label: "Risk screen",          path: "tools/risk/index.html" },
   { key: "ed",    label: "ED screen",            path: "tools/ed/index.html" },
+  { key: "hah",   label: "Hospital at Home",     path: "tools/hah/index.html" },
   { key: "calc",  label: "Calculators",          path: "tools/calc/index.html" },
   { key: "ai",    label: "AI summary",           path: "tools/ai/index.html" },
   { key: "tox",   label: "Oncology toxicity",    path: "tools/tox/index.html", keepHeader: true }, // its header holds the draft/version note

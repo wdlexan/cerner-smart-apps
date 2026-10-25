@@ -1,0 +1,21 @@
+﻿Postal prefix,Status,Area,Nearest site
+V8N,In,Saanich / Gordon Head,RJH / VGH
+V8P,In,Saanich,RJH / VGH
+V8R,In,Oak Bay / Victoria,RJH
+V8S,In,Fairfield / Oak Bay,RJH
+V8T,In,Victoria,RJH
+V8V,In,James Bay / Victoria,RJH
+V8W,In,Downtown Victoria,RJH
+V8X,In,Saanich,RJH / VGH
+V8Y,In,Cordova Bay / Saanich,RJH / VGH
+V8Z,In,Saanich / Royal Oak,VGH
+V9A,In,Esquimalt / Vic West,VGH
+V9B,In,View Royal / Langford,VGH
+V9C,Borderline,Colwood / Metchosin,VGH
+V9E,Borderline,Highlands / Willis Point,VGH
+V8M,Borderline,Central Saanich,VGH
+V8L,Borderline,Sidney / North Saanich,VGH
+V9Z,Out,Sooke,-
+V9L,In,Duncan,CDH
+V9G,Borderline,Chemainus / Ladysmith area,CDH
+V0R,Borderline,Rural Cowichan / Gulf Islands,CDH

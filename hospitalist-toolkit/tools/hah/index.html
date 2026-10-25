@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hospital at Home Screen</title>
+  <style>
+    :root { --bg:#f5f7fa; --card:#fff; --ink:#1f2933; --muted:#6b7785; --accent:#0b6bcb; --line:#dde3ea; --ok:#2f7d32; --bad:#b00020; --warn:#c75b00; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); }
+    header { background:var(--accent); color:#fff; padding:12px 20px; }
+    header h1 { margin:0; font-size:18px; }
+    #patient { font-size:13px; opacity:.9; margin-top:2px; }
+    main { max-width:1100px; margin:16px auto; padding:0 16px; display:grid; gap:16px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:16px; }
+    .card h2 { margin:0 0 10px; font-size:15px; }
+    .note { font-size:12px; color:var(--muted); font-weight:normal; }
+    .banner { border-radius:8px; padding:14px 18px; color:#fff; font-size:14px; margin-bottom:16px; }
+    .banner b { display:block; font-size:18px; margin-bottom:4px; }
+    .banner.yes { background:var(--ok); } .banner.no { background:var(--bad); } .banner.thin { background:#8a6d00; }
+    table.chk { width:100%; border-collapse:collapse; font-size:13px; }
+    .chk th, .chk td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+    .chk th { color:var(--muted); font-weight:600; } .chk .c { text-align:center; width:56px; }
+    .chk tr.sec td { background:#eef4fb; font-weight:700; }
+    .chk tr.ok td:first-child { border-left:4px solid var(--ok); }
+    .chk tr.concern td:first-child { border-left:4px solid var(--bad); } .chk tr.concern { background:#fff6f6; }
+    .chk tr.unknown td:first-child { border-left:4px solid #c9ced6; }
+    .chk tr.info td:first-child { border-left:4px solid var(--accent); }
+    .tag { display:inline-block; font-size:10.5px; border-radius:9px; padding:1px 7px; margin:3px 4px 0 0; }
+    .tag.hard { background:#fde8e8; color:#9b1c1c; } .tag.ask { background:#e3eefc; color:#0b4a99; }
+    .ev { font-size:12px; color:#3e4c59; margin:3px 0; } .ev i { color:var(--muted); font-style:normal; }
+    mark { background:#fff1a8; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:10px 14px; }
+    .grid label { font-size:12px; color:var(--muted); display:flex; flex-direction:column; gap:3px; }
+    .grid label.wide { grid-column:1 / -1; }
+    .grid input[type=text], textarea { padding:7px 8px; border:1px solid var(--line); border-radius:6px; font:inherit; font-size:14px; color:var(--ink); }
+    textarea { min-height:52px; }
+    .radios { font-size:13px; display:flex; flex-wrap:wrap; gap:6px 14px; align-items:center; }
+    .radios label { color:var(--ink); }
+    .toolbar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:12px; }
+    button { background:var(--accent); color:#fff; border:0; padding:8px 14px; border-radius:6px; font-size:14px; cursor:pointer; }
+    button.sec { background:#fff; color:var(--accent); border:1px solid var(--accent); }
+    .warn { background:#fff4e5; border:1px solid #f0c27b; border-radius:6px; padding:8px 12px; font-size:13px; }
+    .err { color:var(--bad); }
+    pre { white-space:pre-wrap; font-size:12.5px; max-height:420px; overflow:auto; background:#fbfcfd; border:1px solid var(--line); border-radius:6px; padding:10px; }
+    ul { margin:6px 0 10px 18px; padding:0; font-size:14px; }
+    @media print { .toolbar, button, input[type=radio] { display:none !important; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Hospital at Home – Candidate Screen</h1>
+    <div id="patient">Loading patient…</div>
+  </header>
+  <main>
+    <p class="note" id="status" style="margin:0">Loading…</p>
+    <div id="out"></div>
+    <div id="viewer"></div>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <script src="criteria-loader.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
