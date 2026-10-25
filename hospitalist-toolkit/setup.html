@@ -43,11 +43,20 @@
       <li>In the Code Console, open your app → <b>Begin Testing</b> → pick a test patient → <b>Launch</b>.</li>
       <li>Sign in with the sandbox provider account if asked. The toolkit opens with its tabs.</li></ol>
       <p style="font-size:14px">Use the same browser you saved the Client ID in. Other computers or browsers need step 2 again.</p></div>
+
+    <div class="card"><h2>4. Open a patient from a link (optional)</h2>
+      <p style="font-size:14px">The toolkit can also open from a link, for example in a Teams message, without going through PowerChart.
+      In the Code Console, also tick the matching <b>User</b> read scopes (Patient, Encounter, Observation, MedicationRequest, Medication,
+      Condition, DocumentReference, Binary, AllergyIntolerance). Then use a link like:</p>
+      <p><code id="sampleLink"></code></p>
+      <p style="font-size:14px">Use <code>?mrn=</code> or <code>?fin=</code> instead of <code>?patient=</code> to look the patient up by MRN or FIN,
+      and add <code>&amp;tab=labs</code> to open a particular tab.</p></div>
   </main>
   <script>
     const base = location.href.replace(/setup\.html.*$/, "");
     document.getElementById("launchUri").textContent = base + "launch.html";
     document.getElementById("redirUri").textContent = base + "index.html";
+    document.getElementById("sampleLink").textContent = base + "launch-standalone.html?patient=12724066&tab=today";
     const msg = (t) => (document.getElementById("msg").textContent = t);
     let cur = ""; try { cur = localStorage.getItem("toolkit-client-id") || ""; } catch (e) {}
     document.getElementById("cid").value = cur;

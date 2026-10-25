@@ -20,6 +20,8 @@
     function fail(text) {
       document.getElementById("msg").innerHTML = "<pre style='color:#b00020;white-space:pre-wrap'>" + text + "</pre>";
     }
+    // Launched from PowerChart: forget any patient left over from a link (standalone launch).
+    try { sessionStorage.removeItem("toolkit-target"); } catch (e) {}
     if (typeof FHIR === "undefined") {
       fail("The FHIR client library failed to load (check internet/ad-blocker and the console).");
     } else {
