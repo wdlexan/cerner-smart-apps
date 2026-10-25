@@ -2,7 +2,7 @@
    Finds POTENTIAL Hospital at Home candidates from the chart, using the items on the Island Health
    Hospital at Home Referral Form (9-90886 V.2 FEB 2024), and pre-fills that form as a PDF.
    It does not decide eligibility: the patient/family must be asked and must consent, and the HaH team decides.
-   The criteria are in hah-criteria.csv, catchment.csv and hah-stability.csv (edit in Excel - no code changes).
+   The criteria are in hah-criteria.csv, hah-diagnoses.csv, catchment.csv and hah-stability.csv (edit in Excel - no code changes).
    Everything runs in this browser. Needs criteria-loader.js (CSV reader) and pdf-lib. */
 
 const CONFIG = {
@@ -71,6 +71,23 @@ async function loadSheets() {
       state.stab.push({ name, test, label: (r[2] || name).trim(), cond: r[1] });
     });
   } catch (e) { problems.push(e.message + " Vital-sign stability will not be checked."); }
+  state.dx = [];
+  try {
+    const d = parseCSV(await fetchText("hah-diagnoses.csv"));
+    const dh = d[0] || [];
+    const di = { grp: headerIndex(dh, "group"), name: headerIndex(dh, "diagnosis"), st: headerIndex(dh, "status"), words: headerIndex(dh, "words"),
+      ign: headerIndex(dh, "ignore"), chk: headerIndex(dh, "check"), src: headerIndex(dh, "source") };
+    d.slice(1).forEach((r, i) => {
+      const get = (k) => (di[k] >= 0 ? (r[di[k]] || "").trim() : "");
+      const name = get("name"); if (!name) return;
+      const st = /^not/i.test(get("st")) ? "Not suitable" : /^suit/i.test(get("st")) ? "Suitable" : null;
+      if (!st) return problems.push(`hah-diagnoses.csv row ${i + 2} (${name}): Status should be Suitable or Not suitable.`);
+      let words, ignore;
+      try { words = phrasesRe(get("words")); ignore = phrasesRe(get("ign")); } catch (e) { return problems.push(`hah-diagnoses.csv row ${i + 2} (${name}): could not read the words (${e.message}).`); }
+      if (!words) return problems.push(`hah-diagnoses.csv row ${i + 2} (${name}): no words to look for.`);
+      state.dx.push({ group: get("grp"), name, status: st, words, ignore, check: get("chk"), src: get("src") });
+    });
+  } catch (e) { problems.push(e.message + " The diagnosis check will show Unknown."); }
   state.problems = problems;
 }
 
@@ -184,6 +201,7 @@ function evaluate() {
       }
       return r;
     }
+    if (row.key === "hahDx") return dxCheck(r);
     const yes = search(row.yes, row.ignore), no = search(row.no, row.ignore);
     if (yes.pos.length && no.pos.length) { r.answer = "Unknown"; r.note = "conflicting entries in the notes"; }
     else if (yes.pos.length) r.answer = "Yes";
@@ -229,6 +247,50 @@ function vitalCheck() {
   return { checked: Object.keys(latest).length > 0, unstable, summary, when: new Date(newest) };
 }
 const short = (n) => ({ "Systolic BP": "SBP", "Heart rate": "HR", "Respiratory rate": "RR", "SpO2": "SpO2", "Temperature": "T" }[n] || n);
+
+// Is the diagnosis one Hospital at Home manages? (hah-diagnoses.csv)
+// 1. The recorded diagnoses and the "Impression / Diagnosis / Assessment" lines of the notes count most.
+// 2. Otherwise, any (not negated) mention in the notes read.
+// A "Not suitable" match (ICU-level care, ACS, GI bleed …) anywhere = No. A "Suitable" match = Yes. Nothing = Unknown (confirm).
+function dxCheck(r) {
+  if (!state.dx.length) { r.note = "hah-diagnoses.csv not loaded"; return r; }
+  const primary = primaryDiagnoses();
+  const inPrimary = (d) => primary.find((t) => d.words.test(t) && !(d.ignore && d.ignore.test(t)));
+  const bad = [], good = [];
+  state.dx.forEach((d) => {
+    const p = inPrimary(d);
+    if (p) return (d.status === "Suitable" ? good : bad).push({ d, where: "diagnosis", text: p });
+    const h = search(d.words, d.ignore).pos;
+    if (h.length) (d.status === "Suitable" ? good : bad).push({ d, where: "notes", hits: h });
+  });
+  const goodP = good.filter((g) => g.where === "diagnosis");
+  const name = (x) => x.d.name + (x.d.check ? ` (check: ${x.d.check})` : "");
+  if (bad.length) {
+    r.answer = "No";
+    r.note = "not suitable: " + bad.map((b) => b.d.name + (b.where === "diagnosis" ? " – recorded diagnosis" : " – mentioned in notes")).join("; ") +
+      (good.length ? ". Also matches: " + good.map((g) => g.d.name).join(", ") : "") + ". Check it applies to this admission.";
+    r.evidence = bad.filter((b) => b.hits).slice(0, 2).map((b) => ev(b.hits[0]));
+  } else if (goodP.length) {
+    r.answer = "Yes";
+    r.note = "diagnosis matches the HaH list: " + goodP.map(name).join("; ");
+  } else if (good.length) {
+    r.answer = "Yes";
+    r.note = "not in the recorded diagnosis, but the notes mention: " + good.map(name).join("; ") + " – confirm this is the admitting problem";
+    r.evidence = good.slice(0, 2).map((g) => ev(g.hits[0]));
+  } else {
+    r.note = primary.length ? `diagnosis "${primary[0].slice(0, 80)}" is not on the HaH list – review with the HaH team` : "no diagnosis found – confirm";
+  }
+  r.dxMatch = (bad.length ? [] : goodP.length ? goodP : good).map((g) => g.d.name);
+  return r;
+}
+function primaryDiagnoses() {
+  const out = state.conds.slice(0, 5).map((c) => (c.code && (c.code.text || ((c.code.coding || [])[0] || {}).display)) || "").filter(Boolean);
+  for (const n of state.notes) {
+    const rx = /(?:admitting diagnosis|diagnosis|impression|assessment(?: and plan)?|a\/p)\s*:\s*([^\n]{3,160})/gi; let m;
+    while ((m = rx.exec(n.text)) && out.length < 12) if (!negated(n.text, m.index + m[0].length - m[1].length, m[1].length)) out.push(m[1].trim());
+  }
+  return out;
+}
 
 function diagnosisText() {
   const c = state.conds[0];
@@ -281,7 +343,7 @@ function render() {
     `</tbody></table></section>`;
   html += referralHtml();
   html += `<section class="card"><b>Criteria used</b><p class="note">${state.rows.length} items from <b>hah-criteria.csv</b>, ${Object.keys(state.catch).length} postal-code prefixes from <b>catchment.csv</b>,
-    ${state.stab.length} vital-sign limits from <b>hah-stability.csv</b>. Edit them in Excel – no code changes needed. ${esc(state.diag.join(" · "))}</p>
+    ${state.stab.length} vital-sign limits from <b>hah-stability.csv</b>, ${state.dx.length} diagnoses from <b>hah-diagnoses.csv</b>. Edit them in Excel – no code changes needed. ${esc(state.diag.join(" · "))}</p>
     ${state.problems.length ? `<div class="warn"><b>Spreadsheet rows skipped:</b><br>${state.problems.map(esc).join("<br>")}</div>` : ""}
     <p class="note">Notes read: ${state.notes.map((n) => `#${n.n} ${esc(n.type)} (${esc(fmt(n.date))})`).join(" · ") || "none"}</p></section>`;
   $("out").innerHTML = html;
@@ -342,7 +404,7 @@ function referralHtml() {
 }
 // Items that are not on the form (home care frequency, staff safety, cirrhosis, consent) go into "Additional information"
 function extraInfo() {
-  const parts = state.items.filter((it) => /extra/i.test(it.row.section) && it.row.key !== "violence").map((it) => {
+  const parts = state.items.filter((it) => /extra/i.test(it.row.section) && !["violence", "hahDx"].includes(it.row.key)).map((it) => {
     const a = state.answers[it.row.key];
     return a === "Unknown" || (it.assumed && a === "No") ? null : `${it.row.item}: ${a}`;
   }).filter(Boolean);

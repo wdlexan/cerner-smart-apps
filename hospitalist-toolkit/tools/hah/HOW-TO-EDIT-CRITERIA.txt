@@ -1,6 +1,6 @@
 HOSPITAL AT HOME SCREEN - HOW TO CHANGE THE CRITERIA (no code changes)
 =====================================================================
-Three spreadsheets in this folder. Edit in Excel, then File > Save As > "CSV UTF-8 (Comma delimited)", same name.
+Four spreadsheets in this folder. Edit in Excel, then File > Save As > "CSV UTF-8 (Comma delimited)", same name.
 Make a backup copy first. Relaunch, and check "Criteria used" at the bottom for any skipped rows.
 
 hah-criteria.csv  - one row per checklist item (the referral form items plus extras)
@@ -16,6 +16,16 @@ hah-criteria.csv  - one row per checklist item (the referral form items plus ext
   Ignore when nearby  phrases that cancel a match within ~40 characters (history of; dog)
   Reference           where the criterion comes from
   Negatives are handled automatically ("denies falls", "no stroke", "Falls: none").
+
+hah-diagnoses.csv - the diagnoses Hospital at Home manages (Suitable) and the ones that rule it out (Not suitable).
+  Group / Diagnosis   names shown on screen
+  Status              Suitable or Not suitable
+  Words to look for   same rules as above (* = any ending; "a ... b" = same sentence; ; between phrases)
+  Ignore when nearby  e.g. history of; rule out; prior
+  Check before referring  reminder shown with a match (e.g. "PESI class I-II")
+  Source              where the row comes from. Rows marked DRAFT are suggestions - confirm with the HaH team.
+  How it is used: the recorded diagnosis and the "Impression / Diagnosis / Assessment" lines count first, then the notes.
+    Any Not suitable match = No (exclusion). A Suitable match = Yes. Nothing on the list = Unknown (confirm).
 
 catchment.csv  - first 3 characters of the postal code: In / Borderline / Out.   ** DRAFT - confirm with the HaH team **
 hah-stability.csv - vital-sign limits for "Clinically stable" (Systolic BP, Heart rate, Respiratory rate, SpO2, Temperature).
