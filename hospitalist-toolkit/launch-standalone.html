@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Opening patient…</title>
+  <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+</head>
+<body style="font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif">
+  <p id="msg">Opening the Hospitalist Toolkit, please wait…</p>
+  <script>
+    // Standalone launch: open the toolkit from a link (e.g. in a Teams message), outside PowerChart.
+    // The link names the patient one of three ways:
+    //   launch-standalone.html?patient=12724066   (Cerner FHIR patient ID)
+    //   launch-standalone.html?mrn=06233571        (looked up after sign-in)
+    //   launch-standalone.html?fin=92036543208     (the admission; looked up after sign-in)
+    // Optional: &tab=labs to open a particular tab, &iss=… to use a different Cerner FHIR server.
+    // After the Cerner sign-in, index.html (shell.js) reads the saved patient and opens the toolkit on them.
+
+    // Oracle Health (Cerner) open sandbox, R4. Island Health would give a different address for real use.
+    const SANDBOX_ISS = "https://fhir-ehr-code.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d";
+
+    let CLIENT_ID = "09c38f54-fb4d-4664-87b6-67b57983ac01";
+    try { CLIENT_ID = localStorage.getItem("toolkit-client-id") || CLIENT_ID; } catch (e) {}
+
+    function fail(text) {
+      document.getElementById("msg").innerHTML = "<pre style='color:#b00020;white-space:pre-wrap'>" + text + "</pre>";
+    }
+
+    const q = new URLSearchParams(location.search);
+    const clean = (v) => (v || "").trim().replace(/\s+/g, "");
+    const target = { patient: clean(q.get("patient")), mrn: clean(q.get("mrn")), fin: clean(q.get("fin")), tab: clean(q.get("tab")) };
+
+    if (!target.patient && !target.mrn && !target.fin) {
+      fail("This link doesn't say which patient to open.\n\nIt should end with ?patient=…, ?mrn=… or ?fin=…");
+    } else if (typeof FHIR === "undefined") {
+      fail("The FHIR client library failed to load (check internet/ad-blocker and the console).");
+    } else {
+      // Remember the patient for after the sign-in (this browser tab only).
+      try { sessionStorage.setItem("toolkit-target", JSON.stringify(target)); }
+      catch (e) { fail("This browser blocked session storage, so the patient can't be remembered across the sign-in."); }
+
+      // "user/" scopes = whatever this clinician is allowed to see (there is no patient from PowerChart).
+      // Encounter is needed to look a patient up by FIN.
+      FHIR.oauth2.authorize({
+        iss: q.get("iss") || SANDBOX_ISS,
+        clientId: CLIENT_ID,
+        scope: "openid fhirUser online_access user/Patient.read user/Encounter.read user/Observation.read " +
+               "user/MedicationRequest.read user/Medication.read user/Condition.read " +
+               "user/DocumentReference.read user/Binary.read user/AllergyIntolerance.read",
+        redirectUri: "index.html"
+      }).catch((err) => fail("Sign-in could not start: " + (err && err.message ? err.message : err) +
+        "\n\nCheck that the app allows the user/… scopes in the Code Console."));
+    }
+  </script>
+</body>
+</html>

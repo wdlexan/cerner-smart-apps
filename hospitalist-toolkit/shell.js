@@ -27,6 +27,24 @@ FHIR.oauth2.ready().then(start).catch((e) => {
 });
 
 async function start(client) {
+  // Opened from a link (launch-standalone.html) instead of PowerChart: there is no patient yet,
+  // so find the one named in the link and hand it to every tab.
+  let target = null;
+  try { target = JSON.parse(sessionStorage.getItem("toolkit-target") || "null"); } catch (e) {}
+  if (!client.patient.id) {
+    try {
+      if (!target) throw new Error("No patient was chosen. Open the toolkit from PowerChart, or from a link ending in ?patient=…, ?mrn=… or ?fin=….");
+      $("msg").textContent = "Finding the patient…";
+      const found = await resolveTarget(client, target);
+      setPatient(client, found.patient, found.encounter);
+    } catch (e) {
+      $("patient").textContent = "No patient";
+      $("msg").innerHTML = `<b class="err">Could not open the patient:</b> ${esc(e.message || e)}`;
+      return;
+    }
+  }
+  try { sessionStorage.removeItem("toolkit-target"); } catch (e) {}
+
   try { $("patient").textContent = describe(await client.patient.read()); }
   catch (e) { $("patient").textContent = "Patient " + client.patient.id; }
   $("msg").remove();
@@ -35,7 +53,7 @@ async function start(client) {
   document.querySelectorAll("#tabs button").forEach((b) => (b.onclick = () => show(b.dataset.k)));
 
   // Open the tab named in the address (#labs), else the last one used, else Today
-  let first = location.hash.slice(1);
+  let first = (target && target.tab) || location.hash.slice(1);
   if (!TOOLS.some((t) => t.key === first)) { try { first = localStorage.getItem("toolkit-tab"); } catch (e) {} }
   if (!TOOLS.some((t) => t.key === first)) first = TOOLS[0].key;
   show(first);
@@ -68,6 +86,44 @@ function tidy(frame) {
     s.textContent = "body > header { display:none !important; } main { margin-top:12px !important; }";
     d.head.appendChild(s);
   } catch (e) { /* not same-site - leave it */ }
+}
+
+// ---- standalone launch: find the patient named in the link ----
+async function resolveTarget(client, t) {
+  if (t.patient) return { patient: t.patient };
+
+  if (t.mrn) {
+    const hits = (await client.request("Patient?identifier=" + encodeURIComponent(t.mrn), { flat: true }))
+      .filter((r) => r.resourceType === "Patient");
+    if (hits.length === 1) return { patient: hits[0].id };
+    if (!hits.length) throw new Error(`No patient found with MRN ${t.mrn}.`);
+    throw new Error(`${hits.length} patients matched MRN ${t.mrn} - open the patient from PowerChart instead.`);
+  }
+
+  if (t.fin) {
+    const encs = (await client.request("Encounter?identifier=" + encodeURIComponent(t.fin), { flat: true }))
+      .filter((r) => r.resourceType === "Encounter");
+    if (encs.length !== 1) throw new Error(encs.length ? `${encs.length} visits matched FIN ${t.fin}.` : `No visit found with FIN ${t.fin}.`);
+    const ref = (encs[0].subject && encs[0].subject.reference) || "";
+    const id = ref.split("/").pop();
+    if (!id) throw new Error(`The visit with FIN ${t.fin} has no patient attached.`);
+    return { patient: id, encounter: encs[0].id };
+  }
+  throw new Error("The link doesn't say which patient to open.");
+}
+
+// Store the patient in the sign-in record the fhirclient library keeps for this browser tab.
+// Every tab reads client.patient.id from that record, so they all open on this patient unchanged.
+function setPatient(client, patientId, encounterId) {
+  client.state.tokenResponse = client.state.tokenResponse || {};
+  client.state.tokenResponse.patient = patientId;
+  if (encounterId) client.state.tokenResponse.encounter = encounterId;
+  const key = JSON.parse(sessionStorage.getItem("SMART_KEY"));
+  const saved = JSON.parse(sessionStorage.getItem(key));
+  saved.tokenResponse = saved.tokenResponse || {};
+  saved.tokenResponse.patient = patientId;
+  if (encounterId) saved.tokenResponse.encounter = encounterId;
+  sessionStorage.setItem(key, JSON.stringify(saved));
 }
 
 function describe(p) {
