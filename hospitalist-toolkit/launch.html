@@ -13,7 +13,9 @@
     //   Today: Observation, MedicationRequest, Medication, DocumentReference, Binary
     //   Labs: Observation · Notes & Risk screen: DocumentReference, Binary · Meds (Beers): MedicationRequest, Medication, Condition
     //   Calculators: Condition, Observation, MedicationRequest · AI summary: + AllergyIntolerance · Oncology toxicity: MedicationRequest
-    const CLIENT_ID = "09c38f54-fb4d-4664-87b6-67b57983ac01";
+    // Other people can use their own Code Console app: they save their client ID once on setup.html (stored in their browser only).
+    let CLIENT_ID = "09c38f54-fb4d-4664-87b6-67b57983ac01";
+    try { CLIENT_ID = localStorage.getItem("toolkit-client-id") || CLIENT_ID; } catch (e) {}
 
     function fail(text) {
       document.getElementById("msg").innerHTML = "<pre style='color:#b00020;white-space:pre-wrap'>" + text + "</pre>";
@@ -27,7 +29,7 @@
                "patient/MedicationRequest.read patient/Medication.read patient/Condition.read " +
                "patient/DocumentReference.read patient/Binary.read patient/AllergyIntolerance.read",
         redirectUri: "index.html"
-      }).catch((err) => fail("Launch failed: " + (err && err.message ? err.message : err)));
+      }).catch((err) => fail("Launch failed: " + (err && err.message ? err.message : err) + "\n\nUsing your own Code Console app? Check the client ID on setup.html."));
     }
   </script>
 </body>
