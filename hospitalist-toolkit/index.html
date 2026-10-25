@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hospitalist Toolkit</title>
+  <style>
+    :root { --bg:#f5f7fa; --ink:#1f2933; --muted:#6b7785; --accent:#0b6bcb; --line:#dde3ea; }
+    * { box-sizing:border-box; }
+    html, body { height:100%; }
+    body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink);
+           display:flex; flex-direction:column; }
+    header { background:var(--accent); color:#fff; padding:10px 20px 0; }
+    .top { display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap; }
+    header h1 { margin:0; font-size:17px; }
+    #patient { font-size:13px; opacity:.95; }
+    nav { display:flex; gap:2px; margin-top:8px; overflow-x:auto; }
+    nav button { background:transparent; color:#dbe9f8; border:0; border-bottom:3px solid transparent; padding:8px 14px;
+                 font-size:14px; cursor:pointer; white-space:nowrap; }
+    nav button:hover { color:#fff; }
+    nav button.on { color:#fff; border-bottom-color:#fff; font-weight:600; }
+    #frames { flex:1; position:relative; min-height:0; }
+    #frames iframe { position:absolute; inset:0; width:100%; height:100%; border:0; background:var(--bg); display:none; }
+    #frames iframe.on { display:block; }
+    .msg { max-width:900px; margin:24px auto; padding:16px; background:#fff; border:1px solid var(--line); border-radius:8px; font-size:14px; }
+    .err { color:#b00020; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="top">
+      <h1>Hospitalist Toolkit</h1>
+      <div id="patient">Loading patient…</div>
+    </div>
+    <nav id="tabs"></nav>
+  </header>
+  <div id="frames"><div class="msg" id="msg">Signing in…</div></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+  <script src="shell.js"></script>
+</body>
+</html>

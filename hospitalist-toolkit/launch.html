@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Launching…</title>
+  <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+</head>
+<body>
+  <p id="msg">Launching Hospitalist Toolkit, please wait…</p>
+  <script>
+    // One launch for every tab. Same Code Console app/client ID as before ("search documents").
+    // The scope list is everything the tabs need together:
+    //   Today: Observation, MedicationRequest, Medication, DocumentReference, Binary
+    //   Labs: Observation · Notes & Risk screen: DocumentReference, Binary · Meds (Beers): MedicationRequest, Medication, Condition
+    //   Calculators: Condition, Observation, MedicationRequest · AI summary: + AllergyIntolerance · Oncology toxicity: MedicationRequest
+    const CLIENT_ID = "09c38f54-fb4d-4664-87b6-67b57983ac01";
+
+    function fail(text) {
+      document.getElementById("msg").innerHTML = "<pre style='color:#b00020;white-space:pre-wrap'>" + text + "</pre>";
+    }
+    if (typeof FHIR === "undefined") {
+      fail("The FHIR client library failed to load (check internet/ad-blocker and the console).");
+    } else {
+      FHIR.oauth2.authorize({
+        clientId: CLIENT_ID,
+        scope: "launch openid fhirUser online_access patient/Patient.read patient/Observation.read " +
+               "patient/MedicationRequest.read patient/Medication.read patient/Condition.read " +
+               "patient/DocumentReference.read patient/Binary.read patient/AllergyIntolerance.read",
+        redirectUri: "index.html"
+      }).catch((err) => fail("Launch failed: " + (err && err.message ? err.message : err)));
+    }
+  </script>
+</body>
+</html>

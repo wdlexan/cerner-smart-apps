@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Oncology Toxicity Matrix</title>
+  <style>
+    :root { --bg:#f5f7fa; --card:#fff; --ink:#1f2933; --muted:#5f6c7b; --accent:#0b6bcb; --line:#dde3ea;
+            --em-bg:#fde8e8; --em-ink:#9b1c1c; --hi-bg:#fff1d6; --hi-ink:#8a5200; --mod-bg:#e3eefc; --mod-ink:#0b4a99; --warn-bg:#fff4e5; --warn-line:#f0c27b; }
+    @media (prefers-color-scheme: dark) { :root { --bg:#111418; --card:#1a1f26; --ink:#e8edf2; --muted:#9aa7b5; --accent:#6aa9ff; --line:#2b333d;
+            --em-bg:#4a1d1d; --em-ink:#ffb3b3; --hi-bg:#4a3511; --hi-ink:#ffd38a; --mod-bg:#14325c; --mod-ink:#a9cdff; --warn-bg:#3a2e15; --warn-line:#6b5420; } }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); }
+    header { padding:14px 20px; border-bottom:1px solid var(--line); background:var(--card); }
+    header h1 { margin:0; font-size:19px; }
+    header .sub { font-size:13px; color:var(--muted); margin-top:2px; }
+    main { max-width:900px; margin:16px auto 40px; padding:0 16px; display:grid; gap:12px; }
+    .banner { background:var(--warn-bg); border:1px solid var(--warn-line); border-radius:8px; padding:10px 14px; font-size:13px; }
+    .controls { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+    .chip { border:1px solid var(--line); background:var(--card); color:var(--ink); border-radius:16px; padding:5px 13px; font-size:13px; cursor:pointer; }
+    .chip[aria-pressed="true"] { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
+    @media (prefers-color-scheme: dark) { .chip[aria-pressed="true"] { color:#0b1a2e; } }
+    input[type=search] { flex:1; min-width:180px; padding:7px 10px; border:1px solid var(--line); border-radius:6px; background:var(--card); color:var(--ink); font-size:14px; }
+    details.card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:0; }
+    details.card > summary { list-style:none; cursor:pointer; padding:14px 16px; display:grid; gap:4px; }
+    details.card > summary::-webkit-details-marker { display:none; }
+    .top { display:flex; justify-content:space-between; gap:10px; align-items:flex-start; }
+    .title { font-size:16px; font-weight:600; }
+    .cls { font-size:13px; color:var(--muted); }
+    .drugs { font-size:12.5px; font-family:ui-monospace,Consolas,monospace; color:var(--muted); }
+    .more { font-size:12px; color:var(--accent); margin-top:2px; }
+    .badge { font-size:11px; font-weight:700; letter-spacing:.04em; padding:3px 9px; border-radius:12px; white-space:nowrap; }
+    .badge.emergent { background:var(--em-bg); color:var(--em-ink); } .badge.high { background:var(--hi-bg); color:var(--hi-ink); } .badge.moderate { background:var(--mod-bg); color:var(--mod-ink); }
+    .body { padding:4px 16px 16px; border-top:1px solid var(--line); font-size:14px; }
+    .lab { font-family:ui-monospace,Consolas,monospace; font-size:11.5px; color:var(--muted); letter-spacing:.06em; margin:14px 0 4px; text-transform:uppercase; }
+    ul.steps { margin:4px 0 0 0; padding-left:18px; } ul.steps li { margin:5px 0; }
+    .src { margin-top:14px; font-size:12.5px; color:var(--muted); border-top:1px dashed var(--line); padding-top:10px; }
+    .unv { display:inline-block; background:var(--em-bg); color:var(--em-ink); font-weight:700; font-size:11px; padding:2px 8px; border-radius:10px; margin-right:6px; }
+    button.copy { background:var(--card); color:var(--accent); border:1px solid var(--accent); border-radius:6px; padding:4px 10px; font-size:12px; cursor:pointer; margin-top:10px; }
+    .panel { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px 16px; font-size:13.5px; }
+    .panel h2 { margin:0 0 6px; font-size:14px; } .panel select, .panel button { font-size:13px; padding:4px 8px; border:1px solid var(--line); border-radius:6px; background:var(--card); color:var(--ink); }
+    .hit { border-color:var(--accent) !important; box-shadow:0 0 0 2px var(--accent) inset; }
+    .hittag { display:inline-block; background:var(--mod-bg); color:var(--mod-ink); font-size:11.5px; font-weight:700; padding:2px 8px; border-radius:10px; margin-top:4px; }
+    .muted { color:var(--muted); font-size:12.5px; }
+    .empty { color:var(--muted); font-size:14px; padding:20px; text-align:center; }
+    @media print { .controls, button { display:none !important; } details.card { break-inside:avoid; } details.card:not([open]) > .body { display:block; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Oncology Toxicity Triage &amp; Management Matrix</h1>
+    <div class="sub" id="meta"></div>
+  </header>
+  <main>
+    <div class="banner"><b>Reference aid. Not a clinical decision.</b> Content is an unreviewed draft. Verify against your hospital pathway, the drug monograph and the treating oncologist. Rows marked UNVERIFIED have not been checked against a source.</div>
+    <div class="panel" id="panel"><h2>This patient's medication list</h2>
+      <div id="pstatus" class="muted">Open from Cerner to match the chart, or pick a made-up test list:</div>
+      <div style="margin-top:6px"><select id="testsel"><option value="">Test list…</option></select> <button id="clear" hidden>Clear</button></div>
+      <div id="pout"></div></div>
+    <div class="controls" id="controls">
+      <input type="search" id="q" placeholder="Search drug, toxicity or class" aria-label="Search">
+    </div>
+    <div id="list"></div>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+  <script src="toxicity-data.js"></script>
+  <script src="test-patients.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

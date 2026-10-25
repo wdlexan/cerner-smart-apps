@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Beers Criteria Medication Review</title>
+  <style>
+    :root { --bg:#f5f7fa; --card:#fff; --ink:#1f2933; --muted:#6b7785; --accent:#0b6bcb; --line:#dde3ea;
+            --avoid:#b00020; --cond:#c75b00; --caution:#8a6d00; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); }
+    header { background:var(--accent); color:#fff; padding:12px 20px; }
+    header h1 { margin:0; font-size:18px; }
+    #patient { font-size:13px; opacity:.9; margin-top:2px; }
+    main { max-width:1100px; margin:16px auto; padding:0 16px; display:grid; gap:16px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:16px; }
+    .card h2 { margin:0 0 10px; font-size:15px; }
+    .sum { display:flex; flex-wrap:wrap; gap:12px; }
+    .stat { flex:1; min-width:140px; border:1px solid var(--line); border-radius:8px; padding:10px 12px; }
+    .stat b { display:block; font-size:22px; }
+    .stat span { font-size:12px; color:var(--muted); }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    th, td { text-align:left; padding:7px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+    th { color:var(--muted); font-weight:600; }
+    tr.flagged { background:#fff8f6; }
+    .b { display:inline-block; font-size:11px; padding:2px 7px; border-radius:10px; color:#fff; margin:1px 3px 1px 0; }
+    .b.avoid { background:var(--avoid); } .b.conditional { background:var(--cond); } .b.caution { background:var(--caution); }
+    .b.info { background:#52606d; }
+    details { border:1px solid var(--line); border-radius:6px; margin-bottom:8px; padding:8px 10px; }
+    summary { cursor:pointer; font-size:14px; }
+    details dl { margin:8px 0 0; font-size:13px; display:grid; grid-template-columns:130px 1fr; gap:4px 10px; }
+    details dt { color:var(--muted); } details dd { margin:0; }
+    .warn { background:#fff4e5; border:1px solid #f0c27b; border-radius:6px; padding:8px 12px; font-size:13px; margin-bottom:8px; }
+    .note { font-size:12px; color:var(--muted); }
+    .toolbar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:10px; }
+    button { background:#fff; color:var(--accent); border:1px solid var(--accent); padding:7px 12px; border-radius:6px; font-size:13px; cursor:pointer; }
+    .err { color:var(--avoid); font-size:14px; }
+    @media print { header .note, .toolbar, button { display:none !important; } details { break-inside:avoid; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Beers Criteria Medication Review (AGS 2023)</h1>
+    <div id="patient">Loading patient…</div>
+  </header>
+  <main id="main">
+    <div class="card"><p id="status">Loading medications…</p></div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+  <script src="beers-data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

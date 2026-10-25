@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lab Results</title>
+  <style>
+    :root { --bg:#f5f7fa; --card:#fff; --ink:#1f2933; --muted:#6b7785; --accent:#0b6bcb; --line:#dde3ea; --bad:#b00020; --warn:#c75b00; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); }
+    header { background:var(--accent); color:#fff; padding:12px 20px; }
+    header h1 { margin:0; font-size:18px; }
+    #patient { font-size:13px; opacity:.9; margin-top:2px; }
+    main { max-width:1100px; margin:16px auto; padding:0 16px; display:grid; gap:16px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:16px; }
+    .row { display:flex; flex-wrap:wrap; gap:14px; align-items:end; }
+    label { font-size:12px; color:var(--muted); display:flex; flex-direction:column; gap:3px; }
+    select, input[type=date], input[type=text] { padding:7px 8px; border:1px solid var(--line); border-radius:6px; font-size:14px; }
+    button { background:var(--accent); color:#fff; border:0; padding:8px 14px; border-radius:6px; font-size:14px; cursor:pointer; }
+    button.sec { background:#fff; color:var(--accent); border:1px solid var(--accent); padding:5px 10px; font-size:12px; }
+    button:disabled { opacity:.5; }
+    .tabs { display:flex; gap:4px; border-bottom:1px solid var(--line); margin-bottom:12px; }
+    .tab { background:none; color:var(--muted); border:0; border-bottom:3px solid transparent; border-radius:0; padding:8px 14px; }
+    .tab.on { color:var(--accent); border-bottom-color:var(--accent); font-weight:600; }
+    .badge { background:var(--bad); color:#fff; border-radius:10px; font-size:11px; padding:1px 7px; margin-left:5px; }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    th, td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+    th { color:var(--muted); font-weight:600; }
+    tr.grp { cursor:pointer; } tr.grp:hover { background:#f0f6fd; }
+    tr.hist td { background:#fafbfc; padding-left:28px; color:#3e4c59; }
+    .H, .L { color:var(--warn); font-weight:600; } .C { color:var(--bad); font-weight:700; }
+    .note { font-size:12px; color:var(--muted); }
+    .checks { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:4px 12px; margin-top:8px; font-size:13px; }
+    .hidden { display:none; }
+    details { margin-top:12px; }
+    summary { cursor:pointer; font-size:13px; color:var(--accent); }
+    .err { color:var(--bad); font-size:14px; }
+    @media print { .row, .tabs, button, details { display:none !important; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Lab Results</h1>
+    <div id="patient">Loading patient…</div>
+  </header>
+
+  <main>
+    <section class="card">
+      <div class="row">
+        <label>How far back
+          <select id="range">
+            <option value="1">Last 24 hours</option>
+            <option value="3">Last 3 days</option>
+            <option value="7">Last 7 days</option>
+            <option value="14">Last 14 days</option>
+            <option value="30" selected>Last 30 days</option>
+            <option value="90">Last 3 months</option>
+            <option value="180">Last 6 months</option>
+            <option value="365">Last 1 year</option>
+            <option value="730">Last 2 years</option>
+            <option value="custom">Custom dates…</option>
+          </select>
+        </label>
+        <label class="custom hidden">From <input type="date" id="from"></label>
+        <label class="custom hidden">To <input type="date" id="to"></label>
+        <label>Common panels
+          <select id="panel"></select>
+        </label>
+        <label>Search lab name <input type="text" id="q" placeholder="e.g. potassium"></label>
+        <label style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="abn"> Abnormal only</label>
+        <button id="go" disabled>Search</button>
+      </div>
+      <p class="note" id="status"></p>
+    </section>
+
+    <section class="card">
+      <div class="tabs">
+        <button class="tab on" data-tab="results">Results</button>
+        <button class="tab" data-tab="recent">New (past 24 h)<span class="badge hidden" id="newCount">0</span></button>
+      </div>
+
+      <div id="tab-results">
+        <details id="labPick">
+          <summary id="labPickSum">Choose which labs</summary>
+          <div style="margin-top:8px">
+            <button class="sec" id="selAll">Select all</button>
+            <button class="sec" id="selNone">Select none</button>
+          </div>
+          <div class="checks" id="labChecks"></div>
+        </details>
+        <p class="note" id="resCount"></p>
+        <table><thead><tr><th>Test</th><th>Latest result</th><th>Reference</th><th>Date</th><th>#</th></tr></thead><tbody id="resRows"></tbody></table>
+      </div>
+
+      <div id="tab-recent" class="hidden">
+        <div style="margin-bottom:8px"><button class="sec" id="refresh">Refresh</button> <span class="note" id="recentNote"></span></div>
+        <table><thead><tr><th>Test</th><th>Result</th><th>Reference</th><th>Resulted</th></tr></thead><tbody id="recRows"></tbody></table>
+      </div>
+    </section>
+    <p class="note">Results are shown as returned by the EHR. Panel filters match on lab names, so confirm against the chart. Printing or copying exports PHI from the EHR.</p>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

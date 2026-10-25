@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forms</title>
+
+    <!-- SMART on FHIR client library -->
+    <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+    <!-- PDF writer (runs in the browser) -->
+    <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+
+    <style>
+        :root {
+            --bg: #f5f7fa;
+            --card: #ffffff;
+            --text: #1f2933;
+            --muted: #616e7c;
+            --border: #cbd2d9;
+            --accent: #0b5cad;
+            --accent-hover: #094a8c;
+            --banner: #e8f0fa;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            padding: 0 0 32px;
+            background: var(--bg);
+            color: var(--text);
+            font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+            font-size: 15px;
+        }
+        .topbar {
+            position: sticky; top: 0; z-index: 5;
+            background: var(--banner);
+            border-bottom: 1px solid var(--border);
+            padding: 10px 16px;
+            font-weight: 600;
+        }
+        .topbar .who { max-width: 860px; margin: 0 auto; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+        .topbar .app { color: var(--accent); }
+        .wrap { max-width: 860px; margin: 20px auto 0; padding: 0 16px; }
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 24px;
+        }
+        h1 { font-size: 20px; margin: 0 0 4px; }
+        .subtitle { color: var(--muted); margin: 0 0 20px; font-size: 13px; }
+
+        /* home */
+        #search {
+            width: 100%; padding: 10px 12px; margin: 0 0 16px;
+            border: 1px solid var(--border); border-radius: 8px; font: inherit;
+        }
+        #formList { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+        .formCard {
+            text-align: left; display: flex; flex-direction: column; gap: 6px;
+            background: #fff; border: 1px solid var(--border); border-radius: 10px;
+            padding: 16px; font: inherit; color: inherit; cursor: pointer;
+        }
+        .formCard:hover { border-color: var(--accent); box-shadow: 0 1px 6px rgba(11, 92, 173, .15); }
+        .formCard .cat { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 600; }
+        .formCard .title { font-weight: 700; font-size: 15px; }
+        .formCard .desc { font-size: 13px; color: var(--muted); }
+        .formCard .file { font-size: 11px; color: var(--muted); margin-top: auto; }
+        .formCard .file.missing { color: #b00020; font-weight: 600; }
+        .empty { color: var(--muted); }
+
+        /* form */
+        .back {
+            background: none; border: none; color: var(--accent); font: inherit;
+            font-weight: 600; cursor: pointer; padding: 0; margin-bottom: 12px;
+        }
+        fieldset { border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin: 0 0 16px; }
+        legend { font-weight: 600; padding: 0 6px; }
+        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0 12px; }
+        .span1 { grid-column: span 1; } .span2 { grid-column: span 2; }
+        .span3 { grid-column: span 3; } .span4 { grid-column: span 4; }
+        @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } .span1, .span2, .span3, .span4 { grid-column: span 1; } }
+        label, .label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+        .req { color: #b00020; }
+        .field { margin-bottom: 12px; min-width: 0; }
+        input[type=text], input[type=date], input[type=time], textarea, select {
+            width: 100%; padding: 8px 10px;
+            border: 1px solid var(--border); border-radius: 6px;
+            font: inherit; color: var(--text); background: #fff;
+        }
+        input:focus, textarea:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: var(--accent); }
+        textarea { min-height: 80px; resize: vertical; }
+        .radios { display: flex; gap: 8px 18px; flex-wrap: wrap; padding: 6px 0; }
+        .radios label { display: inline-flex; align-items: center; gap: 6px; font-weight: 400; margin: 0; }
+        .hint { color: var(--muted); font-size: 12px; margin-top: 4px; }
+        .static { padding: 4px 0; }
+        button.go {
+            background: var(--accent); color: #fff; border: none; border-radius: 6px;
+            padding: 10px 18px; font: inherit; font-weight: 600; cursor: pointer;
+        }
+        button.go:hover { background: var(--accent-hover); }
+        button.go:disabled { opacity: .6; cursor: wait; }
+        .status { margin-top: 12px; min-height: 20px; font-size: 14px; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="topbar"><div class="who"><span class="app">Forms</span><span id="ptBanner">Loading patient…</span></div></div>
+
+    <div class="wrap">
+        <div class="card" id="home">
+            <h1>Choose a form</h1>
+            <p class="subtitle">The patient's details from the chart are filled in automatically. You complete the clinical parts.</p>
+            <input type="search" id="search" placeholder="Search forms…" aria-label="Search forms">
+            <div id="formList"></div>
+        </div>
+        <div id="forms"></div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="form41.js"></script>
+    <script src="bccancer.js"></script>
+    <script src="forms.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

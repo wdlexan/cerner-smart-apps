@@ -1,0 +1,56 @@
+HOW TO CHANGE WHAT THE ED SCREEN LOOKS FOR
+==========================================
+No code changes are needed. Two spreadsheets in this folder hold all the criteria:
+
+  criteria.csv  - words and phrases to look for in the ED note
+  measures.csv  - vital sign and lab thresholds (SI units)
+
+TO EDIT
+1. Make a backup copy of the file first (e.g. criteria-backup.csv).
+2. Open the file in Excel (double-click it, or Excel > File > Open).
+3. Change, add or delete rows. Keep the first row (the column names) as it is.
+4. File > Save As > choose "CSV UTF-8 (Comma delimited) (*.csv)" > keep the same name > Save > Yes to keep the format.
+5. Close Excel, then relaunch the toolkit and open the ED screen tab.
+6. Scroll to "Criteria used" at the bottom of the results. It shows how many rows were loaded and lists any row
+   that was skipped because of a mistake (with the row number and the reason).
+
+criteria.csv COLUMNS
+  Category            ICU
+                      Step-down / monitored
+                      Specialty service
+                      Hospitalist
+                      Observation / discharge
+                      Comorbidity        (3 or more found = "multiple chronic conditions", counted for Hospitalist)
+                      Check documented   (shown under "Clarify with the ED" when NONE of the words appear)
+  Finding             The name shown on screen.
+  Weight              3 = strong, 2 = moderate, 1 = minor. Leave blank for Comorbidity and Check documented.
+                      Each finding counts once. A category total of 3 or more counts as a signal.
+  Words to look for   Phrases separated by a semicolon ;  Capitals do not matter.
+                        pneumon*                 * means "any ending": pneumonia, pneumonitis
+                        step down                a space also matches a hyphen: step-down
+                        troponin ... elevated    both words in the same sentence (up to ~40 characters apart)
+  Ignore when nearby  Phrases that cancel a match if they appear close to it, e.g.  rule out; history of; home
+  Service             (Specialty service rows) the service to suggest, e.g. Orthopedics.
+  Policy reference    Optional. Shown next to the finding, e.g. "VGH Hospitalist criteria 2.3".
+
+  Negatives are handled automatically: "no pneumonia", "denies chest pain", "Nausea: No".
+
+measures.csv COLUMNS
+  Measure     One of: Systolic BP, Heart rate, Respiratory rate, SpO2, Temperature, GCS, Lactate, pH, Potassium,
+              Sodium, Creatinine, Hemoglobin, Glucose, WBC, HEART score
+  Condition   < 90      <= 120      > 130      >= 5.5 or < 3.5
+  Category    ICU, Step-down / monitored, Specialty service, Hospitalist or Observation / discharge
+  Weight      3, 2 or 1
+  Label       Text shown on screen. {v} is replaced by the value, e.g.  Hypotension (SBP {v})
+
+  Units: creatinine umol/L, hemoglobin g/L, glucose mmol/L, temperature C. (Values written in US units are converted.)
+  For each measure, the FIRST row from the top that a value meets is used - so put the most severe row first.
+
+HOW THE RESULT IS CHOSEN (in this order)
+  ICU score 3 or more                          -> Consider ICU / critical care
+  A strong (weight 3) Specialty finding        -> Specialty as primary service
+                                                  (or Hospitalist + specialty consult if Hospitalist score is 6 or more)
+  Step-down score 3 or more                    -> Hospitalist with higher-level monitoring
+  Hospitalist score 3 or more                  -> Likely appropriate for the hospitalist service
+  Observation score 3 or more                  -> Consider observation or discharge
+  Otherwise                                    -> Not enough information

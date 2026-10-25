@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Risk Screen from Notes</title>
+  <style>
+    :root { --bg:#f5f7fa; --card:#fff; --ink:#1f2933; --muted:#6b7785; --accent:#0b6bcb; --line:#dde3ea;
+            --high:#b00020; --mod:#c75b00; --low:#2f7d32; --none:#6b7785; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); }
+    header { background:var(--accent); color:#fff; padding:12px 20px; }
+    header h1 { margin:0; font-size:18px; }
+    #patient { font-size:13px; opacity:.9; margin-top:2px; }
+    main { max-width:1100px; margin:16px auto; padding:0 16px; display:grid; gap:16px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:16px; }
+    .row { display:flex; flex-wrap:wrap; gap:14px; align-items:end; }
+    label { font-size:12px; color:var(--muted); display:flex; flex-direction:column; gap:3px; }
+    select, input[type=number] { padding:7px 8px; border:1px solid var(--line); border-radius:6px; font-size:14px; }
+    input[type=number] { width:80px; }
+    button { background:var(--accent); color:#fff; border:0; padding:8px 14px; border-radius:6px; font-size:14px; cursor:pointer; }
+    button.sec { background:#fff; color:var(--accent); border:1px solid var(--accent); }
+    button:disabled { opacity:.5; }
+    .note { font-size:12px; color:var(--muted); }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:10px; }
+    .tile { border:1px solid var(--line); border-left:6px solid var(--none); border-radius:8px; padding:10px 12px; cursor:pointer; }
+    .tile b { display:block; font-size:14px; } .tile span { font-size:13px; }
+    .tile.High { border-left-color:var(--high); } .tile.Moderate { border-left-color:var(--mod); }
+    .tile.Low { border-left-color:var(--low); }
+    .lvl.High { color:var(--high); font-weight:700; } .lvl.Moderate { color:var(--mod); font-weight:700; } .lvl.Low { color:var(--low); font-weight:700; }
+    details { border:1px solid var(--line); border-radius:6px; margin-bottom:10px; padding:8px 12px; }
+    summary { cursor:pointer; font-size:15px; font-weight:600; }
+    .f { margin:10px 0 0; font-size:13px; }
+    .f b { display:inline-block; }
+    .ev { color:#3e4c59; margin:3px 0 0 14px; font-size:12px; }
+    .ev i { color:var(--muted); font-style:normal; }
+    mark { background:#fff1a8; }
+    .neg { color:var(--muted); font-size:12px; margin-top:8px; }
+    .old { color:var(--mod); }
+    .warn { background:#fff4e5; border:1px solid #f0c27b; border-radius:6px; padding:8px 12px; font-size:13px; }
+    .err { color:var(--high); }
+    @media print { .row, button { display:none !important; } details { break-inside:avoid; } details[open] { display:block; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Pressure Injury · Nutrition · Sleep · Dysphagia · Falls — Chart Screen</h1>
+    <div id="patient">Loading patient…</div>
+  </header>
+  <main>
+    <section class="card">
+      <div class="row">
+        <label>Notes to review <input type="number" id="count" min="5" max="50" value="30"></label>
+        <label>How far back
+          <select id="range">
+            <option value="7">Last 7 days</option>
+            <option value="30" selected>Last 30 days</option>
+            <option value="90">Last 3 months</option>
+            <option value="180">Last 6 months</option>
+            <option value="365">Last 1 year</option>
+            <option value="1095">Last 3 years</option>
+            <option value="0">No limit</option>
+          </select>
+        </label>
+        <button id="go" disabled>Run assessment</button>
+        <button class="sec" onclick="window.print()">Print</button>
+      </div>
+      <p class="note" id="status"></p>
+    </section>
+    <div id="out"></div>
+    <div id="viewer"></div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+  <script src="rules.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>What Changed - Daily Panel</title>
+  <style>
+    :root { --bg:#f5f7fa; --card:#fff; --ink:#1f2933; --muted:#6b7785; --accent:#0b6bcb; --line:#dde3ea;
+            --avoid:#b00020; --cond:#c75b00; --caution:#8a6d00; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); }
+    header { background:var(--accent); color:#fff; padding:12px 20px; }
+    header h1 { margin:0; font-size:18px; }
+    #patient { font-size:13px; opacity:.9; margin-top:2px; }
+    main { max-width:1100px; margin:16px auto; padding:0 16px; display:grid; gap:16px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:16px; }
+    .card h2 { margin:0 0 10px; font-size:15px; }
+    .sum { display:flex; flex-wrap:wrap; gap:12px; }
+    .stat { flex:1; min-width:118px; border:1px solid var(--line); border-radius:8px; padding:10px 12px; }
+    .stat b { display:block; font-size:22px; }
+    .stat span { font-size:12px; color:var(--muted); }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    th, td { text-align:left; padding:7px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+    th { color:var(--muted); font-weight:600; }
+    tr.flagged { background:#fff8f6; }
+    .b { display:inline-block; font-size:11px; padding:2px 7px; border-radius:10px; color:#fff; margin:1px 3px 1px 0; }
+    .b.avoid { background:var(--avoid); }
+    .b.start { background:#2e7d32; } .b.stop { background:#52606d; } .b.chg { background:var(--cond); }
+    .H, .L { color:var(--avoid); font-weight:600; } .C { color:#fff; background:var(--avoid); padding:0 4px; border-radius:3px; }
+    .warn { background:#fff4e5; border:1px solid #f0c27b; border-radius:6px; padding:8px 12px; font-size:13px; }
+    .note { font-size:12px; color:var(--muted); }
+    .toolbar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    button { background:#fff; color:var(--accent); border:1px solid var(--accent); padding:7px 12px; border-radius:6px; font-size:13px; cursor:pointer; }
+    .err { color:var(--avoid); font-size:14px; }
+    details.sec > summary { cursor:pointer; list-style:none; display:flex; align-items:center; gap:10px; }
+    details.sec > summary::-webkit-details-marker { display:none; }
+    details.sec > summary::before { content:"▸"; color:var(--muted); font-size:13px; }
+    details.sec[open] > summary::before { content:"▾"; }
+    details.sec > summary h2 { margin:0; }
+    details.sec[open] > summary { margin-bottom:10px; }
+    .pill { font-size:12px; color:var(--muted); border:1px solid var(--line); border-radius:10px; padding:1px 8px; }
+    label.per { margin-left:auto; font-size:12px; color:var(--muted); font-weight:normal; }
+    select.per { font-size:12px; padding:2px 4px; margin-left:4px; border:1px solid var(--line); border-radius:5px; background:#fff; }
+    .pill.alert { color:#fff; background:var(--avoid); border-color:var(--avoid); }
+    mark { background:#ffe58f; padding:0 1px; border-radius:2px; }
+    select { font-size:13px; padding:5px 6px; border:1px solid var(--line); border-radius:6px; margin-left:4px; }
+    #settingsWrap { max-width:1100px; margin:0 auto 24px; padding:0 16px; }
+    .setgrid { display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:20px; }
+    .setgrid h3 { font-size:13px; margin:0 0 8px; }
+    .setgrid input[type=number] { width:70px; padding:4px 6px; border:1px solid var(--line); border-radius:5px; font-size:13px; }
+    .setrow { display:block; font-size:13px; margin-bottom:8px; }
+    .symgrid { display:grid; grid-template-columns:1fr 1fr; gap:4px 12px; font-size:13px; }
+    textarea { width:100%; font:inherit; font-size:13px; padding:6px; border:1px solid var(--line); border-radius:6px; margin-top:4px; }
+    pre.sumpre, pre.notetext { white-space:pre-wrap; font-size:12px; max-height:320px; overflow:auto; background:#f8fafc;
+      border:1px solid var(--line); border-radius:6px; padding:8px; }
+    .printonly { display:none; }
+    @media (max-width:600px) { th, td { padding:5px 4px; } .symgrid { grid-template-columns:1fr; } }
+    @media print {
+      @page { margin:10mm; }
+      body { background:#fff; font-size:11px; }
+      header { background:#fff; color:#000; padding:0 0 4px; border-bottom:2px solid #000; }
+      main { margin:6px 0; padding:0; gap:6px; max-width:none; }
+      .card { padding:6px 8px; border-color:#bbb; }
+      .card h2 { font-size:12px; }
+      table { font-size:10.5px; } th, td { padding:2px 5px; } tr { break-inside:avoid; }
+      .sum { gap:6px; } .stat { padding:4px 6px; min-width:0; } .stat b { font-size:14px; } .stat span { font-size:10px; }
+      .toolbar, button, select, #settingsWrap, .noprint { display:none !important; }
+      tr.none { display:none; }
+      details.sec > summary::before { content:""; }
+      tr.flagged { background:none; }
+      .pill.alert, .b, mark, .H, .L { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+      .printonly { display:block; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>What Changed - Daily Panel</h1>
+    <div id="patient">Loading patient…</div>
+  </header>
+  <main id="main">
+    <div class="card"><p>Loading vital signs, labs and medications…</p></div>
+  </main>
+  <div id="settingsWrap"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

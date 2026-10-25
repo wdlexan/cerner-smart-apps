@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Calculators</title>
+  <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 12px;
+      background: #f6f6f8
+    }
+  </style>
+</head>
+
+<body>
+  <div id="calcTab">Loading…</div>
+  <script src="calculators.js"></script>
+  <script>
+    // Picks up the toolkit's existing Cerner sign-in, like the other tools
+    FHIR.oauth2.ready()
+      .then(client => HospitalistCalculators.mount(document.getElementById("calcTab"), client))
+      .catch(err => {
+        // Still usable for manual entry if the sign-in can't be read
+        console.warn("Calculators: no Cerner connection – manual entry only", err);
+        HospitalistCalculators.mount(document.getElementById("calcTab"), null);
+      });
+  </script>
+</body>
+
+</html>

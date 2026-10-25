@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ED Note: Hospitalist Screen</title>
+  <style>
+    :root { --bg:#f5f7fa; --card:#fff; --ink:#1f2933; --muted:#6b7785; --accent:#0b6bcb; --line:#dde3ea; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); }
+    header { background:var(--accent); color:#fff; padding:12px 20px; }
+    header h1 { margin:0; font-size:18px; }
+    #patient { font-size:13px; opacity:.9; margin-top:2px; }
+    main { max-width:1100px; margin:16px auto; padding:0 16px; display:grid; gap:16px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:16px; }
+    .row { display:flex; flex-wrap:wrap; gap:14px; align-items:end; }
+    label { font-size:12px; color:var(--muted); display:flex; flex-direction:column; gap:3px; }
+    select { padding:7px 8px; border:1px solid var(--line); border-radius:6px; font-size:14px; max-width:520px; }
+    button { background:var(--accent); color:#fff; border:0; padding:8px 14px; border-radius:6px; font-size:14px; cursor:pointer; }
+    button.sec { background:#fff; color:var(--accent); border:1px solid var(--accent); padding:4px 10px; font-size:12px; }
+    button:disabled { opacity:.5; }
+    .note { font-size:12px; color:var(--muted); }
+    .banner { border-radius:8px; padding:14px 18px; color:#fff; font-size:14px; }
+    .banner b { display:block; font-size:18px; margin-bottom:4px; }
+    .banner.hospitalist { background:#2f7d32; } .banner.mixed { background:#3b7a57; } .banner.monitored { background:#c75b00; }
+    .banner.icu { background:#b00020; } .banner.specialty { background:#6a3fb0; } .banner.obs { background:#52606d; } .banner.unclear { background:#8a6d00; }
+    .chips { display:flex; flex-wrap:wrap; gap:8px; }
+    .chip { border:1px solid var(--line); border-radius:14px; padding:3px 12px; font-size:13px; }
+    .chip.on { background:#fff4e5; border-color:#f0c27b; font-weight:600; }
+    table { width:100%; border-collapse:collapse; font-size:13px; margin-top:8px; }
+    th, td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+    th { color:var(--muted); font-weight:600; }
+    .flag { color:#b00020; font-weight:600; }
+    details { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:10px 14px; }
+    summary { cursor:pointer; font-size:15px; font-weight:600; }
+    .f { margin:10px 0 0; font-size:13px; }
+    .ev { color:#3e4c59; margin:3px 0 0 14px; font-size:12px; }
+    .ev i { color:var(--muted); font-style:normal; }
+    mark { background:#fff1a8; }
+    pre { white-space:pre-wrap; font-size:12px; background:#fbfcfd; border:1px solid var(--line); border-radius:6px; padding:10px; }
+    .warn { background:#fff4e5; border:1px solid #f0c27b; border-radius:6px; padding:8px 12px; font-size:13px; }
+    .err { color:#b00020; }
+    @media print { .row, button { display:none !important; } details { break-inside:avoid; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>ED Note Review: Is This Patient Appropriate for the Hospitalist Service?</h1>
+    <div id="patient">Loading patient…</div>
+  </header>
+  <main>
+    <section class="card">
+      <div class="row">
+        <label>ED / admission note
+          <select id="sel"></select>
+        </label>
+        <label>Look back
+          <select id="range">
+            <option value="2">2 days</option>
+            <option value="7">7 days</option>
+            <option value="30" selected>30 days</option>
+            <option value="180">6 months</option>
+            <option value="0">No limit</option>
+          </select>
+        </label>
+        <label style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="enc"> Include all notes from the same encounter</label>
+        <button id="go" disabled>Analyze</button>
+      </div>
+      <p class="note" id="status"></p>
+    </section>
+    <div id="out"></div>
+    <div id="viewer"></div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+  <script src="criteria-loader.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
