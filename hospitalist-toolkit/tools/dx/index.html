@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diagnosis check</title>
+<link rel="stylesheet" href="dx.css">
+<style>
+  :root { color-scheme: light; }
+  body { font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; margin: 0; background: #fff; color: #000; }
+  header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;
+           padding: 12px 16px; border-bottom: 1px solid #d0d0d0; background: #fff; }
+  header h1 { font-size: 17px; margin: 0; font-weight: 600; }
+  #patient { font-size: 13px; color: #333; }
+  .controls { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  header select, header button { font: inherit; padding: 4px 10px; border-radius: 6px; border: 1px solid #b0b0b0; background: #fff; color: #000; }
+  header button { cursor: pointer; }
+  main { padding: 16px; }
+  .banner { max-width: 900px; padding: 8px 12px; border-radius: 8px; margin-bottom: 12px; font-size: 13px; }
+  .banner-demo { background: #e6f1fb; color: #0c447c; }
+  .banner-error { background: #fcebeb; color: #791f1f; white-space: pre-wrap; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+<script src="dx.js"></script>
+<script src="dx-mock.js"></script>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Diagnosis check</h1>
+    <div id="patient">Loading patient…</div>
+  </div>
+  <div class="controls">
+    <label>Look back
+      <select id="window">
+        <option value="3">3 days</option>
+        <option value="7" selected>7 days</option>
+        <option value="14">14 days</option>
+        <option value="30">30 days</option>
+      </select>
+    </label>
+    <button type="button" id="refresh">Refresh</button>
+  </div>
+</header>
+<main>
+  <div id="banner"></div>
+  <div id="dx-tab"></div>
+</main>
+<script>
+  // Open index.html?demo=1 to see the app with a made-up patient, no launch needed.
+  const DEMO = new URLSearchParams(location.search).has('demo');
+  const $ = id => document.getElementById(id);
+  const lookback = () => parseInt($('window').value, 10);
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const showError = msg => { $('banner').innerHTML = '<div class="banner banner-error">' + esc(msg) + '</div>'; };
+
+  function patientLine(p) {
+    if (!p) return 'Patient not available';
+    const n = (p.name || []).find(x => x.use === 'official') || (p.name || [])[0] || {};
+    const name = n.text || [(n.given || []).join(' '), n.family].filter(Boolean).join(' ') || 'Unknown name';
+    let age = '';
+    if (p.birthDate) {
+      const b = new Date(p.birthDate), d = new Date();
+      let a = d.getFullYear() - b.getFullYear();
+      if (d < new Date(d.getFullYear(), b.getMonth(), b.getDate())) a--;
+      age = a + ' y';
+    }
+    const mrn = (p.identifier || []).find(i => /mrn|medical record/i.test((i.type && (i.type.text || ((i.type.coding || [])[0] || {}).code)) || ''));
+    return [name, age, p.gender, p.birthDate ? 'DOB ' + p.birthDate : '', mrn ? 'MRN ' + mrn.value : ''].filter(Boolean).map(esc).join(' · ');
+  }
+
+  async function startDemo() {
+    $('banner').innerHTML = '<div class="banner banner-demo">Demo mode: made-up patient, no FHIR server.</div>';
+    const now = Date.now();
+    const mock = DXMock.makeMockResources(now);
+    $('patient').textContent = 'Demo patient · 71 y · male';
+    const run = () => DX.mount($('dx-tab'), null, { now: Date.now(), lookbackDays: lookback(), loader: () => Promise.resolve(mock) });
+    $('refresh').onclick = run;
+    $('window').onchange = run;
+    await run();
+  }
+
+  async function startSmart() {
+    let client;
+    try {
+      client = await FHIR.oauth2.ready();
+    } catch (e) {
+      $('patient').textContent = '';
+      showError('Not launched. Open this app from the Cerner sandbox (Code Console → Begin Testing), or open launch.html. ' +
+        'To preview with a made-up patient, add ?demo=1 to this page’s address.\n\n' + (e && e.message ? e.message : e));
+      return;
+    }
+    window.smartClient = client;
+    client.patient.read().then(p => { $('patient').innerHTML = patientLine(p); })
+      .catch(() => { $('patient').textContent = 'Patient ' + (client.patient.id || ''); });
+    const run = () => DX.mount($('dx-tab'), client, { lookbackDays: lookback() }).catch(e => console.error('[dx]', e));
+    $('refresh').onclick = run;
+    $('window').onchange = run;
+    run();
+  }
+
+  const missing = [];
+  if (typeof DX === 'undefined') missing.push('dx.js');
+  if (typeof FHIR === 'undefined' && !DEMO) missing.push('the SMART library (fhir-client.js from cdn.jsdelivr.net — check your internet connection)');
+  if (DEMO && typeof DXMock === 'undefined') missing.push('dx-mock.js');
+  if (missing.length) {
+    showError('Couldn’t load: ' + missing.join(', ') + '.\nMake sure these files are in the same folder as index.html, then press Ctrl + F5.');
+  } else {
+    (DEMO ? startDemo() : startSmart()).catch(e => showError('The checks stopped with an error: ' + (e && e.message ? e.message : e)));
+  }
+</script>
+</body>
+</html>
