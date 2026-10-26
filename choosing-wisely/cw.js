@@ -624,10 +624,13 @@
         if (typeof console !== 'undefined') console.warn('[cw] check ' + c.id + ' failed', e);
         r = R('unknown', 'Couldn’t check (error)', [], '');
       }
+      if (r.status === 'unknown' && ctx.pending.length) {
+        r = R('loading', 'Waiting for data to load…', [], '');
+      }
       return Object.assign({ id: c.id, title: c.title, rec: c.rec, source: c.source, link: c.link }, r);
     });
     const count = s => items.filter(i => i.status === s).length;
-    return { ctx, items, counts: { review: count('review'), ok: count('ok'), na: count('na'), unknown: count('unknown') },
+    return { ctx, items, counts: { review: count('review'), ok: count('ok'), na: count('na'), unknown: count('unknown'), loading: count('loading') },
       failed: ctx.failed.filter(f => !ctx.pending.includes(f)), pending: ctx.pending, reasons: ctx.reasons };
   }
 
@@ -750,6 +753,8 @@
       return ok.flatMap(r => r.value);
     };
 
+    ['Patient', 'Admission', 'Active medications', 'Problem list', 'Medication administrations', 'Lab results',
+      'Microbiology reports', 'Orders', 'Nursing notes'].forEach(l => pending.add(l));
     // Batch 1: the core lists. Batch 2 starts when they finish, so the server never gets
     // more than a handful of searches at once (the Cerner sandbox times out under load).
     await Promise.all([
@@ -761,8 +766,6 @@
         'Condition?patient=' + pid + '&category=problem-list-item',
         'Condition?patient=' + pid + '&clinical-status=active'], 3), [], true)
     ]);
-    ['Medication administrations', 'Lab results', 'Microbiology reports', 'Orders', 'Nursing notes'].forEach(l => pending.add(l));
-    partial(snapshot());
     await Promise.all([
       run('Medication administrations', 'medAdmins', () => fhirSearch(client, 'MedicationAdministration?patient=' + pid +
         '&effective-time=ge' + ge + '&_count=100', 10), null),
@@ -791,7 +794,8 @@
     review: { label: 'Review', cls: 'cw-st-review' },
     ok: { label: 'OK', cls: 'cw-st-ok' },
     na: { label: 'Not applicable', cls: 'cw-st-na' },
-    unknown: { label: 'Couldn’t check', cls: 'cw-st-unknown' }
+    unknown: { label: 'Couldn’t check', cls: 'cw-st-unknown' },
+    loading: { label: 'Loading', cls: 'cw-st-na' }
   };
 
   function itemHtml(i) {
@@ -826,12 +830,12 @@
       '<div class="cw-metric ' + (c.review ? 'cw-metric-bad' : (c.unknown || loading ? '' : 'cw-metric-good')) + '"><div class="cw-metric-label">To review</div><div class="cw-metric-value">' + c.review + '</div></div>' +
       '<div class="cw-metric ' + (c.ok ? 'cw-metric-good' : '') + '"><div class="cw-metric-label">OK</div><div class="cw-metric-value">' + c.ok + '</div></div>' +
       '<div class="cw-metric"><div class="cw-metric-label">Not applicable</div><div class="cw-metric-value">' + c.na + '</div></div>' +
-      '<div class="cw-metric"><div class="cw-metric-label">Couldn’t check</div><div class="cw-metric-value">' + c.unknown + '</div></div>' +
+      '<div class="cw-metric"><div class="cw-metric-label">' + (c.loading ? 'Loading / couldn’t check' : 'Couldn’t check') + '</div><div class="cw-metric-value">' + (c.unknown + c.loading) + '</div></div>' +
       '</div>');
-    const order = ['review', 'unknown', 'ok', 'na'];
+    const order = ['review', 'unknown', 'loading', 'ok', 'na'];
     const sorted = r.items.slice().sort((a, b) => order.indexOf(a.status) - order.indexOf(b.status));
     const showAll = !!opts.showAll;
-    const shown = showAll ? sorted : sorted.filter(i => i.status === 'review' || i.status === 'unknown');
+    const shown = showAll ? sorted : sorted.filter(i => ['review', 'unknown', 'loading'].includes(i.status));
     if (!shown.length) h.push('<section class="cw-item cw-item-ok"><p class="cw-summary">Nothing to review. All checks are OK or not applicable.</p></section>');
     h.push(shown.map(itemHtml).join(''));
     const hidden = sorted.length - shown.length;
