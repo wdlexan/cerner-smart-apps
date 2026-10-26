@@ -741,9 +741,14 @@
       partial(snapshot());
     };
     // Some servers reject a search combination; try simpler forms before giving up.
+    // Each attempt gets an equal share of the time limit, so a search that hangs
+    // still leaves time for the simpler backup search.
     const firstWorking = async (urls, pages) => {
       let last;
-      for (const u of urls) { try { return await fhirSearch(client, u, pages); } catch (e) { last = e; } }
+      const share = Math.floor(CONFIG.timeouts.searchMs / urls.length * 0.9);
+      for (const u of urls) {
+        try { return await withTimeout(fhirSearch(client, u, pages), share, 'Search'); } catch (e) { last = e; }
+      }
       throw last;
     };
     const both = async (fns) => {
