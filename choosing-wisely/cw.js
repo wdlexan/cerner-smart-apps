@@ -49,6 +49,7 @@
       }
     },
     timeouts: { searchMs: 60000, notesMs: 60000, noteMs: 15000 },
+    maxParallel: 4,               // at most this many requests to the server at once
     maxNotes: 25,
     // Site-specific codes found with a data check: { telemetry: ['system|code'], catheter: [...], codeStatus: [...] }
     extraCodes: {}
@@ -362,7 +363,8 @@
       notes: r.notes == null ? null : r.notes.filter(n => n.time >= from && n.time <= now),
       failed: uniq((r.failed || []).concat(r.pending || [])),
       pending: (r.pending || []).slice(),
-      gaps: (r.gaps || []).slice()
+      gaps: (r.gaps || []).slice(),
+      reasons: r.reasons || {}
     };
     ctx.has = label => !ctx.failed.includes(label);
     ctx.medsLoaded = ctx.has('Active medications');
@@ -626,7 +628,7 @@
     });
     const count = s => items.filter(i => i.status === s).length;
     return { ctx, items, counts: { review: count('review'), ok: count('ok'), na: count('na'), unknown: count('unknown') },
-      failed: ctx.failed.filter(f => !ctx.pending.includes(f)), pending: ctx.pending };
+      failed: ctx.failed.filter(f => !ctx.pending.includes(f)), pending: ctx.pending, reasons: ctx.reasons };
   }
 
   // ------------------------------------------------------------------
@@ -684,15 +686,33 @@
       text: texts[i].status === 'fulfilled' ? texts[i].value : '' })).filter(n => n.text);
   }
 
-  async function loadResources(client, opts) {
+  // Wraps the SMART client so no more than CONFIG.maxParallel requests run at once.
+  function throttled(client) {
+    let active = 0;
+    const queue = [];
+    const next = () => {
+      while (active < CONFIG.maxParallel && queue.length) {
+        const job = queue.shift();
+        active++;
+        Promise.resolve().then(job.fn).then(job.resolve, job.reject).finally(() => { active--; next(); });
+      }
+    };
+    return {
+      patient: client.patient,
+      request: (...args) => new Promise((resolve, reject) => { queue.push({ fn: () => client.request(...args), resolve, reject }); next(); })
+    };
+  }
+
+  async function loadResources(rawClient, opts) {
+    const client = throttled(rawClient);
     const pid = client.patient.id;
     const from = opts.from, to = opts.to;
     const ge = fhirDate(from);
-    const gaps = [], failed = [], pending = new Set();
+    const gaps = [], failed = [], pending = new Set(), reasons = {};
     const out = { patient: null, encounters: [], medRequests: [], medAdmins: null, observations: [], reports: [], orders: [], conditions: [], notes: null };
     const progress = opts.onProgress || function () {};
     const partial = opts.onPartial || function () {};
-    const snapshot = () => Object.assign({}, out, { gaps: gaps.slice(), failed: failed.slice(), pending: Array.from(pending) });
+    const snapshot = () => Object.assign({}, out, { gaps: gaps.slice(), failed: failed.slice(), pending: Array.from(pending), reasons: Object.assign({}, reasons) });
     const FAILED = {};
 
     const safe = async (label, fn) => {
@@ -704,6 +724,7 @@
       } catch (e) {
         if (typeof console !== 'undefined') console.warn('[cw] ' + label + ' failed', e);
         progress(label, 'failed', null, shortError(e));
+        reasons[label.replace(' (retry)', '')] = shortError(e);
         return FAILED;
       }
     };
@@ -713,7 +734,7 @@
       let v = await safe(label, fn);
       if (v === FAILED && retryIfQuick && Date.now() - t0 < CONFIG.timeouts.searchMs / 2) v = await safe(label + ' (retry)', fn);
       pending.delete(label);
-      if (v === FAILED) { failed.push(label); out[key] = fallback; } else out[key] = v;
+      if (v === FAILED) { failed.push(label); out[key] = fallback; } else { out[key] = v; delete reasons[label]; }
       partial(snapshot());
     };
     // Some servers reject a search combination; try simpler forms before giving up.
@@ -729,16 +750,22 @@
       return ok.flatMap(r => r.value);
     };
 
+    // Batch 1: the core lists. Batch 2 starts when they finish, so the server never gets
+    // more than a handful of searches at once (the Cerner sandbox times out under load).
     await Promise.all([
       run('Patient', 'patient', () => client.patient.read(), null),
       run('Admission', 'encounters', () => firstWorking([
         'Encounter?patient=' + pid + '&status=in-progress', 'Encounter?patient=' + pid + '&_count=20'], 1), []),
       run('Active medications', 'medRequests', () => fhirSearch(client, 'MedicationRequest?patient=' + pid + '&status=active&_count=100'), [], true),
-      run('Medication administrations', 'medAdmins', () => fhirSearch(client, 'MedicationAdministration?patient=' + pid +
-        '&effective-time=ge' + ge + '&_count=100', 10), null),
       run('Problem list', 'conditions', () => firstWorking([
         'Condition?patient=' + pid + '&category=problem-list-item',
-        'Condition?patient=' + pid + '&clinical-status=active'], 3), [], true),
+        'Condition?patient=' + pid + '&clinical-status=active'], 3), [], true)
+    ]);
+    ['Medication administrations', 'Lab results', 'Microbiology reports', 'Orders', 'Nursing notes'].forEach(l => pending.add(l));
+    partial(snapshot());
+    await Promise.all([
+      run('Medication administrations', 'medAdmins', () => fhirSearch(client, 'MedicationAdministration?patient=' + pid +
+        '&effective-time=ge' + ge + '&_count=100', 10), null),
       // Labs and vitals in the window, plus spirometry results from any date.
       run('Lab results', 'observations', () => both([
         () => firstWorking(['Observation?patient=' + pid + '&category=laboratory&date=ge' + ge + '&_count=100'], 10),
@@ -785,8 +812,15 @@
     h.push('<div class="cw">');
     if (r.pending.length) h.push('<div class="cw-pending" role="status"><span class="cw-spinner" aria-hidden="true"></span><strong>Still loading:</strong> ' +
       r.pending.map(esc).join(', ') + '. The checklist updates when they arrive.</div>');
-    if (r.failed.length) h.push('<div class="cw-incomplete" role="alert"><strong>Incomplete:</strong> ' + r.failed.map(esc).join(', ') +
-      ' didn’t load, so some items show “Couldn’t check”. <button type="button" class="cw-retry">Try again</button></div>');
+    if (r.failed.length) {
+      const why = r.reasons || {};
+      h.push('<div class="cw-incomplete" role="alert"><strong>Incomplete:</strong> some data didn’t load, so some items show “Couldn’t check”. ' +
+        '<button type="button" class="cw-retry">Try again</button><ul class="cw-fail-list">' +
+        r.failed.map(f => '<li>' + esc(f) + (why[f] ? ' — ' + esc(why[f]) : '') + '</li>').join('') + '</ul>' +
+        (Object.values(why).some(w => /Not allowed/.test(w)) ? '<p class="cw-fail-hint">“Not allowed” means the app wasn’t given that permission (scope). Tick it in the Code Console and relaunch.</p>' : '') +
+        (Object.values(why).some(w => /timed out/.test(w)) ? '<p class="cw-fail-hint">“Timed out” means the Cerner server was too slow. Try again in a minute.</p>' : '') +
+        '</div>');
+    }
     const loading = r.pending.length > 0;
     h.push('<div class="cw-metrics">' +
       '<div class="cw-metric ' + (c.review ? 'cw-metric-bad' : (c.unknown || loading ? '' : 'cw-metric-good')) + '"><div class="cw-metric-label">To review</div><div class="cw-metric-value">' + c.review + '</div></div>' +
