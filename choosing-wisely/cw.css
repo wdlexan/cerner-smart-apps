@@ -45,3 +45,5 @@
 .cw-progress span { width: 16px; text-align: center; font-weight: 700; flex: none; }
 .cw-prog-done span { color: #2d5a0b; }
 .cw-prog-failed span { color: #a32d2d; }
+.cw-fail-list { margin: 6px 0 2px; padding-left: 18px; }
+.cw-fail-hint { margin: 4px 0 0; }
