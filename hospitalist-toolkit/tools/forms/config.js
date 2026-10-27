@@ -3,9 +3,9 @@ window.APP_CONFIG = {
     physician: {
         fullName: "Dr. Wayne Alexander Dong",   // Form 4.1 (print full name)
         shortName: "Dr. Wayne A. Dong",         // referral forms
-        collegeId: "21341",
-        msp: "26301",                           // MSP billing number
-        phone: "250-819-0168",
+        collegeId: "11111",
+        msp: "11111",                           // MSP billing number
+        phone: "111-111-1111",
         fax: "",                                // your fax, if you have one
         clinicName: "",                         // e.g. "VGH Hospitalist Service"
         clinicAddress: "1 Hospital Way, Victoria, BC V8Z 6R5"
