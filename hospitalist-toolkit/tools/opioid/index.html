@@ -17,7 +17,10 @@
 <main>
   <div class="toolbar">
     <span>Over-sedation and respiratory depression screen · last 72 h</span>
-    <button type="button" id="refresh">Refresh</button>
+    <span class="tb-right">
+      <select id="case" hidden aria-label="Test patient"></select>
+      <button type="button" id="refresh">Refresh</button>
+    </span>
   </div>
   <div id="banner"></div>
   <div id="op-tab"></div>
@@ -39,11 +42,46 @@
   }
 
   async function startDemo() {
-    $('banner').innerHTML = '<div class="banner banner-demo">Demo mode: made-up patient, no FHIR server.</div>';
-    $('patient').textContent = 'Demo patient · 81 y · female';
-    const run = () => { const now = Date.now(); return OP.mount($('op-tab'), null, { now, loader: () => Promise.resolve(OPMock.make(now)) }); };
+    $('banner').innerHTML = '<div class="banner banner-demo">Demo mode: made-up test patients, no FHIR server. Pick a patient, or the unit view to see them ranked the way a ward worklist would be.</div>';
+    const sel = $('case');
+    sel.hidden = false;
+    sel.innerHTML = '<option value="unit">Unit view — all test patients</option>' +
+      OPMock.CASES.map((c) => `<option value="${c.key}">${esc(c.label)}</option>`).join('');
+    const want = new URLSearchParams(location.search).get('case');
+    if (want && [...sel.options].some((o) => o.value === want)) sel.value = want;
+
+    const run = () => {
+      const now = Date.now(), key = sel.value;
+      const u = new URL(location.href); u.searchParams.set('case', key); history.replaceState(null, '', u);
+      if (key === 'unit') { $('patient').textContent = 'Demo unit · ' + OPMock.CASES.length + ' test patients'; return unitView(now); }
+      const data = OPMock.make(now, key);
+      $('patient').innerHTML = patientLine(data.patient);
+      return OP.mount($('op-tab'), null, { now, loader: () => Promise.resolve(data) });
+    };
+    sel.onchange = run;
     $('refresh').onclick = run;
     await run();
+  }
+
+  // Ranks every test patient - a preview of what a unit-wide sweep would show.
+  function unitView(now) {
+    const order = { red: 0, amber: 1, green: 2, none: 3 };
+    const rows = OPMock.CASES.map((c) => ({ c, d: OPMock.make(now, c.key) })).map((x) => Object.assign(x, { r: OP.assess(x.d) }))
+      .sort((a, b) => order[a.r.tier] - order[b.r.tier] || b.r.points - a.r.points);
+    const top = (r) => r.flags.slice().sort((a, b) => (b.red - a.red) || (b.pts - a.pts)).slice(0, 3)
+      .map((f) => `<span class="${f.red ? 'why red' : 'why'}">${esc(f.text)}</span>`).join('');
+    $('op-tab').innerHTML = `<table class="unit"><thead><tr><th>Risk</th><th>Patient</th><th>Points</th><th>MME 24 h</th><th>Main reasons</th></tr></thead><tbody>${
+      rows.map(({ c, d, r }) => `<tr data-k="${c.key}" tabindex="0">
+        <td><span class="pill pill-${r.tier}">${r.tier.toUpperCase()}</span></td>
+        <td><b>${esc(d.patient.name[0].given[0] + ' ' + d.patient.name[0].family)}</b><br><small>${r.age} ${esc(d.patient.gender)} · ${esc(c.label.split(' — ')[0].split(' · ').slice(2).join(' · '))}</small></td>
+        <td>${r.points}</td>
+        <td>${r.mme.last24 != null ? r.mme.last24 : '≤' + r.mme.ordered + ' <small>(orders)</small>'}</td>
+        <td>${top(r)}</td></tr>`).join('')}</tbody></table>
+      <p class="unit-note">Click a patient to open their full screen. In real use this list would come from a scheduled sweep of the unit, not from opening each chart.</p>`;
+    document.querySelectorAll('table.unit tr[data-k]').forEach((tr) => {
+      const go = () => { $('case').value = tr.dataset.k; $('case').onchange(); };
+      tr.onclick = go; tr.onkeydown = (e) => { if (e.key === 'Enter') go(); };
+    });
   }
 
   async function startSmart() {

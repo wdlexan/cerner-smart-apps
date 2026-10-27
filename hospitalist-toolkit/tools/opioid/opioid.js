@@ -40,6 +40,7 @@
     cut: {
       mmeModerate: 50, mmeHigh: 90,         // MME in last 24 h
       escalationPct: 50,                    // last 24 h vs previous 24 h
+      escalationMinMme: 30,                 // ...only flagged once the last 24 h reaches this many MME
       rrRed: 10, rrAmber: 12,               // breaths/min: < red, < amber
       spo2Red: 88, spo2Amber: 92,           // %: < red, < amber
       egfrHigh: 30, egfrModerate: 60,
@@ -351,9 +352,11 @@
 
     // --- opioid exposure flags ---
     const G1 = 'Opioid exposure';
-    if (mmeShown != null && mmeShown >= CONFIG.cut.mmeHigh) add(G1, `MME ${round(mmeShown)} (${mmeBasis}) — ≥${CONFIG.cut.mmeHigh}`, 2);
+    // Without the MAR the ordered maximum is an upper bound (assumes every PRN is given), so it scores at most +1.
+    const mmeCap = haveMar ? 2 : 1;
+    if (mmeShown != null && mmeShown >= CONFIG.cut.mmeHigh) add(G1, `MME ${round(mmeShown)} (${mmeBasis}) — ≥${CONFIG.cut.mmeHigh}`, Math.min(2, mmeCap));
     else if (mmeShown != null && mmeShown >= CONFIG.cut.mmeModerate) add(G1, `MME ${round(mmeShown)} (${mmeBasis}) — ≥${CONFIG.cut.mmeModerate}`, 1);
-    if (haveMar && mmePrev > 0 && mme24 >= mmePrev * (1 + CONFIG.cut.escalationPct / 100))
+    if (haveMar && mmePrev > 0 && mme24 >= CONFIG.cut.escalationMinMme && mme24 >= mmePrev * (1 + CONFIG.cut.escalationPct / 100))
       add(G1, `Dose escalating: ${round(mme24)} MME in last 24 h vs ${round(mmePrev)} the 24 h before (+${round((mme24 / mmePrev - 1) * 100)}%)`, 1);
     const homeOpioid = orders.some((o) => o.home && o.opioid);
     const firstOpioid = opAdmins.length ? opAdmins[0].t : null;
@@ -411,7 +414,7 @@
     if (egfr != null) {
       const e = round(egfr);
       const renalOps = [...new Set(opOrders.concat(opAdmins).map((x) => x.opioid || x.drug).filter((d) => CONFIG.renalRiskOpioids.includes(d)))];
-      if (egfr < CONFIG.cut.egfrHigh) add(G3, `eGFR ${e} (${egfrSrc})` + (renalOps.length ? ` — ${renalOps.join(', ')} accumulate in renal failure; consider hydromorphone or fentanyl` : ''), renalOps.length ? 3 : 2);
+      if (egfr < CONFIG.cut.egfrHigh) add(G3, `eGFR ${e} (${egfrSrc})` + (renalOps.length ? ` — ${renalOps.join(', ')} ${renalOps.length > 1 ? 'accumulate' : 'accumulates'} in renal failure; consider hydromorphone or fentanyl` : ''), renalOps.length ? 3 : 2);
       else if (egfr < CONFIG.cut.egfrModerate) add(G3, `eGFR ${e} (${egfrSrc})`, 1);
     } else notes.push('No eGFR or creatinine found in the last 14 days.');
     // obesity
@@ -461,6 +464,8 @@
     if (onOpioid && !orders.some((o) => o.naloxone && o.active)) prompts.push('No active naloxone order found — consider naloxone PRN.');
     if (onOpioid && sedClasses.some((e) => e.s.cls === 'Benzodiazepine')) prompts.push('Opioid + benzodiazepine: review whether both are needed; consider continuous SpO₂ monitoring.');
     if (onOpioid && flags.some((f) => /Sleep apnea/.test(f.text))) prompts.push('Sleep apnea: confirm CPAP is in use while sleeping.');
+    if (nalGiven.length) prompts.push('Naloxone was needed: it wears off before most opioids, so watch for re-sedation and review the opioid dose and sedatives now.');
+    if (homeOpioid) prompts.push('Home opioid on file — likely opioid-tolerant, so a high MME means less on its own; new sedatives, renal decline or dose jumps still matter.');
 
     const points = flags.reduce((s, f) => s + f.pts, 0);
     const hard = flags.filter((f) => f.red);
