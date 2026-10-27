@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Watch-ahead</title>
+  <style>
+    :root { --bg:#f5f7fa; --card:#fff; --ink:#1f2933; --muted:#5f6c7b; --accent:#0b6bcb; --line:#dde3ea;
+            --hi-bg:#fde8e8; --hi-ink:#9b1c1c; --med-bg:#fff1d6; --med-ink:#8a5200; --low-bg:#e3eefc; --low-ink:#0b4a99; --warn-bg:#fff4e5; --warn-line:#f0c27b; --ok-bg:#e4f4ea; --ok-ink:#1d6b3a; }
+    @media (prefers-color-scheme: dark) { :root { --bg:#111418; --card:#1a1f26; --ink:#e8edf2; --muted:#9aa7b5; --accent:#6aa9ff; --line:#2b333d;
+            --hi-bg:#4a1d1d; --hi-ink:#ffb3b3; --med-bg:#4a3511; --med-ink:#ffd38a; --low-bg:#14325c; --low-ink:#a9cdff; --warn-bg:#3a2e15; --warn-line:#6b5420; --ok-bg:#16361f; --ok-ink:#9be0b1; } }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); }
+    header { padding:14px 20px; border-bottom:1px solid var(--line); background:var(--card); }
+    header h1 { margin:0; font-size:19px; } header .sub { font-size:13px; color:var(--muted); margin-top:2px; }
+    main { max-width:940px; margin:16px auto 40px; padding:0 16px; display:grid; gap:14px; }
+    .banner { background:var(--warn-bg); border:1px solid var(--warn-line); border-radius:8px; padding:10px 14px; font-size:13px; }
+    .panel { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px 16px; font-size:13.5px; }
+    .panel h2, h2.sec { margin:0 0 6px; font-size:15px; }
+    h2.sec { margin-top:6px; }
+    .panel select, button { font-size:13px; padding:5px 10px; border:1px solid var(--line); border-radius:6px; background:var(--card); color:var(--ink); cursor:pointer; }
+    button.primary { border-color:var(--accent); color:var(--accent); }
+    .muted { color:var(--muted); font-size:12.5px; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px; margin-top:8px; }
+    .kv { border:1px solid var(--line); border-radius:8px; padding:6px 9px; font-size:12.5px; }
+    .kv b { display:block; font-size:11px; color:var(--muted); font-weight:600; letter-spacing:.03em; text-transform:uppercase; }
+    .kv.stale { opacity:.55; }
+    .chips { display:flex; flex-wrap:wrap; gap:8px; margin:4px 0 8px; }
+    .chip { border-radius:16px; padding:5px 13px; }
+    .chip[aria-pressed="true"] { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
+    @media (prefers-color-scheme: dark) { .chip[aria-pressed="true"] { color:#0b1a2e; } }
+    details.card { background:var(--card); border:1px solid var(--line); border-radius:10px; }
+    details.card > summary { list-style:none; cursor:pointer; padding:12px 16px; display:flex; justify-content:space-between; gap:10px; align-items:flex-start; }
+    details.card > summary::-webkit-details-marker { display:none; }
+    .title { font-size:15.5px; font-weight:600; }
+    .badge { font-size:11px; font-weight:700; letter-spacing:.04em; padding:3px 9px; border-radius:12px; white-space:nowrap; }
+    .badge.high { background:var(--hi-bg); color:var(--hi-ink); } .badge.med { background:var(--med-bg); color:var(--med-ink); } .badge.low { background:var(--low-bg); color:var(--low-ink); }
+    .body { padding:2px 16px 14px; border-top:1px solid var(--line); font-size:14px; }
+    .lab { font-family:ui-monospace,Consolas,monospace; font-size:11.5px; color:var(--muted); letter-spacing:.06em; margin:12px 0 4px; text-transform:uppercase; }
+    ul { margin:4px 0 0; padding-left:18px; } li { margin:4px 0; }
+    .if { font-weight:600; } .src { margin-top:12px; font-size:12.5px; color:var(--muted); border-top:1px dashed var(--line); padding-top:8px; }
+    .unv { display:inline-block; background:var(--hi-bg); color:var(--hi-ink); font-weight:700; font-size:11px; padding:2px 8px; border-radius:10px; margin-right:6px; }
+    .empty { color:var(--muted); font-size:14px; padding:14px; text-align:center; border:1px dashed var(--line); border-radius:10px; }
+    .okbox { background:var(--ok-bg); color:var(--ok-ink); border-radius:8px; padding:8px 12px; font-size:13.5px; }
+    .err { color:var(--hi-ink); font-size:12.5px; }
+    @media print { button, select, .chips { display:none !important; } details.card { break-inside:avoid; } details.card:not([open]) > .body { display:block; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Watch-ahead: what to watch, what may happen, and a contingency plan</h1>
+    <div class="sub" id="meta"></div>
+  </header>
+  <main>
+    <div class="banner"><b>Reference aid. Not a clinical decision.</b> It reads the chart and applies fixed rules. It cannot see the bedside, the notes or what you know about the patient. Thresholds, drug lists and course statements are an unreviewed draft: check them against your sources. Prognosis is a qualitative course, not a statistic. No doses are given. Use made-up or sandbox patients only until Island Health approves real data.</div>
+
+    <div class="panel" id="panel">
+      <h2>Chart data</h2>
+      <div id="pstatus" class="muted">Open from Cerner to read the chart, or pick a made-up patient:</div>
+      <div style="margin-top:6px; display:flex; flex-wrap:wrap; gap:10px; align-items:center">
+        <select id="testsel"><option value="">Made-up patient…</option></select>
+        <button id="clear" hidden>Clear</button>
+        <label class="muted"><input type="checkbox" id="useold"> Include older values (not recommended for decisions)</label>
+      </div>
+      <div id="errs" class="err"></div>
+      <div id="pt"></div>
+    </div>
+
+    <div>
+      <h2 class="sec">Watch-outs from this chart</h2>
+      <div id="watch"></div>
+    </div>
+
+    <div>
+      <h2 class="sec">Diagnoses on this admission</h2>
+      <div class="muted">Ticked from the problem list or from chart values. The problem list often holds old problems: untick any that are not this admission's, and tick ones that are.</div>
+      <div class="chips" id="chips"></div>
+      <div id="dx"></div>
+    </div>
+
+    <div class="panel"><button class="primary" id="copy">Copy the plan as text</button> <span class="muted" id="copied"></span></div>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+  <script src="chart.js"></script>
+  <script src="rules.js"></script>
+  <script src="dx.js"></script>
+  <script src="samples.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
