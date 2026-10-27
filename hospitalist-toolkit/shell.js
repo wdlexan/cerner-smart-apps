@@ -17,6 +17,7 @@ const TOOLS = [
   { key: "calc",  label: "Calculators",          path: "tools/calc/index.html" },
   { key: "ai",    label: "AI summary",           path: "tools/ai/index.html" },
   { key: "tox",   label: "Oncology toxicity",    path: "tools/tox/index.html", keepHeader: true }, // its header holds the draft/version note
+  { key: "watch", label: "Watch-ahead",          path: "tools/watch/index.html", keepHeader: true }, // its header holds the draft/version note
   { key: "forms", label: "Forms",                path: "tools/forms/index.html" }
 ];
 
