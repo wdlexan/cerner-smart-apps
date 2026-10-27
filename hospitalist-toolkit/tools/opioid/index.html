@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Opioid safety</title>
+<link rel="stylesheet" href="opioid.css">
+<script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+<script src="opioid.js"></script>
+<script src="opioid-mock.js"></script>
+</head>
+<body>
+<header>
+  <h1>Opioid safety</h1>
+  <div id="patient">Loading patient…</div>
+</header>
+<main>
+  <div class="toolbar">
+    <span>Over-sedation and respiratory depression screen · last 72 h</span>
+    <button type="button" id="refresh">Refresh</button>
+  </div>
+  <div id="banner"></div>
+  <div id="op-tab"></div>
+</main>
+<script>
+  // Open index.html?demo=1 to see the tab with a made-up patient, no launch needed.
+  const DEMO = new URLSearchParams(location.search).has('demo');
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const showError = (msg) => { $('banner').innerHTML = '<div class="banner banner-error">' + esc(msg) + '</div>'; };
+
+  function patientLine(p) {
+    const n = (p.name || []).find((x) => x.use === 'official') || (p.name || [])[0] || {};
+    const name = n.text || [(n.given || []).join(' '), n.family].filter(Boolean).join(' ') || 'Unknown name';
+    let age = '';
+    if (p.birthDate) { const b = new Date(p.birthDate), d = new Date(); let a = d.getFullYear() - b.getFullYear();
+      if (d < new Date(d.getFullYear(), b.getMonth(), b.getDate())) a--; age = a + ' y'; }
+    return [name, age, p.gender, p.birthDate ? 'DOB ' + p.birthDate : ''].filter(Boolean).map(esc).join(' · ');
+  }
+
+  async function startDemo() {
+    $('banner').innerHTML = '<div class="banner banner-demo">Demo mode: made-up patient, no FHIR server.</div>';
+    $('patient').textContent = 'Demo patient · 81 y · female';
+    const run = () => { const now = Date.now(); return OP.mount($('op-tab'), null, { now, loader: () => Promise.resolve(OPMock.make(now)) }); };
+    $('refresh').onclick = run;
+    await run();
+  }
+
+  async function startSmart() {
+    let client;
+    try { client = await FHIR.oauth2.ready(); }
+    catch (e) {
+      $('patient').textContent = '';
+      showError('Not launched. Open this from the Hospitalist Toolkit or the Cerner sandbox. To preview with a made-up patient, add ?demo=1 to this page’s address.\n\n' + (e && e.message ? e.message : e));
+      return;
+    }
+    client.patient.read().then((p) => { $('patient').innerHTML = patientLine(p); }).catch(() => { $('patient').textContent = 'Patient ' + client.patient.id; });
+    const run = () => OP.mount($('op-tab'), client, {}).catch((e) => showError('The screen stopped with an error: ' + (e && e.message ? e.message : e)));
+    $('refresh').onclick = run;
+    run();
+  }
+
+  const missing = [];
+  if (typeof OP === 'undefined') missing.push('opioid.js');
+  if (typeof FHIR === 'undefined' && !DEMO) missing.push('the SMART library (fhir-client.js from cdn.jsdelivr.net)');
+  if (DEMO && typeof OPMock === 'undefined') missing.push('opioid-mock.js');
+  if (missing.length) showError('Couldn’t load: ' + missing.join(', ') + '.\nMake sure these files are in the same folder as index.html, then press Ctrl + F5.');
+  else (DEMO ? startDemo() : startSmart()).catch((e) => showError('The screen stopped with an error: ' + (e && e.message ? e.message : e)));
+</script>
+</body>
+</html>
