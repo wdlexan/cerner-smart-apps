@@ -48,6 +48,14 @@
       ageOld: 65, ageVeryOld: 80
     },
     tiers: { red: 8, amber: 4 },            // total points (any hard trigger makes it red regardless)
+    // Reassessment after each opioid dose - SET TO ISLAND HEALTH POLICY TIMES.
+    reassess: {
+      parenteralMin: 30,      // IV / subcut / IM: check due by expected peak
+      oralMin: 60,            // PO / SL / NG: check due by expected peak
+      redAfterMin: 60,        // overdue this long → red even without other warning signs
+      staleAmberHours: 2,     // amber patient with nothing charted for this long → red
+      lookBeforeHours: 6      // how far back to look for the POSS/RR just before a dose
+    },
     maxParallel: 3,
     searchMs: 25000
   };
@@ -459,23 +467,94 @@
     const nalGiven = admins.filter((a) => a.naloxone);
     if (nalGiven.length) add(G4, `Naloxone given ${nalGiven.length}× (last at ${at(nalGiven[nalGiven.length - 1])}) — near miss`, 5, true);
 
+    // --- reassessment after doses (needs the MAR) ---
+    // A "check" is any charted RR, SpO2, POSS or RASS. Charting silence after a dose is itself a risk:
+    // the screen can only see what is documented.
+    const G5 = 'Monitoring after doses';
+    const checks = [...rr, ...spo2, ...poss, ...rass].map((x) => x.t).sort((a, b) => a - b);
+    const checkedBetween = (from, to) => checks.some((t) => t > from && t <= to);
+    const lastBefore = (s, t) => { let r = null; s.forEach((x) => { if (x.t <= t && x.t >= t - CONFIG.reassess.lookBeforeHours * HOUR) r = x; }); return r; };
+    const peakMin = (a) => a.route === 'parenteral' ? CONFIG.reassess.parenteralMin : CONFIG.reassess.oralMin;
+    const clock = (t) => new Date(t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const dur = (ms) => { const m = Math.round(ms / 60000); return m < 90 ? m + ' min' : round(m / 60, 1) + ' h'; };
+    const doses = opAdmins.filter((a) => !a.infusion && a.route !== 'transdermal' && a.route !== 'neuraxial');
+    const stateBefore = (a) => {
+      const p = lastBefore(poss, a.t), ra = lastBefore(rass, a.t), r = lastBefore(rr, a.t);
+      const why = [];
+      if (p && p.v >= 2) why.push('POSS ' + p.v);
+      if (ra && ra.v <= -1) why.push('RASS ' + ra.v);
+      if (r && r.v < CONFIG.cut.rrAmber) why.push('RR ' + r.v);
+      return why;
+    };
+    const biggerThanPrev = (a, i) => {
+      const prev = doses[i - 1];
+      if (!prev) return null;
+      const bigger = a.mme != null && prev.mme != null ? a.mme > prev.mme + 1e-9 : a.drug === prev.drug && a.mg != null && prev.mg != null && a.mg > prev.mg;
+      return bigger ? prev : null;
+    };
+
+    // Rule: larger dose given while drowsy or breathing slowly (most recent such dose in 24 h).
+    let biggerDrowsy = null;
+    doses.forEach((a, i) => {
+      if (a.t <= t24) return;
+      const prev = biggerThanPrev(a, i), why = stateBefore(a);
+      if (prev && why.length) biggerDrowsy = { a, prev, why };
+    });
+    if (biggerDrowsy) {
+      const { a, prev, why } = biggerDrowsy;
+      add(G5, `Larger dose given while drowsy: ${a.name} ${a.dose} at ${at(a)} (previous dose ${prev.dose}) with ${why.join(', ')} beforehand`, 3, true);
+    }
+
+    // Rule: no check charted after the latest dose by its expected peak.
+    let reassessPrompt = null, gap = null;
+    const last = doses.filter((a) => a.t > t24).pop();
+    if (last) {
+      const due = last.t + peakMin(last) * 60000;
+      if (checkedBetween(last.t, now)) { /* checked - fine */ }
+      else if (now <= due) reassessPrompt = `Last opioid dose ${last.name} ${last.dose} at ${clock(last.t)}: reassess POSS and RR by ${clock(due)} (expected peak effect).`;
+      else {
+        const lastIdx = doses.indexOf(last);
+        const riskier = biggerThanPrev(last, lastIdx) || stateBefore(last).length;
+        const overdue = now - due;
+        gap = { from: last.t, due };
+        add(G5, `No RR, SpO₂ or sedation score charted since ${last.name} ${last.dose} at ${at(last)} — check was due ${clock(due)}, now ${dur(overdue)} overdue`
+          + (riskier ? ' (dose was larger, or patient already drowsy)' : ''),
+          riskier || overdue > CONFIG.reassess.redAfterMin * 60000 ? 3 : 2, !!riskier || overdue > CONFIG.reassess.redAfterMin * 60000);
+      }
+    }
+    // Audit: earlier doses in the last 24 h with no check within 2x the peak time (shown as a prompt, not scored).
+    const earlier = doses.filter((a) => a.t > t24 && a !== last);
+    const missed = earlier.filter((a) => !checkedBetween(a.t, a.t + 2 * peakMin(a) * 60000)).length;
+    if (!haveMar) notes.push('Reassessment after doses can’t be checked without medication administrations.');
+
     // --- good-practice prompts (no points) ---
     const prompts = [];
+    if (reassessPrompt) prompts.push(reassessPrompt);
+    if (missed) prompts.push(`${missed} of ${earlier.length} earlier opioid doses in the last 24 h had no RR, SpO₂ or sedation score charted within twice the peak time.`);
     if (onOpioid && !orders.some((o) => o.naloxone && o.active)) prompts.push('No active naloxone order found — consider naloxone PRN.');
     if (onOpioid && sedClasses.some((e) => e.s.cls === 'Benzodiazepine')) prompts.push('Opioid + benzodiazepine: review whether both are needed; consider continuous SpO₂ monitoring.');
     if (onOpioid && flags.some((f) => /Sleep apnea/.test(f.text))) prompts.push('Sleep apnea: confirm CPAP is in use while sleeping.');
     if (nalGiven.length) prompts.push('Naloxone was needed: it wears off before most opioids, so watch for re-sedation and review the opioid dose and sedatives now.');
     if (homeOpioid) prompts.push('Home opioid on file — likely opioid-tolerant, so a high MME means less on its own; new sedatives, renal decline or dose jumps still matter.');
 
+    const tierOf = () => {
+      const pts = flags.reduce((s, f) => s + f.pts, 0), anyRed = flags.some((f) => f.red);
+      return !(onOpioid || anyRed) ? 'none' : anyRed || pts >= CONFIG.tiers.red ? 'red' : pts >= CONFIG.tiers.amber ? 'amber' : 'green';
+    };
+    // Rule: moderate risk with nothing charted recently moves up to red - silence is not reassurance.
+    if (tierOf() === 'amber') {
+      const lastCheck = checks.length ? checks[checks.length - 1] : null;
+      if (lastCheck == null || now - lastCheck > CONFIG.reassess.staleAmberHours * HOUR)
+        add(G5, `Moderate risk and no RR, SpO₂ or sedation score charted ${lastCheck == null ? 'in 72 h' : 'for ' + dur(now - lastCheck)}`, 0, true);
+    }
     const points = flags.reduce((s, f) => s + f.pts, 0);
     const hard = flags.filter((f) => f.red);
-    let tier = 'none';
-    if (onOpioid || hard.length) tier = hard.length || points >= CONFIG.tiers.red ? 'red' : points >= CONFIG.tiers.amber ? 'amber' : 'green';
+    const tier = tierOf();
 
     return { tier, points, flags, hard, prompts, notes, onOpioid, age, sex,
       mme: { last24: haveMar ? round(mme24) : null, prev24: haveMar ? round(mmePrev) : null, ordered: mmeOrdered != null ? round(mmeOrdered) : null, basis: mmeBasis },
       admins, opAdmins, sedClasses, opOrders: opOrders.map((o) => ({ name: o.name, prn: o.prn, route: o.route })),
-      vitals: { rr, spo2, o2, poss, rass }, haveMar, failed: data.failed || [], now };
+      vitals: { rr, spo2, o2, poss, rass }, gap, haveMar, failed: data.failed || [], now };
   }
 
   // ---------- rendering ----------
@@ -483,7 +562,7 @@
     red: 'High risk — review now', amber: 'Moderate risk — watch closely', green: 'Lower risk', none: 'No opioid in the last 24 h or on active orders'
   };
   function render(el, res) {
-    const groups = ['Early warning signs', 'Opioid exposure', 'Other sedating medications', 'Patient factors'];
+    const groups = ['Early warning signs', 'Monitoring after doses', 'Opioid exposure', 'Other sedating medications', 'Patient factors'];
     const fl = (g) => res.flags.filter((f) => f.group === g);
     const timeFmt = (t) => new Date(t).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
     el.innerHTML = `
@@ -532,6 +611,11 @@
         res.admins.filter((a) => a.naloxone).forEach((a) => { svg += `<text x="${x(a.t) - 5}" y="${top + 12}" class="nal">N</text>`; });
         res.admins.filter((a) => a.sed).forEach((a) => { svg += `<circle cx="${x(a.t)}" cy="${bot + 0}" r="3.5" class="sedm"><title>${esc(a.name)} ${esc(a.dose)}</title></circle>`; });
       } else {
+        if (res.gap) { // nothing charted since the last opioid dose: shade it, darker once the check is overdue
+          svg += `<rect x="${x(res.gap.from)}" y="${top}" width="${Math.max(0, x(res.gap.due) - x(res.gap.from))}" height="${row.h}" class="gap"/>` +
+            `<rect x="${x(res.gap.due)}" y="${top}" width="${Math.max(0, x(now) - x(res.gap.due))}" height="${row.h}" class="gap over"/>`;
+          if (row.key === 'rr') svg += `<text x="${x(now) - 4}" y="${top + 12}" class="gaplbl" text-anchor="end">no check charted</text>`;
+        }
         const s = row.key === 'rr' ? res.vitals.rr : res.vitals.spo2;
         const lo = row.key === 'rr' ? 4 : 80, hi = row.key === 'rr' ? 28 : 100;
         const y = (v) => bot - (Math.min(hi, Math.max(lo, v)) - lo) / (hi - lo) * (row.h - 8);
@@ -546,7 +630,7 @@
     });
     ticks.forEach((t) => { svg += `<text x="${x(t)}" y="${y0 + 2}" class="tick" text-anchor="middle">${new Date(t).toLocaleString([], { weekday: 'short', hour: '2-digit' })}</text>`; });
     return `<svg viewBox="0 0 ${W} ${y0 + 10}" class="op-svg" role="img" aria-label="Timeline of opioid doses, respiratory rate and oxygen saturation">${svg}</svg>
-      <div class="op-legend"><span class="k bar"></span>opioid dose (height = MME) <span class="k sedm"></span>sedative given <b class="nal">N</b> naloxone given <span class="k cut"></span>red-flag line</div>`;
+      <div class="op-legend"><span class="k bar"></span>opioid dose (height = MME) <span class="k sedm"></span>sedative given <b class="nal">N</b> naloxone given <span class="k cut"></span>red-flag line${res.gap ? ' <span class="k gap"></span>no check after last dose' : ''}</div>`;
   }
 
   async function mount(el, client, opts) {

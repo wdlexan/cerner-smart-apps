@@ -68,3 +68,7 @@ table.unit small { color: #666; }
 .why { display: block; font-size: 12px; color: #333; }
 .why.red { color: #a31515; font-weight: 600; }
 .unit-note { font-size: 12px; color: #666; }
+
+.op-svg .gap { fill: #fde7c2; opacity: .6; } .op-svg .gap.over { fill: #f6b4b4; opacity: .55; }
+.op-svg .gaplbl { font-size: 11px; fill: #a31515; font-weight: 600; }
+.op-legend .k.gap { background: #f6b4b4; }

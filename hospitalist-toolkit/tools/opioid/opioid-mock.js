@@ -42,9 +42,9 @@
       orders: [['oxyCODONE 10 mg tablet', 'PO', 10, 'mg', 'q4h PRN pain', true], ['zopiclone 7.5 mg tablet', 'PO', 7.5, 'mg', 'HS PRN sleep', true],
         ['naloxone 0.4 mg/mL injection', 'IV', 0.1, 'mg', 'PRN', true], ['predniSONE 40 mg tablet', 'PO', 40, 'mg', 'daily']],
       given: [['oxyCODONE 10 mg tablet', 'PO', 10, 'mg', [66, 60, 52, 44, 38, 34, 28, 20, 16, 10, 4]], ['zopiclone 7.5 mg tablet', 'PO', 7.5, 'mg', [57, 33, 9]]],
-      rr: [[66, 22], [54, 20], [42, 20], [30, 18], [18, 18], [8, 18], [2, 18]],
-      spo2: [[66, 89], [54, 90], [42, 91], [30, 91], [18, 92], [8, 91], [2, 90]],
-      o2: [66, 54, 42, 30, 18, 8, 2], creat: [88, 'umol/L'] },
+      rr: [[66, 22], [54, 20], [42, 20], [30, 18], [18, 18], [8, 18], [1.5, 18]],
+      spo2: [[66, 89], [54, 90], [42, 91], [30, 91], [18, 92], [8, 91], [1.5, 90]],
+      o2: [66, 54, 42, 30, 18, 8, 1.5], creat: [88, 'umol/L'] },
 
     { key: 'tolerant', label: 'D · 58 M · chronic pain on home methadone + fentanyl patch — high MME, tolerant',
       name: ['Dave', 'Testpatient'], age: 58, sex: 'male', expect: 'amber',
@@ -53,9 +53,9 @@
         ['fentaNYL 25 mcg/h transdermal patch', 'transdermal', 25, 'mcg/h', 'q72h'], ['gabapentin 600 mg tablet', 'PO', 600, 'mg', 'TID'],
         ['naloxone 0.4 mg/mL injection', 'IV', 0.1, 'mg', 'PRN', true], ['ceFAZolin 2 g injection', 'IV', 2000, 'mg', 'q8h']],
       given: [['methadone 30 mg oral solution', 'PO', 30, 'mg', [57, 33, 9]], ['gabapentin 600 mg tablet', 'PO', 600, 'mg', [58, 50, 42, 34, 26, 18, 10, 2]]],
-      rr: [[60, 16], [48, 16], [36, 16], [24, 15], [12, 16], [2, 16]],
-      spo2: [[60, 97], [48, 97], [36, 96], [24, 97], [12, 96], [2, 97]],
-      poss: [[12, 1], [2, 1]], creat: [76, 'umol/L'] },
+      rr: [[60, 16], [48, 16], [36, 16], [24, 15], [12, 16], [1.5, 16]],
+      spo2: [[60, 97], [48, 97], [36, 96], [24, 97], [12, 96], [1.5, 97]],
+      poss: [[12, 1], [1.5, 1]], creat: [76, 'umol/L'] },
 
     { key: 'postop', label: 'E · 45 F · post appendectomy — low-dose oxycodone, normal vitals',
       name: ['Erin', 'Testpatient'], age: 45, sex: 'female', expect: 'green',
@@ -63,17 +63,31 @@
       orders: [['oxyCODONE 5 mg tablet', 'PO', 5, 'mg', 'q4h PRN pain', true], ['naloxone 0.4 mg/mL injection', 'IV', 0.1, 'mg', 'PRN', true],
         ['acetaminophen 1 g tablet', 'PO', 1000, 'mg', 'q6h'], ['ibuprofen 400 mg tablet', 'PO', 400, 'mg', 'q6h PRN', true]],
       given: [['oxyCODONE 5 mg tablet', 'PO', 5, 'mg', [30, 20, 12, 3]]],
-      rr: [[30, 16], [20, 16], [12, 14], [3, 16]], spo2: [[30, 98], [20, 97], [12, 98], [3, 98]],
-      poss: [[12, 1], [3, 1]], creat: [62, 'umol/L'] },
+      rr: [[30, 16], [20, 16], [12, 14], [2, 16]], spo2: [[30, 98], [20, 97], [12, 98], [2, 98]],
+      poss: [[12, 1], [2, 1]], creat: [62, 'umol/L'] },
 
     { key: 'nomar', label: 'F · 88 F · dementia, delirium — PRN orders only (no MAR data)',
       name: ['Fran', 'Testpatient'], age: 88, sex: 'female', expect: 'amber', noMar: true,
       conditions: ['Alzheimer dementia', 'Delirium', 'Compression fracture T12'],
       orders: [['HYDROmorphone 1 mg tablet', 'PO', 1, 'mg', 'q4h PRN pain', true], ['HYDROmorphone 0.5 mg injection', 'subcut', 0.5, 'mg', 'q2h PRN pain', true],
         ['haloperidol 0.5 mg injection', 'subcut', 0.5, 'mg', 'q4h PRN agitation', true]],
-      rr: [[40, 16], [28, 16], [16, 15], [4, 14]], spo2: [[40, 95], [28, 95], [16, 94], [4, 94]],
-      poss: [[4, 2]], egfr: 52 }
+      rr: [[40, 16], [28, 16], [16, 15], [1, 14]], spo2: [[40, 95], [28, 95], [16, 94], [1, 94]],
+      poss: [[1, 2]], egfr: 52 }
   ];
+
+  // G: reconstructed, de-identified event - POSS 2, then a LARGER hydromorphone dose, then no check for hours.
+  // Shown at two moments: s = hours since the larger dose.
+  function eventCase(key, s, when) {
+    return { key, label: `${key.toUpperCase()} · 76 F · ${when} — larger hydromorphone dose given at POSS 2, no check since`,
+      name: ['Gina', 'Testpatient'], age: 76, sex: 'female', expect: 'red',
+      conditions: ['Community-acquired pneumonia', 'Osteoporotic compression fracture L1'],
+      orders: [['HYDROmorphone 1-2 mg tablet', 'PO', 2, 'mg', 'q3h PRN pain', true], ['naloxone 0.4 mg/mL injection', 'IV', 0.1, 'mg', 'PRN', true],
+        ['acetaminophen 1 g tablet', 'PO', 1000, 'mg', 'q6h']],
+      given: [['HYDROmorphone 1-2 mg tablet', 'PO', 1, 'mg', [s + 9, s + 4.5]], ['HYDROmorphone 1-2 mg tablet', 'PO', 2, 'mg', [s]]],
+      rr: [[s + 10, 18], [s + 5, 16], [s + 0.2, 14]], spo2: [[s + 10, 96], [s + 5, 95], [s + 0.2, 93]],
+      poss: [[s + 5, 1], [s + 0.2, 2]], creat: [75, 'umol/L'] };
+  }
+  CASES.push(eventCase('g1', 20 / 60, '20 min after dose'), eventCase('g2', 4, '4 h after dose'));
 
   function build(spec, now) {
     let n = 0;
