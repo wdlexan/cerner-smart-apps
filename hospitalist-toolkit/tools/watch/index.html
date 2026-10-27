@@ -78,6 +78,15 @@
       <div id="dx"></div>
     </div>
 
+    <div class="panel" id="aipanel">
+      <h2>AI draft (optional, second layer)</h2>
+      <div class="muted">The rules above always run first. The AI adds a separate draft in plain language: what to watch, what may happen, a contingency plan, a rough course and treatment length. It is written by a model, so every line needs checking against the chart. It never gives doses or mortality figures.
+        <span id="aimode"></span></div>
+      <details style="margin-top:8px"><summary class="muted" style="cursor:pointer">See exactly what would be sent (no name, no dates)</summary><pre id="aitext" style="white-space:pre-wrap;font-size:12px;margin:6px 0 0"></pre></details>
+      <div style="margin-top:8px"><button class="primary" id="aigo" disabled>Draft with AI</button> <button id="aicopy" disabled>Copy the draft</button> <span class="muted" id="aistatus"></span></div>
+      <div id="aiout"></div>
+    </div>
+
     <div class="panel"><button class="primary" id="copy">Copy the plan as text</button> <span class="muted" id="copied"></span></div>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
@@ -85,6 +94,8 @@
   <script src="rules.js"></script>
   <script src="dx.js"></script>
   <script src="samples.js"></script>
+  <script src="ai-config.js"></script>
+  <script src="ai.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

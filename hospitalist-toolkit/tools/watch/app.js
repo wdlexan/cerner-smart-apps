@@ -52,7 +52,7 @@ function drawWatch() {
 function drawDx() {
   const dl = dxList(), chips = $("chips"), box = $("dx");
   chips.innerHTML = "";
-  if (!state.f) { box.innerHTML = ""; return; }
+  if (!state.f) { box.innerHTML = ""; if (typeof drawAI === "function") drawAI(); return; }
   dl.forEach(({ d, on, how }) => {
     const b = document.createElement("button"); b.className = "chip"; b.setAttribute("aria-pressed", on); b.textContent = d.title + (how ? ` (${how})` : "");
     b.onclick = () => { state.dxOver[d.id] = !on; drawDx(); }; chips.appendChild(b);
@@ -65,8 +65,42 @@ function drawDx() {
     <div class="lab">Rough course (qualitative)</div><div>${esc(d.course)}</div>
     <div class="lab">Treatment length and time points</div><ul>${d.length.map(([k, v]) => `<li><b>${esc(k)}:</b> ${esc(v)}</li>`).join("")}</ul>
     ${srcLine(d.source)}</div></details>`).join("") : '<div class="empty">No diagnosis selected. Tick one above to see what may happen, the contingency plan, the expected course and treatment length.</div>';
+  if (typeof drawAI === "function") drawAI();
 }
 function draw() { drawPatient(); drawWatch(); drawDx(); }
+
+/* ---------- AI draft panel (see ai.js, ai-config.js) ---------- */
+function aiList(a) { return a && a.length ? `<ul>${a.map((x) => `<li>${esc(x.t)}${x.s ? `<div class="muted">Based on: ${esc(x.s)}</div>` : ""}</li>`).join("")}</ul>` : '<div class="muted">none</div>'; }
+function renderAI(R, isSample) {
+  const sample = isSample ? '<div class="banner" style="margin-top:8px"><b>SAMPLE OUTPUT.</b> Not generated from this patient. It only shows the layout. Set the AI address in ai-config.js to get a real draft.</div>' : '<div class="banner" style="margin-top:8px"><b>AI-written draft. Not checked.</b> Verify every line against the chart. Not a clinical decision.</div>';
+  $("aiout").innerHTML = `${sample}<div style="margin-top:8px">
+    <div class="lab">Snapshot</div><div>${esc(R.snapshot)}</div>
+    <div class="lab">What to watch</div>${aiList(R.watch)}
+    <div class="lab">What may happen</div>${aiList(R.mayHappen)}
+    <div class="lab">Contingency plan</div>${R.contingency && R.contingency.length ? `<ul>${R.contingency.map((c) => `<li><span class="if">If ${esc(c.if)}:</span> ${esc(c.then)}</li>`).join("")}</ul>` : '<div class="muted">none</div>'}
+    <div class="lab">Rough course (qualitative)</div><div>${esc(R.course)}</div>
+    <div class="lab">Treatment length (typical ranges)</div>${R.length && R.length.length ? `<ul>${R.length.map((l) => `<li><b>${esc(l.what)}:</b> ${esc(l.range)}${l.basis ? `<div class="muted">Basis: ${esc(l.basis)}</div>` : ""}</li>`).join("")}</ul>` : '<div class="muted">none</div>'}
+    <div class="lab">What would change this / what is missing</div>${R.uncertainty && R.uncertainty.length ? `<ul>${R.uncertainty.map((u) => `<li>${esc(u)}</li>`).join("")}</ul>` : '<div class="muted">none</div>'}</div>`;
+  state.aiOut = [isSample ? "SAMPLE OUTPUT (not from this patient)" : "AI draft (physician review required; not checked)", "", "Snapshot: " + R.snapshot, "", "What to watch:", ...(R.watch || []).map((x) => `- ${x.t} [${x.s}]`), "", "What may happen:", ...(R.mayHappen || []).map((x) => `- ${x.t} [${x.s}]`),
+    "", "Contingency plan:", ...(R.contingency || []).map((c) => `- if ${c.if}: ${c.then}`), "", "Rough course: " + R.course, "", "Treatment length:", ...(R.length || []).map((l) => `- ${l.what}: ${l.range} (${l.basis})`), "", "Missing or would change this:", ...(R.uncertainty || []).map((u) => "- " + u)].join("\n");
+  $("aicopy").disabled = false;
+}
+function aiText() { return window.WAAI.buildText(state, dxList().filter((x) => x.on).map((x) => x.d.title)); }
+function drawAI() {
+  const a = window.WAAI.allowed(state), ep = window.WA_AI_ENDPOINT || "";
+  $("aimode").textContent = ep ? " Connected to: " + ep : " No AI address is set, so the button shows a fixed sample.";
+  $("aigo").disabled = !a.ok; $("aistatus").textContent = a.ok ? "" : a.why;
+  $("aitext").textContent = state.f ? aiText() : "";
+}
+$("aigo").onclick = async () => {
+  const ep = window.WA_AI_ENDPOINT || "";
+  if (!ep) { renderAI(window.WAAI.SAMPLE, true); $("aistatus").textContent = "Showing a fixed sample."; return; }
+  $("aigo").disabled = true; $("aistatus").textContent = "Asking the AI…";
+  try { renderAI(await window.WAAI.call(ep, aiText()), false); $("aistatus").textContent = "Done. Draft only."; }
+  catch (e) { $("aistatus").textContent = "AI service failed: " + (e && e.message ? e.message : e) + ". The rules above still apply."; }
+  $("aigo").disabled = !window.WAAI.allowed(state).ok;
+};
+$("aicopy").onclick = () => navigator.clipboard.writeText(state.aiOut || "").then(() => ($("aistatus").textContent = "Copied."), () => ($("aistatus").textContent = "Could not copy."));
 
 function planText() {
   const f = state.f; if (!f) return "";
@@ -85,8 +119,8 @@ function planText() {
 }
 $("copy").onclick = () => { const t = planText(); if (!t) { $("copied").textContent = "Nothing to copy yet."; return; } navigator.clipboard.writeText(t).then(() => { $("copied").textContent = "Copied."; setTimeout(() => ($("copied").textContent = ""), 1500); }, () => { $("copied").textContent = "Could not copy."; }); };
 
-function setRaw(raw, note, errors) {
-  state.raw = raw; state.dxOver = {}; state.errors = errors || [];
+function setRaw(raw, note, errors, source, serverUrl) {
+  state.raw = raw; state.dxOver = {}; state.errors = errors || []; state.source = raw ? source || "" : ""; state.serverUrl = serverUrl || ""; $("aiout").innerHTML = ""; state.aiOut = "";
   $("pstatus").textContent = note; $("clear").hidden = !raw;
   $("errs").innerHTML = state.errors.length ? "Could not read: " + state.errors.map(esc).join("; ") + ". Check that the scopes are enabled in the Code Console." : "";
   recompute(); draw();
@@ -97,7 +131,7 @@ $("clear").onclick = () => { $("testsel").value = ""; setRaw(null, "Open from Ce
 const sel = $("testsel"), SAMPLES = window.WA_SAMPLES || [];
 if (!SAMPLES.length) sel.hidden = true;
 SAMPLES.forEach((p, i) => { const o = document.createElement("option"); o.value = i; o.textContent = p.label; sel.appendChild(o); });
-sel.onchange = () => { const p = SAMPLES[sel.value]; if (p) { state.now = Date.now(); setRaw(p.raw, "Made-up patient: " + p.label); } else $("clear").onclick(); };
+sel.onchange = () => { const p = SAMPLES[sel.value]; if (p) { state.now = Date.now(); setRaw(p.raw, "Made-up patient: " + p.label, [], "sample"); } else $("clear").onclick(); };
 
 async function fromChart() {
   if (typeof FHIR === "undefined" || !(location.search.includes("code=") || sessionStorage.getItem("SMART_KEY"))) return;
@@ -106,7 +140,7 @@ async function fromChart() {
     const client = await FHIR.oauth2.ready();
     const { raw, errors } = await WAChart.gather(client, (m) => ($("pstatus").textContent = m));
     state.now = Date.now();
-    setRaw(raw, "Chart read. Nothing is sent anywhere; the rules run in this page.", errors);
+    setRaw(raw, "Chart read. The rules run in this page and send nothing anywhere. (Only the optional AI draft can send data, and only when you press its button.)", errors, "chart", (client.state && client.state.serverUrl) || "");
   } catch (e) { $("pstatus").textContent = "Could not read the chart: " + (e && e.message ? e.message : e) + ". The made-up patients still work."; }
 }
 $("meta").textContent = `Draft v${window.WA_DX_META.version} · updated ${window.WA_DX_META.updated} · ${window.WA_DX_META.note}`;
