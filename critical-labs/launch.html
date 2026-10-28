@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Critical Labs – Launching</title>
+  <script src="https://cdn.jsdelivr.net/npm/fhirclient/build/fhir-client.js"></script>
+  <script src="config.js"></script>
+</head>
+<body style="font-family:system-ui,sans-serif;padding:24px">
+  <p>Connecting to the chart…</p>
+  <script>
+    (function () {
+      var c = window.CRIT_CONFIG;
+      var params = new URLSearchParams(window.location.search);
+      var isEhrLaunch = params.has("iss") && params.has("launch");
+      FHIR.oauth2.authorize({
+        clientId: c.clientId,
+        scope: isEhrLaunch ? c.scope : c.scope.replace(/(^|\s)launch(\s|$)/, "$1launch/patient$2"),
+        redirectUri: c.redirectUri,
+        iss: isEhrLaunch ? params.get("iss") : c.sandboxIss
+      });
+    })();
+  </script>
+</body>
+</html>
