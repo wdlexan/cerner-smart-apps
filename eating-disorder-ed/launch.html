@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eating Disorder ED Review — launching</title>
+<style>
+  body { font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; margin: 24px; color: #000; background: #fff; }
+  .err { color: #a32d2d; white-space: pre-wrap; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+</head>
+<body>
+<p id="msg">Launching Eating Disorder ED Review…</p>
+<script>
+  // ---- Settings ----------------------------------------------------------
+  // Cerner Code Console client ID. If you register this app separately, put its new client ID here.
+  const CLIENT_ID = '09c38f54-fb4d-4664-87b6-67b57983ac01';
+
+  // Only used for a standalone launch (opening launch.html directly, not from the EHR).
+  const STANDALONE_ISS = 'https://fhir-ehr-code.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d';
+
+  const DATA_SCOPES = [
+    'patient/Patient.read',
+    'patient/Encounter.read',
+    'patient/Observation.read',
+    'patient/Condition.read',
+    'patient/MedicationRequest.read',
+    'patient/DocumentReference.read',
+    'patient/Binary.read'
+  ];
+  // ------------------------------------------------------------------------
+
+  if (!window.FHIR) {
+    document.getElementById('msg').className = 'err';
+    document.getElementById('msg').textContent = 'Couldn’t load the SMART library (fhir-client.js). Check your internet connection.';
+  } else {
+    const params = new URLSearchParams(location.search);
+    const ehrLaunch = params.has('launch');
+    const options = {
+      clientId: CLIENT_ID,
+      redirectUri: 'index.html',
+      scope: (ehrLaunch ? ['launch'] : ['launch/patient']).concat(['openid', 'fhirUser', 'online_access'], DATA_SCOPES).join(' ')
+    };
+    if (!ehrLaunch) options.iss = params.get('iss') || STANDALONE_ISS;
+    FHIR.oauth2.authorize(options).catch(e => {
+      const m = document.getElementById('msg');
+      m.className = 'err';
+      m.textContent = 'Launch failed: ' + (e && e.message ? e.message : e);
+    });
+  }
+</script>
+</body>
+</html>

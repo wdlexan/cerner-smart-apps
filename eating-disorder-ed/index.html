@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eating Disorder ED Review</title>
+<link rel="stylesheet" href="edr.css">
+<style>
+  :root { color-scheme: light; }
+  body { font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; margin: 0; background: #fff; color: #000; }
+  header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;
+           padding: 12px 16px; border-bottom: 1px solid #d0d0d0; background: #fff; position: sticky; top: 0; z-index: 2; }
+  header h1 { font-size: 17px; margin: 0; font-weight: 600; }
+  #patient { font-size: 13px; color: #333; }
+  .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 13px; }
+  header select, header button { font: inherit; padding: 4px 10px; border-radius: 6px; border: 1px solid #b0b0b0; background: #fff; color: #000; }
+  header button { cursor: pointer; }
+  main { padding: 16px; }
+  .banner { max-width: 1000px; padding: 8px 12px; border-radius: 8px; margin-bottom: 12px; font-size: 13px; }
+  .banner-demo { background: #e6f1fb; color: #0c447c; }
+  .banner-error { background: #fcebeb; color: #791f1f; white-space: pre-wrap; }
+  #demo-pick { display: none; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+<script src="edr-criteria.js"></script>
+<script src="edr.js"></script>
+<script src="edr-mock.js"></script>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Eating Disorder ED Review <span style="font-weight:400;color:#555;font-size:13px">· adults</span></h1>
+    <div id="patient">Loading patient…</div>
+  </div>
+  <div class="controls">
+    <select id="demo-pick" aria-label="Demo patient"></select>
+    <label>Past visits
+      <select id="months">
+        <option value="12">12 months</option>
+        <option value="24" selected>24 months</option>
+        <option value="36">36 months</option>
+      </select>
+    </label>
+    <button type="button" id="refresh">Refresh</button>
+  </div>
+</header>
+<main>
+  <div id="banner"></div>
+  <div id="edr-tab"></div>
+</main>
+<script>
+  // Open index.html?demo=1 (or 2, 3) to see made-up patients, no launch needed.
+  const params = new URLSearchParams(location.search);
+  const DEMO = params.has('demo');
+  const $ = id => document.getElementById(id);
+  const months = () => parseInt($('months').value, 10);
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const showError = msg => { $('banner').innerHTML = '<div class="banner banner-error">' + esc(msg) + '</div>'; };
+
+  function patientLine(p) {
+    if (!p) return 'Patient not available';
+    const n = (p.name || []).find(x => x.use === 'official') || (p.name || [])[0] || {};
+    const name = n.text || [(n.given || []).join(' '), n.family].filter(Boolean).join(' ') || 'Unknown name';
+    let age = '';
+    if (p.birthDate) {
+      const b = new Date(p.birthDate), d = new Date();
+      let a = d.getFullYear() - b.getFullYear();
+      if (d < new Date(d.getFullYear(), b.getMonth(), b.getDate())) a--;
+      age = a + ' y';
+    }
+    const mrn = (p.identifier || []).find(i => /mrn|medical record/i.test((i.type && (i.type.text || ((i.type.coding || [])[0] || {}).code)) || ''));
+    return [name, age, p.gender, p.birthDate ? 'DOB ' + p.birthDate : '', mrn ? 'MRN ' + mrn.value : ''].filter(Boolean).map(esc).join(' · ');
+  }
+
+  async function startDemo() {
+    $('banner').innerHTML = '<div class="banner banner-demo">Demo mode: made-up patients, no FHIR server.</div>';
+    const pick = $('demo-pick');
+    pick.style.display = 'inline-block';
+    pick.innerHTML = Object.keys(EDRMock.PATIENTS).map(k => '<option value="' + k + '">' + esc(EDRMock.PATIENTS[k]) + '</option>').join('');
+    pick.value = ['1', '2', '3'].includes(params.get('demo')) ? params.get('demo') : '1';
+    const run = () => {
+      const which = pick.value;
+      $('patient').textContent = EDRMock.PATIENTS[which];
+      const now = Date.now();
+      return EDR.mount($('edr-tab'), null, { now, historyMonths: months(), patientKey: 'demo' + which,
+        loader: () => Promise.resolve(EDRMock.makeMockResources(now, which)) });
+    };
+    $('refresh').onclick = run;
+    $('months').onchange = run;
+    pick.onchange = run;
+    await run();
+  }
+
+  async function startSmart() {
+    let client;
+    try {
+      client = await FHIR.oauth2.ready();
+    } catch (e) {
+      $('patient').textContent = '';
+      showError('Not launched. Open this app from the Cerner sandbox (Code Console → Begin Testing), or open launch.html. ' +
+        'To preview with made-up patients, add ?demo=1 to this page’s address.\n\n' + (e && e.message ? e.message : e));
+      return;
+    }
+    window.smartClient = client;
+    client.patient.read().then(p => { $('patient').innerHTML = patientLine(p); })
+      .catch(() => { $('patient').textContent = 'Patient ' + (client.patient.id || ''); });
+    const run = () => EDR.mount($('edr-tab'), client, { historyMonths: months() }).catch(e => console.error('[edr]', e));
+    $('refresh').onclick = run;
+    $('months').onchange = run;
+    run();
+  }
+
+  const missing = [];
+  if (typeof EDRCriteria === 'undefined') missing.push('edr-criteria.js');
+  if (typeof EDR === 'undefined') missing.push('edr.js');
+  if (typeof FHIR === 'undefined' && !DEMO) missing.push('the SMART library (fhir-client.js from cdn.jsdelivr.net — check your internet connection)');
+  if (DEMO && typeof EDRMock === 'undefined') missing.push('edr-mock.js');
+  if (missing.length) {
+    showError('Couldn’t load: ' + missing.join(', ') + '.\nMake sure these files are in the same folder as index.html, then press Ctrl + F5.');
+  } else {
+    (DEMO ? startDemo() : startSmart()).catch(e => showError('The review stopped with an error: ' + (e && e.message ? e.message : e)));
+  }
+</script>
+</body>
+</html>
