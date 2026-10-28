@@ -7,6 +7,7 @@
 const TOOLS = [
   { key: "today", label: "Today (what changed)", path: "tools/today/index.html" },
   { key: "labs",  label: "Labs",                 path: "tools/labs/index.html" },
+  { key: "crit",  label: "Critical labs → MRP",  path: "tools/critical/index.html" },
   { key: "notes", label: "Notes",                path: "tools/notes/index.html" },
   { key: "meds",  label: "Meds review (Beers)",  path: "tools/meds/index.html" },
   { key: "risk",  label: "Risk screen",          path: "tools/risk/index.html" },
