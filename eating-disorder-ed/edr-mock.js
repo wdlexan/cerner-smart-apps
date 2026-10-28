@@ -3,6 +3,8 @@
  *   1  29-year-old woman, frequent visits, stable today (amber potassium), care plan note on file
  *   2  24-year-old woman, red criteria today (bradycardia, low BP, low phosphate, rapid weight loss)
  *   3  34-year-old man, partly assessed (no labs or ECG yet), no care plan found
+ *   4  admitted to IM 9 days ago; checks transfer to the hospitalist service
+ *   5  admitted to IM 4 days ago with low phosphate; stays with IM
  * No real patient data.
  */
 (function (root) {
@@ -130,12 +132,39 @@
     return out;
   }
 
+
+  // Admitted to IM for supervised feeding; checks whether transfer to the hospitalist service fits.
+  function admitted(now, stay) {
+    const b = builder(now), V = b.V;
+    const out = { patient: { resourceType: 'Patient', id: stay ? 'edr-mock-5' : 'edr-mock-4', gender: 'female', birthDate: stay ? '1999-11-02' : '1994-05-30' },
+      encounters: [], observations: [V.ht(now - 300 * DAY, 160)], notes: [],
+      conditions: [b.cond('Anorexia nervosa, restricting type')], medRequests: [b.med('thiamine 100 mg oral tablet'), b.med('potassium phosphate oral')] };
+    b.visit(out, 120, { hr: 50, sbp: 96, dbp: 60, temp: 36.3, wt: 37.5, k: 3.4, po4: 0.85, glu: 4.3, reason: 'Weakness' }, 'Weakness. Discharged per care plan.');
+    const adm = now - (stay ? 4 : 9) * DAY;
+    out.encounters.push(b.enc('EMER', adm, 6, { reason: 'Bradycardia, food refusal', disp: 'Admitted' }));
+    out.encounters.push(b.enc('IMP', adm + 6 * HOUR, 0, { open: true, reason: 'Anorexia nervosa, supervised feeding' }));
+    const days = stay ? 4 : 9;
+    for (let d = days; d >= 0; d--) {
+      const t = now - d * DAY + 2 * HOUR - (d === 0 ? 4 * HOUR : 0);
+      out.observations.push(V.hr(t, d > 6 ? 38 + (days - d) : 44 + (days - d) % 4), V.bp(t, 92 + (days - d), 58), V.temp(t, 36.2));
+      if (d % 1 === 0) out.observations.push(V.k(t, d === 5 ? 2.9 : 3.5), V.po4(t, d === 8 ? 0.35 : (stay && d === 2 ? 0.38 : 0.82)), V.na(t, 136),
+        obsCO2(V, t), V.glu(t, d === 3 ? 3.7 : 4.8));
+      if (d % 3 === 0) out.observations.push(V.wt(t, 34.0 + (days - d) * 0.15));
+    }
+    out.observations.push(V.qtc(now - 2 * DAY, 446));
+    out.notes.push({ time: adm + 3 * HOUR, title: 'Internal Medicine Admission Note', text: 'Admitted to GIM for supervised feeding. HR 38, food refusal 6 days. Refeeding protocol started with dietitian. Psychiatry liaison consulted.' });
+    if (!stay) out.notes.push({ time: now - 3 * DAY + 4 * HOUR, title: 'Internal Medicine Progress Note', text: 'Glucose 3.7 one hour after lunch, postprandial, asymptomatic, resolved. Phosphate replaced earlier in admission, now stable. Tolerating full meal plan.' });
+    else out.notes.push({ time: now - 2 * DAY + 4 * HOUR, title: 'Internal Medicine Progress Note', text: 'Phosphate 0.38 on day 2 of feeding, IV phosphate given. Continue refeeding precautions. Dizzy on standing.' });
+    return out;
+  }
+  function obsCO2(V, t) { const o = V.k(t, 28); o.code = { coding: [{ system: 'http://loinc.org', code: '1963-8', display: 'Bicarbonate' }], text: 'Bicarbonate' }; return o; }
+
   function makeMockResources(now, which) {
     now = now || Date.now();
-    const f = { 1: patient1, 2: patient2, 3: patient3 }[which || 1] || patient1;
+    const f = { 1: patient1, 2: patient2, 3: patient3, 4: n => admitted(n, false), 5: n => admitted(n, true) }[which || 1] || patient1;
     return Object.assign({ failed: [], reasons: {}, pending: [] }, f(now));
   }
-  const PATIENTS = { 1: 'Demo 1 · 29 F · frequent visits, stable today', 2: 'Demo 2 · 24 F · red criteria today', 3: 'Demo 3 · 34 M · partly assessed' };
+  const PATIENTS = { 1: 'Demo 1 · 29 F · frequent visits, stable today', 2: 'Demo 2 · 24 F · red criteria today', 3: 'Demo 3 · 34 M · partly assessed', 4: 'Demo 4 · admitted day 9 · transfer check', 5: 'Demo 5 · admitted day 4 · stays with IM' };
 
   root.EDRMock = { makeMockResources, PATIENTS };
   if (typeof module === 'object' && module.exports) module.exports = { makeMockResources, PATIENTS };

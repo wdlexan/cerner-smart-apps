@@ -77,7 +77,7 @@
     const pick = $('demo-pick');
     pick.style.display = 'inline-block';
     pick.innerHTML = Object.keys(EDRMock.PATIENTS).map(k => '<option value="' + k + '">' + esc(EDRMock.PATIENTS[k]) + '</option>').join('');
-    pick.value = ['1', '2', '3'].includes(params.get('demo')) ? params.get('demo') : '1';
+    pick.value = ['1', '2', '3', '4', '5'].includes(params.get('demo')) ? params.get('demo') : '1';
     const run = () => {
       const which = pick.value;
       $('patient').textContent = EDRMock.PATIENTS[which];

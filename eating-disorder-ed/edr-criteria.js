@@ -95,6 +95,10 @@
       options: [['', 'Not assessed'], ['none', 'None'], ['occasional', 'Occasional'], ['recurrent', 'Recurrent']],
       flags: { occasional: 'amber', recurrent: 'red' }, source: 'MEED',
       noteHint: /\bsyncop\w*|\bfaint\w*|\bcollaps\w*|\bpassed out\b|\bLOC\b|\bloss of consciousness\b/i },
+    { key: 'posturalSymptoms', label: 'Symptoms on standing (dizziness, presyncope)', required: false,
+      options: [['', 'Not assessed'], ['no', 'No'], ['yes', 'Yes']],
+      flags: {}, source: 'Island Health transfer criteria',
+      noteHint: /\bdizz\w*|\blight-?headed\w*|\bpresyncop\w*|\bnear[- ]syncop\w*/i },
     { key: 'ecgOther', label: 'Other ECG abnormality (arrhythmia, heart block, etc.)', required: false,
       options: [['', 'Not assessed'], ['no', 'No'], ['yes', 'Yes']],
       flags: { yes: 'red' }, source: 'MEED red; APA arrhythmia',
@@ -170,11 +174,48 @@
     ['Family doctor / GP', /\bfamily (?:doctor|physician)\b|\bGP\b|\bprimary care\b/i]
   ];
 
+  // ------------------------------------------------------------------
+  // Island Health service routing (VGH / RJH pathway for supervised feeding admissions)
+  // ------------------------------------------------------------------
+  // Admission: Internal Medicine is MRP. Transfer to the hospitalist service (House) may be considered
+  // once refeeding risk is over and NONE of the criteria below have been present in the last 7 days
+  // (to be mutually agreed by House and IM; usually 7–10 days after admission).
+  const ROUTING = {
+    defaultSite: 'VGH',
+    windowDays: 7,
+    usualTransferDays: '7–10',
+    sites: {
+      VGH: { im: 'General Internal Medicine (GIM)', admit: 'Admit to GIM as MRP. GIM involves the dietitian and Psychiatry Liaison as appropriate.' },
+      RJH: { im: 'Internal Medicine CTU', admit: 'Admit to CTU, with Psychiatry (Dr Blashko) and the specialized dietitian (Crystal Frost) consulting. There is no dedicated eating disorder unit at RJH.' }
+    },
+    higherCare: 'If an ED patient needs transfer to RJH for a higher level of care, IM is MRP pending transfer.',
+    afterTransfer: 'After transfer, the hospitalist can request ongoing GIM consultant support, with ongoing Psychiatry and dietitian support.',
+    advice: '24-hour on-call IM eating disorder specialist at St. Paul’s Hospital for specific eating disorder questions.',
+    // Lab and vital criteria (SI; mEq/L = mmol/L for K and HCO3). Any value in the window = criterion present.
+    labs: [
+      { key: 'k', op: '<', value: 2.7, label: 'K⁺ < 2.7 mmol/L' },
+      { key: 'hco3', op: '>', value: 35, label: 'Severe metabolic alkalosis (HCO₃ > 35)' },
+      { key: 'na', op: '<', value: 125, label: 'Na⁺ < 125 mmol/L' },
+      { key: 'po4', op: '<', value: 0.4, label: 'PO₄ < 0.4 mmol/L' },
+      { key: 'glucose', op: '<', value: 4.0, label: 'Hypoglycemia < 4.0 mmol/L',
+        caveat: 'Brief low glucose after meals is common during refeeding and usually settles; confirm whether this was postprandial.' },
+      { key: 'temp', op: '<', value: 35, label: 'Hypothermia < 35 °C' },
+      { key: 'qtc', op: '>', value: 450, label: 'QTc > 450 ms' }
+    ],
+    bradycardia: { below: 40, label: 'Bradycardia < 40 bpm with symptoms or another metabolic disturbance' },
+    postural: { hrRise: 40, sbpDrop: 20, label: 'Postural hypotension with symptoms (HR rise > 40 or SBP drop > 20)',
+      note: 'A postural HR change without symptoms is not a criterion. Vitals don’t have to be normal; bradycardia and postural changes are common in this group.' },
+    // Notes in the window are searched for these; a hit means "check", since notes can be historical.
+    syncope: /\bsyncop\w*|\bfaint(?:ed|ing)\b|\bcollaps(?:e|ed)\b|\bpassed out\b|\bloss of consciousness\b/i,
+    dysrhythmia: /\bdysrhythmi\w*|\barrhythmi\w*|\bheart block\b|\bjunctional rhythm\b|\bventricular tachycardia\b|\bnon-?sustained VT\b|\bNSVT\b|\btorsade\w*|\bpauses?\b(?= on tele)/i,
+    symptoms: /\bdizz\w*|\blight-?headed\w*|\bpresyncop\w*|\bnear[- ]syncop\w*|\bchest pain\b|\bpalpitation\w*|\bshort(?:ness)? of breath\b/i
+  };
+
   // Eating disorder diagnoses on the problem list (just for the header).
   const ED_DIAGNOSES = /anorexia nervosa|bulimia|binge eating|ARFID|avoidant[/ -]restrictive|eating disorder|OSFED|EDNOS/i;
   const DIABETES = /diabet|\bT1DM\b|\bT2DM\b/i;
 
-  const api = { MEASURES, QUESTIONS, ORTHOSTATIC, WEIGHT_LOSS, REFEEDING, CARE_PLAN, HISTORY_TERMS, SERVICES, ED_DIAGNOSES, DIABETES };
+  const api = { ROUTING, MEASURES, QUESTIONS, ORTHOSTATIC, WEIGHT_LOSS, REFEEDING, CARE_PLAN, HISTORY_TERMS, SERVICES, ED_DIAGNOSES, DIABETES };
   root.EDRCriteria = api;
   if (typeof module === 'object' && module.exports) module.exports = api;
 })(typeof self !== 'undefined' ? self : this);

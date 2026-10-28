@@ -111,3 +111,22 @@
   .edr-table th, .edr-table td { padding: 4px 6px; }
   .edr-metric-value { font-size: 18px; }
 }
+
+/* Service routing (Internal Medicine / hospitalist) */
+.edr-svc { display: flex; gap: 14px; align-items: flex-start; border-radius: 10px; padding: 12px 16px; margin-bottom: 14px; border: 2px solid; }
+.edr-svc-icon { flex: none; }
+.edr-svc-body { flex: 1; min-width: 0; }
+.edr-svc-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px 12px; }
+.edr-svc h2 { font-size: 17px; margin: 0; }
+.edr-svc-im { background: #f3ecf9; border-color: #5b2a86; color: #3a1659; }
+.edr-svc-house { background: #eaf3de; border-color: #2d6a0b; color: #1f4a07; }
+.edr-svc-pending { background: #fff4e0; border-color: #b07a10; color: #5a3205; }
+.edr-svc-none { background: #f6f6f6; border-color: #c4c4c4; color: #333; }
+.edr-site { font-size: 13px; }
+.edr-site select { margin-left: 4px; }
+.edr-tlist { list-style: none; padding: 0; margin: 6px 0; font-size: 13px; }
+.edr-tlist li { margin: 4px 0; overflow-wrap: anywhere; }
+.edr-b-im { background: #5b2a86; color: #fff; }
+.edr-svc-more { font-size: 12px; margin-top: 6px; }
+.edr-svc-more summary { cursor: pointer; }
+@media (max-width: 600px) { .edr-svc { flex-direction: column; } }

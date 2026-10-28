@@ -57,7 +57,7 @@
     ca: ['17861-6', '2000-8'], glucose: ['2345-7', '2339-0', '41653-7', '14749-6', '15074-8', '2341-6'],
     albumin: ['1751-7', '61151-7'], alt: ['1742-6', '1743-4', '76625-3'], ast: ['1920-8', '30239-8'],
     wbc: ['6690-2', '26464-8', '804-5'], neut: ['751-8', '26499-4', '753-4'], hgb: ['718-7', '30313-1', '20509-6'],
-    qtc: ['8636-3', '8634-8'], a1c: ['4548-4', '17856-6']
+    qtc: ['8636-3', '8634-8'], a1c: ['4548-4', '17856-6'], hco3: ['1963-8', '2028-9', '1959-6', '14627-4']
   };
   const CODE_PARAM = Object.keys(LOINC).flatMap(k => LOINC[k]).map(c => 'http://loinc.org|' + c).join(',');
 
@@ -123,6 +123,7 @@
     const t = lc(ccText(cc) + ' ' + cods.map(c => c.display || '').join(' '));
     if (!t.trim() || /urine|csf|fluid|stool|ratio|panel$/.test(t)) return null;
     if (/\bqtc\b|qt interval,? corrected|corrected qt/.test(t)) return 'qtc';
+    if (/bicarbonate|\bhco3\b|total co2|co2,? total|carbon dioxide/.test(t) && !/partial|pco2|venous|arterial/.test(t)) return 'hco3';
     if (/heart rate|pulse rate|^pulse\b|apical pulse/.test(t)) return 'hr';
     if (/systolic/.test(t)) return 'sbp';
     if (/diastolic/.test(t)) return 'dbp';
@@ -280,7 +281,8 @@
     });
 
     const inpatientsInWindow = inpatients.filter(i => i.start >= from);
-    return { now, from, historyMonths, patient: p, sex, age, obs, encounters, notes, conditions, meds, current, curFrom, inCurrent,
+    const admission = inpatients.filter(i => i.open && i.start <= now).pop() || null;
+    return { now, from, admission, historyMonths, patient: p, sex, age, obs, encounters, notes, conditions, meds, current, curFrom, inCurrent,
       visits, edFallback, inpatientsInWindow, gaps: r.gaps || [], failed: r.failed || [], reasons: r.reasons || {}, pending: r.pending || [] };
   }
 
@@ -458,6 +460,93 @@
     return { high, reasons: one.length ? one : two, any: one.concat(two), unknown, bmi, loss };
   }
 
+
+  // ------------------------------------------------------------------
+  // Island Health routing: admit to Internal Medicine / transfer to hospitalist (House)
+  // ------------------------------------------------------------------
+  function routing(ctx, answers, a, site) {
+    const R = C.ROUTING;
+    site = R.sites[site] ? site : R.defaultSite;
+    const S = R.sites[site];
+    const from = ctx.now - R.windowDays * DAY;
+    const obsW = ctx.obs.filter(o => o.time >= from && o.time <= ctx.now + HOUR);
+    const notesW = ctx.notes.filter(n => n.time >= from && n.time <= ctx.now + HOUR);
+    const items = [];   // { label, status: 'met' | 'check' | 'notmet', evidence, caveat }
+    const worstOf = (list, op) => list.reduce((x, y) => ((op === '<' ? y.value < x.value : y.value > x.value) ? y : x));
+    const ans = k => answers[k] || '';
+
+    // Labs and measured values
+    R.labs.forEach(L => {
+      const hits = obsW.filter(o => o.kind === L.key && test(L.op, o.value, L.value));
+      if (L.key === 'qtc' && answers.qtc !== '' && answers.qtc != null && test(L.op, +answers.qtc, L.value)) {
+        items.push({ key: L.key, label: L.label, status: 'met', evidence: 'QTc ' + answers.qtc + ' ms entered today' });
+        return;
+      }
+      if (hits.length) {
+        const w = worstOf(hits, L.op);
+        items.push({ key: L.key, label: L.label, status: L.caveat ? 'check' : 'met', caveat: L.caveat,
+          evidence: plural(hits.length, 'result') + '; worst ' + fmtVal(L.key, w.value) + ' on ' + fmtTime(w.time) });
+      }
+    });
+    const metabolicMet = items.filter(i => i.key !== 'qtc' && i.key !== 'temp' && i.status === 'met');
+
+    // Symptoms (bedside answer, or mentioned in notes from the last week)
+    const symptomNotes = findInNotes(notesW, R.symptoms).concat(findInNotes(notesW, R.syncope));
+    const symptomsYes = ans('posturalSymptoms') === 'yes' || ['occasional', 'recurrent'].includes(ans('syncope'));
+    const quote = h => '“' + h.excerpt + '” (' + h.title + ', ' + fmtTime(h.time) + ')';
+
+    // Bradycardia < 40 with symptoms or another metabolic disturbance
+    const brady = obsW.filter(o => o.kind === 'hr' && o.value < R.bradycardia.below);
+    if (brady.length) {
+      const w = worstOf(brady, '<');
+      const base = 'HR ' + fmtVal('hr', w.value) + ' on ' + fmtTime(w.time);
+      if (symptomsYes || metabolicMet.length) items.push({ key: 'brady', label: R.bradycardia.label, status: 'met',
+        evidence: base + (symptomsYes ? ' with symptoms' : ' with ' + metabolicMet.map(i => i.label).join(', ')) });
+      else items.push({ key: 'brady', label: R.bradycardia.label, status: 'check',
+        evidence: base + '. Counts only with symptoms or another metabolic disturbance' + (symptomNotes.length ? '. Notes mention: ' + quote(symptomNotes[0]) : '; none recorded.') });
+    }
+
+    // Syncope
+    const syncNotes = findInNotes(notesW, R.syncope);
+    if (['occasional', 'recurrent'].includes(ans('syncope'))) items.push({ key: 'syncope', label: 'Syncope', status: 'met', evidence: 'Entered at the bedside' });
+    else if (syncNotes.length && ans('syncope') !== 'none') items.push({ key: 'syncope', label: 'Syncope', status: 'check', evidence: 'Notes mention: ' + quote(syncNotes[0]) });
+
+    // Dysrhythmia
+    const dysNotes = findInNotes(notesW, R.dysrhythmia);
+    if (ans('ecgOther') === 'yes') items.push({ key: 'dys', label: 'Dysrhythmia', status: 'met', evidence: 'Entered at the bedside' });
+    else if (dysNotes.length && ans('ecgOther') !== 'no') items.push({ key: 'dys', label: 'Dysrhythmia', status: 'check', evidence: 'Notes mention: ' + quote(dysNotes[0]) });
+
+    // Postural hypotension with symptoms
+    const P = R.postural;
+    if (a.ortho && (a.ortho.drop > P.sbpDrop || a.ortho.rise > P.hrRise)) {
+      const what = [a.ortho.drop > P.sbpDrop ? 'SBP drop ' + a.ortho.drop : '', a.ortho.rise > P.hrRise ? 'HR rise ' + a.ortho.rise : ''].filter(Boolean).join(', ');
+      if (ans('posturalSymptoms') === 'yes') items.push({ key: 'postural', label: P.label, status: 'met', evidence: what + ', with symptoms' });
+      else if (ans('posturalSymptoms') === 'no') items.push({ key: 'postural', label: P.label, status: 'notmet', evidence: what + ', no symptoms (postural change alone is not a criterion)' });
+      else items.push({ key: 'postural', label: P.label, status: 'check', evidence: what + '. Answer “Symptoms on standing” below.' });
+    }
+
+    // A clinician can mark a "check" item as reviewed (e.g. glucose was postprandial).
+    items.forEach(i => { if (i.status === 'check' && ans('clear_' + i.key) === 'yes') { i.status = 'notmet'; i.cleared = true; } });
+
+    // What hasn't been measured in the window
+    const gaps = [];
+    [['k', 'Potassium'], ['na', 'Sodium'], ['po4', 'Phosphate'], ['glucose', 'Glucose'], ['hco3', 'Bicarbonate']]
+      .forEach(([k, l]) => { if (!obsW.some(o => o.kind === k)) gaps.push(l); });
+    if (!obsW.some(o => o.kind === 'qtc') && !(answers.qtc !== '' && answers.qtc != null)) gaps.push('ECG / QTc');
+    if (!a.ortho) gaps.push('Lying and standing BP and HR');
+
+    const met = items.filter(i => i.status === 'met'), checks = items.filter(i => i.status === 'check');
+    const admitted = !!ctx.admission;
+    const admitDays = admitted ? Math.round((ctx.now - ctx.admission.start) / DAY) : null;
+    let decision;
+    if (admitted) {
+      if (met.length) decision = 'stayIM';
+      else if (checks.length || gaps.length || ans('refeedingDone') !== 'yes') decision = 'review';
+      else decision = 'transfer';
+    } else decision = (a.verdict === 'red' || met.length) ? 'admitIM' : 'none';
+    return { site, S, R, items, met, checks, gaps, admitted, admitDays, decision, refeedingDone: ans('refeedingDone') === 'yes' };
+  }
+
   // ------------------------------------------------------------------
   // History summary
   // ------------------------------------------------------------------
@@ -509,7 +598,7 @@
   // ------------------------------------------------------------------
   // Summary text for the note
   // ------------------------------------------------------------------
-  function summaryText(ctx, a, hist, checks) {
+  function summaryText(ctx, a, hist, checks, rt) {
     const L = [];
     L.push('Eating disorder ED review (adult criteria: MEED 2022 / APA 2023), ' + fmtTime(ctx.now) + '.');
     L.push('Past ' + ctx.historyMonths + ' months: ' + plural(hist.visitsAll, 'ED visit') + ' (' + hist.visits12 + ' in the last 12 months), ' +
@@ -521,6 +610,17 @@
     L.push('Refeeding risk (NICE): ' + (a.refeeding.high ? 'HIGH — ' + a.refeeding.reasons.join('; ') : 'not high on available data' + (a.refeeding.unknown.length ? ' (unknown: ' + a.refeeding.unknown.join(', ') + ')' : '')) + '.');
     const sq = a.questions.find(x => x.q.key === 'suicide');
     L.push('Suicide / self-harm risk: ' + (sq && sq.answer ? (sq.q.options.find(o => o[0] === sq.answer) || [])[1] : 'not documented here') + '.');
+    if (rt) {
+      const im = rt.S.im + ' (' + rt.site + ')';
+      const line = {
+        admitIM: 'Service: admit to ' + im + ' as MRP (Island Health eating disorder admission pathway).',
+        none: 'Service: admission criteria not met at this time.',
+        stayIM: 'Service: remains with ' + im + '. Transfer criteria present in the last ' + rt.R.windowDays + ' days: ' + rt.met.map(i => i.label).join('; ') + '.',
+        review: 'Service: transfer to hospitalist not yet confirmed. To check: ' + rt.checks.map(i => i.label).concat(rt.gaps).concat(rt.refeedingDone ? [] : ['refeeding risk resolved']).join('; ') + '.',
+        transfer: 'Service: no transfer criteria in the last ' + rt.R.windowDays + ' days and refeeding risk resolved; consider transfer from ' + im + ' to the hospitalist service, to be mutually agreed.'
+      }[rt.decision];
+      L.push(line);
+    }
     const done = (checks || []).filter(c => c.checked).map(c => c.label);
     if (done.length) L.push((a.verdict === 'red' ? 'Admission steps: ' : 'Discharge plan: ') + done.join('; ') + '.');
     L.push('Decision support only; final decision by clinical assessment.');
@@ -670,9 +770,9 @@
   const LEVEL_LABEL = { red: 'Red', amber: 'Amber', ok: 'OK' };
   const badge = l => l ? '<span class="edr-badge edr-b-' + l + '">' + LEVEL_LABEL[l] + '</span>' : '<span class="edr-badge edr-b-none">No value</span>';
 
-  function verdictHtml(a) {
+  function verdictHtml(a, admitted) {
     const V = {
-      red: ['edr-v-red', 'Meets at least one red criterion — consider medical admission',
+      red: ['edr-v-red', admitted ? 'Meets at least one red criterion today' : 'Meets at least one red criterion — consider medical admission',
         'Any one red criterion is enough to consider admission (MEED / APA). Review the items below.'],
       incomplete: ['edr-v-incomplete', 'Not complete — ' + plural(a.missing.length, 'item') + ' still to check',
         'No red criteria found so far' + (a.ambers.length ? ', ' + plural(a.ambers.length, 'amber flag') : '') + '. The patient can’t be called stable until these are checked.'],
@@ -838,7 +938,54 @@
     return out.join('');
   }
 
-  function render(ctx, a, hist, cp, state) {
+
+  // Icons: IM = Internal Medicine, H = hospitalist (House)
+  function svcIcon(kind) {
+    const c = { im: ['#5b2a86', 'IM'], house: ['#2d6a0b', 'H'], pending: ['#b07a10', '?'], none: ['#8a8a8a', 'IM'] }[kind];
+    return '<svg class="edr-svc-icon" viewBox="0 0 48 48" width="48" height="48" role="img" aria-label="' + (kind === 'house' ? 'Hospitalist' : kind === 'pending' ? 'Not decided' : 'Internal Medicine') + '">' +
+      '<rect x="2" y="2" width="44" height="44" rx="10" fill="' + c[0] + '"/>' +
+      '<path d="M24 9v8M20 13h8" stroke="#fff" stroke-width="3" stroke-linecap="round"/>' +
+      '<text x="24" y="38" text-anchor="middle" font-family="system-ui,sans-serif" font-size="' + (c[1].length > 1 ? 15 : 18) + '" font-weight="700" fill="#fff">' + c[1] + '</text></svg>';
+  }
+
+  function serviceHtml(rt) {
+    const R = rt.R, S = rt.S;
+    const siteSel = '<label class="edr-site">Site <select data-site="1">' + Object.keys(R.sites).map(k => '<option value="' + k + '"' + (k === rt.site ? ' selected' : '') + '>' + k + '</option>').join('') + '</select></label>';
+    const itemLi = i => '<li class="edr-ti-' + i.status + '"><span class="edr-badge ' + (i.status === 'met' ? 'edr-b-im' : i.status === 'check' ? 'edr-b-amber' : 'edr-b-ok') + '">' +
+      (i.status === 'met' ? 'Present' : i.status === 'check' ? 'Check' : 'Not met') + '</span> <strong>' + esc(i.label) + '</strong> — ' + esc(i.evidence) +
+      (i.caveat && !i.cleared ? '<div class="edr-muted">' + esc(i.caveat) + '</div>' : '') +
+      ((i.status === 'check' || i.cleared) ? '<label class="edr-clear"><input type="checkbox" data-k="clear_' + esc(i.key) + '"' + (i.cleared ? ' checked' : '') + '> Reviewed — doesn’t count</label>' : '') + '</li>';
+    const list = rt.items.length ? '<ul class="edr-tlist">' + rt.items.map(itemLi).join('') + '</ul>' : '';
+    let icon, cls, title, body = '';
+    if (rt.decision === 'admitIM') {
+      icon = 'im'; cls = 'edr-svc-im'; title = 'Admit to Internal Medicine — ' + S.im;
+      body = '<p>' + esc(S.admit) + '</p>' + (rt.met.length ? '<p class="edr-muted">Internal Medicine criteria present (last ' + R.windowDays + ' days):</p>' + '<ul class="edr-tlist">' + rt.met.map(itemLi).join('') + '</ul>' : '') +
+        (rt.checks.length ? '<p class="edr-muted">Also check:</p><ul class="edr-tlist">' + rt.checks.map(itemLi).join('') + '</ul>' : '') +
+        '<p class="edr-muted">Transfer to the hospitalist service can be considered once refeeding risk is over and none of the IM criteria have been present for ' + R.windowDays + ' days (usually ' + R.usualTransferDays + ' days after admission).</p>';
+    } else if (rt.decision === 'none') {
+      icon = 'none'; cls = 'edr-svc-none'; title = 'Admission criteria not met at this time';
+      body = '<p>If admission for supervised feeding is needed, Internal Medicine is MRP: ' + esc(S.admit) + '</p>' + (rt.checks.length ? '<p class="edr-muted">To check:</p>' + list : '');
+    } else if (rt.decision === 'stayIM') {
+      icon = 'im'; cls = 'edr-svc-im'; title = 'Stays with Internal Medicine — ' + S.im;
+      body = '<p>Admitted ' + plural(rt.admitDays, 'day') + ' ago. These transfer criteria were present in the last ' + R.windowDays + ' days, so the patient stays with IM:</p>' + list;
+    } else if (rt.decision === 'review') {
+      icon = 'pending'; cls = 'edr-svc-pending'; title = 'Transfer to hospitalist — not yet confirmed';
+      body = '<p>Admitted ' + plural(rt.admitDays, 'day') + ' ago. No IM criterion is definitely present, but these need checking first:</p>' +
+        (rt.items.length ? list : '') +
+        (rt.gaps.length ? '<p><strong>Not measured in the last ' + R.windowDays + ' days:</strong> ' + esc(rt.gaps.join(', ')) + '</p>' : '') +
+        (rt.refeedingDone ? '' : '<p><strong>Refeeding risk resolved?</strong> Tick the box below once agreed.</p>');
+    } else {
+      icon = 'house'; cls = 'edr-svc-house'; title = 'Consider transfer to the hospitalist service';
+      body = '<p>Admitted ' + plural(rt.admitDays, 'day') + ' ago. None of the IM criteria in the last ' + R.windowDays + ' days, and refeeding risk is marked as resolved. Transfer is to be <strong>mutually agreed by House and Internal Medicine</strong>.</p>' +
+        '<p class="edr-muted">' + esc(R.afterTransfer) + '</p>' + (rt.items.length ? list : '');
+    }
+    const refeedBox = rt.admitted ? '<label class="edr-inline"><input type="checkbox" data-k="refeedingDone"' + (rt.refeedingDone ? ' checked' : '') +
+      '> Refeeding risk resolved and otherwise medically stable (agreed with IM)</label>' : '';
+    return '<section class="edr-svc ' + cls + '">' + svcIcon(icon) + '<div class="edr-svc-body"><div class="edr-svc-top"><h2>' + esc(title) + '</h2>' + siteSel + '</div>' + body + refeedBox +
+      '<details class="edr-svc-more"><summary>Pathway details</summary><p>' + esc(R.postural.note) + '</p><p>' + esc(R.higherCare) + '</p><p>' + esc(R.advice) + '</p></details></div></section>';
+  }
+
+  function render(ctx, a, hist, cp, state, rt) {
     const H = [];
     H.push('<div class="edr">');
     if (ctx.failed.length) {
@@ -846,12 +993,13 @@
         ctx.failed.map(f => '<li>' + esc(f) + (ctx.reasons[f] ? ' — ' + esc(ctx.reasons[f]) : '') + '</li>').join('') + '</ul></div>');
     }
     if (ctx.age != null && ctx.age < 18) H.push('<div class="edr-incomplete" role="alert"><strong>This patient is under 18.</strong> These are adult criteria; use the paediatric (MEED / SAHM) thresholds instead.</div>');
-    H.push(verdictHtml(a));
+    H.push(serviceHtml(rt));
+    H.push(verdictHtml(a, rt.admitted));
     H.push('<section class="edr-section"><h3 class="edr-h">1. Today</h3>' + measuresHtml(a) + '</section>');
     H.push('<section class="edr-section"><h3 class="edr-h">2. Bedside assessment</h3>' + bedsideHtml(a, state.answers) + '</section>');
     H.push('<section class="edr-section"><h3 class="edr-h">3. Decision</h3>' + refeedingHtml(a.refeeding) + decisionHtml(a, state.checks) +
       '<section class="edr-card"><h3>Summary for the note</h3><textarea class="edr-summary" rows="9" readonly>' + esc(summaryText(ctx, a, hist,
-        (a.verdict === 'red' ? ADMIT_CHECKS : DISCHARGE_CHECKS).map((label, i) => ({ label, checked: !!state.checks[i] })))) + '</textarea>' +
+        (a.verdict === 'red' ? ADMIT_CHECKS : DISCHARGE_CHECKS).map((label, i) => ({ label, checked: !!state.checks[i] })), rt)) + '</textarea>' +
       '<button type="button" class="edr-copy">Copy summary</button> <span class="edr-copied" aria-live="polite"></span></section></section>');
     H.push('<section class="edr-section"><h3 class="edr-h">4. Care plan</h3>' + carePlanHtml(cp) + '</section>');
     H.push('<section class="edr-section"><h3 class="edr-h">5. Past visits (' + ctx.historyMonths + ' months)</h3>' + historyHtml(ctx, hist) + '</section>');
@@ -876,7 +1024,7 @@
     const from = now - historyMonths * 30.44 * DAY;
     const pid = (client && client.patient && client.patient.id) || opts.patientKey || 'demo';
     // Bedside entries survive a Refresh for the same patient (kept in memory only).
-    if (container.__edrPid !== pid) { container.__edrPid = pid; container.__edrState = { answers: {}, checks: {} }; }
+    if (container.__edrPid !== pid) { container.__edrPid = pid; container.__edrState = { answers: {}, checks: {}, site: opts.site || (container.__edrState && container.__edrState.site) || C.ROUTING.defaultSite }; }
     const state = container.__edrState;
     const status = {};
     const drawProgress = () => {
@@ -900,10 +1048,12 @@
     const ctx = buildContext(res, { now, historyMonths });
     const hist = historySummary(ctx);
     const cp = findCarePlan(ctx);
-    let scrollY = 0;
+    let scrollY = 0, last = null;
     const draw = (focusKey) => {
       const a = assess(ctx, state.answers);
-      container.innerHTML = render(ctx, a, hist, cp, state);
+      const rt = routing(ctx, state.answers, a, state.site);
+      container.innerHTML = render(ctx, a, hist, cp, state, rt);
+      last = { a, rt };
       wire();
       if (focusKey) {
         const el = container.querySelector('[data-k="' + focusKey + '"]');
@@ -916,7 +1066,7 @@
         const k = el.getAttribute('data-k');
         const ev = el.tagName === 'SELECT' ? 'change' : 'change';
         el.addEventListener(ev, () => {
-          state.answers[k] = el.value;
+          state.answers[k] = el.type === 'checkbox' ? (el.checked ? 'yes' : '') : el.value;
           scrollY = (typeof window !== 'undefined') ? window.scrollY : 0;
           draw(null);
           if (typeof window !== 'undefined') window.scrollTo(0, scrollY);
@@ -930,6 +1080,8 @@
           if (typeof window !== 'undefined') window.scrollTo(0, scrollY);
         });
       });
+      const ss = container.querySelector('[data-site]');
+      if (ss) ss.addEventListener('change', () => { state.site = ss.value; scrollY = (typeof window !== 'undefined') ? window.scrollY : 0; draw(null); if (typeof window !== 'undefined') window.scrollTo(0, scrollY); });
       const cb = container.querySelector('.edr-copy');
       if (cb) cb.addEventListener('click', async () => {
         const ta = container.querySelector('.edr-summary');
@@ -940,9 +1092,9 @@
       const rb = container.querySelector('.edr-retry');
       if (rb) rb.addEventListener('click', () => { mount(container, client, Object.assign({}, opts, { now: undefined })).catch(() => {}); });
     };
-    const a = draw(null);
-    return { ctx, assessment: a, history: hist, carePlan: cp };
+    draw(null);
+    return { ctx, assessment: last.a, routing: last.rt, history: hist, carePlan: cp };
   }
 
-  return { CONFIG, LINKS, LOINC, mount, loadResources, buildContext, assess, historySummary, findCarePlan, summaryText, kindOf, toSI, levelFor, render };
+  return { CONFIG, LINKS, LOINC, routing, mount, loadResources, buildContext, assess, historySummary, findCarePlan, summaryText, kindOf, toSI, levelFor, render };
 });

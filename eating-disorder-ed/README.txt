@@ -10,14 +10,29 @@ Files (keep all in one folder)
   launch.html       SMART launch. CLIENT_ID is set to 09c38f54-fb4d-4664-87b6-67b57983ac01;
                     change it if you register this app separately in the Code Console.
   index.html        The page: Past visits (12/24/36 months), Refresh.
-                    Open index.html?demo=1 (or 2, 3) to see made-up patients without a launch.
+                    Open index.html?demo=1 (or 2–5) to see made-up patients without a launch.
   edr-criteria.js   ALL thresholds and questions. Edit this file to change what is flagged.
   edr.js            FHIR loading, the checks and the display.
   edr.css           Styles.
   edr-mock.js       Made-up patients: 1 = frequent visits, stable today; 2 = red criteria;
-                    3 = partly assessed.
+                    3 = partly assessed; 4 = admitted day 9, transfer check;
+                    5 = admitted day 4, stays with IM.
 
 What the screen shows
+  Service card (top, with icon) — Island Health pathway for supervised-feeding admissions
+            IM (purple)   In the ED: admission criteria met → "Admit to Internal Medicine"
+                          (VGH: GIM is MRP; RJH: CTU with Psychiatry and dietitian consulting).
+                          Admitted: an IM criterion was present in the last 7 days → "Stays with IM".
+            ? (amber)     Admitted: nothing definitely present, but items need checking, labs are
+                          missing, or "refeeding risk resolved" isn't ticked yet.
+            H (green)     Admitted: no IM criteria in 7 days and refeeding resolved →
+                          "Consider transfer to the hospitalist service" (mutually agreed by House and IM).
+            IM criteria checked over the last 7 days: syncope, dysrhythmia, QTc >450, HR <40 with
+            symptoms or another metabolic disturbance, postural SBP drop >20 or HR rise >40 with
+            symptoms, K <2.7, HCO3 >35, Na <125, PO4 <0.4, glucose <4.0, temperature <35.
+            Lab values count automatically. Syncope/dysrhythmia found only in notes, HR <40 without
+            symptoms, and glucose <4.0 (may be postprandial) show as "Check"; tick "Reviewed — doesn't
+            count" once confirmed. Site (VGH/RJH) is chosen on the card. Rules: ROUTING in edr-criteria.js.
   Verdict   Red     = at least one red criterion → consider medical admission
             Not complete = no red found yet, but required items are not checked
             Amber   = no red, amber flags to review before discharge
