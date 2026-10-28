@@ -15,7 +15,7 @@ window.CRIT_CONFIG = {
   // Paste the Power Automate "When a HTTP request is received" URL here.
   // WARNING: this repo is public on GitHub Pages — anyone who sees this URL can post to the flow.
   // Fine for the test tenant with made-up patients ONLY. See README "Before real patients".
-  flowUrl: "",
+  flowUrl: "https://default9d8fe0c9fade4b1e96e1c6232c54c3.d3.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/09/workflows/978f7b4f2af7426c8d5e5a1e36ce3c74/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=XEcZ6wuZKs_hgW5UfKGXjDqPIA0lS7SPu3Q-0NxC1V8",
 
   // PLACEHOLDER thresholds (SI units). Replace with the VGH / Island Health lab critical-value list.
   // A result only checks against a threshold when its unit matches one listed here,
