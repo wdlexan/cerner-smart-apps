@@ -110,12 +110,12 @@ tr.ab-lab td { color: #555; font-size: 12px; background: #fafbfc; }
 .ab-echo-done { font-size: 13px; background: #eaf6ec; color: #1f6b28; border-radius: 6px; padding: 4px 8px; margin-bottom: 8px; }
 .ab-echo-none { font-size: 12px; color: #777; margin-bottom: 8px; }
 #ab-echo .ab-lbl select { max-width: 460px; }
-.ab-checks { margin: 10px 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2px 16px; }
-.ab-chk { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; padding: 3px 0; cursor: pointer; }
-.ab-chk input { margin-top: 3px; }
+.ab-checks { margin: 8px 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 0 14px; }
+.ab-chk { display: flex; gap: 6px; align-items: flex-start; font-size: 12.5px; line-height: 1.3; padding: 2px 0; cursor: pointer; }
+.ab-chk input { margin: 1px 0 0; flex: none; }
 .ab-fixed { cursor: default; padding-left: 22px; }
 .ab-pts { font-size: 11px; color: #0c447c; background: #e6f1fb; border-radius: 4px; padding: 0 5px; margin-left: 4px; }
-.ab-from { display: block; color: #1f6b28; font-size: 11px; }
+.ab-from { display: block; color: #1f6b28; font-size: 10.5px; line-height: 1.2; }
 .ab-echo-res { border-radius: 8px; padding: 8px 12px; font-size: 13px; border-left: 5px solid; }
 .ab-er-title { font-size: 15px; font-weight: 700; }
 .ab-er-red { background: #fdecec; border-color: #c62828; } .ab-er-red .ab-er-title { color: #a31515; }
@@ -123,3 +123,12 @@ tr.ab-lab td { color: #555; font-size: 12px; background: #fafbfc; }
 .ab-er-green { background: #eaf6ec; border-color: #2e7d32; } .ab-er-green .ab-er-title { color: #1f6b28; }
 .ab-remind { font-size: 13px; margin: 8px 0 0; padding-left: 18px; }
 .ab-fine { font-size: 11px; color: #777; margin: 8px 0 0; }
+
+/* coloured heading banners */
+.op-card { overflow: hidden; }
+.ab-head { display: flex; align-items: center; gap: 8px; margin: -10px -14px 10px; padding: 7px 14px; color: #fff; font-size: 14px; font-weight: 600; }
+.ab-head small { font-weight: 400; opacity: .85; font-size: 12px; }
+.ab-ico { display: inline-flex; background: rgba(255,255,255,.18); border-radius: 6px; padding: 3px; }
+.ab-ico svg { height: 22px; width: auto; display: block; }
+.ab-h-days { background: #3949ab; } .ab-h-clock { background: #6a4fb3; } .ab-h-ivpo { background: #2e7d32; }
+.ab-h-kidney { background: #00796b; } .ab-h-echo { background: #b3261e; }

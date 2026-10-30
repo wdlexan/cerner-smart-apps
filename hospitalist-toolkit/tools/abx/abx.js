@@ -348,13 +348,13 @@
       </div>
 
       <div class="op-card op-wide">
-        <h3>Antimicrobials by day</h3>
+        ${(root.ABXIcons ? root.ABXIcons.head('days', 'Antimicrobials by day') : '<h3>' + 'Antimicrobials by day' + '</h3>')}
         ${gridHtml(res)}
       </div>
 
       <div class="op-grid">
         <div class="op-card">
-          <h3>Duration</h3>
+          ${(root.ABXIcons ? root.ABXIcons.head('clock', 'Duration') : '<h3>' + 'Duration' + '</h3>')}
           <label class="ab-lbl">Indication
             <select id="ab-ind">${R.indications.map((i) => `<option value="${i.key}"${i.key === chosen ? ' selected' : ''}>${esc(i.label)}</option>`).join('')}</select>
           </label>
@@ -364,7 +364,7 @@
         </div>
 
         <div class="op-card">
-          <h3>IV → PO</h3>
+          ${(root.ABXIcons ? root.ABXIcons.head('ivpo', 'IV → PO') : '<h3>' + 'IV → PO' + '</h3>')}
           ${res.ivpo.applies ? `
             <ul>${res.ivpo.crit.map((c) => `<li class="${c.ok === false ? 'red' : ''}"><span>${c.ok === true ? '✅' : c.ok === false ? '❌' : '❔'} ${esc(c.text)}</span><b>${esc(c.detail)}</b></li>`).join('')}
               ${wi.ind.mustIV ? `<li class="red"><span>❌ Indication needs IV (${esc(wi.ind.label)})</span><b></b></li>` : ''}</ul>
@@ -374,7 +374,7 @@
         </div>
 
         <div class="op-card">
-          <h3>Renal dosing</h3>
+          ${(root.ABXIcons ? root.ABXIcons.head('kidney', 'Renal dosing') : '<h3>' + 'Renal dosing' + '</h3>')}
           ${res.renal.scr ? `<p class="ab-note">Creatinine ${round(res.renal.scr.v * 88.4)} µmol/L (${esc(fmtT(res.renal.scr.t))})<br>
             ${res.renal.use != null ? `<b>${round(res.renal.use)} mL/min</b> - ${esc(res.renal.useLabel)}` : 'Age or sex missing - can’t calculate.'}
             ${res.renal.aki ? `<br><span class="ab-red">${esc(res.renal.aki)}</span>` : ''}</p>` : ''}

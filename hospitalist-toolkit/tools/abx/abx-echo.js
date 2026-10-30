@@ -89,7 +89,7 @@
       const items = itemsFor(org);
       const pts = {}; if (org.score) R.echoScores[org.score].items.forEach(([k, p]) => { pts[k] = p; });
       el.innerHTML = `
-        <h3>Echo needed? <small class="ab-sub">bacteremia / candidemia</small></h3>
+        ${root.ABXIcons ? root.ABXIcons.head('echo', 'Echo needed?', 'bacteremia / candidemia') : '<h3>Echo needed? <small class="ab-sub">bacteremia / candidemia</small></h3>'}
         ${ctx.echoes && ctx.echoes.length ? `<div class="ab-echo-done">Already this visit: ${ctx.echoes.map((e) => esc(e.text) + ' (' + esc(new Date(e.t).toLocaleDateString([], { month: 'short', day: 'numeric' })) + ')').join(' · ')}</div>` : '<div class="ab-echo-none">No echo found in the chart this visit.</div>'}
         <label class="ab-lbl">Organism in blood cultures
           <select id="ab-org">${R.echoOrganisms.map((o) => `<option value="${o.key}"${o.key === state.org ? ' selected' : ''}>${esc(o.label)}</option>`).join('')}</select>
