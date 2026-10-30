@@ -207,11 +207,87 @@
   }
 
   // ---------------- rendering ----------------
+  // ---------------- optional AI summary (sandbox / made-up patients only) ----------------
+  const SANDBOX_HOSTS = ['fhir-ehr-code.cerner.com', 'fhir-open.cerner.com'];
+  let aiCtx = { source: 'sample', serverUrl: '' };
+  function setContext(c) { aiCtx = Object.assign({ source: 'sample', serverUrl: '' }, c || {}); }
+  function aiAllowed() {
+    if (aiCtx.source === 'sample') return { ok: true };
+    if (SANDBOX_HOSTS.some((h) => String(aiCtx.serverUrl || '').includes(h))) return { ok: true };
+    return { ok: false, why: 'AI is off for this chart: it does not look like the Cerner sandbox. Real patient data stays out of AI until Island Health approves.' };
+  }
+  // Remove identifiers before anything leaves the page. The user sees the result before sending.
+  function deidentify(text) {
+    const months = '(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*';
+    return String(text || '')
+      .split('\n').filter((l) => !/^\s*(patient( name)?|name|mrn|fin|phn|health ?number|account|dob|date of birth|birth ?date|age\/sex|address|phone|location|room|bed|referring|ordering|requesting|attending|sonographer|technologist|reading (physician|md)|interpreted by|electronically signed|signed by|signature|cc|copy to|accession|study (date|time|id))\b/i.test(l))
+      .join('\n')
+      .replace(/\b\d{4}[-/.]\d{1,2}[-/.]\d{1,2}([ T]\d{1,2}:\d{2}(:\d{2})?)?\b/g, '[date]')
+      .replace(/\b\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4}\b/g, '[date]')
+      .replace(new RegExp('\\b' + months + '\\.? \\d{1,2},? \\d{4}\\b', 'gi'), '[date]')
+      .replace(new RegExp('\\b\\d{1,2} ' + months + '\\.? \\d{4}\\b', 'gi'), '[date]')
+      .replace(/\b(dr|doctor|md)\.? [A-Z][a-zA-Z'-]+( [A-Z][a-zA-Z'-]+)?/g, 'Dr. [name]')
+      .replace(/\b\d{6,}\b/g, '[number]')
+      .replace(/\n{3,}/g, '\n\n').trim();
+  }
+  // Every AI finding must quote the report; quotes we can't find in the text are flagged.
+  function verifyQuote(quote, text) {
+    const norm = (x) => String(x || '').toLowerCase().replace(/\s+/g, ' ').replace(/[“”"']/g, '').trim();
+    const q = norm(quote); return q.length >= 4 && norm(text).includes(q);
+  }
+  const AI_SAMPLE = { sample: true, summary: 'SAMPLE ONLY, not about this patient: normal LV function, moderate aortic stenosis, no vegetation seen; TTE cannot exclude endocarditis.',
+    findings: [{ label: 'Vegetation', value: 'none seen', quote: 'No vegetation seen' }],
+    endocarditis: 'No echo features of endocarditis on TTE; TTE does not exclude it.', limitations: ['Sample output - set the AI server address in abx-ai-config.js to get a real draft.'] };
+
+  async function runAI(box, sent) {
+    const ep = root.ABX_AI_ENDPOINT || '';
+    box.innerHTML = '<div class="ab-ai-wait">Asking the AI…</div>';
+    let R;
+    try {
+      if (!ep) R = AI_SAMPLE;
+      else {
+        const res = await fetch(ep, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: sent }) });
+        if (!res.ok) { let m = ''; try { m = (await res.json()).error || ''; } catch (e) { /* none */ } throw new Error('HTTP ' + res.status + (m ? ': ' + m : '')); }
+        R = await res.json();
+      }
+    } catch (e) {
+      box.innerHTML = `<div class="banner banner-error">AI summary failed: ${esc(e.message)}.${/fetch|network/i.test(e.message) ? ' Is the AI server running on this computer? (node echo-server.js)' : ''}</div>`;
+      return;
+    }
+    const f = (R.findings || []).map((x) => Object.assign({}, x, { ok: verifyQuote(x.quote, sent) }));
+    box.innerHTML = `<div class="ab-ai-out">
+      <div class="ab-ai-tag">${R.sample ? 'SAMPLE OUTPUT - not about this patient' : 'AI draft - check against the report'}</div>
+      <p>${esc(R.summary || '')}</p>
+      ${R.endocarditis ? `<p><b>Endocarditis features:</b> ${esc(R.endocarditis)}</p>` : ''}
+      ${f.length ? '<ul>' + f.map((x) => `<li><b>${esc(x.label)}:</b> ${esc(x.value)}${x.quote ? `<br><small class="${x.ok ? 'ab-q-ok' : 'ab-q-bad'}">${x.ok ? '✓' : '⚠ quote not found in report -'} “${esc(x.quote)}”</small>` : ''}</li>`).join('') + '</ul>' : ''}
+      ${(R.limitations || []).length ? '<p class="ab-fine"><b>Limits:</b> ' + R.limitations.map(esc).join(' ') + '</p>' : ''}
+    </div>`;
+  }
+  function aiPanel(r) {
+    const a = aiAllowed();
+    if (!a.ok) return `<div class="ab-ai"><span class="ab-fine">${esc(a.why)}</span></div>`;
+    return `<div class="ab-ai"><button type="button" class="ab-ai-btn" data-ai="${r._i}">✨ AI summary (draft)</button><div class="ab-ai-box"></div></div>`;
+  }
+  function wireAI(el, reports) {
+    el.querySelectorAll('.ab-ai-btn').forEach((btn) => {
+      btn.onclick = () => {
+        const r = reports[+btn.dataset.ai], box = btn.nextElementSibling, sent = deidentify(r.text);
+        box.innerHTML = `<div class="ab-ai-prev"><b>This is exactly what will be sent</b> (names, numbers and dates removed - check nothing identifying is left):
+          <pre class="ab-er-full">${esc(sent)}</pre>
+          <button type="button" class="ab-ai-send">Send to AI</button> <button type="button" class="ab-ai-cancel">Cancel</button>
+          <span class="ab-fine">Server: ${esc(root.ABX_AI_ENDPOINT || 'none - a fixed sample will be shown')}</span></div>`;
+        box.querySelector('.ab-ai-cancel').onclick = () => { box.innerHTML = ''; };
+        box.querySelector('.ab-ai-send').onclick = () => runAI(box, sent);
+      };
+    });
+  }
+
   const cache = {};
   function render(el, loader, patientId, onResult) {
     const pid = patientId || 'demo';
     const show = (reports) => {
       if (!reports.length) { el.innerHTML = '<div class="ab-echo-none">No echo report found in the last 12 months.</div>'; return; }
+      reports.forEach((r, i) => { r._i = i; });
       el.innerHTML = reports.map((r, i) => {
         const x = r.x;
         const when = r.t ? new Date(r.t).toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric' }) : '';
@@ -221,10 +297,12 @@
           ${r.text ? `<div class="ab-er-chips">${x.findings.map((f) => `<span class="ab-chip ab-chip-${f.level}" title="${esc(f.value)}"><b>${esc(f.label)}:</b> ${esc(f.value.length > 60 ? f.value.slice(0, 57) + '…' : f.value)}</span>`).join('')}</div>
             ${x.flag === 'ie' ? '<div class="ab-er-ie">Findings suggest endocarditis - see the Endocarditis tool; ID / cardiac surgery input.</div>' : ''}
             ${x.conclusion ? `<div class="ab-er-concl"><b>Conclusion (as written):</b><br>${esc(x.conclusion).replace(/\n/g, '<br>')}</div>` : ''}
-            <details><summary>Full report</summary><pre class="ab-er-full">${esc(r.text)}</pre></details>`
+            <details><summary>Full report</summary><pre class="ab-er-full">${esc(r.text)}</pre></details>
+            ${aiPanel(r)}`
           : `<div class="ab-echo-none">Couldn’t read the report text${r.error ? ' (' + esc(r.error) + ')' : ''}. Open it in PowerChart.</div>`}
         </div>`;
       }).join('') + '<p class="ab-fine">Findings are pulled out of the report text automatically and can miss or misread wording - always check the conclusion and full report.</p>';
+      wireAI(el, reports);
     };
     if (cache[pid]) { show(cache[pid]); if (onResult) onResult(cache[pid]); return; }
     el.innerHTML = '<div class="ab-echo-none">Looking for echo reports…</div>';
@@ -234,6 +312,6 @@
     }).catch((e) => { el.innerHTML = '<div class="ab-echo-none">Couldn’t search for echo reports: ' + esc(e.message || e) + '</div>'; });
   }
 
-  const ABXEchoReport = { extract, makeLoader, render };
+  const ABXEchoReport = { extract, makeLoader, render, setContext, deidentify, verifyQuote };
   if (typeof module !== 'undefined' && module.exports) module.exports = ABXEchoReport; else root.ABXEchoReport = ABXEchoReport;
 })(typeof window !== 'undefined' ? window : globalThis);

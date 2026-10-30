@@ -442,6 +442,7 @@
     const data = opts.loader ? await opts.loader() : await load(client, opts);
     if (opts.now) data.now = opts.now;
     const res = assess(data);
+    if (root.ABXEchoReport) root.ABXEchoReport.setContext(client ? { source: 'chart', serverUrl: client.state && client.state.serverUrl } : { source: 'sample' });
     render(el, res, { patientId: (data.patient && data.patient.id) || opts.patientId,
       historyLoader: opts.historyLoader || (client ? historyLoader(client) : null),
       echoLoader: opts.echoLoader || (client && root.ABXEchoReport ? root.ABXEchoReport.makeLoader(client) : null) });

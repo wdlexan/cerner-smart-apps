@@ -161,3 +161,14 @@ table.ab-hist tr.on td { background: #f6f9fe; }
 .ab-er-report details summary { font-size: 12px; color: #0b6bcb; cursor: pointer; }
 .ab-er-full { white-space: pre-wrap; font-size: 12px; max-height: 320px; overflow: auto; background: #fbfcfd; border: 1px solid #e6e9ee; border-radius: 6px; padding: 8px; }
 .ab-er-next { margin-top: 4px; font-weight: 700; }
+
+/* AI echo summary */
+.ab-ai { margin-top: 6px; }
+.ab-ai-btn, .ab-ai-send, .ab-ai-cancel { font: inherit; font-size: 12px; padding: 3px 10px; border-radius: 6px; border: 1px solid #7e57c2; background: #fff; color: #5e35b1; cursor: pointer; }
+.ab-ai-send { background: #5e35b1; color: #fff; }
+.ab-ai-prev { font-size: 12px; margin-top: 6px; background: #f6f2fc; border: 1px solid #e0d4f5; border-radius: 6px; padding: 8px; }
+.ab-ai-out { font-size: 13px; margin-top: 6px; background: #f6f2fc; border-left: 3px solid #7e57c2; border-radius: 6px; padding: 8px 12px; }
+.ab-ai-out ul { margin: 4px 0; padding-left: 18px; } .ab-ai-out li { display: list-item; border: 0; padding: 2px 0; }
+.ab-ai-tag { font-size: 11px; font-weight: 700; color: #5e35b1; text-transform: uppercase; letter-spacing: .04em; }
+.ab-q-ok { color: #1f6b28; } .ab-q-bad { color: #a31515; font-weight: 600; }
+.ab-ai-wait { font-size: 12px; color: #5e35b1; margin-top: 6px; }
