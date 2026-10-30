@@ -67,6 +67,13 @@
     .st.current { background:var(--g-bg); color:var(--g-ink); } .st.held { background:var(--a-bg); color:var(--a-ink); } .st.stopped, .st.past { background:var(--line); color:var(--muted); } .st.none { color:var(--muted); }
     button.x { padding:0 6px; font-size:12px; border-radius:10px; }
     ul.rem { margin:6px 0 0; padding-left:18px; font-size:12.5px; color:var(--muted); }
+    .stg { border:1px solid var(--line); border-radius:8px; padding:8px 12px; margin:0 0 4px; background:var(--card); }
+    .stg.here { border:2px solid var(--accent); background:var(--b-bg); color:var(--b-ink); }
+    .stg h4 { margin:0 0 4px; font-size:13.5px; } .stg ul { margin:4px 0 0; padding-left:18px; font-size:12.5px; }
+    .stg .nx { font-size:12px; margin-top:4px; font-style:italic; } .arrow { text-align:center; color:var(--muted); line-height:1; margin:0 0 4px; }
+    .chip { display:inline-block; border:1px solid var(--line); border-radius:12px; padding:2px 10px; margin:2px 4px 2px 0; font-size:12.5px; background:var(--card); }
+    .chip.current { background:var(--g-bg); color:var(--g-ink); } .chip.tried { background:var(--line); color:var(--muted); text-decoration:line-through; } .chip.warn { border-color:var(--warn-line); background:var(--warn-bg); }
+    .tier { margin:6px 0; } .tier b { display:inline-block; min-width:150px; }
     @media print { button, select, input, .noprint { display:none !important; } }
   </style>
 </head>
@@ -117,6 +124,23 @@
       </div>
     </details>
 
+    <details class="card" id="sec-path" open>
+      <summary><span>Choosing a medication: when to add what</span><span class="muted" id="pathsum"></span></summary>
+      <div class="body">
+        <div class="warn-note muted">Guideline summary, not an order set. Efficacy tiers come from the AGA and ACG guideline summaries listed at the bottom of this section (read 2026-10-30); steps marked "general practice" are my own summary and are NOT from those sources. Check current guidelines, Health Canada approval and BC coverage rules.</div>
+        <div class="row">
+          <label class="inl">Situation <select id="p-sit"><option value="auto">Choose for me (from the page)</option><option value="mild">Mild to moderate</option><option value="adv">Moderate to severe: advanced therapy needed</option><option value="switch">Not responding to first advanced therapy</option><option value="acute">Acute severe colitis, admitted (UC)</option><option value="perianal">Perianal fistulizing disease (Crohn)</option><option value="postop">After resection (Crohn)</option></select></label>
+          <label class="inl">Advanced-therapy history <select id="p-hist"><option value="auto">From the medication list</option><option value="naive">Never had a biologic, JAK or S1P</option><option value="exposed">Has had advanced therapy</option></select></label>
+        </div>
+        <div class="row"><span class="muted">Patient factors:</span>
+          <label class="inl"><input type="checkbox" data-pf="tb"> TB positive / latent</label><label class="inl"><input type="checkbox" data-pf="hbv"> Hepatitis B positive</label><label class="inl"><input type="checkbox" data-pf="hf"> Heart failure or demyelinating disease</label>
+          <label class="inl"><input type="checkbox" data-pf="cvrisk"> Cardiovascular, clot or smoking risk</label><label class="inl"><input type="checkbox" data-pf="eim"> Joint, skin or eye features</label><label class="inl"><input type="checkbox" data-pf="preg"> Pregnant or planning</label>
+          <label class="inl"><input type="checkbox" data-pf="malig"> Past or current cancer</label><label class="inl"><input type="checkbox" data-pf="infect"> Recurrent or serious infections</label><label class="inl"><input type="checkbox" data-pf="highrisk"> Crohn high-risk features (young onset, extensive, deep ulcers, smoker)</label>
+        </div>
+        <div id="path"></div>
+      </div>
+    </details>
+
     <details class="card" id="sec-endo" open>
       <summary><span>Endoscopy</span><span class="muted" id="endosum"></span></summary>
       <div class="body">
@@ -157,6 +181,7 @@
   <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
   <script src="data.js?v=20261030a"></script>
   <script src="rules.js?v=20261030a"></script>
+  <script src="pathway.js?v=20261030a"></script>
   <script src="chart.js?v=20261030a"></script>
   <script src="samples.js?v=20261030a"></script>
   <script src="app.js?v=20261030a"></script>

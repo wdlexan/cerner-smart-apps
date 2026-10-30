@@ -190,7 +190,45 @@ function noteText() {
 $("copy").onclick = () => navigator.clipboard.writeText(noteText()).then(() => { $("copied").textContent = "Copied."; setTimeout(() => ($("copied").textContent = ""), 1500); }, () => { $("copied").textContent = "Could not copy."; });
 window.__noteText = noteText;
 
-function drawAll() { drawPt(); drawTiles(); drawAlerts(); drawFlow(); drawMeds(); drawEndo(); drawSym(); drawScreen(); }
+/* ---------- choosing a medication ---------- */
+state.pf = {};
+function pathContext() {
+  const s = S(), f = s.f, now = nowT(), ms = R.meds(s, now), P = window.IBDPath;
+  const h = P.history(ms, R.ADVANCED), sel = $("p-sit").value, hsel = $("p-hist").value;
+  const le = latestEntry(), sc = le ? R.scoreEntry(le, state.disease) : null, band = sc ? ((sc.pmayo || sc.hbi || {}).band || "") : "";
+  const acuteAuto = state.disease === "uc" && !!R.severeUC(s, now);
+  const lab = (id) => { const e = R.latest(f.labs[id]); return e && R.labAbn(id, e) === true; };
+  const feats = Object.assign({ age: f.age == null ? 0 : f.age, tb: lab("tb"), hbv: lab("hbsag") }, state.pf);
+  const hist = hsel === "auto" ? (h.exposed ? "exposed" : "naive") : hsel;
+  let key = sel;
+  if (sel === "auto") key = P.stage(state.disease, { acute: acuteAuto, band: band || (state.flaring ? "moderate" : ""), exposed: h.exposed, failing: false, perianal: false, postop: false, highrisk: !!state.pf.highrisk });
+  return { s, ms, h, hist, feats, key, auto: sel === "auto", acuteAuto, band };
+}
+function drawPath() {
+  const P = window.IBDPath, el = $("path");
+  if (state.disease !== "cd" && state.disease !== "uc") { $("pathsum").textContent = ""; el.innerHTML = '<div class="empty">Choose Crohn disease or ulcerative colitis in the Patient box to see the guide.</div>'; return; }
+  const c = pathContext(), o = P.options(state.disease, c.hist), ladder = P.LADDER[state.disease], notes = P.notes(c.feats, state.disease);
+  const drugState = {}; c.ms.forEach((m) => { drugState[m.drug.id] = m.status; });
+  const label = (id) => { const d = IB.CLASSES.reduce((a, cl) => a || cl.drugs.find((x) => x.id === id), null); return d ? d.label.split(" (")[0] : id; };
+  const cautioned = {}; notes.forEach((n) => (n.drugs || []).forEach((d) => { if (n.level !== "info" || n.id === "s1p") (cautioned[d] = cautioned[d] || []).push(n.text); }));
+  const here = ladder.find((x) => x.id === c.key);
+  $("pathsum").textContent = (here ? here.title : "") + " | " + (c.hist === "exposed" ? "advanced therapy before: " + (c.h.names.join(", ") || "yes") : "no advanced therapy on record");
+  let h = `<div class="muted">${state.disease === "cd" ? "Crohn disease" : "Ulcerative colitis"}. ${c.auto ? "Stage chosen from the page" + (c.acuteAuto ? " (meets severe colitis criteria)" : c.band ? " (latest score: " + esc(c.band) + ")" : " (no score entered yet: pick a situation)") + "." : "Stage chosen by you."}</div><div class="muted">Advanced therapy on record: ${c.h.names.length ? esc(c.ms.filter((m) => R.ADVANCED.includes(m.cls.id) && m.status !== "none").map((m) => m.drug.label.split(" (")[0] + " (" + m.status + ")").join(", ")) : "none found"}.</div><div class="lab">Stepwise approach</div>`;
+  ladder.forEach((st, i) => {
+    h += `<div class="stg ${st.id === c.key ? "here" : ""}"><h4>${st.id === c.key ? "▶ " : ""}${esc(st.title)} <span class="tag" style="${st.src === "guideline" ? "" : "background:var(--line);color:var(--muted)"}">${st.src === "guideline" ? "from guideline summaries" : "general practice, not from the sources read"}</span></h4><ul>${st.lines.map((l) => `<li>${esc(l)}</li>`).join("")}</ul>${st.next ? `<div class="nx">${esc(st.next)}</div>` : ""}</div>`;
+    if (st.next && i < ladder.length - 1 && ["mild", "adv"].includes(st.id)) h += '<div class="arrow">▼</div>';
+  });
+  h += `<div class="lab">Advanced therapy options: ${c.hist === "exposed" ? "previously exposed" : "never exposed"} (guideline efficacy tiers)</div><div class="muted">${esc(o.note)}</div>`;
+  o.tiers.forEach(([k, name, ids]) => { h += `<div class="tier"><b>${esc(name)}</b>${ids.map((id) => { const st = drugState[id], warn = cautioned[id]; const cls = st === "current" ? "current" : st && st !== "none" ? "tried" : ""; return `<span class="chip ${cls} ${warn ? "warn" : ""}" title="${esc((warn || []).join(" "))}">${esc(label(id))}${st === "current" ? " (current)" : st && st !== "none" ? " (" + esc(st) + ")" : ""}${warn ? " ⚠" : ""}</span>`; }).join("")}</div>`; });
+  h += `<div class="muted">Green = on now. Struck through = already used (same drug usually not repeated). ⚠ = a patient factor below applies; hover for why. Tiers rank average effect in trials, not your patient: availability, route, speed of onset, safety and coverage also decide.</div>`;
+  if (notes.length) h += `<div class="lab">Patient factors that change the choice</div>` + notes.map((n) => `<div class="alert ${n.level === "urgent" ? "urgent" : n.level === "action" ? "action" : "info"}">${esc(n.text)}</div>`).join("");
+  h += `<div class="lab">Before starting advanced therapy</div><div class="muted">C. difficile and other stool tests, TB, hepatitis B/C, HIV, VZV status, vaccines (live vaccines before starting), pregnancy plans, baseline CBC, liver tests, creatinine. See the screening box below and the drug class reminders above.</div>`;
+  h += `<div class="lab">Sources</div><ul class="rem">${P.SOURCES.map(([t, u]) => `<li><a href="${u}" target="_blank" rel="noopener">${esc(t)}</a></li>`).join("")}<li>Full guidelines: AGA, ACG and Canadian Association of Gastroenterology websites (not read here).</li></ul>`;
+  el.innerHTML = h;
+}
+$("p-sit").onchange = $("p-hist").onchange = () => drawPath();
+document.querySelectorAll("[data-pf]").forEach((cb) => (cb.onchange = () => { state.pf[cb.dataset.pf] = cb.checked; drawPath(); }));
+function drawAll() { drawPt(); drawTiles(); drawAlerts(); drawFlow(); drawMeds(); drawPath(); drawEndo(); drawSym(); drawScreen(); }
 $("disease").onchange = () => { state.disease = $("disease").value; drawAll(); symPreview(); };
 $("setting").onchange = () => { state.setting = $("setting").value; drawAll(); };
 $("flaring").onchange = () => { state.flaring = $("flaring").checked; drawAll(); };
@@ -199,7 +237,7 @@ $("range").onchange = () => { state.range = +$("range").value; drawFlow(); };
 /* ---------- loading a patient ---------- */
 function setChart(raw, note, errors, source) {
   state.f = raw ? window.IBDChart.parseChart(raw, { now: Date.now() }) : null; state.source = raw ? source : "";
-  state.entries = []; state.manualMeds = []; state.manualEndo = []; state.open = {}; state.hide = {};
+  state.entries = []; state.manualMeds = []; state.manualEndo = []; state.open = {}; state.hide = {}; state.pf = {}; document.querySelectorAll('[data-pf]').forEach((cb) => (cb.checked = false)); $('p-sit').value = 'auto'; $('p-hist').value = 'auto';
   state.disease = state.f && state.f.disease ? state.f.disease : "unknown"; state.setting = "outpatient"; state.flaring = false;
   $("pstatus").textContent = note; $("clear").hidden = !raw;
   $("errs").innerHTML = errors && errors.length ? "Could not read: " + errors.map(esc).join("; ") + ". Check that the scopes are enabled in the Code Console. You can still enter things by hand." : "";
