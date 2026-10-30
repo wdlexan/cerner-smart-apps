@@ -58,6 +58,24 @@
       .filter((x) => x.v >= 20 && x.v <= 400).sort((a, b) => b.t - a.t);
     if (wts.length) { f.weightKg = wts[0].v; f.weightT = wts[0].t; }
 
+    // ICE / ICANS records charted by nursing (matched by NAME: Cerner has no standard code for these, so a PowerForm that is free text will not appear)
+    const numOf = (o) => { const q = o.valueQuantity && o.valueQuantity.value; if (typeof q === "number") return q; if (typeof o.valueInteger === "number") return o.valueInteger; const m = String(o.valueString || "").match(/(\d+(?:\.\d+)?)/); return m ? Number(m[1]) : null; };
+    const ITEMS = [["orient", /orient/i], ["naming", /naming|name/i], ["command", /command/i], ["writing", /writ/i], ["attention", /attention|count/i]];
+    f.ice = []; f.icansGrades = [];
+    obs.forEach((o) => {
+      const lab = label(o.code), t = tOf(o); if (t == null) return;
+      if (!/\bICE\b|immune effector|icans|encephalopathy/i.test(lab)) return;
+      const by = ((o.performer || [])[0] || {}).display || "";
+      if (/grade/i.test(lab)) { const g = numOf(o); if (g != null && g >= 0 && g <= 4) f.icansGrades.push({ t, grade: g, by }); return; }
+      let total = numOf(o); const items = {};
+      (o.component || []).forEach((cm) => { const cl = label(cm.code), v = cm.valueQuantity ? cm.valueQuantity.value : typeof cm.valueInteger === "number" ? cm.valueInteger : null; const it = ITEMS.find(([, re]) => re.test(cl)); if (it && typeof v === "number") items[it[0]] = v; });
+      if (total == null && Object.keys(items).length === 5) total = Object.values(items).reduce((a, b) => a + b, 0);
+      if (total == null || total < 0 || total > 10) return;
+      f.ice.push({ t, total, items: Object.keys(items).length ? items : null, by, src: "chart", name: lab });
+    });
+    f.ice.sort((a, b) => b.t - a.t);
+    f.gcs = obs.filter((o) => (codes(o.code).includes("9269-2") || /glasgow coma/i.test(label(o.code))) && numOf(o) != null && numOf(o) >= 3 && numOf(o) <= 15).map((o) => ({ t: tOf(o) || 0, v: numOf(o) })).sort((a, b) => b.t - a.t);
+
     // vitals -> readings (rows by minute)
     const rows = new Map(), ignored = [];
     obs.forEach((o) => {
@@ -135,15 +153,18 @@
     const labKeys = Object.keys(LABS), chunks = [];
     for (let i = 0; i < labKeys.length; i += 6) chunks.push(labKeys.slice(i, i + 6));
     const labReq = chunks.map((ks) => get(`Observation?patient=${pid}&code=${L(ks.reduce((a, k) => a.concat(LABS[k][0]), []))}&date=ge${since}&_count=50`, "labs " + ks.join("/"), 2));
-    const [patient, vitals, weight, admins, meds, ...labsets] = await Promise.all([
+    const [patient, vitals, weight, admins, meds, survey, exam, gcs, ...labsets] = await Promise.all([
       (async () => { try { return await client.patient.read(); } catch (e) { errors.push("patient: " + (e.message || e)); return null; } })(),
       get(`Observation?patient=${pid}&category=vital-signs&date=ge${since}&_count=100`, "vital signs (last 21 days)", 3),
       get(`Observation?patient=${pid}&code=${L(["29463-7", "3141-9"])}&_count=5`, "weight"),
       get(`MedicationAdministration?patient=${pid}&_count=100`, "medication administrations", 3),
       get(`MedicationRequest?patient=${pid}&_count=100`, "medication orders", 3),
+      get(`Observation?patient=${pid}&category=survey&date=ge${since}&_count=100`, "nursing assessments (survey)", 3),
+      get(`Observation?patient=${pid}&category=exam&date=ge${since}&_count=100`, "nursing assessments (exam)", 3),
+      get(`Observation?patient=${pid}&code=${L(["9269-2"])}&date=ge${since}&_count=50`, "Glasgow coma score"),
       ...labReq
     ]);
-    const seen = new Set(), all = vitals.concat(weight, ...labsets).filter((o) => { const i = o.id || Math.random(); if (seen.has(i)) return false; seen.add(i); return true; });
+    const seen = new Set(), all = vitals.concat(weight, survey, exam, gcs, ...labsets).filter((o) => { const i = o.id || Math.random(); if (seen.has(i)) return false; seen.add(i); return true; });
     return { raw: { patient, obs: all, admins, meds }, errors };
   }
   window.BSChart = { parseChart, gather, LABS };

@@ -49,6 +49,10 @@
     .place.home, .place.facility { background:var(--g-bg); color:var(--g-ink); } .place.ward { background:var(--a-bg); color:var(--a-ink); } .place.er, .place.icu { background:var(--r-bg); color:var(--r-ink); }
     ul.chk li.where .t { font-weight:600; }
     .tag.crs { background:var(--a-bg); color:var(--a-ink); } .tag.icans { background:var(--b-bg); color:var(--b-ink); }
+    details.sub { border:1px solid var(--line); border-radius:8px; margin:8px 0; background:var(--card); }
+    details.sub > summary { cursor:pointer; padding:7px 12px; font-weight:600; font-size:13.5px; }
+    details.sub > .in { padding:0 12px 10px; }
+    details.card > summary .muted { font-weight:400; }
     @media print { button, select, input, .noprint { display:none !important; } }
   </style>
 </head>
@@ -60,8 +64,9 @@
   <main>
     <div class="banner"><b>Decision-support draft. Not a clinical decision, and it orders nothing.</b> Grades and actions are transcribed from the BC Cancer SCCRS (revised 1 Jun 2026) and SCICANS (revised 1 Dec 2024) protocols supplied, and have <b>not been checked</b> against the live protocols: verify every dose against the current protocol and your orders. The chart does not hold oxygen delivery, vasopressor use, ICE score or neuro findings, so you enter those. Entries stay in this page only (they are lost on reload): copy the note into the chart. Use made-up or Cerner sandbox patients only until Island Health approves real data.</div>
 
-    <div class="panel" id="panel">
-      <h2>Patient</h2>
+    <details class="card" id="panel" open>
+      <summary><span>Patient</span><span class="muted" id="ptsum"></span></summary>
+      <div class="body">
       <div id="pstatus" class="muted">Open from Cerner to read the chart, or pick a made-up patient:</div>
       <div class="row">
         <select id="testsel"><option value="">Made-up patient…</option></select>
@@ -72,26 +77,26 @@
       </div>
       <div id="errs" class="err"></div>
       <div id="pt" class="muted"></div>
-    </div>
-
+</div>
+    </details>
     <div class="tiles" id="tiles"></div>
-    <div><h2 class="sec">What the protocol says now</h2><div id="mgmt"></div></div>
-    <div class="panel" id="protolinks">
-      <b>Full protocols (BC Cancer)</b>
-      <ul style="margin:6px 0 0; padding-left:18px">
+    <details class="card" id="sec-mgmt" open><summary><span>What the protocol says now</span><span class="muted" id="mgmtsum"></span></summary><div class="body" id="mgmt"></div></details>
+    <details class="card" id="protolinks" open>
+      <summary><span>Full protocols (BC Cancer)</span></summary>
+      <div class="body"><ul style="margin:6px 0 0; padding-left:18px">
         <li><a href="https://www.bccancer.bc.ca/chemotherapy-protocols-site/Documents/Supportive%20Care/SCCRS_Protocol.pdf" target="_blank" rel="noopener">SCCRS: Cytokine Release Syndrome Management</a> (PDF; the version this tool was built from was revised 1 Jun 2026)</li>
         <li><a href="https://www.bccancer.bc.ca/chemotherapy-protocols-site/Documents/Supportive%20Care/SCICANS_Protocol.pdf" target="_blank" rel="noopener">SCICANS: ICANS Management</a> (PDF; built from the version revised 1 Dec 2024)</li>
         <li><a href="https://www.bccancer.bc.ca/chemotherapy-protocols-site/Documents/Supportive%20Care/SCCRS%20and%20SCICANS_Patient%20Handout.pdf" target="_blank" rel="noopener">SCCRS and SCICANS patient handout</a> (PDF)</li>
         <li><a href="https://www.bccancer.bc.ca/health-professionals/clinical-resources/chemotherapy-protocols/supportive-care" target="_blank" rel="noopener">BC Cancer Supportive Care protocols index</a> (if a link above has moved)</li>
       </ul>
-      <div class="muted" style="margin-top:6px">If BC Cancer has revised a protocol since the dates above, the live PDF wins: check it against the actions shown here.</div>
-    </div>
-    <div><h2 class="sec">Alerts</h2><div id="alerts"></div></div>
+      <div class="muted" style="margin-top:6px">If BC Cancer has revised a protocol since the dates above, the live PDF wins: check it against the actions shown here.</div></div>
+    </details>
+    <details class="card" id="sec-alerts" open><summary><span>Alerts</span><span class="muted" id="alertsum"></span></summary><div class="body" id="alerts"></div></details>
 
     <details class="card" id="entry" open>
       <summary><span>Bedside entry</span><span class="muted" style="font-weight:400">type what the chart does not hold</span></summary>
       <div class="body">
-        <div class="lab">Add a set of vital signs</div>
+        <details class="sub" open><summary>Vital signs and baseline</summary><div class="in">
         <div class="row">
           <input type="datetime-local" id="rt" title="Time of reading">
           <label class="inl">Temp °C <input type="number" step="0.1" id="rtemp"></label>
@@ -103,7 +108,8 @@
         </div>
         <div class="row"><label class="inl">Baseline systolic BP (before treatment) <input type="number" id="basesbp"></label><span class="muted" id="basenote"></span></div>
 
-        <div class="lab">CRS support (the chart rarely shows these)</div>
+        </div></details>
+        <details class="sub" open><summary>CRS: oxygen, blood pressure support, symptoms</summary><div class="in">
         <div class="row">
           <label class="inl">Oxygen delivery
             <select id="o2"><option value="ra">Room air</option><option value="low">Low-flow nasal cannula (6 L/min or less) or blow-by</option><option value="high">High-flow nasal cannula (over 6 L/min), face mask, non-rebreather or Venturi</option><option value="pp">Positive pressure (CPAP, BiPAP, intubation)</option></select></label>
@@ -123,7 +129,8 @@
           <label class="inl"><input type="checkbox" data-sym="orthostatic"> New orthostatic symptoms</label><label class="inl"><input type="checkbox" data-sym="weakness"> Weakness</label><label class="inl"><input type="checkbox" data-sym="dizziness"> Dizziness</label><label class="inl"><input type="checkbox" data-sym="dyspnea"> Shortness of breath</label><label class="inl"><input type="checkbox" data-sym="confusion"> Confusion</label>
         </div>
 
-        <div class="lab">ICANS: ICE score (blank = not done)</div>
+        </div></details>
+        <details class="sub" open><summary>ICANS: ICE score and neuro findings</summary><div class="in">
         <div class="row">
           <label class="inl">Orientation (year, month, city, place) /4 <select id="ice-orient"></select></label>
           <label class="inl">Naming /3 <select id="ice-naming"></select></label>
@@ -133,7 +140,7 @@
           <span id="icetotal" style="font-weight:700"></span>
         </div>
         <div class="row">
-          <label class="inl">Time of ICE <input type="datetime-local" id="iceT"></label><button id="icenow">Now</button>
+          <label class="inl">Time of ICE <input type="datetime-local" id="iceT"></label><button id="icenow">Now</button> <button class="primary" id="icerec-add" title="Save this ICE assessment to the record below">Record this ICE</button>
           <label class="inl">Baseline ICE <select id="baselineIce"></select></label>
           <label class="inl">Level of consciousness
             <select id="loc"><option value="awake">Awake</option><option value="voice">Awakens to voice</option><option value="tactile">Awakens only to tactile stimulus</option><option value="unrousable">Unrousable, or needs vigorous or repeated tactile stimulus</option></select></label>
@@ -145,19 +152,20 @@
         </div>
         <div class="row"><span class="muted">Neurovitals (for the note only):</span><label class="inl">GCS <input type="number" id="gcs"></label><label class="inl">Pupil L mm <input type="number" step="0.5" id="pupilL"></label><label class="inl">Pupil R mm <input type="number" step="0.5" id="pupilR"></label></div>
 
-        <div class="lab">Add a dose given</div>
+        </div></details>
+        <details class="sub" open><summary>Doses given (teclistamab, tocilizumab, dexamethasone)</summary><div class="in">
         <div class="row">
           <select id="dd-drug"><option value="tec">Teclistamab</option><option value="toci">Tocilizumab</option><option value="dex">Dexamethasone</option></select>
           <input type="text" id="dd-label" placeholder="e.g. Step-up 2, first full dose" size="28">
           <input type="datetime-local" id="dd-t"><button class="primary" id="dd-add">Add dose</button>
         </div>
+      </div></details>
       </div>
     </details>
-
-
-    <div class="panel"><h2>Doses, risk window and tocilizumab</h2><div id="doses"></div></div>
-    <div class="panel"><h2>Readings</h2><div id="readings"></div></div>
-    <div class="panel"><h2>Protocol lab panel</h2><div id="labs"></div></div>
+    <details class="card" id="sec-icerec" open><summary><span>ICE / ICANS record (nursing charts and this page)</span><span class="muted" id="icesum"></span></summary><div class="body" id="icerec"></div></details>
+    <details class="card" id="sec-doses" open><summary><span>Doses, risk window and tocilizumab</span></summary><div class="body" id="doses"></div></details>
+    <details class="card" id="sec-readings" open><summary><span>Vital sign readings</span></summary><div class="body" id="readings"></div></details>
+    <details class="card" id="sec-labs"><summary><span>Protocol lab panel</span></summary><div class="body" id="labs"></div></details>
     <div class="panel noprint"><button class="primary" id="copy">Copy monitoring note</button> <span class="muted" id="copied"></span></div>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>

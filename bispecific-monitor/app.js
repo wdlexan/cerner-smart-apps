@@ -4,7 +4,7 @@ const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&":
 const H = 36e5, MIN = 6e4, R = window.BSRules, P = window.BS_PROTOCOL;
 const freshIn = () => ({ hypo: "none", o2: "ra", feverMasked: false, g1persist: false, comorbid: false, fullDoseNoCRS: false, crsResolved: false, symptoms: {},
   ice: { orient: "", naming: "", command: "", writing: "", attention: "" }, iceT: null, baselineIce: 10, loc: "awake", seizure: "none", motor: "none", icp: "none", gcs: "", pupilL: "", pupilR: "", baseSbp: "", kg: "" });
-const state = { f: null, source: "", where: "home", entered: [], manualDoses: [], in: freshIn(), checks: {}, errors: [], now: null };
+const state = { f: null, source: "", where: "home", entered: [], manualDoses: [], iceLog: [], open: {}, in: freshIn(), checks: {}, errors: [], now: null };
 const nowT = () => state.now || Date.now();
 const two = (n) => String(n).padStart(2, "0");
 const toLocal = (ms) => { const d = new Date(ms); return `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())}T${two(d.getHours())}:${two(d.getMinutes())}`; };
@@ -25,6 +25,7 @@ const weightKg = () => (state.in.kg !== "" && Number(state.in.kg) > 0 ? Number(s
 function drawPatient() {
   const f = state.f;
   $("pt").innerHTML = f ? `<b>${f.age != null ? f.age + " years" : "Age not read"}${f.sex ? ", " + esc(f.sex) : ""}</b>${weightKg() ? " &middot; " + weightKg() + " kg" : " &middot; weight not read"}${f.notes.length ? "<br>" + f.notes.map((n) => "&bull; " + esc(n)).join("<br>") : ""}` : "";
+  $("ptsum").textContent = f ? `${f.age != null ? f.age + " y" : ""}${f.sex ? " " + f.sex : ""}${weightKg() ? " · " + weightKg() + " kg" : ""}` : "";
   const g = f && f.baseSbpGuess;
   $("basenote").textContent = g ? `From the chart: ${g} (median of ${f.baseSbpN} reading${f.baseSbpN === 1 ? "" : "s"}${f.baseFromBefore ? " before the first teclistamab dose" : ", no pre-dose readings, so the earliest on record"}). Type a number to override.` : "Not found in the chart: type it in (drives the low-BP rule).";
   $("basesbp").placeholder = g ? String(g) : "";
@@ -50,9 +51,12 @@ function drawTiles(S, c, n, d, due) {
 }
 function drawAlerts(S) {
   const a = R.alerts(S);
+  $("alertsum").textContent = a.length ? `${a.length} alert${a.length === 1 ? "" : "s"}${a.some((x) => x.level === "urgent") ? " (urgent)" : ""}` : "none";
   $("alerts").innerHTML = a.length ? a.map((x) => `<div class="alert ${x.level}"><b>${esc(x.title)}</b>${esc(x.text)}${x.src ? `<div class="src">${esc(x.src)}</div>` : ""}</div>`).join("") : '<div class="empty">No alerts from the data and entries so far.</div>';
   return a;
 }
+const op = (k, d) => ((state.open[k] !== undefined ? state.open[k] : d) ? " open" : "");
+document.addEventListener("toggle", (e) => { const k = e.target.dataset && e.target.dataset.det; if (k) state.open[k] = e.target.open; }, true);
 const KIND_TAG = { crs: "CRS", icans: "ICANS" };
 function planEntries(kind, grade, S) {
   return (P[kind === "crs" ? "CRS" : "ICANS"][grade] || []).map((it, i) => ({ it, kind, key: `${kind}:${grade}:${i}` })).filter((x) => !x.it.w || x.it.w === S.where);
@@ -78,11 +82,12 @@ function drawMgmt(S, c, n) {
   if (gC >= 1) active.push(...planEntries("crs", Math.min(gC, 3), S));
   if (n.grade >= 1) active.push(...planEntries("icans", n.grade, S));
   const title = [gC >= 1 ? `CRS ${gC >= 3 ? "grade 3 or 4" : "grade " + gC}${c.provisional && !c.grade ? " (provisional)" : ""}` : "", n.grade >= 1 ? `ICANS grade ${n.grade}` : ""].filter(Boolean).join(" + ");
-  const card = active.length ? `<details class="card" open><summary><span>Action plan: ${esc(title)}</span><span class="muted">${S.where === "home" ? "patient at home" : "patient at a facility"}</span></summary><div class="body">${groupedHTML(active)}<div class="muted" style="margin-top:10px">Sources: ${esc(P.META.crs)}; ${esc(P.META.icans)}. Doses as printed: verify against the current protocols and your orders.</div></div></details>`
+  const card = active.length ? `<details class="card" data-det="plan"${op("plan", true)}><summary><span>Action plan: ${esc(title)}</span><span class="muted">${S.where === "home" ? "patient at home" : "patient at a facility"}</span></summary><div class="body">${groupedHTML(active)}<div class="muted" style="margin-top:10px">Sources: ${esc(P.META.crs)}; ${esc(P.META.icans)}. Doses as printed: verify against the current protocols and your orders.</div></div></details>`
     : `<div class="empty">No CRS or ICANS grade now, so there is no action plan. If fever ≥ 38.0 °C occurs, CRS grade 1 actions apply (see the reference below).</div>`;
-  const refs = [1, 2, 3].map((g) => `<details class="card"><summary><span>Reference: CRS grade ${g === 3 ? "3 or 4" : g}</span></summary><div class="body">${groupedHTML(planEntries("crs", g, S))}</div></details>`)
-    .concat([1, 2, 3, 4].map((g) => `<details class="card"><summary><span>Reference: ICANS grade ${g}</span></summary><div class="body">${groupedHTML(planEntries("icans", g, S))}</div></details>`));
-  $("mgmt").innerHTML = banner + card + `<details class="card" style="margin-top:8px"><summary><span>Reference: every grade, grouped the same way</span></summary><div class="body" style="display:grid;gap:8px">${refs.join("")}</div></details>`;
+  const refs = [1, 2, 3].map((g) => `<details class="card" data-det="ref-crs-${g}"${op("ref-crs-" + g, false)}><summary><span>Reference: CRS grade ${g === 3 ? "3 or 4" : g}</span></summary><div class="body">${groupedHTML(planEntries("crs", g, S))}</div></details>`)
+    .concat([1, 2, 3, 4].map((g) => `<details class="card" data-det="ref-icans-${g}"${op("ref-icans-" + g, false)}><summary><span>Reference: ICANS grade ${g}</span></summary><div class="body">${groupedHTML(planEntries("icans", g, S))}</div></details>`));
+  $("mgmtsum").textContent = pl.title;
+  $("mgmt").innerHTML = banner + card + `<details class="card" data-det="ref-all"${op("ref-all", false)} style="margin-top:8px"><summary><span>Reference: every grade, grouped the same way</span></summary><div class="body" style="display:grid;gap:8px">${refs.join("")}</div></details>`;
 }
 function drawDoses(S) {
   const d = R.doseInfo(S), rows = (arr) => arr.length ? arr.map((x) => `<tr><td>${fmt(x.t)}</td><td>${esc(x.label || x.name || "")}${x.detail ? " <span class=\"muted\">" + esc(x.detail) + "</span>" : ""}</td><td>${esc(x.src === "entered" ? "entered" : "chart")}</td><td>${ago(S.now - x.t)} ago</td></tr>`).join("") : '<tr><td colspan="4" class="muted">none</td></tr>';
@@ -122,6 +127,8 @@ function noteText(S, c, n, alerts) {
   if (sy.length) L.push("  symptoms: " + sy.join(", "));
   L.push(n.done || n.grade ? `ICANS: grade ${n.grade}${n.total != null ? `, ICE ${n.total}/10` : ""} (baseline ${n.baseline})${state.in.iceT ? ", ICE at " + fmt(state.in.iceT) : ""}` : "ICANS: ICE not done");
   L.push(`  consciousness: ${state.in.loc}; seizure: ${state.in.seizure}; motor: ${state.in.motor}; edema/ICP: ${state.in.icp}${state.in.gcs ? "; GCS " + state.in.gcs : ""}${state.in.pupilL || state.in.pupilR ? `; pupils L ${state.in.pupilL || "?"} / R ${state.in.pupilR || "?"} mm` : ""}`);
+  const iceAll = ((state.f && state.f.ice) || []).concat(state.iceLog).sort((p, q) => q.t - p.t).slice(0, 8);
+  if (iceAll.length) L.push("ICE record (newest first): " + iceAll.map((x) => `${x.total}/10 ${fmt(x.t)}${x.src === "entered" ? " (entered)" : ""}`).join("; "));
   L.push("", "Recent vital signs (newest first):");
   rs.forEach((r) => L.push(`  ${fmt(r.t)}  T ${r.temp != null ? r.temp : "-"}  SBP ${r.sbp != null ? r.sbp : "-"}  HR ${r.hr != null ? r.hr : "-"}  RR ${r.rr != null ? r.rr : "-"}  SpO2 ${r.spo2 != null ? r.spo2 : "-"}`));
   L.push(`  baseline SBP ${S.baseSbp || "not set"}`);
@@ -130,13 +137,33 @@ function noteText(S, c, n, alerts) {
   L.push("", `Protocol checklist items ticked in this page: ${done}`, "Source: BC Cancer SCCRS (rev 1 Jun 2026) and SCICANS (rev 1 Dec 2024), transcribed into this tool and not independently verified.");
   return L.join("\n");
 }
+const iceGrade = (t) => (t === 10 ? "none" : t >= 7 ? "1" : t >= 3 ? "2" : "3 (4 if unrousable)");
+function drawIceRec(S) {
+  const f = state.f || {}, all = (f.ice || []).concat(state.iceLog).sort((a, b) => b.t - a.t);
+  const gcs = (f.gcs || []).slice(0, 6), gr = (f.icansGrades || []).slice(0, 6);
+  if (!all.length && !gcs.length && !gr.length) { $("icerec").innerHTML = '<div class="empty">No ICE scores found in the chart or recorded here. Nursing ICE scores are found by name; if your nursing ICE form is free text it will not appear. Enter an ICE score and press "Record this ICE" to start the record.</div>'; $("icesum").textContent = ""; return; }
+  const trend = all.slice(0, 10).reverse().map((x) => x.total).join(" → ");
+  $("icesum").textContent = all.length ? `latest ${all[0].total}/10 (${fmt(all[0].t)})` : "";
+  const items = (x) => (x.items ? ["orient", "naming", "command", "writing", "attention"].map((k) => k.slice(0, 4) + " " + (x.items[k] != null ? x.items[k] : "?")).join(", ") : "");
+  const rows = all.slice(0, 20).map((x, i) => {
+    const prev = all[i + 1], d = prev ? x.total - prev.total : null;
+    const detail = x.src === "entered" ? esc(x.detail || "") + (x.items ? (x.detail ? "; " : "") + esc(items(x)) : "") : esc((x.by ? x.by + ". " : "") + items(x));
+    return `<tr><td>${fmt(x.t)}</td><td${x.total < 9 ? ' class="hot"' : ""}>${x.total}/10</td><td>${iceGrade(x.total)}</td><td>${d == null ? "" : d === 0 ? "no change" : d > 0 ? "+" + d + " (better)" : d + " (worse)"}</td><td>${detail}</td><td>${x.src === "entered" ? "entered here" : "chart (nursing)"}</td><td>${x.src === "entered" ? `<button data-rmice="${esc(x.id)}">remove</button>` : ""}</td></tr>`;
+  }).join("");
+  const base = (f.ice || []).slice().sort((p, q) => p.t - q.t).find((x) => !(S.doses.find((d) => d.drug === "tec")) || x.t < S.doses.filter((d) => d.drug === "tec").sort((p, q) => p.t - q.t)[0].t);
+  $("icerec").innerHTML = (all.length ? `<div style="margin-bottom:6px"><b>Trend (oldest to newest):</b> ${esc(trend)}</div><table><tr><th>Time</th><th>ICE</th><th>ICANS grade from ICE</th><th>Change</th><th>Detail</th><th>Source</th><th></th></tr>${rows}</table>` : "")
+    + (base ? `<div class="muted" style="margin-top:6px">Earliest charted ICE before treatment: ${base.total}/10 (${fmt(base.t)}). Set the baseline in the ICE section if it differs from 10.</div>` : "")
+    + (gr.length ? `<div style="margin-top:6px"><b>ICANS grade charted by nursing:</b> ${gr.map((x) => `grade ${x.grade} (${fmt(x.t)})`).join("; ")}</div>` : "")
+    + (gcs.length ? `<div style="margin-top:6px"><b>Glasgow coma score (chart):</b> ${gcs.map((x) => `${x.v} (${fmt(x.t)})`).join("; ")}</div>` : "")
+    + '<div class="muted" style="margin-top:6px">Chart records are matched by their name, so check them against the nursing flowsheet. “ICANS grade from ICE” uses only the ICE score; the app\'s overall grade also uses consciousness, seizure, motor and edema.</div>';
+}
 let lastAlerts = [];
 function drawResults() {
   drawPatient();
   const S = buildS(), c = R.crs(S), n = R.icans(S), d = R.doseInfo(S), due = R.dueTimes(S, c, n);
   const has = state.f || state.entered.length || state.manualDoses.length;
-  if (!has) { $("tiles").innerHTML = ""; $("alerts").innerHTML = '<div class="empty">Pick a made-up patient, open from Cerner, or add readings and doses by hand.</div>'; $("mgmt").innerHTML = ""; $("doses").innerHTML = ""; $("readings").innerHTML = ""; $("labs").innerHTML = ""; return; }
-  drawTiles(S, c, n, d, due); lastAlerts = drawAlerts(S); drawMgmt(S, c, n); drawDoses(S); drawReadings(S); drawLabs(S, c, n);
+  if (!has) { $("tiles").innerHTML = ""; $("icerec").innerHTML = ""; $("icesum").textContent = ""; $("alertsum").textContent = ""; $("mgmtsum").textContent = ""; $("alerts").innerHTML = '<div class="empty">Pick a made-up patient, open from Cerner, or add readings and doses by hand.</div>'; $("mgmt").innerHTML = ""; $("doses").innerHTML = ""; $("readings").innerHTML = ""; $("labs").innerHTML = ""; return; }
+  drawTiles(S, c, n, d, due); lastAlerts = drawAlerts(S); drawMgmt(S, c, n); drawDoses(S); drawReadings(S); drawLabs(S, c, n); drawIceRec(S);
   const t = R.iceTotal(state.in.ice); $("icetotal").textContent = t == null ? "ICE incomplete" : "ICE " + t + "/10";
 }
 window.__state = state; window.__draw = drawResults; // used by tests
@@ -179,7 +206,14 @@ $("dd-add").onclick = () => {
   const drug = $("dd-drug").value, label = $("dd-label").value.trim() || { tec: "Teclistamab dose", toci: "Tocilizumab", dex: "Dexamethasone" }[drug];
   state.manualDoses.push({ drug, t, label, src: "entered" }); $("dd-label").value = ""; $("dd-t").value = toLocal(Date.now()); drawResults();
 };
+$("icerec-add").onclick = () => {
+  readForm(); const S = buildS(), n = R.icans(S); if (!n.done) { $("icetotal").textContent = "Complete all five ICE items first"; return; }
+  const i = state.in, detail = [`consciousness ${i.loc}`, i.seizure !== "none" ? "seizure " + i.seizure : "", i.gcs ? "GCS " + i.gcs : "", `overall ICANS grade ${n.grade}`].filter(Boolean).join(", ");
+  state.iceLog.push({ id: String(Date.now()) + Math.random().toString(36).slice(2, 6), t: i.iceT || nowT(), total: n.total, items: Object.assign({}, i.ice), detail, src: "entered", by: "" });
+  drawResults();
+};
 document.addEventListener("click", (e) => {
+  const ri = e.target.dataset && e.target.dataset.rmice; if (ri) { state.iceLog = state.iceLog.filter((x) => x.id !== ri); drawResults(); return; }
   const rm = e.target.dataset && e.target.dataset.rm;
   if (rm) { state.entered = state.entered.filter((r) => String(Math.floor(r.t / MIN)) !== rm); drawResults(); }
 });
@@ -194,7 +228,7 @@ window.__noteText = () => { const S = buildS(); return noteText(S, R.crs(S), R.i
 /* ---------- loading a patient ---------- */
 function setChart(raw, note, errors, source) {
   state.f = raw ? BSChart.parseChart(raw, { now: Date.now() }) : null; state.source = raw ? source : ""; state.errors = errors || [];
-  state.entered = []; state.manualDoses = []; state.checks = {}; state.in = freshIn(); state.now = null;
+  state.entered = []; state.manualDoses = []; state.iceLog = []; state.checks = {}; state.in = freshIn(); state.now = null;
   $("pstatus").textContent = note; $("clear").hidden = !raw;
   $("errs").innerHTML = state.errors.length ? "Could not read: " + state.errors.map(esc).join("; ") + ". Check that the scopes are enabled in the Code Console. You can still enter readings and doses by hand." : "";
   setForm(); drawResults();
