@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bispecific CRS/ICANS monitor</title>
+  <style>
+    :root { --bg:#f5f7fa; --card:#fff; --ink:#1f2933; --muted:#5f6c7b; --accent:#0b6bcb; --line:#dde3ea;
+            --r-bg:#fde8e8; --r-ink:#9b1c1c; --a-bg:#fff1d6; --a-ink:#8a5200; --b-bg:#e3eefc; --b-ink:#0b4a99; --g-bg:#e4f4ea; --g-ink:#1d6b3a; --warn-bg:#fff4e5; --warn-line:#f0c27b; }
+    @media (prefers-color-scheme: dark) { :root { --bg:#111418; --card:#1a1f26; --ink:#e8edf2; --muted:#9aa7b5; --accent:#6aa9ff; --line:#2b333d;
+            --r-bg:#4a1d1d; --r-ink:#ffb3b3; --a-bg:#4a3511; --a-ink:#ffd38a; --b-bg:#14325c; --b-ink:#a9cdff; --g-bg:#16361f; --g-ink:#9be0b1; --warn-bg:#3a2e15; --warn-line:#6b5420; } }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); }
+    header { padding:14px 20px; border-bottom:1px solid var(--line); background:var(--card); }
+    header h1 { margin:0; font-size:19px; } header .sub { font-size:13px; color:var(--muted); margin-top:2px; }
+    main { max-width:980px; margin:16px auto 40px; padding:0 16px; display:grid; gap:14px; }
+    .banner { background:var(--warn-bg); border:1px solid var(--warn-line); border-radius:8px; padding:10px 14px; font-size:13px; }
+    .panel { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px 16px; font-size:13.5px; }
+    .panel h2, h2.sec { margin:0 0 6px; font-size:15px; } h2.sec { margin-top:6px; }
+    select, input, button, textarea { font:inherit; font-size:13px; padding:5px 8px; border:1px solid var(--line); border-radius:6px; background:var(--card); color:var(--ink); }
+    button { cursor:pointer; } button.primary { border-color:var(--accent); color:var(--accent); }
+    input[type=number] { width:76px; } input[type=datetime-local] { width:190px; }
+    label.inl { display:inline-flex; gap:5px; align-items:center; margin:2px 12px 2px 0; }
+    .muted { color:var(--muted); font-size:12.5px; }
+    .row { display:flex; flex-wrap:wrap; gap:8px 12px; align-items:center; margin:6px 0; }
+    .tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:10px; }
+    .tile { border-radius:10px; padding:10px 14px; border:1px solid var(--line); background:var(--card); }
+    .tile .k { font-size:11px; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); font-weight:600; }
+    .tile .big { font-size:26px; font-weight:700; line-height:1.2; } .tile .s { font-size:12.5px; margin-top:2px; }
+    .t0 { background:var(--g-bg); color:var(--g-ink); } .t1 { background:var(--b-bg); color:var(--b-ink); } .t2 { background:var(--a-bg); color:var(--a-ink); } .t3, .t4 { background:var(--r-bg); color:var(--r-ink); }
+    .tile.t0 .k, .tile.t1 .k, .tile.t2 .k, .tile.t3 .k, .tile.t4 .k { color:inherit; opacity:.8; }
+    .alert { border-radius:8px; padding:8px 12px; margin-bottom:6px; font-size:13.5px; border:1px solid var(--line); }
+    .alert b { display:block; } .alert .src { font-size:11.5px; opacity:.75; margin-top:2px; }
+    .alert.urgent { background:var(--r-bg); color:var(--r-ink); } .alert.action { background:var(--a-bg); color:var(--a-ink); } .alert.info { background:var(--b-bg); color:var(--b-ink); }
+    details.card { background:var(--card); border:1px solid var(--line); border-radius:10px; }
+    details.card > summary { list-style:none; cursor:pointer; padding:11px 16px; display:flex; justify-content:space-between; gap:10px; font-weight:600; font-size:15px; }
+    details.card > summary::-webkit-details-marker { display:none; }
+    .body { padding:2px 16px 14px; border-top:1px solid var(--line); font-size:13.5px; }
+    .lab { font-family:ui-monospace,Consolas,monospace; font-size:11.5px; color:var(--muted); letter-spacing:.06em; margin:12px 0 4px; text-transform:uppercase; }
+    ul.chk { list-style:none; margin:4px 0 0; padding:0; } ul.chk li { margin:5px 0; display:flex; gap:8px; align-items:flex-start; }
+    ul.chk li.done span.t { text-decoration:line-through; opacity:.55; }
+    .tag { font-size:10px; font-weight:700; letter-spacing:.04em; padding:1px 6px; border-radius:8px; margin-right:6px; background:var(--b-bg); color:var(--b-ink); white-space:nowrap; }
+    .tag.stop, .tag.escalate { background:var(--r-bg); color:var(--r-ink); } .tag.drug { background:var(--a-bg); color:var(--a-ink); } .tag.notify { background:var(--a-bg); color:var(--a-ink); }
+    table { border-collapse:collapse; width:100%; font-size:12.5px; } th, td { text-align:left; padding:4px 8px; border-bottom:1px solid var(--line); } th { color:var(--muted); font-weight:600; }
+    td.hot { color:var(--r-ink); font-weight:700; } td.abn { color:var(--r-ink); font-weight:700; }
+    .err { color:var(--r-ink); font-size:12.5px; } .empty { color:var(--muted); padding:12px; text-align:center; border:1px dashed var(--line); border-radius:10px; }
+    @media print { button, select, input, .noprint { display:none !important; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Bispecific CRS / ICANS monitor</h1>
+    <div class="sub" id="meta">Teclistamab monitoring (hospital at home or facility). Follows BC Cancer SCCRS and SCICANS.</div>
+  </header>
+  <main>
+    <div class="banner"><b>Decision-support draft. Not a clinical decision, and it orders nothing.</b> Grades and actions are transcribed from the BC Cancer SCCRS (revised 1 Jun 2026) and SCICANS (revised 1 Dec 2024) protocols supplied, and have <b>not been checked</b> against the live protocols: verify every dose against the current protocol and your orders. The chart does not hold oxygen delivery, vasopressor use, ICE score or neuro findings, so you enter those. Entries stay in this page only (they are lost on reload): copy the note into the chart. Use made-up or Cerner sandbox patients only until Island Health approves real data.</div>
+
+    <div class="panel" id="panel">
+      <h2>Patient</h2>
+      <div id="pstatus" class="muted">Open from Cerner to read the chart, or pick a made-up patient:</div>
+      <div class="row">
+        <select id="testsel"><option value="">Made-up patient…</option></select>
+        <button id="clear" hidden>Clear</button>
+        <span>Where is the patient?</span>
+        <label class="inl"><input type="radio" name="where" value="home" checked> At home (Hospital at Home)</label>
+        <label class="inl"><input type="radio" name="where" value="facility"> In a health-care facility</label>
+      </div>
+      <div id="errs" class="err"></div>
+      <div id="pt" class="muted"></div>
+    </div>
+
+    <div class="tiles" id="tiles"></div>
+    <div><h2 class="sec">Alerts</h2><div id="alerts"></div></div>
+
+    <details class="card" id="entry" open>
+      <summary><span>Bedside entry</span><span class="muted" style="font-weight:400">type what the chart does not hold</span></summary>
+      <div class="body">
+        <div class="lab">Add a set of vital signs</div>
+        <div class="row">
+          <input type="datetime-local" id="rt" title="Time of reading">
+          <label class="inl">Temp °C <input type="number" step="0.1" id="rtemp"></label>
+          <label class="inl">SBP <input type="number" id="rsbp"></label>
+          <label class="inl">HR <input type="number" id="rhr"></label>
+          <label class="inl">RR <input type="number" id="rrr"></label>
+          <label class="inl">SpO2 % <input type="number" id="rspo2"></label>
+          <button class="primary" id="radd">Add reading</button>
+        </div>
+        <div class="row"><label class="inl">Baseline systolic BP (before treatment) <input type="number" id="basesbp"></label><span class="muted" id="basenote"></span></div>
+
+        <div class="lab">CRS support (the chart rarely shows these)</div>
+        <div class="row">
+          <label class="inl">Oxygen delivery
+            <select id="o2"><option value="ra">Room air</option><option value="low">Low-flow nasal cannula (6 L/min or less) or blow-by</option><option value="high">High-flow nasal cannula (over 6 L/min), face mask, non-rebreather or Venturi</option><option value="pp">Positive pressure (CPAP, BiPAP, intubation)</option></select></label>
+          <label class="inl">Weight kg <input type="number" step="0.1" id="kg"></label>
+          <label class="inl">Hypotension needing
+            <select id="hypo"><option value="none">Nothing</option><option value="fluid">IV fluids only (responsive)</option><option value="one">One vasopressor (± vasopressin)</option><option value="multi">Multiple vasopressors</option></select></label>
+        </div>
+        <div class="row">
+          <label class="inl"><input type="checkbox" id="feverMasked"> Fever occurred but is masked (acetaminophen or steroid)</label>
+          <label class="inl"><input type="checkbox" id="g1persist"> Grade 1 persists despite measures</label>
+          <label class="inl"><input type="checkbox" id="comorbid"> Extensive comorbidities or poor performance status</label>
+          <label class="inl"><input type="checkbox" id="fullDoseNoCRS"> A full dose was already given without CRS</label>
+          <label class="inl"><input type="checkbox" id="crsResolved"> CRS symptoms have resolved</label>
+        </div>
+        <div class="row"><span class="muted">Symptoms now:</span>
+          <label class="inl"><input type="checkbox" data-sym="rigors"> Rigors</label><label class="inl"><input type="checkbox" data-sym="headache"> Headache</label><label class="inl"><input type="checkbox" data-sym="myalgia"> Myalgia</label><label class="inl"><input type="checkbox" data-sym="nausea"> Nausea</label><label class="inl"><input type="checkbox" data-sym="rash"> Rash</label>
+          <label class="inl"><input type="checkbox" data-sym="orthostatic"> New orthostatic symptoms</label><label class="inl"><input type="checkbox" data-sym="weakness"> Weakness</label><label class="inl"><input type="checkbox" data-sym="dizziness"> Dizziness</label><label class="inl"><input type="checkbox" data-sym="dyspnea"> Shortness of breath</label><label class="inl"><input type="checkbox" data-sym="confusion"> Confusion</label>
+        </div>
+
+        <div class="lab">ICANS: ICE score (blank = not done)</div>
+        <div class="row">
+          <label class="inl">Orientation (year, month, city, place) /4 <select id="ice-orient"></select></label>
+          <label class="inl">Naming /3 <select id="ice-naming"></select></label>
+          <label class="inl">Commands /1 <select id="ice-command"></select></label>
+          <label class="inl">Writing /1 <select id="ice-writing"></select></label>
+          <label class="inl">Count back from 100 by 10 /1 <select id="ice-attention"></select></label>
+          <span id="icetotal" style="font-weight:700"></span>
+        </div>
+        <div class="row">
+          <label class="inl">Time of ICE <input type="datetime-local" id="iceT"></label><button id="icenow">Now</button>
+          <label class="inl">Baseline ICE <select id="baselineIce"></select></label>
+          <label class="inl">Level of consciousness
+            <select id="loc"><option value="awake">Awake</option><option value="voice">Awakens to voice</option><option value="tactile">Awakens only to tactile stimulus</option><option value="unrousable">Unrousable, or needs vigorous or repeated tactile stimulus</option></select></label>
+        </div>
+        <div class="row">
+          <label class="inl">Seizure <select id="seizure"><option value="none">None</option><option value="g3">Any seizure that resolves rapidly, or EEG seizure resolving with treatment</option><option value="g4">Life-threatening prolonged (over 5 min) or repetitive without return to baseline</option></select></label>
+          <label class="inl">Motor <select id="motor"><option value="none">Normal</option><option value="g4">Deep focal weakness (hemiparesis, paraparesis)</option></select></label>
+          <label class="inl">Edema / raised ICP <select id="icp"><option value="none">None</option><option value="g3">Focal edema on neuroimaging (not hemorrhage)</option><option value="g4">Diffuse edema, posturing, papilledema, CN VI palsy, Cushing triad</option></select></label>
+        </div>
+        <div class="row"><span class="muted">Neurovitals (for the note only):</span><label class="inl">GCS <input type="number" id="gcs"></label><label class="inl">Pupil L mm <input type="number" step="0.5" id="pupilL"></label><label class="inl">Pupil R mm <input type="number" step="0.5" id="pupilR"></label></div>
+
+        <div class="lab">Add a dose given</div>
+        <div class="row">
+          <select id="dd-drug"><option value="tec">Teclistamab</option><option value="toci">Tocilizumab</option><option value="dex">Dexamethasone</option></select>
+          <input type="text" id="dd-label" placeholder="e.g. Step-up 2, first full dose" size="28">
+          <input type="datetime-local" id="dd-t"><button class="primary" id="dd-add">Add dose</button>
+        </div>
+      </div>
+    </details>
+
+    <div><h2 class="sec">What the protocol says now</h2><div id="mgmt"></div></div>
+
+    <div class="panel"><h2>Doses, risk window and tocilizumab</h2><div id="doses"></div></div>
+    <div class="panel"><h2>Readings</h2><div id="readings"></div></div>
+    <div class="panel"><h2>Protocol lab panel</h2><div id="labs"></div></div>
+    <div class="panel noprint"><button class="primary" id="copy">Copy monitoring note</button> <span class="muted" id="copied"></span></div>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+  <script src="protocol.js"></script>
+  <script src="rules.js"></script>
+  <script src="chart.js"></script>
+  <script src="samples.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
