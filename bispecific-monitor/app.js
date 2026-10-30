@@ -174,7 +174,7 @@ let lastAlerts = [];
 function drawResults() {
   drawPatient();
   const S = buildS(), c = R.crs(S), n = R.icans(S), d = R.doseInfo(S), due = R.dueTimes(S, c, n);
-  const has = state.f || state.entered.length || state.manualDoses.length;
+  const has = state.f || state.entered.length || state.manualDoses.length || state.iceLog.length || pendingIce();
   if (!has) { $("tiles").innerHTML = ""; $("icerec").innerHTML = ""; $("icesum").textContent = ""; $("alertsum").textContent = ""; $("mgmtsum").textContent = ""; $("alerts").innerHTML = '<div class="empty">Pick a made-up patient, open from Cerner, or add readings and doses by hand.</div>'; $("mgmt").innerHTML = ""; $("doses").innerHTML = ""; $("readings").innerHTML = ""; $("labs").innerHTML = ""; return; }
   drawTiles(S, c, n, d, due); lastAlerts = drawAlerts(S); drawMgmt(S, c, n); drawDoses(S); drawReadings(S); drawLabs(S, c, n); drawIceRec(S);
   const t = R.iceTotal(state.in.ice); $("icetotal").textContent = t == null ? "ICE incomplete" : "ICE " + t + "/10";
@@ -270,5 +270,5 @@ async function fromChart() {
     setChart(raw, "Chart read (read-only). Nothing is sent anywhere. Oxygen delivery, vasopressors, ICE and neuro findings are entered below.", errors, "chart");
   } catch (e) { $("pstatus").textContent = "Could not read the chart: " + (e && e.message ? e.message : e) + ". The made-up patients still work."; }
 }
-setInterval(() => { if (state.f || state.entered.length || state.manualDoses.length) drawResults(); }, 60000);
+setInterval(() => { if (state.f || state.entered.length || state.manualDoses.length || state.iceLog.length) drawResults(); }, 60000);
 setForm(); drawResults(); fromChart();
