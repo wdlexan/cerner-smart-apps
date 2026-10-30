@@ -13,7 +13,7 @@
   const CONFIG = { fallbackDays: 14, gridDays: 14, labDays: 7, maxParallel: 3, searchMs: 25000 };
   const L = {
     temp: ['8310-5', '8331-1', '8332-9', '8333-7'], hr: ['8867-4'], sbp: ['8480-6'], bpPanel: ['85354-9', '55284-4'],
-    wbc: ['6690-2', '26464-8', '33256-9'], creat: ['2160-0', '14682-9', '38483-4', '59826-8'],
+    crp: ['1988-5', '30522-7', '76485-2'], wbc: ['6690-2', '26464-8', '33256-9'], creat: ['2160-0', '14682-9', '38483-4', '59826-8'],
     weight: ['29463-7', '3141-9'], height: ['8302-2', '3137-7']
   };
 
@@ -102,7 +102,7 @@
   async function load(rawClient, opts) {
     const client = throttled(rawClient), pid = client.patient.id;
     const now = (opts && opts.now) || Date.now();
-    const out = { now, patient: null, encounters: [], medRequests: [], medAdmins: null, vitals: [], labs: [], body: [], conditions: [], failed: [] };
+    const out = { now, patient: null, encounters: [], medRequests: [], medAdmins: null, vitals: [], labs: [], body: [], conditions: [], reports: [], procedures: [], failed: [] };
     const run = async (label, key, fn, fb) => { try { out[key] = await fn(); } catch (e) { console.warn('[abx] ' + label, e); out.failed.push(label); out[key] = fb; } };
     await Promise.all([
       run('Patient', 'patient', () => client.patient.read(), null),
@@ -119,8 +119,10 @@
       run('Medication administrations', 'medAdmins', () => search(client, 'MedicationAdministration?patient=' + pid + '&effective-time=ge' + ge + '&_count=100', 10), null),
       run('Vital signs', 'vitals', () => search(client, 'Observation?patient=' + pid + '&category=vital-signs&date=ge' + fhirDate(now - 3 * DAY) + '&_count=100', 10), []),
       run('Labs', 'labs', () => firstWorking(client, [
-        'Observation?patient=' + pid + '&code=' + L.wbc.concat(L.creat).map((c) => 'http://loinc.org|' + c).join(',') + '&date=ge' + ge + '&_count=100',
+        'Observation?patient=' + pid + '&code=' + L.wbc.concat(L.creat, L.crp).map((c) => 'http://loinc.org|' + c).join(',') + '&date=ge' + ge + '&_count=100',
         'Observation?patient=' + pid + '&category=laboratory&date=ge' + ge + '&_count=100'], 5), []),
+      run('Reports (echo)', 'reports', () => search(client, 'DiagnosticReport?patient=' + pid + '&date=ge' + ge + '&_count=50', 2), []),
+      run('Procedures (echo)', 'procedures', () => search(client, 'Procedure?patient=' + pid + '&date=ge' + ge + '&_count=50', 2), []),
       run('Height / weight', 'body', () => search(client, 'Observation?patient=' + pid + '&code=' + L.weight.concat(L.height).map((c) => 'http://loinc.org|' + c).join(',') + '&_count=20', 1), [])
     ]);
     const refs = new Set();
@@ -283,7 +285,19 @@
     const sug = R.suggest.find((s) => s.re.test(probText));
 
     if (data.failed && data.failed.length) notes.push('Couldn’t load: ' + data.failed.join(', ') + '.');
-    return { now, enc, fromMar, courses: list, active, abxDay, dot, firstT, renal, ivpo, grid, flags, notes, suggestedIndication: sug ? sug.key : '', age, sex, probText };
+    // ---- context for the "Echo needed?" card ----
+    const crpS = series(data.labs, L.crp).filter((p) => p.t >= windowStart - 2 * DAY);
+    const echoes = [];
+    (data.reports || []).concat(data.procedures || []).forEach((r) => {
+      if (!r || !['DiagnosticReport', 'Procedure'].includes(r.resourceType) || ['entered-in-error', 'cancelled', 'not-done'].includes(r.status)) return;
+      const text = ccText(r.code); if (!R.echoTextRe.test(text)) return;
+      const t = toTime(r.effectiveDateTime || (r.effectivePeriod && r.effectivePeriod.start) || r.performedDateTime || (r.performedPeriod && r.performedPeriod.start) || r.issued);
+      if (t != null && t >= windowStart - DAY) echoes.push({ t, text });
+    });
+    const orgSug = /aureus|mssa|mrsa/i.test(probText) ? 'sa' : /candid/i.test(probText) ? 'candida' : /faecalis/i.test(probText) ? 'efaecalis' : '';
+    const echoCtx = { probText, crp: crpS.length ? crpS.reduce((m, p) => (p.v > m.v ? p : m)) : null, echoes: echoes.sort((a, b) => a.t - b.t), suggestedOrg: orgSug };
+
+    return { echoCtx, now, enc, fromMar, courses: list, active, abxDay, dot, firstT, renal, ivpo, grid, flags, notes, suggestedIndication: sug ? sug.key : '', age, sex, probText };
   }
 
   // Duration + indication-dependent IV→PO verdict (called on every indication change)
@@ -368,11 +382,15 @@
         </div>
       </div>
 
+      <div class="op-card op-wide" id="ab-echo"></div>
+
       <div class="op-notes">
         ${res.notes.map((n) => '<div>' + esc(n) + '</div>').join('')}
         <div>DRAFT - durations, dose bands and oral options are general defaults, not Island Health policy. Check with pharmacy / stewardship. Cultures and susceptibilities are not checked yet (phase 2).</div>
       </div>`;
 
+      if (root.ABXEcho) root.ABXEcho.render(el.querySelector('#ab-echo'), res.echoCtx, opts.patientId);
+      else el.querySelector('#ab-echo').remove();
       const sel = el.querySelector('#ab-ind');
       sel.onchange = () => { chosen = sel.value; try { localStorage.setItem(key, chosen); } catch (e) { /* no storage */ } draw(); };
     };

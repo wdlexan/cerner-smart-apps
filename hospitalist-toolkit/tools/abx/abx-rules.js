@@ -173,6 +173,65 @@
     broadReviewHours: 72    // broad-spectrum β-lactam this long: "cultures back? De-escalate?"
   };
 
-  const R = { drugs, indications, suggest, ivpo, flags };
+  // ---------------- "Echo needed?" card ----------------
+  // Items that can be ticked. chart: regex run against the problem list to pre-tick it.
+  const echoItems = {
+    emboli:      { text: 'Cerebral or peripheral emboli' },
+    meningitis:  { text: 'Meningitis' },
+    device:      { text: 'Prosthetic valve, pacemaker/ICD, or previous endocarditis',
+                   chart: /prosthetic.{0,12}valve|valve replacement|\btavi\b|\btavr\b|\bavr\b|\bmvr\b|pacemaker|\bicd\b|defibrillator|\bcrt-?[dp]?\b|cardiac device|endocarditis/i },
+    ivdu:        { text: 'Injection drug use', chart: /inject\w* drug|intravenous drug|\bivdu\b|\bpwid\b/i },
+    valve:       { text: 'Native valve disease (stenosis / regurgitation / bicuspid / rheumatic)',
+                   chart: /stenosis|regurgitation|insufficiency|valve prolapse|bicuspid|rheumatic heart|valvular/i },
+    murmur:      { text: 'Heart murmur on exam' },
+    persistent:  { text: 'Persistent bacteremia ≥ 48 h despite therapy' },
+    vertebral:   { text: 'Vertebral osteomyelitis / discitis', chart: /vertebral osteo|discitis|spondylodiscitis/i },
+    community:   { text: 'Community-acquired (or healthcare-associated, not hospital-acquired)', defaultOn: true },
+    shock:       { text: 'Severe sepsis or septic shock' },
+    crp:         { text: 'CRP > 190 mg/L' },             // pre-ticked from labs
+    symptoms7:   { text: 'Symptoms for ≥ 7 days before cultures' },
+    cultures2:   { text: '≥ 2 positive blood culture sets' },
+    unknownSrc:  { text: 'Source unknown' },
+    mono:        { text: 'Only one species in blood cultures', defaultOn: true },
+    dialysis:    { text: 'On hemodialysis', chart: /dialysis|end.?stage renal|\besrd\b/i }
+  };
+
+  // Scores. Points as published - VERIFY against the original papers with ID before use.
+  const echoScores = {
+    // Tubiana et al., J Infect 2016. ≤ 2 = low risk (TEE can usually be skipped).
+    virsta: { name: 'VIRSTA', lowMax: 2, items: [['emboli', 5], ['meningitis', 5], ['device', 4], ['ivdu', 4], ['valve', 3],
+      ['persistent', 3], ['vertebral', 2], ['community', 2], ['shock', 1], ['crp', 1]] },
+    // Berge et al., Eur Heart J 2019 (E. faecalis). ≥ 3 = TEE.
+    denova: { name: 'DENOVA', lowMax: 2, items: [['symptoms7', 1], ['emboli', 1], ['cultures2', 1], ['unknownSrc', 1], ['valve', 1], ['murmur', 1]] },
+    // Sunnerhagen et al., Clin Infect Dis 2018 (non-β-hemolytic streptococci). ≥ 3 = echo.
+    // The species point (A) comes from the organism choice below (aetiologyPts).
+    handoc: { name: 'HANDOC', lowMax: 2, items: [['murmur', 1], ['valve', 1], ['cultures2', 1], ['symptoms7', 1], ['mono', 1], ['community', 1]], heartIsOne: true }
+  };
+
+  // Organisms. score: which score applies. aetiologyPts: HANDOC "A" point for that group
+  // (S. anginosus is −1 in the original table - CHECK).
+  const echoOrganisms = [
+    { key: '', label: '— choose organism —' },
+    { key: 'sa', label: 'Staphylococcus aureus (MSSA / MRSA)', score: 'virsta', alwaysTTE: true,
+      remind: ['Repeat blood cultures every 24–48 h until negative.', 'ID consult (lowers mortality in SAB).', 'Remove / replace infected lines; look for metastatic foci (spine, joints, abscess).'] },
+    { key: 'slug', label: 'Staphylococcus lugdunensis', score: 'virsta', alwaysTTE: true, remind: ['Treat like S. aureus.', 'Repeat blood cultures until negative.'] },
+    { key: 'efaecalis', label: 'Enterococcus faecalis', score: 'denova', remind: ['Repeat blood cultures until negative.', 'If E. faecalis and no clear source, consider colonoscopy.'] },
+    { key: 'efaecium', label: 'Enterococcus faecium', rule: 'risk', remind: ['Lower endocarditis risk than E. faecalis; echo if persistent, device or valve disease.'] },
+    { key: 'smutans', label: 'Viridans strep: S. mutans group', score: 'handoc', aetiologyPts: 1 },
+    { key: 'sbovis', label: 'S. bovis / gallolyticus group', score: 'handoc', aetiologyPts: 1, remind: ['Colonoscopy (association with colorectal neoplasia).'] },
+    { key: 'ssanguinis', label: 'Viridans strep: S. sanguinis group', score: 'handoc', aetiologyPts: 1 },
+    { key: 'sanginosus', label: 'S. anginosus group (milleri)', score: 'handoc', aetiologyPts: -1, remind: ['Look for an abscess (this group causes abscesses more than endocarditis).'] },
+    { key: 'smitis', label: 'Viridans strep: mitis / oralis / salivarius / other', score: 'handoc', aetiologyPts: 0 },
+    { key: 'bhs', label: 'β-hemolytic strep (group A, B, C, G)', rule: 'risk', remind: ['Group B / G in older patients: lower threshold for echo.'] },
+    { key: 'hacek', label: 'HACEK organism', rule: 'always', remind: ['HACEK bacteremia without another source is endocarditis until proven otherwise.'] },
+    { key: 'gnb', label: 'Gram-negative bacilli (E. coli, Klebsiella, Pseudomonas…)', rule: 'risk', remind: ['Endocarditis is uncommon; echo only with risk features below.'] },
+    { key: 'cons', label: 'Coagulase-negative staph (not lugdunensis)', rule: 'cons', remind: ['Single positive set is usually a contaminant.'] },
+    { key: 'candida', label: 'Candida', rule: 'candida', remind: ['Dilated eye exam (ophthalmology).', 'Remove central lines.', 'Repeat blood cultures daily until negative.'] },
+    { key: 'other', label: 'Other / not listed', rule: 'risk' }
+  ];
+
+  const echoTextRe = /echocardiog|\becho\b|transthoracic|trans-?o?esophageal|\btte\b|\btee\b/i;
+
+  const R = { drugs, indications, suggest, ivpo, flags, echoItems, echoScores, echoOrganisms, echoTextRe };
   if (typeof module !== 'undefined' && module.exports) module.exports = R; else root.ABX_RULES = R;
 })(typeof window !== 'undefined' ? window : globalThis);

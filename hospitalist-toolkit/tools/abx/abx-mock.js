@@ -13,6 +13,7 @@
   const obs = (code, v, unit, t, cat) => ({ resourceType: 'Observation', status: 'final', category: [{ coding: [{ code: cat || 'vital-signs' }] }],
     code: { coding: [{ system: 'http://loinc.org', code }] }, valueQuantity: { value: v, unit }, effectiveDateTime: iso(t) });
   const cond = (text) => ({ resourceType: 'Condition', code: { text } });
+  const report = (text, t) => ({ resourceType: 'DiagnosticReport', status: 'final', code: { text }, effectiveDateTime: iso(t) });
 
   // doses of one drug every `everyH` hours from startAgo until stopAgo (ms before now)
   function doses(name, route, dose, everyH, startAgo, stopAgo, now) {
@@ -54,13 +55,23 @@
     { key: 'sab', label: 'S. aureus bacteremia day 5 on cefazolin (+ vanco stopped)',
       make: (now) => ({
         patient: patient('demo-sab', 'Victor', 'TESTSAB', 'male', 61), encounters: [enc(now, 4)],
-        conditions: [cond('MSSA bacteremia'), cond('Type 2 diabetes')],
+        conditions: [cond('MSSA bacteremia'), cond('Type 2 diabetes'), cond('Moderate aortic stenosis')],
+        reports: [report('Echocardiogram transthoracic (TTE)', now - 2 * D)],
         medRequests: [order('o1', 'ceFAZolin 2 g', 'Intravenous', '2 g IV q8h', 2.5 * D, now), order('o2', 'vancomycin 1.25 g', 'Intravenous', '1.25 g IV q12h', 3.8 * D, now, 'stopped'),
           order('o3', 'metformin 500 mg', 'Oral', '500 mg PO bid', 3.8 * D, now)],
         medAdmins: [...doses('vancomycin 1.25 g', 'Intravenous', '1.25 g', 12, 3.8 * D, 2.6 * D, now), ...doses('ceFAZolin 2 g', 'Intravenous', '2 g', 8, 2.5 * D, 0, now)],
         vitals: vitals(now, () => ({ t: 36.9, hr: 82, sbp: 132 })),
-        labs: labs(now, [[4, '6690-2', 13.5, '10*9/L'], [1, '6690-2', 8.2, '10*9/L'], [1, '14682-9', 80, 'umol/L']]),
+        labs: labs(now, [[4, '6690-2', 13.5, '10*9/L'], [1, '6690-2', 8.2, '10*9/L'], [1, '14682-9', 80, 'umol/L'], [4, '1988-5', 214, 'mg/L'], [1, '1988-5', 96, 'mg/L']]),
         body: weight(now, 95) }) },
+    { key: 'efae', label: 'E. faecalis bacteremia day 2 on ampicillin, urinary source',
+      make: (now) => ({
+        patient: patient('demo-efae', 'Harold', 'TESTENTERO', 'male', 79), encounters: [enc(now, 2)],
+        conditions: [cond('Enterococcus faecalis bacteremia'), cond('Benign prostatic hyperplasia with urinary retention')],
+        medRequests: [order('o1', 'ampicillin 2 g', 'Intravenous', '2 g IV q4h', 1.7 * D, now), order('o2', 'tamsulosin 0.4 mg', 'Oral', '0.4 mg PO daily', 1.7 * D, now)],
+        medAdmins: doses('ampicillin 2 g', 'Intravenous', '2 g', 4, 1.7 * D, 0, now),
+        vitals: vitals(now, (h) => ({ t: h > 36 ? 38.3 : 37.2, hr: 90, sbp: 128 })),
+        labs: labs(now, [[2, '6690-2', 14.1, '10*9/L'], [0.5, '6690-2', 10.2, '10*9/L'], [0.5, '14682-9', 110, 'umol/L'], [2, '1988-5', 120, 'mg/L']]),
+        body: weight(now, 72) }) },
     { key: 'cell', label: 'Cellulitis day 2 on vanco + cefazolin, still febrile',
       make: (now) => ({
         patient: patient('demo-cell', 'Grace', 'TESTCELL', 'female', 48), encounters: [enc(now, 2)],
