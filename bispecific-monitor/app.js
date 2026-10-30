@@ -17,7 +17,19 @@ function buildS() {
   const f = state.f || { readings: [], doses: [] };
   const baseSbp = state.in.baseSbp !== "" && !isNaN(Number(state.in.baseSbp)) ? Number(state.in.baseSbp) : f.baseSbpGuess || null;
   const doses = (f.doses || []).concat(state.manualDoses);
-  return { now: nowT(), where: state.where, baseSbp, readings: R.mergeReadings(f.readings, state.entered), doses, in: state.in };
+  return { now: nowT(), where: state.where, baseSbp, readings: R.mergeReadings(f.readings, state.entered), doses, in: effectiveIn() };
+}
+/* The ICE that drives grading and timers is the NEWEST of: the boxes on the form (if all five are filled) and every recorded ICE (chart or entered here). */
+function iceRecords() { return ((state.f && state.f.ice) || []).concat(state.iceLog).sort((a, b) => b.t - a.t); }
+function pendingIce() {
+  const total = R.iceTotal(state.in.ice); if (total == null) return null;
+  const t = state.in.iceT || nowT(), dup = iceRecords().some((x) => x.total === total && Math.abs(x.t - t) < 2 * MIN);
+  return { total, t, dup };
+}
+function effectiveIn() {
+  const i = state.in, p = pendingIce(), latest = iceRecords()[0];
+  if (latest && (!p || latest.t > p.t)) return Object.assign({}, i, { iceTotalOverride: latest.total, iceT: latest.t });
+  return i;
 }
 const weightKg = () => (state.in.kg !== "" && Number(state.in.kg) > 0 ? Number(state.in.kg) : state.f && state.f.weightKg);
 
@@ -125,7 +137,7 @@ function noteText(S, c, n, alerts) {
   L.push("", c.grade === 0 && !c.provisional ? "CRS: none (no fever >= 38.0 C in 24 h)" : c.grade === 0 ? `CRS: provisional grade ${c.provisional} (no fever documented)` : `CRS: grade ${c.grade}${c.manageAs !== c.grade ? ` (managing as grade ${c.manageAs})` : ""}`);
   L.push(`  oxygen: ${{ ra: "room air", low: "low-flow", high: "high-flow/mask", pp: "positive pressure" }[state.in.o2]}; hypotension support: ${{ none: "none", fluid: "IV fluids", one: "one vasopressor", multi: "multiple vasopressors" }[state.in.hypo]}`);
   if (sy.length) L.push("  symptoms: " + sy.join(", "));
-  L.push(n.done || n.grade ? `ICANS: grade ${n.grade}${n.total != null ? `, ICE ${n.total}/10` : ""} (baseline ${n.baseline})${state.in.iceT ? ", ICE at " + fmt(state.in.iceT) : ""}` : "ICANS: ICE not done");
+  L.push(n.done || n.grade ? `ICANS: grade ${n.grade}${n.total != null ? `, ICE ${n.total}/10` : ""} (baseline ${n.baseline})${S.in.iceT ? ", ICE at " + fmt(S.in.iceT) : ""}` : "ICANS: ICE not done");
   L.push(`  consciousness: ${state.in.loc}; seizure: ${state.in.seizure}; motor: ${state.in.motor}; edema/ICP: ${state.in.icp}${state.in.gcs ? "; GCS " + state.in.gcs : ""}${state.in.pupilL || state.in.pupilR ? `; pupils L ${state.in.pupilL || "?"} / R ${state.in.pupilR || "?"} mm` : ""}`);
   const iceAll = ((state.f && state.f.ice) || []).concat(state.iceLog).sort((p, q) => q.t - p.t).slice(0, 8);
   if (iceAll.length) L.push("ICE record (newest first): " + iceAll.map((x) => `${x.total}/10 ${fmt(x.t)}${x.src === "entered" ? " (entered)" : ""}`).join("; "));
@@ -141,17 +153,18 @@ const iceGrade = (t) => (t === 10 ? "none" : t >= 7 ? "1" : t >= 3 ? "2" : "3 (4
 function drawIceRec(S) {
   const f = state.f || {}, all = (f.ice || []).concat(state.iceLog).sort((a, b) => b.t - a.t);
   const gcs = (f.gcs || []).slice(0, 6), gr = (f.icansGrades || []).slice(0, 6);
-  if (!all.length && !gcs.length && !gr.length) { $("icerec").innerHTML = '<div class="empty">No ICE scores found in the chart or recorded here. Nursing ICE scores are found by name; if your nursing ICE form is free text it will not appear. Enter an ICE score and press "Record this ICE" to start the record.</div>'; $("icesum").textContent = ""; return; }
+  if (!all.length && !gcs.length && !gr.length && !pendingIce()) { $("icerec").innerHTML = '<div class="empty">No ICE scores found in the chart or recorded here. Nursing ICE scores are found by name; if your nursing ICE form is free text it will not appear. Enter an ICE score and press "Record this ICE" to start the record.</div>'; $("icesum").textContent = ""; return; }
   const trend = all.slice(0, 10).reverse().map((x) => x.total).join(" → ");
   $("icesum").textContent = all.length ? `latest ${all[0].total}/10 (${fmt(all[0].t)})` : "";
   const items = (x) => (x.items ? ["orient", "naming", "command", "writing", "attention"].map((k) => k.slice(0, 4) + " " + (x.items[k] != null ? x.items[k] : "?")).join(", ") : "");
-  const rows = all.slice(0, 20).map((x, i) => {
+  const pend = pendingIce(), pendRow = pend && !pend.dup ? `<tr style="background:var(--a-bg)"><td>${fmt(pend.t)}</td><td${pend.total < 9 ? ' class="hot"' : ""}>${pend.total}/10</td><td>${iceGrade(pend.total)}</td><td></td><td><b>Not saved yet.</b> Press Record to add it to the record.</td><td>entered here</td><td><button class="primary" data-recnow="1">Record</button></td></tr>` : "";
+  const rows = pendRow + all.slice(0, 20).map((x, i) => {
     const prev = all[i + 1], d = prev ? x.total - prev.total : null;
     const detail = x.src === "entered" ? esc(x.detail || "") + (x.items ? (x.detail ? "; " : "") + esc(items(x)) : "") : esc((x.by ? x.by + ". " : "") + items(x));
     return `<tr><td>${fmt(x.t)}</td><td${x.total < 9 ? ' class="hot"' : ""}>${x.total}/10</td><td>${iceGrade(x.total)}</td><td>${d == null ? "" : d === 0 ? "no change" : d > 0 ? "+" + d + " (better)" : d + " (worse)"}</td><td>${detail}</td><td>${x.src === "entered" ? "entered here" : "chart (nursing)"}</td><td>${x.src === "entered" ? `<button data-rmice="${esc(x.id)}">remove</button>` : ""}</td></tr>`;
   }).join("");
   const base = (f.ice || []).slice().sort((p, q) => p.t - q.t).find((x) => !(S.doses.find((d) => d.drug === "tec")) || x.t < S.doses.filter((d) => d.drug === "tec").sort((p, q) => p.t - q.t)[0].t);
-  $("icerec").innerHTML = (all.length ? `<div style="margin-bottom:6px"><b>Trend (oldest to newest):</b> ${esc(trend)}</div><table><tr><th>Time</th><th>ICE</th><th>ICANS grade from ICE</th><th>Change</th><th>Detail</th><th>Source</th><th></th></tr>${rows}</table>` : "")
+  $("icerec").innerHTML = (all.length || pendRow ? `<div style="margin-bottom:6px"><b>Trend (oldest to newest):</b> ${esc(trend || "none recorded yet")}</div><table><tr><th>Time</th><th>ICE</th><th>ICANS grade from ICE</th><th>Change</th><th>Detail</th><th>Source</th><th></th></tr>${rows}</table>` : "")
     + (base ? `<div class="muted" style="margin-top:6px">Earliest charted ICE before treatment: ${base.total}/10 (${fmt(base.t)}). Set the baseline in the ICE section if it differs from 10.</div>` : "")
     + (gr.length ? `<div style="margin-top:6px"><b>ICANS grade charted by nursing:</b> ${gr.map((x) => `grade ${x.grade} (${fmt(x.t)})`).join("; ")}</div>` : "")
     + (gcs.length ? `<div style="margin-top:6px"><b>Glasgow coma score (chart):</b> ${gcs.map((x) => `${x.v} (${fmt(x.t)})`).join("; ")}</div>` : "")
@@ -206,13 +219,18 @@ $("dd-add").onclick = () => {
   const drug = $("dd-drug").value, label = $("dd-label").value.trim() || { tec: "Teclistamab dose", toci: "Tocilizumab", dex: "Dexamethasone" }[drug];
   state.manualDoses.push({ drug, t, label, src: "entered" }); $("dd-label").value = ""; $("dd-t").value = toLocal(Date.now()); drawResults();
 };
-$("icerec-add").onclick = () => {
-  readForm(); const S = buildS(), n = R.icans(S); if (!n.done) { $("icetotal").textContent = "Complete all five ICE items first"; return; }
-  const i = state.in, detail = [`consciousness ${i.loc}`, i.seizure !== "none" ? "seizure " + i.seizure : "", i.gcs ? "GCS " + i.gcs : "", `overall ICANS grade ${n.grade}`].filter(Boolean).join(", ");
-  state.iceLog.push({ id: String(Date.now()) + Math.random().toString(36).slice(2, 6), t: i.iceT || nowT(), total: n.total, items: Object.assign({}, i.ice), detail, src: "entered", by: "" });
+function recordIce() {
+  readForm(); const p = pendingIce(); if (!p) { $("icetotal").textContent = "Complete all five ICE items first"; return; }
+  const i = state.in, n = R.icans(Object.assign({}, buildS(), { in: Object.assign({}, i, { iceTotalOverride: null }) }));
+  const detail = [`consciousness ${i.loc}`, i.seizure !== "none" ? "seizure " + i.seizure : "", i.gcs ? "GCS " + i.gcs : "", `overall ICANS grade ${n.grade}`].filter(Boolean).join(", ");
+  state.iceLog.push({ id: String(Date.now()) + Math.random().toString(36).slice(2, 6), t: p.t, total: p.total, items: Object.assign({}, i.ice), detail, src: "entered", by: "" });
+  // clear the boxes ready for the next ICE; grading carries on from the newest recorded score
+  state.in.ice = { orient: "", naming: "", command: "", writing: "", attention: "" }; state.in.iceT = null; setForm();
   drawResults();
-};
+}
+$("icerec-add").onclick = recordIce;
 document.addEventListener("click", (e) => {
+  if (e.target.dataset && e.target.dataset.recnow) { recordIce(); return; }
   const ri = e.target.dataset && e.target.dataset.rmice; if (ri) { state.iceLog = state.iceLog.filter((x) => x.id !== ri); drawResults(); return; }
   const rm = e.target.dataset && e.target.dataset.rm;
   if (rm) { state.entered = state.entered.filter((r) => String(Math.floor(r.t / MIN)) !== rm); drawResults(); }

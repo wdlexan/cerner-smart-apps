@@ -46,7 +46,8 @@
      Level of consciousness: awakens spontaneously gives no grade by itself (it is only the Grade 1 column when ICE is 7-9); to voice -> 2; tactile only -> 3; unrousable or vigorous/repeated tactile -> 4. */
   const LOC_G = { awake: 0, voice: 2, tactile: 3, unrousable: 4 };
   function icans(S) {
-    const total = iceTotal(S.in.ice);
+    // iceTotalOverride: the app passes the newest recorded ICE (chart or entered) when the boxes are empty or older
+    const total = S.in.iceTotalOverride != null ? S.in.iceTotalOverride : iceTotal(S.in.ice);
     const parts = [];
     let g = 0;
     const add = (gr, why) => { if (gr > 0) parts.push({ g: gr, why }); g = Math.max(g, gr); };

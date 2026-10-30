@@ -48,6 +48,8 @@ ok("most severe domain wins (ICE 8 + seizure)", nOf((S) => { S.in.ice = ice(4, 3
 ok("ICE not done -> not graded from ICE", (() => { const n = nOf((S) => { S.in.ice = {}; }); return n.grade === 0 && !n.done; })());
 ok("baseline ICE 9, score 9 -> no notify", !nOf((S) => { S.in.baselineIce = 9; S.in.ice = ice(4, 3, 1, 1, 0); }).notifyMRP);
 
+ok("ICE override uses recorded total", (() => { const n = nOf((S) => { S.in.ice = { orient: "", naming: "", command: "", writing: "", attention: "" }; S.in.iceTotalOverride = 6; }); return n.grade === 2 && n.total === 6 && n.done; })());
+
 // ---- fever pattern (home)
 const fp = (list) => R.feverPattern(list, now);
 ok("single fever: no persist, no recur", (() => { const f = fp([rd(10, 38.3)]); return f.febrileNow && !f.persist && !f.recur; })());
