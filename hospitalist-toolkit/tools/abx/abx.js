@@ -132,6 +132,22 @@
     return out;
   }
 
+  // Longer look-back for the "Antibiotic history" card (orders are cached; doses searched by date)
+  function historyLoader(rawClient) {
+    const client = throttled(rawClient), pid = client.patient.id;
+    let ordersP = null;
+    return async (days) => {
+      const ge = fhirDate(Date.now() - days * DAY);
+      if (!ordersP) ordersP = search(client, 'MedicationRequest?patient=' + pid + '&_count=100', 30);
+      const [medRequests, medAdmins] = await Promise.all([ordersP,
+        search(client, 'MedicationAdministration?patient=' + pid + '&effective-time=ge' + ge + '&_count=100', 40).catch(() => [])]);
+      const refs = new Set(), medNames = {};
+      medRequests.concat(medAdmins).forEach((r) => { const ref = r && r.medicationReference; if (ref && ref.reference && !ref.display && !ref.reference.startsWith('#')) refs.add(ref.reference); });
+      await Promise.all([...refs].slice(0, 60).map(async (ref) => { try { medNames[ref] = ccText((await client.request(ref)).code); } catch (e) { /* unnamed */ } }));
+      return { medRequests, medAdmins, medNames };
+    };
+  }
+
   function currentEncounter(encs, now) {
     const list = (encs || []).filter((e) => e && e.resourceType === 'Encounter' && e.period && e.period.start)
       .map((e) => ({ e, start: toTime(e.period.start), end: toTime(e.period.end) }))
@@ -382,6 +398,8 @@
         </div>
       </div>
 
+      <div class="op-card op-wide" id="ab-hist"></div>
+
       <div class="op-card op-wide" id="ab-echo"></div>
 
       <div class="op-notes">
@@ -389,6 +407,8 @@
         <div>DRAFT - durations, dose bands and oral options are general defaults, not Island Health policy. Check with pharmacy / stewardship. Cultures and susceptibilities are not checked yet (phase 2).</div>
       </div>`;
 
+      if (root.ABXHistory && opts.historyLoader) root.ABXHistory.render(el.querySelector('#ab-hist'), opts.historyLoader, { patientId: opts.patientId, visitStart: res.enc ? res.enc.start : null, now: res.now });
+      else el.querySelector('#ab-hist').remove();
       if (root.ABXEcho) root.ABXEcho.render(el.querySelector('#ab-echo'), res.echoCtx, opts.patientId);
       else el.querySelector('#ab-echo').remove();
       const sel = el.querySelector('#ab-ind');
@@ -422,7 +442,8 @@
     const data = opts.loader ? await opts.loader() : await load(client, opts);
     if (opts.now) data.now = opts.now;
     const res = assess(data);
-    render(el, res, { patientId: (data.patient && data.patient.id) || opts.patientId });
+    render(el, res, { patientId: (data.patient && data.patient.id) || opts.patientId,
+      historyLoader: opts.historyLoader || (client ? historyLoader(client) : null) });
     return res;
   }
 

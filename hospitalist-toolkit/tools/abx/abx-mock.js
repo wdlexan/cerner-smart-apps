@@ -83,7 +83,25 @@
         body: weight(now, 110) }) }
   ];
 
-  const ABXMock = { CASES: CASES.map(({ key, label }) => ({ key, label })),
+  // Earlier courses (outpatient prescriptions + a past admission) for the history card
+  const PRIOR = {
+    cap: [['amoxicillin-clavulanate 875 mg', 'Oral', '875 mg PO bid', 245, 7], ['azithromycin 250 mg', 'Oral', '500 mg day 1 then 250 mg daily', 420, 5]],
+    pyelo: [['ciprofloxacin 500 mg', 'Oral', '500 mg PO bid', 62, 7], ['nitrofurantoin 100 mg', 'Oral', '100 mg PO bid', 150, 5], ['cephalexin 500 mg', 'Oral', '500 mg PO qid', 300, 7]],
+    sab: [['cephalexin 500 mg', 'Oral', '500 mg PO qid', 33, 10]],
+    efae: [['ciprofloxacin 500 mg', 'Oral', '500 mg PO bid', 120, 7]],
+    cell: [['cephalexin 500 mg', 'Oral', '500 mg PO qid', 21, 7], ['clindamycin 300 mg', 'Oral', '300 mg PO qid', 400, 7]]
+  };
+  function history(now, key, days) {
+    const cur = CASES.find((x) => x.key === key) || CASES[0], d = cur.make(now);
+    const prior = (PRIOR[cur.key] || []).map(([name, route, dose, ago, len], i) => ({ resourceType: 'MedicationRequest', id: 'h' + i, status: 'completed',
+      medicationCodeableConcept: { text: name }, authoredOn: iso(now - ago * D),
+      dosageInstruction: [{ text: dose, route: { text: route }, timing: { repeat: { boundsPeriod: { start: iso(now - ago * D), end: iso(now - (ago - len) * D) } } } }] }));
+    // a past admission with charted IV doses, 5 months ago
+    const pastAdmin = cur.key === 'cap' ? doses('piperacillin-tazobactam 4.5 g', 'Intravenous', '4.5 g', 8, 152 * D, 148 * D, now) : [];
+    return new Promise((res) => setTimeout(() => res({ medRequests: d.medRequests.concat(prior), medAdmins: d.medAdmins.concat(pastAdmin), medNames: {} }), 250));
+  }
+
+  const ABXMock = { history, CASES: CASES.map(({ key, label }) => ({ key, label })),
     make: (now, key) => { const c = CASES.find((x) => x.key === key) || CASES[0]; return Object.assign({ now, failed: [], medNames: {} }, c.make(now)); } };
   if (typeof module !== 'undefined' && module.exports) module.exports = ABXMock; else root.ABXMock = ABXMock;
 })(typeof window !== 'undefined' ? window : globalThis);
