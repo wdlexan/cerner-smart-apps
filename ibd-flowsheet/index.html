@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IBD flowsheet (Crohn and ulcerative colitis)</title>
+  <style>
+    :root { --bg:#f5f7fa; --card:#fff; --ink:#1f2933; --muted:#5f6c7b; --accent:#0b6bcb; --line:#dde3ea;
+            --r-bg:#fde8e8; --r-ink:#9b1c1c; --a-bg:#fff1d6; --a-ink:#8a5200; --b-bg:#e3eefc; --b-ink:#0b4a99; --g-bg:#e4f4ea; --g-ink:#1d6b3a; --warn-bg:#fff4e5; --warn-line:#f0c27b; }
+    @media (prefers-color-scheme: dark) { :root { --bg:#111418; --card:#1a1f26; --ink:#e8edf2; --muted:#9aa7b5; --accent:#6aa9ff; --line:#2b333d;
+            --r-bg:#4a1d1d; --r-ink:#ffb3b3; --a-bg:#4a3511; --a-ink:#ffd38a; --b-bg:#14325c; --b-ink:#a9cdff; --g-bg:#16361f; --g-ink:#9be0b1; --warn-bg:#3a2e15; --warn-line:#6b5420; } }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); }
+    header { padding:14px 20px; border-bottom:1px solid var(--line); background:var(--card); }
+    header h1 { margin:0; font-size:19px; } header .sub { font-size:13px; color:var(--muted); margin-top:2px; }
+    main { max-width:980px; margin:16px auto 40px; padding:0 16px; display:grid; gap:14px; }
+    .banner { background:var(--warn-bg); border:1px solid var(--warn-line); border-radius:8px; padding:10px 14px; font-size:13px; }
+    .panel { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px 16px; font-size:13.5px; }
+    .panel h2, h2.sec { margin:0 0 6px; font-size:15px; } h2.sec { margin-top:6px; }
+    select, input, button, textarea { font:inherit; font-size:13px; padding:5px 8px; border:1px solid var(--line); border-radius:6px; background:var(--card); color:var(--ink); }
+    button { cursor:pointer; } button.primary { border-color:var(--accent); color:var(--accent); }
+    input[type=number] { width:76px; } input[type=datetime-local] { width:190px; }
+    label.inl { display:inline-flex; gap:5px; align-items:center; margin:2px 12px 2px 0; }
+    .muted { color:var(--muted); font-size:12.5px; }
+    .row { display:flex; flex-wrap:wrap; gap:8px 12px; align-items:center; margin:6px 0; }
+    .tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:10px; }
+    .tile { border-radius:10px; padding:10px 14px; border:1px solid var(--line); background:var(--card); }
+    .tile .k { font-size:11px; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); font-weight:600; }
+    .tile .big { font-size:26px; font-weight:700; line-height:1.2; } .tile .s { font-size:12.5px; margin-top:2px; }
+    .t0 { background:var(--g-bg); color:var(--g-ink); } .t1 { background:var(--b-bg); color:var(--b-ink); } .t2 { background:var(--a-bg); color:var(--a-ink); } .t3, .t4 { background:var(--r-bg); color:var(--r-ink); }
+    .tile.t0 .k, .tile.t1 .k, .tile.t2 .k, .tile.t3 .k, .tile.t4 .k { color:inherit; opacity:.8; }
+    .alert { border-radius:8px; padding:8px 12px; margin-bottom:6px; font-size:13.5px; border:1px solid var(--line); }
+    .alert b { display:block; } .alert .src { font-size:11.5px; opacity:.75; margin-top:2px; }
+    .alert.urgent { background:var(--r-bg); color:var(--r-ink); } .alert.action { background:var(--a-bg); color:var(--a-ink); } .alert.info { background:var(--b-bg); color:var(--b-ink); }
+    details.card { background:var(--card); border:1px solid var(--line); border-radius:10px; }
+    details.card > summary { list-style:none; cursor:pointer; padding:11px 16px; display:flex; justify-content:space-between; gap:10px; font-weight:600; font-size:15px; }
+    details.card > summary::-webkit-details-marker { display:none; }
+    .body { padding:2px 16px 14px; border-top:1px solid var(--line); font-size:13.5px; }
+    .lab { font-family:ui-monospace,Consolas,monospace; font-size:11.5px; color:var(--muted); letter-spacing:.06em; margin:12px 0 4px; text-transform:uppercase; }
+    ul.chk { list-style:none; margin:4px 0 0; padding:0; } ul.chk li { margin:5px 0; display:flex; gap:8px; align-items:flex-start; }
+    ul.chk li.done span.t { text-decoration:line-through; opacity:.55; }
+    .tag { font-size:10px; font-weight:700; letter-spacing:.04em; padding:1px 6px; border-radius:8px; margin-right:6px; background:var(--b-bg); color:var(--b-ink); white-space:nowrap; }
+    .tag.stop, .tag.escalate { background:var(--r-bg); color:var(--r-ink); } .tag.drug { background:var(--a-bg); color:var(--a-ink); } .tag.notify { background:var(--a-bg); color:var(--a-ink); }
+    table { border-collapse:collapse; width:100%; font-size:12.5px; } th, td { text-align:left; padding:4px 8px; border-bottom:1px solid var(--line); } th { color:var(--muted); font-weight:600; }
+    td.hot { color:var(--r-ink); font-weight:700; } td.abn { color:var(--r-ink); font-weight:700; }
+    .err { color:var(--r-ink); font-size:12.5px; } .empty { color:var(--muted); padding:12px; text-align:center; border:1px dashed var(--line); border-radius:10px; }
+    .place { border-radius:10px; padding:12px 16px; margin-bottom:10px; border:1px solid var(--line); }
+    .place .k { font-size:11px; letter-spacing:.05em; text-transform:uppercase; font-weight:600; opacity:.8; } .place .big { font-size:22px; font-weight:700; margin:2px 0; } .place .s { font-size:12.5px; margin-top:4px; opacity:.9; }
+    .place.home, .place.facility { background:var(--g-bg); color:var(--g-ink); } .place.ward { background:var(--a-bg); color:var(--a-ink); } .place.er, .place.icu { background:var(--r-bg); color:var(--r-ink); }
+    ul.chk li.where .t { font-weight:600; }
+    .tag.crs { background:var(--a-bg); color:var(--a-ink); } .tag.icans { background:var(--b-bg); color:var(--b-ink); }
+    details.sub { border:1px solid var(--line); border-radius:8px; margin:8px 0; background:var(--card); }
+    details.sub > summary { cursor:pointer; padding:7px 12px; font-weight:600; font-size:13.5px; }
+    details.sub > .in { padding:0 12px 10px; }
+    details.card > summary .muted { font-weight:400; }
+    
+    .scroll { overflow-x:auto; border:1px solid var(--line); border-radius:8px; }
+    table.fs { border-collapse:separate; border-spacing:0; width:auto; min-width:100%; font-size:12.5px; }
+    table.fs th, table.fs td { white-space:nowrap; padding:3px 9px; border-bottom:1px solid var(--line); text-align:center; }
+    table.fs th.lab, table.fs td.lab { position:sticky; left:0; background:var(--card); text-align:left; z-index:1; font-family:inherit; font-size:12.5px; letter-spacing:0; text-transform:none; color:var(--ink); margin:0; border-right:1px solid var(--line); min-width:190px; }
+    table.fs tr.grp td { background:var(--bg); font-weight:700; text-align:left; cursor:pointer; color:var(--muted); font-size:11.5px; letter-spacing:.05em; text-transform:uppercase; }
+    table.fs tr.cls td { background:var(--bg); text-align:left; font-size:11.5px; color:var(--muted); font-style:italic; }
+    table.fs td.hi { color:var(--r-ink); background:var(--r-bg); font-weight:700; }
+    table.fs td.cur { background:var(--g-bg); color:var(--g-ink); font-weight:700; }
+    table.fs td.endo { background:var(--b-bg); color:var(--b-ink); font-weight:600; white-space:normal; min-width:120px; max-width:200px; }
+    .st { font-size:10.5px; font-weight:700; padding:1px 7px; border-radius:8px; white-space:nowrap; }
+    .st.current { background:var(--g-bg); color:var(--g-ink); } .st.held { background:var(--a-bg); color:var(--a-ink); } .st.stopped, .st.past { background:var(--line); color:var(--muted); } .st.none { color:var(--muted); }
+    button.x { padding:0 6px; font-size:12px; border-radius:10px; }
+    ul.rem { margin:6px 0 0; padding-left:18px; font-size:12.5px; color:var(--muted); }
+    @media print { button, select, input, .noprint { display:none !important; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>IBD flowsheet: Crohn disease and ulcerative colitis</h1>
+    <div class="sub" id="meta">Labs, medications, endoscopy and symptom scores on one page. Read-only.</div>
+  </header>
+  <main>
+    <div class="banner"><b>Decision-support draft. Not a clinical decision, and it orders nothing.</b> Drug lists, lab matching, score cut-offs and reminders were written by Claude and have <b>not been verified</b>: check them against your IBD guidelines and local policy before real use. Labs, drugs and endoscopy are found by <b>name</b> in the chart, so something not shown may still exist; the page says "not found", never "not done". Entries you type stay in this page only (lost on reload). Use made-up or Cerner sandbox patients only until Island Health approves real data.</div>
+
+    <details class="card" id="panel" open>
+      <summary><span>Patient</span><span class="muted" id="ptsum"></span></summary>
+      <div class="body">
+        <div id="pstatus" class="muted">Open from Cerner to read the chart, or pick a made-up patient:</div>
+        <div class="row">
+          <select id="testsel"><option value="">Made-up patient…</option></select>
+          <button id="clear" hidden>Clear</button>
+          <label class="inl">Disease <select id="disease"><option value="unknown">Not chosen</option><option value="cd">Crohn disease</option><option value="uc">Ulcerative colitis</option></select></label>
+          <label class="inl">Setting <select id="setting"><option value="outpatient">Outpatient / clinic</option><option value="inpatient">Admitted</option></select></label>
+          <label class="inl"><input type="checkbox" id="flaring"> Currently flaring</label>
+        </div>
+        <div id="errs" class="err"></div>
+        <div id="pt" class="muted"></div>
+      </div>
+    </details>
+
+    <div class="tiles" id="tiles"></div>
+    <details class="card" id="sec-alerts" open><summary><span>Alerts and reminders</span><span class="muted" id="alertsum"></span></summary><div class="body" id="alerts"></div></details>
+
+    <details class="card" id="sec-flow" open>
+      <summary><span>Flowsheet</span><span class="muted" id="flowsum"></span></summary>
+      <div class="body">
+        <div class="row"><label class="inl">Show <select id="range"><option value="30">last 30 days</option><option value="90">last 3 months</option><option value="365" selected>last year</option><option value="1100">last 3 years</option></select></label>
+          <span class="muted">One column per date that has any result. Red = outside the lab's range (or the built-in fallback range). Click a group heading to hide or show it. Medications: S started or ordered, ● given, Δ changed, H held, X stopped.</span></div>
+        <div class="scroll" id="flow"></div>
+      </div>
+    </details>
+
+    <details class="card" id="sec-meds" open>
+      <summary><span>Medications by class</span><span class="muted" id="medsum"></span></summary>
+      <div class="body">
+        <div class="row"><b>Add or correct a medication</b>
+          <select id="m-class"></select><select id="m-drug"></select>
+          <select id="m-type"></select><input type="datetime-local" id="m-t"><input type="text" id="m-detail" placeholder="dose / note" size="20"><button class="primary" id="m-add">Add</button></div>
+        <div class="muted">Use this for drugs given outside this chart, or to mark a drug held or stopped. Open each class below for its drugs, history and monitoring reminders.</div>
+        <div id="meds"></div>
+      </div>
+    </details>
+
+    <details class="card" id="sec-endo" open>
+      <summary><span>Endoscopy</span><span class="muted" id="endosum"></span></summary>
+      <div class="body">
+        <div id="endo"></div>
+        <details class="sub"><summary>Add an endoscopy (done elsewhere or not found)</summary><div class="in">
+          <div class="row"><input type="datetime-local" id="e-t">
+            <select id="e-kind"><option>Colonoscopy</option><option>Flexible sigmoidoscopy</option><option>Colonoscopy with ileoscopy</option><option>Upper endoscopy (EGD)</option><option>Capsule endoscopy</option><option>Pouchoscopy</option><option>Other endoscopy</option></select>
+            <label class="inl">Mayo endoscopic <select id="e-mayo"><option value="">-</option><option>0</option><option>1</option><option>2</option><option>3</option></select></label>
+            <label class="inl">SES-CD <input type="number" min="0" max="56" id="e-ses"></label>
+            <label class="inl">Rutgeerts <select id="e-rut"><option value="">-</option><option>i0</option><option>i1</option><option>i2</option><option>i3</option><option>i4</option></select></label></div>
+          <div class="row"><input type="text" id="e-note" size="60" placeholder="Findings (extent, ulcers, strictures, biopsies...)"><button class="primary" id="e-add">Add endoscopy</button></div>
+        </div></details>
+      </div>
+    </details>
+
+    <details class="card" id="sec-sym" open>
+      <summary><span>Symptom scores (entered)</span><span class="muted" id="symsum"></span></summary>
+      <div class="body">
+        <div class="row"><input type="datetime-local" id="s-t">
+          <label class="inl">Stools per day <input type="number" min="0" id="s-stools"></label>
+          <label class="inl">Normal stools per day for this patient <input type="number" min="0" id="s-norm" value="1"></label></div>
+        <div class="row"><b>Ulcerative colitis (partial Mayo)</b>
+          <label class="inl">Rectal bleeding <select id="s-blood"><option value="">-</option><option value="0">0 None</option><option value="1">1 Streaks, less than half the time</option><option value="2">2 Obvious blood most of the time</option><option value="3">3 Blood alone passed</option></select></label>
+          <label class="inl">Physician global assessment <select id="s-pga"><option value="">-</option><option value="0">0 Normal</option><option value="1">1 Mild</option><option value="2">2 Moderate</option><option value="3">3 Severe</option></select></label></div>
+        <div class="row"><b>Crohn disease (Harvey-Bradshaw)</b>
+          <label class="inl">General well-being <select id="s-wb"><option value="">-</option><option value="0">0 Very well</option><option value="1">1 Slightly below par</option><option value="2">2 Poor</option><option value="3">3 Very poor</option><option value="4">4 Terrible</option></select></label>
+          <label class="inl">Abdominal pain <select id="s-pain"><option value="">-</option><option value="0">0 None</option><option value="1">1 Mild</option><option value="2">2 Moderate</option><option value="3">3 Severe</option></select></label>
+          <label class="inl">Abdominal mass <select id="s-mass"><option value="">-</option><option value="0">0 None</option><option value="1">1 Dubious</option><option value="2">2 Definite</option><option value="3">3 Definite and tender</option></select></label>
+          <label class="inl">Complications (count) <input type="number" min="0" max="8" id="s-comp" value="0" title="arthralgia, uveitis, erythema nodosum, aphthous ulcers, pyoderma gangrenosum, anal fissure, new fistula, abscess: 1 point each"></label></div>
+        <div class="row"><span id="s-prev" style="font-weight:700"></span><button class="primary" id="s-add">Add to flowsheet</button></div>
+        <div id="sym"></div>
+      </div>
+    </details>
+
+    <details class="card" id="sec-screen"><summary><span>Before or during biologic / JAK therapy: screening found in the chart</span></summary><div class="body" id="screen"></div></details>
+    <div class="panel noprint"><button class="primary" id="copy">Copy IBD summary note</button> <span class="muted" id="copied"></span></div>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+  <script src="data.js?v=20261030a"></script>
+  <script src="rules.js?v=20261030a"></script>
+  <script src="chart.js?v=20261030a"></script>
+  <script src="samples.js?v=20261030a"></script>
+  <script src="app.js?v=20261030a"></script>
+</body>
+</html>

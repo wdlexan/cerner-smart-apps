@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Launching…</title>
+  <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+</head>
+<body>
+  <p id="msg">Launching app, please wait…</p>
+  <script>
+    // Standalone use only. Inside the Hospitalist Toolkit this app is the "IBD flowsheet" tab and uses the toolkit's launch.
+    // To run it alone: register it in the Cerner Code Console, paste the client ID here.
+    // READ scopes: Patient, Observation, Condition, MedicationAdministration, MedicationRequest, Medication, Procedure, DiagnosticReport, DocumentReference.
+    // Redirect URI = the full address of this folder's index.html. Launch URI = the full address of this file.
+    const CLIENT_ID = "PASTE-THIS-APPS-CLIENT-ID-HERE";
+    function fail(text) { document.getElementById("msg").innerHTML = "<pre style='color:#b00020;white-space:pre-wrap'>" + text + "</pre>"; }
+    if (typeof FHIR === "undefined") {
+      fail("The FHIR client library failed to load (check internet/ad-blocker and the console).");
+    } else {
+      FHIR.oauth2.authorize({
+        clientId: CLIENT_ID,
+        scope: "launch openid fhirUser online_access patient/Patient.read patient/Observation.read patient/Condition.read patient/MedicationAdministration.read patient/MedicationRequest.read patient/Medication.read patient/Procedure.read patient/DiagnosticReport.read patient/DocumentReference.read",
+        redirectUri: "index.html"
+      }).catch((err) => fail("Launch failed: " + (err && err.message ? err.message : err)));
+    }
+  </script>
+</body>
+</html>
