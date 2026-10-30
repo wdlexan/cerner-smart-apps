@@ -12,6 +12,7 @@ const TOOLS = [
   { key: "meds",  label: "Meds review (Beers)",  path: "tools/meds/index.html" },
   { key: "risk",  label: "Risk screen",          path: "tools/risk/index.html" },
   { key: "opioid", label: "Opioid safety",       path: "tools/opioid/index.html" },
+  { key: "abx",   label: "Antibiotics",          path: "tools/abx/index.html" },
   { key: "cw",    label: "Choosing Wisely",      path: "tools/cw/index.html", keepHeader: true }, // its header holds the Look back control
   { key: "dx",    label: "Diagnosis check",      path: "tools/dx/index.html", keepHeader: true }, // its header holds the Look back control
   { key: "ed",    label: "ED screen",            path: "tools/ed/index.html" },

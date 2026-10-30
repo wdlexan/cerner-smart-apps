@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Antibiotics</title>
+<link rel="stylesheet" href="abx.css?v=20261029a">
+<script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+<script src="abx-rules.js?v=20261029a"></script>
+<script src="abx.js?v=20261029a"></script>
+<script src="abx-mock.js?v=20261029a"></script>
+</head>
+<body>
+<header>
+  <h1>Antibiotic review</h1>
+  <div id="patient">Loading patient…</div>
+</header>
+<main>
+  <div class="toolbar">
+    <span>Day count · duration · IV→PO · renal dosing</span>
+    <span class="tb-right">
+      <select id="case" hidden aria-label="Test patient"></select>
+      <button type="button" id="refresh">Refresh</button>
+    </span>
+  </div>
+  <div id="banner"></div>
+  <div id="ab-tab"></div>
+</main>
+<script>
+  // Open index.html?demo=1 to see the tab with made-up patients, no launch needed.
+  const DEMO = new URLSearchParams(location.search).has('demo');
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const showError = (msg) => { $('banner').innerHTML = '<div class="banner banner-error">' + esc(msg) + '</div>'; };
+  function patientLine(p) {
+    const n = (p.name || []).find((x) => x.use === 'official') || (p.name || [])[0] || {};
+    const name = n.text || [(n.given || []).join(' '), n.family].filter(Boolean).join(' ') || 'Unknown name';
+    let age = '';
+    if (p.birthDate) { const b = new Date(p.birthDate), d = new Date(); let a = d.getFullYear() - b.getFullYear();
+      if (d < new Date(d.getFullYear(), b.getMonth(), b.getDate())) a--; age = a + ' y'; }
+    return [name, age, p.gender, p.birthDate ? 'DOB ' + p.birthDate : ''].filter(Boolean).map(esc).join(' · ');
+  }
+
+  async function startDemo() {
+    $('banner').innerHTML = '<div class="banner banner-demo">Demo mode: made-up test patients, no FHIR server.</div>';
+    const sel = $('case'); sel.hidden = false;
+    sel.innerHTML = ABXMock.CASES.map((c) => `<option value="${c.key}">${esc(c.label)}</option>`).join('');
+    const want = new URLSearchParams(location.search).get('case');
+    if (want && [...sel.options].some((o) => o.value === want)) sel.value = want;
+    const run = () => {
+      const now = Date.now(), key = sel.value;
+      const u = new URL(location.href); u.searchParams.set('case', key); history.replaceState(null, '', u);
+      const data = ABXMock.make(now, key);
+      $('patient').innerHTML = patientLine(data.patient);
+      return ABX.mount($('ab-tab'), null, { now, loader: () => Promise.resolve(data) });
+    };
+    sel.onchange = run; $('refresh').onclick = run;
+    await run();
+  }
+
+  async function startSmart() {
+    let client;
+    try { client = await FHIR.oauth2.ready(); }
+    catch (e) {
+      $('patient').textContent = '';
+      showError('Not launched. Open this from the Hospitalist Toolkit or the Cerner sandbox. To preview with made-up patients, add ?demo=1 to this page’s address.\n\n' + (e && e.message ? e.message : e));
+      return;
+    }
+    client.patient.read().then((p) => { $('patient').innerHTML = patientLine(p); }).catch(() => { $('patient').textContent = 'Patient ' + client.patient.id; });
+    const run = () => ABX.mount($('ab-tab'), client, { patientId: client.patient.id }).catch((e) => showError('The screen stopped with an error: ' + (e && e.message ? e.message : e)));
+    $('refresh').onclick = run;
+    run();
+  }
+
+  const missing = [];
+  if (typeof ABX_RULES === 'undefined') missing.push('abx-rules.js');
+  if (typeof ABX === 'undefined') missing.push('abx.js');
+  if (typeof FHIR === 'undefined' && !DEMO) missing.push('the SMART library (fhir-client.js from cdn.jsdelivr.net)');
+  if (DEMO && typeof ABXMock === 'undefined') missing.push('abx-mock.js');
+  if (missing.length) showError('Couldn’t load: ' + missing.join(', ') + '.\nMake sure these files are in the same folder as index.html, then press Ctrl + F5.');
+  else (DEMO ? startDemo() : startSmart()).catch((e) => showError('The screen stopped with an error: ' + (e && e.message ? e.message : e)));
+</script>
+</body>
+</html>
