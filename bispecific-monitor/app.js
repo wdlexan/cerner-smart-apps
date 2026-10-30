@@ -53,23 +53,36 @@ function drawAlerts(S) {
   $("alerts").innerHTML = a.length ? a.map((x) => `<div class="alert ${x.level}"><b>${esc(x.title)}</b>${esc(x.text)}${x.src ? `<div class="src">${esc(x.src)}</div>` : ""}</div>`).join("") : '<div class="empty">No alerts from the data and entries so far.</div>';
   return a;
 }
-function mgmtCards(kind, grade, S, open) {
-  const secs = (kind === "crs" ? P.CRS : P.ICANS)[grade] || [];
-  return secs.filter((s) => !s.where || s.where === S.where).map((s, si) => `<div class="lab">${esc(s.title)}</div><ul class="chk">${s.items.map((it, i) => {
-    const key = `${kind}:${grade}:${si}:${i}`, on = !!state.checks[key];
-    return `<li class="${on ? "done" : ""}"><input type="checkbox" data-chk="${esc(key)}"${on ? " checked" : ""}><span class="t"><span class="tag ${it.k}">${it.k.toUpperCase()}</span>${esc(it.t)}</span></li>`;
-  }).join("")}</ul>`).join("");
+const KIND_TAG = { crs: "CRS", icans: "ICANS" };
+function planEntries(kind, grade, S) {
+  return (P[kind === "crs" ? "CRS" : "ICANS"][grade] || []).map((it, i) => ({ it, kind, key: `${kind}:${grade}:${i}` })).filter((x) => !x.it.w || x.it.w === S.where);
+}
+/* group entries by category (where / notify / stop / meds / labs / imaging / consults / monitoring); identical lines from CRS and ICANS are merged */
+function groupedHTML(entries) {
+  const out = [];
+  P.CATS.forEach(([cat, title]) => {
+    const seen = new Map();
+    entries.filter((e) => e.it.c === cat).forEach((e) => { const k = e.it.t; if (seen.has(k)) seen.get(k).kinds.add(e.kind); else seen.set(k, { e, kinds: new Set([e.kind]) }); });
+    if (!seen.size) return;
+    out.push(`<div class="lab">${esc(title)}</div><ul class="chk">${Array.from(seen.values()).map(({ e, kinds }) => {
+      const on = !!state.checks[e.key];
+      return `<li class="${on ? "done" : ""}${cat === "where" ? " where" : ""}"><input type="checkbox" data-chk="${esc(e.key)}"${on ? " checked" : ""}><span class="t">${Array.from(kinds).map((k) => `<span class="tag ${k}">${KIND_TAG[k]}</span>`).join("")}${esc(e.it.t)}</span></li>`;
+    }).join("")}</ul>`);
+  });
+  return out.join("");
 }
 function drawMgmt(S, c, n) {
-  const parts = [];
-  const gC = c.manageAs;
-  const labsNote = (k) => `<div class="lab">Tests</div><div>${esc(P.OTHER_TESTS[k])} Lab panel is listed below.</div>`;
-  if (gC >= 1) parts.push(`<details class="card" open><summary><span>CRS: manage as grade ${gC >= 3 ? "3 or 4" : gC}${c.provisional && !c.grade ? " (provisional)" : ""} &middot; ${S.where === "home" ? "patient at home" : "at a facility"}</span><span class="muted">${esc(P.META.crs)}</span></summary><div class="body">${mgmtCards("crs", Math.min(gC, 3), S, true)}${labsNote("crs")}</div></details>`);
-  else parts.push(`<details class="card"><summary><span>CRS: none now</span><span class="muted">${(R.doseInfo(S).inWindow ? "Inside the 48 h window: " : "") + "if fever ≥ 38.0 °C, see grade 1 below"}</span></summary><div class="body">${mgmtCards("crs", 1, S, false)}</div></details>`);
-  if (n.grade >= 1) parts.push(`<details class="card" open><summary><span>ICANS: grade ${n.grade}</span><span class="muted">${esc(P.META.icans)}</span></summary><div class="body">${mgmtCards("icans", n.grade, S, true)}${labsNote("icans")}</div></details>`);
-  else parts.push(`<details class="card"><summary><span>ICANS: none now</span><span class="muted">grade 1 actions shown if the ICE score falls</span></summary><div class="body">${mgmtCards("icans", 1, S, false)}</div></details>`);
-  const others = [1, 2, 3].filter((g) => g !== Math.min(gC, 3)).map((g) => `<details class="card"><summary><span>Reference: CRS grade ${g === 3 ? "3 or 4" : g}</span></summary><div class="body">${mgmtCards("crs", g, S, false)}</div></details>`).concat([1, 2, 3, 4].filter((g) => g !== n.grade).map((g) => `<details class="card"><summary><span>Reference: ICANS grade ${g}</span></summary><div class="body">${mgmtCards("icans", g, S, false)}</div></details>`));
-  $("mgmt").innerHTML = parts.join("") + `<details class="card" style="margin-top:8px"><summary><span>Reference: other grades</span></summary><div class="body" style="display:grid;gap:8px">${others.join("")}</div></details>`;
+  const pl = R.placement(S, c, n), gC = c.manageAs;
+  const banner = `<div class="place ${pl.key}"><div class="k">Where the patient should be</div><div class="big">${esc(pl.title)}</div><div>${esc(pl.text)}</div>${pl.reasons.length ? `<div class="s">Because: ${esc(pl.reasons.join("; "))}.</div>` : ""}${pl.considerICU ? '<div class="s"><b>Consider a higher level of care (ICU)</b> if there is no response to fluids and steroids, or the oxygen need rises.</div>' : ""}<div class="s">Ward, ER and ICU are the app's reading of the protocols' "health-care facility / admit / higher level of care / ER/ICU" wording; the protocols do not name a ward.</div></div>`;
+  const active = [];
+  if (gC >= 1) active.push(...planEntries("crs", Math.min(gC, 3), S));
+  if (n.grade >= 1) active.push(...planEntries("icans", n.grade, S));
+  const title = [gC >= 1 ? `CRS ${gC >= 3 ? "grade 3 or 4" : "grade " + gC}${c.provisional && !c.grade ? " (provisional)" : ""}` : "", n.grade >= 1 ? `ICANS grade ${n.grade}` : ""].filter(Boolean).join(" + ");
+  const card = active.length ? `<details class="card" open><summary><span>Action plan: ${esc(title)}</span><span class="muted">${S.where === "home" ? "patient at home" : "patient at a facility"}</span></summary><div class="body">${groupedHTML(active)}<div class="muted" style="margin-top:10px">Sources: ${esc(P.META.crs)}; ${esc(P.META.icans)}. Doses as printed: verify against the current protocols and your orders.</div></div></details>`
+    : `<div class="empty">No CRS or ICANS grade now, so there is no action plan. If fever ≥ 38.0 °C occurs, CRS grade 1 actions apply (see the reference below).</div>`;
+  const refs = [1, 2, 3].map((g) => `<details class="card"><summary><span>Reference: CRS grade ${g === 3 ? "3 or 4" : g}</span></summary><div class="body">${groupedHTML(planEntries("crs", g, S))}</div></details>`)
+    .concat([1, 2, 3, 4].map((g) => `<details class="card"><summary><span>Reference: ICANS grade ${g}</span></summary><div class="body">${groupedHTML(planEntries("icans", g, S))}</div></details>`));
+  $("mgmt").innerHTML = banner + card + `<details class="card" style="margin-top:8px"><summary><span>Reference: every grade, grouped the same way</span></summary><div class="body" style="display:grid;gap:8px">${refs.join("")}</div></details>`;
 }
 function drawDoses(S) {
   const d = R.doseInfo(S), rows = (arr) => arr.length ? arr.map((x) => `<tr><td>${fmt(x.t)}</td><td>${esc(x.label || x.name || "")}${x.detail ? " <span class=\"muted\">" + esc(x.detail) + "</span>" : ""}</td><td>${esc(x.src === "entered" ? "entered" : "chart")}</td><td>${ago(S.now - x.t)} ago</td></tr>`).join("") : '<tr><td colspan="4" class="muted">none</td></tr>';

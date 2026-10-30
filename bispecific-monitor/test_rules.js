@@ -106,4 +106,21 @@ ok("ICE 10, no ICANS: no ICE timer", du(() => {}).ice === undefined);
 // ---- merge
 ok("merge: entered value wins at same minute and newest first", (() => { const m = R.mergeReadings([{ t: now - 10 * M, temp: 37, sbp: 120 }, { t: now - 70 * M, temp: 36.8 }], [{ t: now - 10 * M + 5000, temp: 38.4 }]); return m.length === 2 && m[0].temp === 38.4 && m[0].sbp === 120; })());
 
+
+// ---- placement (where the patient should be)
+const pl = (mut, where) => { const S = base(); if (where) S.where = where; mut(S); return R.placement(S, R.crs(S), R.icans(S)); };
+ok("placement: nothing at home -> home", pl((S) => { S.readings = [rd(5, 37, 125, 97)]; }).key === "home");
+ok("placement: nothing at facility -> facility", pl((S) => { S.readings = [rd(5, 37, 125, 97)]; }, "facility").key === "facility");
+ok("placement: grade 1 at home, single fever -> home with hourly checks", (() => { const p = pl((S) => { S.readings = [rd(5, 38.3, 125, 97)]; }); return p.key === "home" && /hourly/i.test(p.title); })());
+ok("placement: grade 1 at facility -> ward", pl((S) => { S.readings = [rd(5, 38.3, 125, 97)]; }, "facility").key === "ward");
+ok("placement: home fever persists -> ER", pl((S) => { S.readings = [rd(70, 38.2, 125, 97), rd(5, 38.3, 125, 97)]; }).key === "er");
+ok("placement: grade 2 at home -> ER", pl((S) => { S.readings = [rd(5, 38.5, 90, 97)]; S.in.hypo = "fluid"; }).key === "er");
+ok("placement: grade 2 at facility -> ward, not ICU", pl((S) => { S.readings = [rd(5, 38.5, 90, 97)]; S.in.hypo = "fluid"; }, "facility").key === "ward");
+ok("placement: grade 2 + comorbid at facility -> ICU", pl((S) => { S.readings = [rd(5, 38.5, 90, 97)]; S.in.hypo = "fluid"; S.in.comorbid = true; }, "facility").key === "icu");
+ok("placement: grade 3 at facility -> ICU; at home -> ER then ICU", pl((S) => { S.readings = [rd(5, 39, 80, 90)]; S.in.hypo = "one"; }, "facility").key === "icu" && /ICU/.test(pl((S) => { S.readings = [rd(5, 39, 80, 90)]; S.in.hypo = "one"; }).title));
+ok("placement: ICANS grade 1 at facility -> ward", pl((S) => { S.in.ice = ice(4, 3, 1, 0, 0); }, "facility").key === "ward");
+ok("placement: ICANS grade 3 -> ICU", pl((S) => { S.in.seizure = "g3"; }, "facility").key === "icu");
+ok("placement: ICANS 2 + CRS 2 -> consider ICU flag", pl((S) => { S.readings = [rd(5, 38.5, 90, 97)]; S.in.hypo = "fluid"; S.in.loc = "voice"; }, "facility").considerICU === true);
+ok("placement: home symptom (dizziness) -> ER", pl((S) => { S.in.symptoms = { dizziness: true }; }).key === "er");
+
 console.log(`\n${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);

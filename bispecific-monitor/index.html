@@ -44,6 +44,11 @@
     table { border-collapse:collapse; width:100%; font-size:12.5px; } th, td { text-align:left; padding:4px 8px; border-bottom:1px solid var(--line); } th { color:var(--muted); font-weight:600; }
     td.hot { color:var(--r-ink); font-weight:700; } td.abn { color:var(--r-ink); font-weight:700; }
     .err { color:var(--r-ink); font-size:12.5px; } .empty { color:var(--muted); padding:12px; text-align:center; border:1px dashed var(--line); border-radius:10px; }
+    .place { border-radius:10px; padding:12px 16px; margin-bottom:10px; border:1px solid var(--line); }
+    .place .k { font-size:11px; letter-spacing:.05em; text-transform:uppercase; font-weight:600; opacity:.8; } .place .big { font-size:22px; font-weight:700; margin:2px 0; } .place .s { font-size:12.5px; margin-top:4px; opacity:.9; }
+    .place.home, .place.facility { background:var(--g-bg); color:var(--g-ink); } .place.ward { background:var(--a-bg); color:var(--a-ink); } .place.er, .place.icu { background:var(--r-bg); color:var(--r-ink); }
+    ul.chk li.where .t { font-weight:600; }
+    .tag.crs { background:var(--a-bg); color:var(--a-ink); } .tag.icans { background:var(--b-bg); color:var(--b-ink); }
     @media print { button, select, input, .noprint { display:none !important; } }
   </style>
 </head>

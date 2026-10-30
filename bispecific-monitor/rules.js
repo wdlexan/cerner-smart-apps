@@ -213,7 +213,33 @@
     return Array.from(map.values()).sort((a, b) => b.t - a.t);
   }
 
-  const API = { iceTotal, ICE_MAX, crs, icans, feverPattern, doseInfo, tociDose, stable4h, normalReading, alerts, dueTimes, mergeReadings, FEVER };
+  /* ---------- where the patient should be ----------
+     Pulled together from the protocols' "present to facility", "admit", "higher level of care" and "ER/ICU" wording.
+     INTERPRETATION: the protocols name "health-care facility", "admit", "higher level of care" and "ER/ICU"; they do not name a ward.
+     key: home | facility (no escalation, at a facility) | ward | er | icu. */
+  function placement(S, c, n) {
+    const home = S.where === "home", f = feverPattern(S.readings, S.now), reasons = [], sy = S.in.symptoms || {};
+    const rs = (S.readings || []).slice().sort((a, b) => b.t - a.t), latestSbp = (rs.find((r) => r.sbp != null) || {}).sbp, base = S.baseSbp;
+    let level = 0; // 0 none, 1 CRS grade 1, 2 admit or present, 3 ER/ICU
+    const up = (l, why) => { level = Math.max(level, l); if (why && !reasons.includes(why)) reasons.push(why); };
+    if (c.manageAs >= 3) up(3, c.grade >= 3 ? "CRS grade " + c.grade : "CRS grade 2 with comorbidities (managed as grade 3)");
+    if (n.grade >= 3) up(3, "ICANS grade " + n.grade);
+    if (c.manageAs === 2) up(2, c.grade === 1 ? "persistent CRS grade 1 (treated as grade 2)" : "CRS grade 2");
+    if (n.grade >= 1) up(2, "ICANS grade " + n.grade);
+    if (c.manageAs === 1) up(1, "CRS grade 1");
+    if (home && (f.persist || f.recur)) up(2, f.persist ? "fever for " + f.runMin + " min" : "fever recurred within 6 h");
+    if (home && latestSbp != null && base && latestSbp < base - 10 && latestSbp < 100) up(2, "SBP " + latestSbp + " (below baseline and under 100)");
+    if (home && ["orthostatic", "weakness", "dizziness", "dyspnea", "confusion"].some((k) => sy[k])) up(2, "new symptoms at home");
+    const considerICU = !!(level < 3 && ((n.grade === 2 && c.grade >= 2) || (c.manageAs === 2 && S.in.hypo === "fluid" && S.in.o2 === "low")));
+    let key, title, text;
+    if (level === 3) { key = home ? "er" : "icu"; title = home ? "ER now, then ICU" : "ICU / higher level of care now"; text = home ? "Emergency transport to the ER now; protocol requires emergent transfer to a higher level of care (ER/ICU)." : "Emergent transfer to ICU / higher level of care (ER/ICU required by protocol). Contact ICU."; }
+    else if (level === 2) { key = home ? "er" : "ward"; title = home ? "Come to the ER / health-care facility now" : "Ward: admitted, monitored bed"; text = home ? "Protocol: present urgently to a health-care facility (ER) for evaluation, then admission for monitoring." : "Stay admitted on a monitored bed with at least hourly vital signs and neuro checks."; }
+    else if (level === 1) { key = home ? "home" : "ward"; title = home ? "Home with hourly checks" : "Facility: monitored bed, hourly vital signs"; text = home ? "May stay at home with hourly temperature checks. Come in (ER / health-care facility) if fever persists over 1 hour or recurs within 6 hours, new orthostatic symptoms, weakness, confusion, dizziness or shortness of breath, or SBP drops." : "Stay in a monitored bed with hourly vital signs until symptoms resolve."; }
+    else { key = home ? "home" : "facility"; title = home ? "Home (Hospital at Home)" : "Facility: no escalation"; text = "No CRS or ICANS criteria met by the data and entries so far. Keep monitoring; re-grade after every new reading."; }
+    return { key, title, text, reasons, considerICU, level };
+  }
+
+  const API = { iceTotal, ICE_MAX, crs, icans, feverPattern, doseInfo, tociDose, stable4h, normalReading, alerts, dueTimes, mergeReadings, placement, FEVER };
   if (typeof window !== "undefined") window.BSRules = API;
   if (typeof module !== "undefined") module.exports = API;
 })();
