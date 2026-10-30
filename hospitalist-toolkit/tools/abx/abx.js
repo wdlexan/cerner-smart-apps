@@ -409,7 +409,7 @@
 
       if (root.ABXHistory && opts.historyLoader) root.ABXHistory.render(el.querySelector('#ab-hist'), opts.historyLoader, { patientId: opts.patientId, visitStart: res.enc ? res.enc.start : null, now: res.now });
       else el.querySelector('#ab-hist').remove();
-      if (root.ABXEcho) root.ABXEcho.render(el.querySelector('#ab-echo'), res.echoCtx, opts.patientId);
+      if (root.ABXEcho) root.ABXEcho.render(el.querySelector('#ab-echo'), Object.assign({}, res.echoCtx, { echoLoader: opts.echoLoader }), opts.patientId);
       else el.querySelector('#ab-echo').remove();
       const sel = el.querySelector('#ab-ind');
       sel.onchange = () => { chosen = sel.value; try { localStorage.setItem(key, chosen); } catch (e) { /* no storage */ } draw(); };
@@ -443,7 +443,8 @@
     if (opts.now) data.now = opts.now;
     const res = assess(data);
     render(el, res, { patientId: (data.patient && data.patient.id) || opts.patientId,
-      historyLoader: opts.historyLoader || (client ? historyLoader(client) : null) });
+      historyLoader: opts.historyLoader || (client ? historyLoader(client) : null),
+      echoLoader: opts.echoLoader || (client && root.ABXEchoReport ? root.ABXEchoReport.makeLoader(client) : null) });
     return res;
   }
 

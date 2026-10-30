@@ -90,7 +90,8 @@
       const pts = {}; if (org.score) R.echoScores[org.score].items.forEach(([k, p]) => { pts[k] = p; });
       el.innerHTML = `
         ${root.ABXIcons ? root.ABXIcons.head('echo', 'Echo needed?', 'bacteremia / candidemia') : '<h3>Echo needed? <small class="ab-sub">bacteremia / candidemia</small></h3>'}
-        ${ctx.echoes && ctx.echoes.length ? `<div class="ab-echo-done">Already this visit: ${ctx.echoes.map((e) => esc(e.text) + ' (' + esc(new Date(e.t).toLocaleDateString([], { month: 'short', day: 'numeric' })) + ')').join(' · ')}</div>` : '<div class="ab-echo-none">No echo found in the chart this visit.</div>'}
+        ${ctx.echoLoader && root.ABXEchoReport ? '<div class="ab-er-sec">Echo reports (last 12 months)</div><div id="ab-echo-reports"></div><div class="ab-er-sec">Does this patient need one?</div>'
+          : (ctx.echoes && ctx.echoes.length ? `<div class="ab-echo-done">Already this visit: ${ctx.echoes.map((e) => esc(e.text) + ' (' + esc(new Date(e.t).toLocaleDateString([], { month: 'short', day: 'numeric' })) + ')').join(' · ')}</div>` : '<div class="ab-echo-none">No echo found in the chart this visit.</div>')}
         <label class="ab-lbl">Organism in blood cultures
           <select id="ab-org">${R.echoOrganisms.map((o) => `<option value="${o.key}"${o.key === state.org ? ' selected' : ''}>${esc(o.label)}</option>`).join('')}</select>
         </label>
@@ -103,10 +104,14 @@
         ${res.org && res.org.key ? `<div class="ab-echo-res ab-er-${res.level}">
             <div class="ab-er-title">${esc(res.title)}</div>
             ${res.text ? `<div>${esc(res.text)}</div>` : ''}
+            ${res.level === 'red' && ctx.echoes && ctx.echoes.some((e) => /transthoracic|\btte\b/i.test(e.text)) && !ctx.echoes.some((e) => /esophag|\btee\b/i.test(e.text))
+              ? `<div class="ab-er-next">TTE already done (${esc(new Date(ctx.echoes.filter((e) => /transthoracic|\btte\b/i.test(e.text)).pop().t).toLocaleDateString([], { month: 'short', day: 'numeric' }))}) → next step: TEE${res.scoreName === 'VIRSTA' || res.title.includes('TEE') ? '' : ' if suspicion remains'}.</div>` : ''}
           </div>
           ${res.remind.length ? '<ul class="ab-remind">' + res.remind.map((r) => '<li>' + esc(r) + '</li>').join('') + '</ul>' : ''}
           ${res.scoreName === 'VIRSTA' ? '<p class="ab-fine">Unticking “community-acquired” lowers the score - only untick if the bacteremia started in hospital (&gt; 48 h after admission).</p>' : ''}` : ''}
         <p class="ab-fine">Scores: VIRSTA (Tubiana 2016), DENOVA (Berge 2019), HANDOC (Sunnerhagen 2018). DRAFT - check points and wording with ID before clinical use. Any new murmur, emboli, device or persistent bacteremia → echo regardless of score.</p>`;
+      const repEl = el.querySelector('#ab-echo-reports');
+      if (repEl) root.ABXEchoReport.render(repEl, ctx.echoLoader, patientId);
       el.querySelector('#ab-org').onchange = (e) => { state.org = e.target.value; save(); draw(); };
       el.querySelectorAll('input[data-k]').forEach((cb) => { cb.onchange = () => { state.ticks[cb.dataset.k] = cb.checked; save(); draw(); }; });
     };

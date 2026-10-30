@@ -4,14 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Antibiotics</title>
-<link rel="stylesheet" href="abx.css?v=20261029d">
+<link rel="stylesheet" href="abx.css?v=20261029e">
 <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
-<script src="abx-rules.js?v=20261029d"></script>
-<script src="abx-icons.js?v=20261029d"></script>
-<script src="abx.js?v=20261029d"></script>
-<script src="abx-echo.js?v=20261029d"></script>
-<script src="abx-history.js?v=20261029d"></script>
-<script src="abx-mock.js?v=20261029d"></script>
+<script src="abx-rules.js?v=20261029e"></script>
+<script src="abx-icons.js?v=20261029e"></script>
+<script src="abx.js?v=20261029e"></script>
+<script src="abx-echo.js?v=20261029e"></script>
+<script src="abx-history.js?v=20261029e"></script>
+<script src="abx-echoreport.js?v=20261029e"></script>
+<script src="abx-mock.js?v=20261029e"></script>
 </head>
 <body>
 <header>
@@ -55,7 +56,7 @@
       const u = new URL(location.href); u.searchParams.set('case', key); history.replaceState(null, '', u);
       const data = ABXMock.make(now, key);
       $('patient').innerHTML = patientLine(data.patient);
-      return ABX.mount($('ab-tab'), null, { now, loader: () => Promise.resolve(data), historyLoader: (days) => ABXMock.history(now, key, days) });
+      return ABX.mount($('ab-tab'), null, { now, loader: () => Promise.resolve(data), historyLoader: (days) => ABXMock.history(now, key, days), echoLoader: () => ABXMock.echoReports(now, key) });
     };
     sel.onchange = run; $('refresh').onclick = run;
     await run();

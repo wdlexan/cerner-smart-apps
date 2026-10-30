@@ -101,7 +101,34 @@
     return new Promise((res) => setTimeout(() => res({ medRequests: d.medRequests.concat(prior), medAdmins: d.medAdmins.concat(pastAdmin), medNames: {} }), 250));
   }
 
-  const ABXMock = { history, CASES: CASES.map(({ key, label }) => ({ key, label })),
+  // Made-up echo report text for the report reader
+  const ECHO_TEXT = {
+    sab: [[2, 'Echocardiogram transthoracic (TTE)', 'Dr. Test Cardiology', `TRANSTHORACIC ECHOCARDIOGRAM
+Indication: MSSA bacteremia.
+Findings:
+Left ventricle normal in size with normal wall thickness. LVEF 55-60%. No regional wall motion abnormalities.
+Aortic valve: trileaflet, calcified. Moderate aortic stenosis (mean gradient 24 mmHg). Mild aortic regurgitation.
+Mitral valve: mildly thickened. Trace mitral regurgitation. No vegetation seen.
+Tricuspid valve: mild tricuspid regurgitation. RVSP 34 mmHg.
+Right ventricular size and systolic function are normal.
+No pericardial effusion.
+
+Conclusions:
+1. Normal LV size and systolic function, EF 55-60%.
+2. Moderate aortic stenosis with mild aortic regurgitation.
+3. No vegetation seen. Image quality limited; TTE cannot exclude endocarditis - consider TEE if clinically indicated.
+
+Electronically signed by Dr. Test Cardiology`]],
+    efae: [[200, 'Echocardiogram transthoracic (TTE)', 'Dr. Test Cardiology', `TTE (outpatient, for murmur)
+LVEF estimated at 50%. Mild mitral regurgitation. Sclerotic aortic valve without stenosis. No pericardial effusion.
+Impression: Low-normal LV function. Mild MR. Aortic sclerosis.`]]
+  };
+  function echoReports(now, key) {
+    const list = (ECHO_TEXT[key] || []).map(([ago, title, author, text]) => ({ t: now - ago * D, title, author, status: 'final', text }));
+    return new Promise((res) => setTimeout(() => res(list), 200));
+  }
+
+  const ABXMock = { history, echoReports, CASES: CASES.map(({ key, label }) => ({ key, label })),
     make: (now, key) => { const c = CASES.find((x) => x.key === key) || CASES[0]; return Object.assign({ now, failed: [], medNames: {} }, c.make(now)); } };
   if (typeof module !== 'undefined' && module.exports) module.exports = ABXMock; else root.ABXMock = ABXMock;
 })(typeof window !== 'undefined' ? window : globalThis);

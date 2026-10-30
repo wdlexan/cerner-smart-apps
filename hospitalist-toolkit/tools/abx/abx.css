@@ -144,3 +144,20 @@ tr.ab-lab td { color: #555; font-size: 12px; background: #fafbfc; }
 table.ab-hist td { vertical-align: top; padding: 5px 8px; }
 table.ab-hist td small { color: #666; }
 table.ab-hist tr.on td { background: #f6f9fe; }
+
+/* echo report reader */
+.ab-er-sec { font-size: 12px; font-weight: 700; color: #b3261e; text-transform: uppercase; letter-spacing: .04em; margin: 4px 0 6px; }
+.ab-er-sec ~ .ab-er-sec { margin-top: 14px; border-top: 1px solid #eee; padding-top: 10px; }
+.ab-er-report { border: 1px solid #e6e9ee; border-radius: 8px; padding: 8px 12px; margin-bottom: 8px; background: #fff; }
+.ab-er-report.older { background: #fafbfc; }
+.ab-er-top { font-size: 13px; } .ab-er-top small { color: #666; }
+.ab-er-type { display: inline-block; font-size: 11px; font-weight: 700; color: #fff; background: #b3261e; border-radius: 4px; padding: 1px 6px; }
+.ab-er-chips { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; }
+.ab-chip { font-size: 12px; border-radius: 12px; padding: 2px 9px; background: #eef1f4; color: #333; }
+.ab-chip-ok { background: #eaf6ec; color: #1f6b28; } .ab-chip-amber { background: #fff3d6; color: #7a4f00; }
+.ab-chip-red { background: #fdecec; color: #a31515; } .ab-chip-info { background: #eef1f4; color: #333; }
+.ab-er-ie { font-size: 13px; font-weight: 700; color: #a31515; margin: 4px 0; }
+.ab-er-concl { font-size: 13px; background: #f7f8fa; border-left: 3px solid #b3261e; padding: 6px 10px; margin: 6px 0; }
+.ab-er-report details summary { font-size: 12px; color: #0b6bcb; cursor: pointer; }
+.ab-er-full { white-space: pre-wrap; font-size: 12px; max-height: 320px; overflow: auto; background: #fbfcfd; border: 1px solid #e6e9ee; border-radius: 6px; padding: 8px; }
+.ab-er-next { margin-top: 4px; font-weight: 700; }
