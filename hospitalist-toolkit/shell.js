@@ -4,7 +4,7 @@
    A tab is only loaded the first time you open it, and stays loaded when you switch away. */
 
 // To add a tool: put its files in tools/<folder>/ and add a line here.
-const TOOL_V = "20261030a"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
+const TOOL_V = "20261030b"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
 const TOOLS = [
   { key: "today", label: "Today (what changed)", path: "tools/today/index.html" },
   { key: "labs",  label: "Labs",                 path: "tools/labs/index.html" },
@@ -54,6 +54,7 @@ async function start(client) {
   }
   try { sessionStorage.removeItem("toolkit-target"); } catch (e) {}
 
+  window.TK = { patientId: client.patient.id }; // used by the PDF import button
   try { $("patient").textContent = describe(await client.patient.read()); }
   catch (e) { $("patient").textContent = "Patient " + client.patient.id; }
   $("msg").remove();
