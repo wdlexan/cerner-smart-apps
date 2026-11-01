@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Liver scores (MELD, Child-Pugh)</title>
+  <title>Liver: scores, kidneys, ascites, nutrition, VTE</title>
   <style>
     :root { --bg:#f5f7fa; --card:#fff; --ink:#1f2933; --muted:#5f6c7b; --accent:#0b6bcb; --line:#dde3ea;
             --r-bg:#fde8e8; --r-ink:#9b1c1c; --a-bg:#fff1d6; --a-ink:#8a5200; --b-bg:#e3eefc; --b-ink:#0b4a99; --g-bg:#e4f4ea; --g-ink:#1d6b3a; --warn-bg:#fff4e5; --warn-line:#f0c27b; }
@@ -41,16 +41,25 @@
     .scroll { overflow-x:auto; }
     .cp td:first-child { white-space:normal; }
     svg text { fill:var(--muted); font-size:11px; }
+    .chip { display:inline-block; padding:1px 8px; border-radius:10px; font-size:12px; font-weight:600; }
+    .c-yes { background:var(--g-bg); color:var(--g-ink); } .c-likely { background:var(--b-bg); color:var(--b-ink); } .c-no { background:var(--r-bg); color:var(--r-ink); } .c-unknown { background:var(--a-bg); color:var(--a-ink); }
+    .plan h3 { font-size:14px; margin:12px 0 4px; } .plan ul { margin:4px 0 8px 18px; padding:0; } .plan li { margin:3px 0; }
+    .result { border-radius:8px; padding:8px 12px; font-weight:600; margin:8px 0; }
+    .grid2 { display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:10px 18px; }
+    .kv { display:grid; grid-template-columns:auto 1fr; gap:3px 12px; } .kv div:nth-child(odd) { color:var(--muted); }
+    input[type=number] { width:80px; } input.wide { width:220px; }
+    td.wrap { white-space:normal; min-width:220px; }
+    .src { font-size:12px; color:var(--muted); margin-top:8px; }
     @media print { .noprint { display:none; } }
   </style>
 </head>
 <body>
   <header>
-    <h1>Liver scores: MELD-Na, MELD 3.0, Child-Pugh</h1>
+    <h1>Liver: MELD, Child-Pugh, kidneys, HRS, ascites, nutrition, VTE</h1>
     <div class="sub">Calculated from the chart's latest labs. Read-only.</div>
   </header>
   <main>
-    <div class="banner"><b>Decision-support draft. It orders nothing.</b> Formulas, cut-offs and lab matching were written by Claude and have <b>not been verified</b>: check them against the OPTN/UNOS MELD definitions and your local references before real use. Labs are found by code and <b>name</b>, so a result not shown may still be in the chart. Ascites and encephalopathy grades are your clinical judgment and stay in this page only. Use made-up or Cerner sandbox patients until Island Health approves real data.</div>
+    <div class="banner"><b>Decision-support draft. It orders nothing.</b> Formulas, cut-offs and lab matching were written by Claude and have <b>not been verified</b>: check them against the OPTN/UNOS MELD definitions and your local references before real use. Labs are found by code and <b>name</b>, so a result not shown may still be in the chart. Ascites and encephalopathy grades, checklist answers and anything you type are your clinical judgment and stay in this page only (lost on reload). Use made-up or Cerner sandbox patients until Island Health approves real data.</div>
 
     <details class="card" open>
       <summary><span>Patient and clinical grades</span><span class="muted" id="ptsum"></span></summary>
@@ -89,13 +98,68 @@
       <div class="body"><div id="spark"></div><div class="scroll" id="trend"></div></div>
     </details>
 
+    <details class="card" open>
+      <summary><span>Kidneys and blood pressure</span><span class="muted" id="kidsum"></span></summary>
+      <div class="body">
+        <div class="row"><label class="inl">Baseline creatinine (optional, umol/L) <input type="number" id="basecr" min="20" max="1500"></label>
+          <span class="muted">Leave blank to use the lowest value in the past 3 months (ICA-ADQI 2024).</span></div>
+        <div class="grid2"><div id="kidney"></div><div id="bp"></div></div>
+      </div>
+    </details>
+
+    <details class="card" open id="sec-hrs">
+      <summary><span>Hepatorenal syndrome (HRS-AKI) and treatment plan</span><span class="muted" id="hrssum"></span></summary>
+      <div class="body"><div id="hrs"></div><div class="plan" id="plan"></div>
+        <div class="src">Criteria: ICA-ADQI 2024 consensus (no 48 h albumin challenge needed; baseline = lowest creatinine in 3 months). Doses: ICA-ADQI 2024 and AASLD 2021. Unverified summary: check before use.</div></div>
+    </details>
+
+    <details class="card" open>
+      <summary><span>Ascitic fluid and ascites treatment</span><span class="muted" id="fluidsum"></span></summary>
+      <div class="body">
+        <div class="scroll" id="taps"></div>
+        <details style="margin:8px 0"><summary class="muted">Add a paracentesis result (done elsewhere or not found)</summary>
+          <div class="row"><input type="datetime-local" id="f-t">
+            <label class="inl">WBC /uL <input type="number" id="f-wbc"></label><label class="inl">Neutrophils % <input type="number" id="f-pct"></label>
+            <label class="inl">or PMN /uL <input type="number" id="f-pmn"></label><label class="inl">RBC /uL <input type="number" id="f-rbc"></label></div>
+          <div class="row"><label class="inl">Albumin g/L <input type="number" id="f-alb"></label><label class="inl">Protein g/L <input type="number" id="f-prot"></label>
+            <label class="inl">Glucose mmol/L <input type="number" id="f-glu" step="0.1"></label><label class="inl">LDH U/L <input type="number" id="f-ldh"></label>
+            <input type="text" id="f-cult" class="wide" placeholder="Culture / Gram stain result"><button class="primary" id="f-add">Add</button></div>
+        </details>
+        <div class="row"><label class="inl">Litres removed at the last large-volume tap <input type="number" id="lvp" step="0.5" min="0"></label><span id="lvpout"></span></div>
+        <div class="plan" id="fluidplan"></div>
+        <div class="src">AASLD 2021 ascites, SBP and HRS guidance; EASL 2018 for SBP antibiotic duration. Unverified summary: check before use and follow the Island Health antibiogram.</div>
+      </div>
+    </details>
+
+    <details class="card" open>
+      <summary><span>Nutrition</span><span class="muted" id="nutsum"></span></summary>
+      <div class="body">
+        <div class="row"><label class="inl">Fluid to subtract for dry weight <select id="drylevel"><option value="auto">From the ascites grade</option><option value="0">No ascites</option><option value="1">Mild ascites (-5%)</option><option value="2">Moderate ascites (-10%)</option><option value="3">Tense ascites (-15%)</option></select></label>
+          <label class="inl"><input type="checkbox" id="edema"> Bilateral leg edema (-5%)</label></div>
+        <div id="nut"></div>
+        <div class="src">AASLD 2021 malnutrition, frailty and sarcopenia guidance (obese targets from its table; dry-weight percentages are the commonly used estimate). Unverified summary.</div>
+      </div>
+    </details>
+
+    <details class="card" open>
+      <summary><span>VTE prophylaxis</span><span class="muted" id="vtesum"></span></summary>
+      <div class="body">
+        <div class="row"><label class="inl"><input type="checkbox" id="bleeding"> Active bleeding, or variceal bleed not yet controlled</label></div>
+        <div class="row" id="padua"></div>
+        <div id="vte"></div>
+        <div class="src">AGA 2021: hospitalised patients with cirrhosis who meet standard criteria should get standard prophylaxis; a raised INR does not protect against clots. Padua score for risk. Platelet cut-off is local practice, not guideline. Unverified summary.</div>
+      </div>
+    </details>
+
     <div class="card noprint" style="padding:12px 16px"><button class="primary" id="copy">Copy liver score summary</button> <span class="muted" id="copied"></span></div>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
-  <script src="scores.js?v=20261031a"></script>
-  <script src="chart.js?v=20261031a"></script>
-  <script src="samples.js?v=20261031a"></script>
-  <script src="app.js?v=20261031a"></script>
+  <script src="scores.js?v=20261031b"></script>
+  <script src="rules.js?v=20261031b"></script>
+  <script src="chart.js?v=20261031b"></script>
+  <script src="samples.js?v=20261031b"></script>
+  <script src="clinical.js?v=20261031b"></script>
+  <script src="app.js?v=20261031b"></script>
 </body>
 </html>

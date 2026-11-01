@@ -47,4 +47,61 @@ eq("CP range lo", c.lo, 5); eq("CP range hi", c.hi, 9); eq("CP incomplete", c.sc
 eq("bili mg/dL", Math.round(S.toSI.bili(2, "mg/dL") * 10) / 10, 34.2);
 eq("creat mg/dL", Math.round(S.toSI.creat(1, "mg/dL") * 10) / 10, 88.4);
 eq("alb g/dL", S.toSI.alb(3.2, "g/dL"), 32);
+
+// ---------- rules ----------
+const R = require("../tools/liver/rules.js"), D = 864e5, now = Date.now();
+const near = (name, got, want, tol) => { const ok = got != null && Math.abs(got - want) <= (tol || 0.5); if (!ok) fail++; console.log((ok ? "ok   " : "FAIL ") + name + ": got " + got + ", want ~" + want); };
+// eGFR: CKD-EPI 2021, creatinine 88.4 umol/L (1.0 mg/dL), 60 y male -> about 86
+near("eGFR 60M Cr 1.0", R.egfr(88.4, 60, "male"), 86, 1.5);
+near("back-calc gives eGFR 75", R.egfr(R.crForEgfr(75, 60, "male"), 60, "male"), 75, 0.01);
+// Cockcroft-Gault: (140-60)*70*1.23/100 = 68.9
+near("CrCl", R.crcl(100, 60, 70, "male"), 68.9, 0.1);
+// AKI: baseline lowest in 3 months = 74; now 182 -> 2.46x stage 2
+let a = R.aki([{ t: now - 60 * D, v: 74 }, { t: now - 5 * D, v: 118 }, { t: now - 3 * D, v: 145 }, { t: now, v: 182 }]);
+eq("AKI yes", a.isAki, true); eq("AKI baseline", a.base, 74); eq("AKI stage", a.stage, 2);
+// stage 1A: 80 -> 110 in 24 h (rise 30, ratio 1.375), below 133
+a = R.aki([{ t: now - 30 * D, v: 80 }, { t: now - 1 * D, v: 80 }, { t: now, v: 110 }]);
+eq("AKI 1A by 48h rise", a.sub, "1A");
+// no AKI: 80 -> 100 (ratio 1.25, rise 20)
+eq("no AKI", R.aki([{ t: now - 10 * D, v: 80 }, { t: now, v: 100 }]).isAki, false);
+// stage 3 by creatinine >= 353.6 with a rise
+eq("AKI stage 3 by level", R.aki([{ t: now - 20 * D, v: 250 }, { t: now - 1 * D, v: 250 }, { t: now, v: 360 }]).stage, 3);
+// manual baseline wins
+eq("manual baseline", R.aki([{ t: now - 20 * D, v: 60 }, { t: now, v: 130 }], { manualBaseline: 100 }).isAki, false);
+// FENa: uNa 10, uCr 8 mmol/L, pNa 130, pCr 180 -> 10*180/(130*8000)*100 = 0.173%
+near("FENa", R.fena(10, 8, "mmol/L", 130, 180), 0.173, 0.001);
+// MAP
+eq("MAP", Math.round(R.mapOf(120, 60)), 80);
+// fluid: WBC 900, 60% PMN = 540 -> SBP; RBC 25000 corrects by 100 -> 440
+let fl = R.fluid({ wbc: 900, pmnPct: 60, rbc: 25000, alb: 8, prot: 9, culture: "No growth" }, { alb: 28 });
+eq("SBP", fl.sbp, true); near("PMN corrected", fl.corr, 440, 0.1); eq("SAAG 20", fl.saag, 20); eq("portal", fl.portal, true); eq("low protein", fl.lowProt, true);
+// PMN 200 + culture positive -> bacterascites
+fl = R.fluid({ pmn: 200, culture: "Escherichia coli isolated" }, {});
+eq("bacterascites", fl.bacterascites, true);
+// secondary peritonitis: PMN 3000, protein 22, glucose 1.5, LDH 400
+fl = R.fluid({ pmn: 3000, prot: 22, glu: 1.5, ldh: 400 }, { ldhUln: 225 });
+eq("secondary (Runyon)", fl.secondary, true);
+// albumin doses
+eq("SBP albumin d1 70 kg", R.albuminSbp(70).d1, 105); eq("SBP albumin d3", R.albuminSbp(70).d3, 70);
+eq("LVP 8 L", R.albuminLvp(8).lo, 50); eq("LVP 8 L hi", R.albuminLvp(8).hi, 65); eq("LVP 4 L none", R.albuminLvp(4), null);
+// primary prophylaxis
+eq("prophylaxis yes", R.sbpProphylaxis({ prot: 10, na: 128 }).meets, true);
+eq("prophylaxis no", R.sbpProphylaxis({ prot: 10, na: 135, cr: 80 }).meets, false);
+eq("prophylaxis protein high", R.sbpProphylaxis({ prot: 20, na: 120 }), null);
+// HRS: all yes
+let h = R.hrs({ ascites: true, aki: R.aki([{ t: now - 60 * D, v: 74 }, { t: now, v: 182 }]), volGiven: true, crAtVol: 170, hoursSinceVol: 30, altCauses: [], manual: { noalt: "yes" } });
+eq("HRS met", h.result, "yes");
+// improved after albumin -> not HRS
+h = R.hrs({ ascites: true, aki: R.aki([{ t: now - 60 * D, v: 74 }, { t: now, v: 130 }]), volGiven: true, crAtVol: 170, hoursSinceVol: 30, altCauses: [] });
+eq("HRS excluded by response", h.result, "no");
+// nutrition: 80 kg, moderate ascites (-10%) -> dry 72; 170 cm BMI 24.9; 35 kcal/kg = 2520 -> 2500; protein 86-108 -> 85-110
+let n = R.nutrition({ wt: 80, ht: 170, ascitesLevel: 2, sex: "male" });
+near("dry weight", n.dry, 72, 0.01); eq("kcal", n.kcal[0], 2500); eq("protein lo", n.prot[0], 85); eq("protein hi", n.prot[1], 110);
+// VTE
+eq("Padua", R.padua({ mobility: true, age: true, infection: true }), 5);
+eq("VTE start", R.vte({ padua: 5, plt: 90, crcl: 60 }).state, "start");
+eq("VTE low plt", R.vte({ padua: 5, plt: 40 }).state, "mechanical");
+eq("VTE low risk", R.vte({ padua: 2, plt: 150 }).state, "low");
+eq("VTE renal dose", /enoxaparin 30/.test(R.vte({ padua: 5, plt: 150, crcl: 25 }).head), true);
+eq("VTE therapeutic", R.vte({ therapeutic: "apixaban" }).state, "na");
 console.log(fail ? fail + " FAILED" : "all passed"); process.exit(fail ? 1 : 0);

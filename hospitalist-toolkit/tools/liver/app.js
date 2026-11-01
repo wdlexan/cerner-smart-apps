@@ -1,12 +1,12 @@
 /* Liver scores page. Read-only from the chart; the grades you choose stay in this page. UNVERIFIED draft. */
-const S = window.LiverScores, C = window.LiverChart, DAY = C.DAY, MAX_AGE = 14 * DAY;
+const S = window.LiverScores, R = window.LiverRules, C = window.LiverChart, DAY = C.DAY, MAX_AGE = 14 * DAY;
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const fmtD = (t) => new Date(t).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 const fmtDT = (t) => new Date(t).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 const ago = (t) => { const d = (Date.now() - t) / DAY; return d < 1 ? Math.max(1, Math.round(d * 24)) + " h ago" : Math.round(d) + " d ago"; };
 const r1 = (v) => (Math.abs(v) >= 100 ? Math.round(v) : Math.round(v * 10) / 10);
-const state = { f: null };
+const state = { f: null, manualTaps: [], hrsManual: {}, padua: null };
 
 function inputs(f, t) {
   const v = C.at(f, t, MAX_AGE);
@@ -21,7 +21,7 @@ const meldCls = (m) => (m == null ? "" : m < 15 ? "t0" : m < 20 ? "t1" : m < 30 
 
 function draw() {
   const f = state.f;
-  if (!f) { $("tiles").innerHTML = ""; $("alerts").innerHTML = '<div class="muted">No patient loaded.</div>'; ["inputs", "cp", "trend", "spark", "hints"].forEach((id) => ($(id).innerHTML = "")); $("alertsum").textContent = ""; return; }
+  if (!f) { $("tiles").innerHTML = ""; $("alerts").innerHTML = '<div class="muted">No patient loaded.</div>'; ["inputs", "cp", "trend", "spark", "hints", "kidney", "bp", "hrs", "plan", "taps", "fluidplan", "nut", "padua", "vte", "lvpout"].forEach((id) => ($(id).innerHTML = "")); ["kidsum", "hrssum", "fluidsum", "nutsum", "vtesum"].forEach((id) => ($(id).textContent = "")); $("alertsum").textContent = ""; return; }
   const now = Date.now(), { v, x } = inputs(f, now), { m, m3, cp } = results(x);
 
   // tiles
@@ -71,6 +71,7 @@ function draw() {
 
   drawAlerts(f, v, x, m, m3, cp, now);
   drawTrend(f);
+  drawClinical(f, v, x, cp, now);
 }
 
 function drawAlerts(f, v, x, m, m3, cp, now) {
@@ -122,6 +123,18 @@ function drawTrend(f) {
     <text x="30" y="${H - 2}">${fmtD(t0)}</text><text x="${W - 10}" y="${H - 2}" text-anchor="end">${fmtD(t1)}</text></svg>`;
 }
 
+
+/* add a paracentesis result by hand */
+$("f-add").onclick = () => {
+  const num = (id) => { const n = parseFloat($(id).value); return isFinite(n) ? n : null; };
+  const t = $("f-t").value ? new Date($("f-t").value).getTime() : Date.now();
+  const tap = { t, src: "manual", site: "ascitic", wbc: num("f-wbc"), pmnPct: num("f-pct"), pmn: num("f-pmn"), rbc: num("f-rbc"), alb: num("f-alb"), prot: num("f-prot"), glu: num("f-glu"), ldh: num("f-ldh"), culture: $("f-cult").value.trim() };
+  if (tap.wbc == null && tap.pmn == null && tap.alb == null && tap.prot == null && !tap.culture) return;
+  state.manualTaps.push(tap);
+  ["f-t", "f-wbc", "f-pct", "f-pmn", "f-rbc", "f-alb", "f-prot", "f-glu", "f-ldh", "f-cult"].forEach((id) => ($(id).value = ""));
+  draw();
+};
+
 /* copy a short summary for a note */
 $("copy").onclick = async () => {
   const f = state.f; if (!f) return;
@@ -131,13 +144,18 @@ $("copy").onclick = async () => {
     "MELD-Na " + (m && m.meldNa != null ? m.meldNa : "n/a") + "; MELD 3.0 " + (m3 ? m3.meld3 : "n/a") + "; MELD " + (m ? m.meld : "n/a") + (x.dialysis ? " (dialysis: creatinine set to max)" : ""),
     "Child-Pugh " + (cp ? (cp.complete ? cp.score + ", class " + cp.cls : cp.lo + "-" + cp.hi + " (ascites/encephalopathy not graded)") : "n/a"),
     "Bilirubin " + L("bili", "umol/L") + "; creatinine " + L("creat", "umol/L") + "; INR " + L("inr") + "; Na " + L("na", "mmol/L") + "; albumin " + L("alb", "g/L"),
-    f.meds.warfarin ? "Note: on warfarin, INR-based scores overstate severity." : ""].filter(Boolean).join("\n");
+    f.meds.warfarin ? "Note: on warfarin, INR-based scores overstate severity." : "",
+    $("kidsum").textContent ? "Kidneys: " + $("kidsum").textContent + ($("hrssum").textContent && $("hrssum").textContent !== "not applicable" ? "; " + $("hrssum").textContent : "") : "",
+    $("fluidsum").textContent ? "Ascitic fluid: " + $("fluidsum").textContent : "",
+    $("nutsum").textContent ? "Nutrition targets: " + $("nutsum").textContent : "",
+    $("vtesum").textContent ? "VTE prophylaxis: " + $("vtesum").textContent : ""].filter(Boolean).join("\n");
   try { await navigator.clipboard.writeText(txt); $("copied").textContent = "Copied."; } catch (e) { $("copied").textContent = "Could not copy: select and copy by hand."; }
 };
 
 function load(raw, note, errors, preset) {
   state.f = raw ? C.parse(raw) : null;
   preset = preset || {};
+  state.manualTaps = []; state.hrsManual = {}; state.padua = null; $("basecr").value = ""; $("lvp").value = ""; $("bleeding").checked = false; $("edema").checked = !!preset.edema; $("drylevel").value = "auto";
   $("ascites").value = preset.ascites || ""; $("he").value = preset.he || ""; $("cholestatic").checked = !!preset.cholestatic;
   $("sex").value = state.f && ["female", "male"].includes(state.f.sex) ? state.f.sex : "";
   $("dialysis").checked = !!(state.f && state.f.dialysis.length >= 2);
@@ -147,7 +165,7 @@ function load(raw, note, errors, preset) {
   $("errs").innerHTML = errors && errors.length ? "Could not read: " + errors.map(esc).join("; ") + ". Check the scopes in the Code Console." : "";
   draw();
 }
-["ascites", "he", "sex", "dialysis", "cholestatic"].forEach((id) => ($(id).onchange = draw));
+["ascites", "he", "sex", "dialysis", "cholestatic", "basecr", "lvp", "bleeding", "edema", "drylevel"].forEach((id) => ($(id).onchange = draw)); $("lvp").oninput = draw;
 $("clear").onclick = () => { $("testsel").value = ""; load(null, "Open from Cerner to read the chart, or pick a made-up patient:"); };
 const SAMPLES = window.LIVER_SAMPLES || [];
 SAMPLES.forEach((p, i) => { const o = document.createElement("option"); o.value = i; o.textContent = p.label; $("testsel").appendChild(o); });
