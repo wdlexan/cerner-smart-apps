@@ -151,15 +151,20 @@
       </div>
     </details>
 
-    <div class="card noprint" style="padding:12px 16px"><button class="primary" id="copy">Copy liver score summary</button> <span class="muted" id="copied"></span></div>
+    <details class="card noprint" open id="sec-note">
+      <summary><span>Note draft</span><span class="muted">check, edit, then paste into your PowerChart note</span></summary>
+      <div class="body" id="note"></div>
+    </details>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
-  <script src="scores.js?v=20261031b"></script>
-  <script src="rules.js?v=20261031b"></script>
-  <script src="chart.js?v=20261031b"></script>
-  <script src="samples.js?v=20261031b"></script>
-  <script src="clinical.js?v=20261031b"></script>
-  <script src="app.js?v=20261031b"></script>
+  <script src="scores.js?v=20261101c"></script>
+  <script src="rules.js?v=20261101c"></script>
+  <script src="chart.js?v=20261101c"></script>
+  <script src="samples.js?v=20261101c"></script>
+  <script src="clinical.js?v=20261101c"></script>
+  <script src="../../notedraft.js?v=20261101c"></script>
+  <script src="note.js?v=20261101c"></script>
+  <script src="app.js?v=20261101c"></script>
 </body>
 </html>

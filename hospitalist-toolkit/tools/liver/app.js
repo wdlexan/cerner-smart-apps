@@ -21,7 +21,7 @@ const meldCls = (m) => (m == null ? "" : m < 15 ? "t0" : m < 20 ? "t1" : m < 30 
 
 function draw() {
   const f = state.f;
-  if (!f) { $("tiles").innerHTML = ""; $("alerts").innerHTML = '<div class="muted">No patient loaded.</div>'; ["inputs", "cp", "trend", "spark", "hints", "kidney", "bp", "hrs", "plan", "taps", "fluidplan", "nut", "padua", "vte", "lvpout"].forEach((id) => ($(id).innerHTML = "")); ["kidsum", "hrssum", "fluidsum", "nutsum", "vtesum"].forEach((id) => ($(id).textContent = "")); $("alertsum").textContent = ""; return; }
+  if (!f) { $("tiles").innerHTML = ""; $("alerts").innerHTML = '<div class="muted">No patient loaded.</div>'; ["inputs", "cp", "trend", "spark", "hints", "kidney", "bp", "hrs", "plan", "taps", "fluidplan", "nut", "padua", "vte", "lvpout"].forEach((id) => ($(id).innerHTML = "")); ["kidsum", "hrssum", "fluidsum", "nutsum", "vtesum"].forEach((id) => ($(id).textContent = "")); $("alertsum").textContent = ""; LIVER_NOTE.update(); return; }
   const now = Date.now(), { v, x } = inputs(f, now), { m, m3, cp } = results(x);
 
   // tiles
@@ -72,6 +72,7 @@ function draw() {
   drawAlerts(f, v, x, m, m3, cp, now);
   drawTrend(f);
   drawClinical(f, v, x, cp, now);
+  LIVER_NOTE.update();
 }
 
 function drawAlerts(f, v, x, m, m3, cp, now) {
@@ -135,23 +136,6 @@ $("f-add").onclick = () => {
   draw();
 };
 
-/* copy a short summary for a note */
-$("copy").onclick = async () => {
-  const f = state.f; if (!f) return;
-  const { v, x } = inputs(f, Date.now()), { m, m3, cp } = results(x);
-  const L = (id, u) => (v[id] ? r1(v[id].v) + (u ? " " + u : "") + " (" + fmtD(v[id].t) + ")" : "not available");
-  const txt = ["Liver scores (" + fmtD(Date.now()) + "):",
-    "MELD-Na " + (m && m.meldNa != null ? m.meldNa : "n/a") + "; MELD 3.0 " + (m3 ? m3.meld3 : "n/a") + "; MELD " + (m ? m.meld : "n/a") + (x.dialysis ? " (dialysis: creatinine set to max)" : ""),
-    "Child-Pugh " + (cp ? (cp.complete ? cp.score + ", class " + cp.cls : cp.lo + "-" + cp.hi + " (ascites/encephalopathy not graded)") : "n/a"),
-    "Bilirubin " + L("bili", "umol/L") + "; creatinine " + L("creat", "umol/L") + "; INR " + L("inr") + "; Na " + L("na", "mmol/L") + "; albumin " + L("alb", "g/L"),
-    f.meds.warfarin ? "Note: on warfarin, INR-based scores overstate severity." : "",
-    $("kidsum").textContent ? "Kidneys: " + $("kidsum").textContent + ($("hrssum").textContent && $("hrssum").textContent !== "not applicable" ? "; " + $("hrssum").textContent : "") : "",
-    $("fluidsum").textContent ? "Ascitic fluid: " + $("fluidsum").textContent : "",
-    $("nutsum").textContent ? "Nutrition targets: " + $("nutsum").textContent : "",
-    $("vtesum").textContent ? "VTE prophylaxis: " + $("vtesum").textContent : ""].filter(Boolean).join("\n");
-  try { await navigator.clipboard.writeText(txt); $("copied").textContent = "Copied."; } catch (e) { $("copied").textContent = "Could not copy: select and copy by hand."; }
-};
-
 function load(raw, note, errors, preset) {
   state.f = raw ? C.parse(raw) : null;
   preset = preset || {};
@@ -163,7 +147,7 @@ function load(raw, note, errors, preset) {
   $("pstatus").textContent = note; $("clear").hidden = !raw;
   $("ptsum").textContent = state.f ? [state.f.sex, state.f.age != null ? state.f.age + " y" : ""].filter(Boolean).join(", ") : "";
   $("errs").innerHTML = errors && errors.length ? "Could not read: " + errors.map(esc).join("; ") + ". Check the scopes in the Code Console." : "";
-  draw();
+  draw(); LIVER_NOTE.reset();
 }
 ["ascites", "he", "sex", "dialysis", "cholestatic", "basecr", "lvp", "bleeding", "edema", "drylevel"].forEach((id) => ($(id).onchange = draw)); $("lvp").oninput = draw;
 $("clear").onclick = () => { $("testsel").value = ""; load(null, "Open from Cerner to read the chart, or pick a made-up patient:"); };

@@ -39,8 +39,10 @@ function context(f, v, x, cp, now) {
   return c;
 }
 
+let NF = {}; /* facts for the note draft (note.js), refilled on every draw */
 function drawClinical(f, v, x, cp, now) {
   const c = context(f, v, x, cp, now);
+  NF = { c };
   drawKidney(f, v, x, c); drawHrs(f, v, x, c); drawFluid(f, v, x, c); drawNutrition(f, v, x, c); drawVte(f, v, x, c);
 }
 
@@ -73,7 +75,7 @@ function drawKidney(f, v, x, c) {
     $("kidney").innerHTML = out.join("");
   }
   // blood pressure
-  const b = [], nb = R.nsbbCheck({ map: c.map, sbp: c.bp && c.bp.sbp, na: v.na && v.na.v, cr: a && a.cur.v, aki: a && a.isAki && !a.stale });
+  const b = [], nb = NF.nb = R.nsbbCheck({ map: c.map, sbp: c.bp && c.bp.sbp, na: v.na && v.na.v, cr: a && a.cur.v, aki: a && a.isAki && !a.stale });
   if (!c.bp) b.push('<div class="muted">No blood pressure found in the past 72 h.</div>');
   else b.push(`<div class="kv"><div>Latest BP</div><div>${c.bp.sbp}/${c.bp.dbp} (${fmtDT(c.bp.t)})</div><div>MAP</div><div>${Math.round(c.map)}${c.map < 65 ? ' <b class="err">below 65</b>' : ""}</div>
     ${c.minMap != null ? `<div>Lowest MAP, 24 h</div><div>${Math.round(c.minMap)}</div>` : ""}${c.hr != null ? `<div>Heart rate</div><div>${c.hr}</div>` : ""}${c.spo2 != null ? `<div>SpO2</div><div>${c.spo2}%</div>` : ""}</div>`);
@@ -93,7 +95,7 @@ function drawKidney(f, v, x, c) {
 /* ---------- HRS-AKI ---------- */
 function drawHrs(f, v, x, c) {
   const a = c.aki;
-  if (!a || !a.isAki || a.stale) { $("hrs").innerHTML = '<div class="muted">' + (c.esrd ? "On chronic dialysis: HRS-AKI does not apply." : a && a.stale ? "No creatinine in the past 72 h: HRS cannot be assessed." : "No AKI by creatinine, so HRS-AKI does not apply now.") + "</div>"; $("plan").innerHTML = ""; $("hrssum").textContent = "not applicable"; return; }
+  if (!a || !a.isAki || a.stale) { $("hrs").innerHTML = '<div class="muted">' + (c.esrd ? "On chronic dialysis: HRS-AKI does not apply." : a && a.stale ? "No creatinine in the past 72 h: HRS cannot be assessed." : "No AKI by creatinine, so HRS-AKI does not apply now.") + "</div>"; $("plan").innerHTML = ""; $("hrssum").textContent = "not applicable"; NF.hrs = null; return; }
   // volume challenge: albumin in the past 4 days
   const alb = f.albumin.filter((e) => c.now - e.t <= 4 * DAY);
   const firstAlb = alb[0];
@@ -122,6 +124,7 @@ function drawHrs(f, v, x, c) {
   const now = [];
   if (vc.length) now.push(`Vasoconstrictor on record since ${fmtD(vc[0].t)} (${esc(vc[0].name)}). Creatinine then ${r1(crStart)}, now ${r1(a.cur.v)}: ${a.cur.v <= crStart * 0.75 ? "responding (25% or more fall)" : "not yet a 25% fall"}.`);
   if (alb.length) now.push(`Albumin given in the past 4 days: ${alb.length} dose(s)${alb.some((e) => e.g) ? ", about " + Math.round(alb.reduce((s2, e) => s2 + (e.g || 0), 0)) + " g in total" : ""}.`);
+  NF.hrs = { h, resText, vc, crStart, alb, steps, done: now };
   $("plan").innerHTML = (now.length ? block("Already done", now.map(esc)) : "") + steps.map((s2) => block(s2.h, s2.items.map(esc))).join("");
 }
 
@@ -148,21 +151,25 @@ function drawFluid(f, v, x, c) {
   $("taps").innerHTML = rows.length ? `<table><tr><th>Date</th><th>WBC/uL</th><th>PMN</th><th>Alb g/L</th><th>Prot g/L</th><th>Glu</th><th>LDH</th><th>Culture</th><th>Interpretation</th></tr>${rows.join("")}</table>` +
     (ldh && !ldh.hi ? "" : "") : '<div class="muted">No ascitic fluid results found. Add one below if the paracentesis was done elsewhere, or if your lab names fluid tests differently.</div>';
   const last = c.taps[0], it = last ? last._it : null;
+  NF.tap = last ? { last, it } : null;
   $("fluidsum").textContent = last ? "last tap " + fmtD(last.t) + (it && it.sbp ? ": SBP" : "") : "no tap found";
 
   const wt = c.wt && c.wt.v, plan = [];
   // diagnostic tap
   const recentTap = c.taps.find((t2) => c.now - t2.t <= 3 * DAY);
+  NF.diagTap = !!((c.ascites || c.ascitesHint) && !recentTap);
   if ((c.ascites || c.ascitesHint) && !recentTap) plan.push(block("Diagnostic paracentesis", ["No ascitic fluid result in the past 3 days. AASLD 2021: tap every admitted patient with ascites, and anyone with ascites and fever, abdominal pain, encephalopathy, AKI, GI bleed or clinical decline.",
     "Send cell count with differential, albumin (with a same-day serum albumin for SAAG), total protein, and culture in blood-culture bottles at the bedside. Add glucose and LDH if secondary peritonitis is possible; cytology if malignancy is possible.",
     "No need to correct INR or platelets first (AGA 2021, AASLD 2021)."]));
   // LVP albumin
   const lit = parseFloat($("lvp").value), lv = R.albuminLvp(lit);
+  NF.lvp = isFinite(lit) && lit > 0 ? { lit, lv } : null;
   $("lvpout").innerHTML = isFinite(lit) && lit > 0 ? (lv ? `<b>Give ${lv.lo}-${lv.hi} g albumin</b> (6-8 g per litre removed; 25% albumin ${lv.lo * 4}-${lv.hi * 4} mL).` : "5 L or less: albumin not routinely needed.") + (lit > 8 ? " More than 8 L raises the risk of circulatory dysfunction." : "") : "";
   if (it && it.sbp) {
     const ad = R.albuminSbp(wt), onAbx = names([].concat(recent(f, "sbpabx", 2, c.now), recent(f, "broadabx", 2, c.now)));
     const bili = v.bili && v.bili.v, cr = v.creat && v.creat.v, urea = c.ex.urea && c.ex.urea.v;
     const hi = [cr > 88 ? "creatinine above 88" : "", urea > 10.7 ? "urea above 10.7 (BUN 30)" : "", bili > 68 ? "bilirubin above 68" : ""].filter(Boolean);
+    NF.sbp = { ad, onAbx, wt };
     plan.push(block("Spontaneous bacterial peritonitis: treat now", [
       onAbx.length ? "Antibiotics on record: " + onAbx.join(", ") + ". Check they fit the setting below." : "No antibiotic found in the past 2 days.",
       "Community-acquired, no recent antibiotics, not septic: ceftriaxone 2 g IV every 24 h (or cefotaxime). Hospital-acquired, recent antibiotics or sepsis: broader cover (for example piperacillin-tazobactam or meropenem) per the Island Health antibiogram.",
@@ -178,6 +185,7 @@ function drawFluid(f, v, x, c) {
   if (it && it.lowProt && !it.sbp) {
     const pr = R.sbpProphylaxis({ prot: last.prot, cr: v.creat && v.creat.v, urea: c.ex.urea && c.ex.urea.v, na: v.na && v.na.v, cp: c.cp && c.cp.complete ? c.cp.score : c.cp ? c.cp.lo : null, bili: v.bili && v.bili.v });
     const already = names(recent(f, "sbpabx", 2, c.now));
+    NF.proph = pr ? { pr, already } : null;
     if (pr) plan.push(block("Primary SBP prophylaxis", [pr.meets ? "Consider it: ascitic protein below 15 g/L with " + pr.why.join("; ") + "." : "Ascitic protein below 15 g/L, but no kidney or liver criterion met: prophylaxis not indicated by AASLD 2021.",
       pr.meets ? (already.length ? "On record: " + already.join(", ") + "." : "Options: ciprofloxacin 500 mg daily or trimethoprim-sulfamethoxazole DS daily.") : ""]));
   }
@@ -186,6 +194,7 @@ function drawFluid(f, v, x, c) {
     const holds = R.diureticHolds({ aki: c.aki && c.aki.isAki && !c.aki.stale, na: v.na && v.na.v, k: c.ex.k && c.ex.k.v, heBad: x.he === 3 });
     const sp = recent(f, "spironolactone", 1, c.now)[0], fu = recent(f, "furosemide", 1, c.now)[0];
     const spMg = sp ? C.dailyMg(sp.name) : null, fuMg = fu ? C.dailyMg(fu.name) : null;
+    NF.diuretic = { holds, sp, fu, spMg, fuMg, fluidR: v.na && v.na.v <= 125 };
     const doses = sp || fu ? `Current: ${sp ? esc(sp.name) + (spMg ? " (" + spMg + " mg/day)" : "") : "no aldosterone antagonist"}; ${fu ? esc(fu.name) + (fuMg ? " (" + fuMg + " mg/day)" : "") : "no loop diuretic"}.` + (spMg && fuMg ? ` Ratio ${Math.round((spMg / fuMg) * 40)}:40 (target 100:40).` : "") : "No diuretics on record.";
     plan.push(block("Ascites treatment", [
       "Sodium 2 g (about 88 mmol) per day; loosen this if it stops the patient eating.",
@@ -209,6 +218,7 @@ function drawNutrition(f, v, x, c) {
   if (c.ex.k && c.ex.k.v < 3.5) refeed.push("potassium " + r1(c.ex.k.v)); if (c.ex.mg && c.ex.mg.v < 0.7) refeed.push("magnesium " + c.ex.mg.v.toFixed(2)); if (c.ex.phos && c.ex.phos.v < 0.8) refeed.push("phosphate " + c.ex.phos.v.toFixed(2));
   const alcohol = f.problems.concat(f.prob.ascites || []).some((p) => /alcohol|K70/i.test(p));
   const thiamine = f.meds.thiamine && (f.meds.thiamine.active || (f.meds.thiamine.lastGiven && c.now - f.meds.thiamine.lastGiven <= 2 * DAY));
+  NF.nut = { n, refeed, needThiamine: alcohol && !thiamine };
   $("nut").innerHTML = `<div class="kv"><div>Weight</div><div>${r1(c.wt.v)} kg (${fmtD(c.wt.t)})${c.ht ? " · height " + r1(c.ht.v) + " cm" : " · no height found"}</div>
     <div>Dry weight</div><div>${r1(n.dry)} kg${level || $("edema").checked ? "" : " (no fluid subtracted)"}</div>
     <div>BMI (dry)</div><div>${n.bmi != null ? r1(n.bmi) : "needs height"}</div>
@@ -241,6 +251,7 @@ function drawVte(f, v, x, c) {
   const crcl = v.creat && c.wt && f.age != null ? R.crcl(v.creat.v, f.age, c.wt.v, x.sex || f.sex) : null;
   const bleedProb = (f.prob.bleed || []).length;
   const res = R.vte({ therapeutic: ther, prophylaxis: proph, bleeding: $("bleeding").checked, hgbDrop: drop, plt: c.ex.plt && c.ex.plt.v, crcl, padua: score });
+  NF.vte = { res, score };
   $("vtesum").textContent = { na: "on anticoagulation", on: "prophylaxis ordered", review: "review prophylaxis", mechanical: "mechanical only for now", start: "start prophylaxis", low: "low risk" }[res.state];
   const facts = [c.ex.plt ? "Platelets " + r1(c.ex.plt.v) + " (" + fmtD(c.ex.plt.t) + ")" : "No platelet count in 72 h", drop != null ? "Hemoglobin change in 48 h: " + (drop > 0 ? "-" : "+") + r1(Math.abs(drop)) + " g/L" : "",
     v.inr ? "INR " + r1(v.inr.v) + " (does not protect against clots)" : "", crcl != null ? "CrCl " + Math.round(crcl) + " mL/min (overestimates in cirrhosis)" : ""].filter(Boolean);

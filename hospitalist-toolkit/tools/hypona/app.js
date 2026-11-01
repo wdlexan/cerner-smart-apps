@@ -52,11 +52,12 @@ function tile(cls, k, big, s) { return `<div class="tile ${cls}"><div class="k">
 
 function draw() {
   const f = state.f;
-  if (!f) { ["tiles", "alerts", "spark", "trend", "plan", "tests", "steps", "siad", "meds", "calc", "hints", "riskrow"].forEach((id) => ($(id).innerHTML = "")); ["alertsum", "trendsum", "plansum", "causesum", "ptsum"].forEach((id) => ($(id).textContent = "")); $("alerts").innerHTML = '<div class="muted">No patient loaded.</div>'; return; }
+  if (!f) { ["tiles", "alerts", "spark", "trend", "plan", "tests", "steps", "siad", "meds", "calc", "hints", "riskrow"].forEach((id) => ($(id).innerHTML = "")); ["alertsum", "trendsum", "plansum", "causesum", "ptsum"].forEach((id) => ($(id).textContent = "")); $("alerts").innerHTML = '<div class="muted">No patient loaded.</div>'; HYPO_NOTE.update(); return; }
   const x = ctx();
   drawRisk(x);
-  if (!x.last) { $("tiles").innerHTML = ""; $("alerts").innerHTML = '<div class="muted">No sodium found in the past 14 days.</div>'; return; }
+  if (!x.last) { $("tiles").innerHTML = ""; $("alerts").innerHTML = '<div class="muted">No sodium found in the past 14 days.</div>'; HYPO_NOTE.update(); return; }
   drawTiles(x); drawAlerts(x); drawTrend(x); drawPlan(x); drawWorkup(x); drawCalc(x);
+  HYPO_NOTE.update();
 }
 
 function drawRisk(x) {
@@ -174,20 +175,6 @@ function drawCalc(x) {
     (room != null && per > 0 ? ` Volume that would reach the ceiling (${x.st.c.v}): about ${Math.round(room / per * 1000)} mL.` : "") + "</div>";
 }
 
-$("copy").onclick = async () => {
-  if (!state.f) return; const x = ctx(); if (!x.last) return;
-  const st = x.st, c = x.cause;
-  const txt = ["Hyponatremia (" + fmtDT(Date.now()) + "):",
-    `Na ${x.last.v} (${x.last.src}, ${fmtDT(x.last.t)})` + (x.glu && x.glu.v > 10 ? `, glucose-corrected ${r1(R.glucoseCorrected(x.last.v, x.glu.v))}` : "") + ` - ${R.severity(x.last.v)}.`,
-    st ? `Change ${sgn(st.rs.rise24)} in 24 h, ${sgn(st.rs.rise48)} in 48 h. Limit ${x.lim.l24}/24 h, ${x.lim.l48}/48 h${x.high ? " (high ODS risk: " + RISKS.filter(([k]) => state.risk[k]).map(([, l]) => l.toLowerCase()).join(", ") + ")" : ""}. Max allowed now ${st.c ? st.c.v : "n/a"}${st.over ? " - OVERCORRECTED" : st.near ? " - close to limit" : ""}.` : "",
-    `Symptoms: ${$("symptoms").selectedOptions[0].text}. Volume: ${$("volume").selectedOptions[0].text}. Onset: ${x.acute ? "acute" : "chronic/unknown"}.`,
-    "Workup: " + [x.sosm && "sOsm " + Math.round(x.sosm.v), x.uosm && "uOsm " + Math.round(x.uosm.v), x.una && "uNa " + Math.round(x.una.v), x.uk && "uK " + Math.round(x.uk.v), x.tsh && "TSH " + x.tsh.v, x.cort && "cortisol " + Math.round(x.cort.v)].filter(Boolean).join(", ") + (c && c.missing.length ? " (missing: " + c.missing.join(", ") + ")" : "") + ".",
-    c ? "Likely: " + (LABEL[c.label] || "") + (c.likely.length ? " - consider " + c.likely.slice(0, 4).join("; ") : "") + "." : "",
-    x.furst ? `Furst ratio ${r1(x.furst.ratio)}: ${x.furst.advice}` : "",
-    x.meds.culprits.length ? "Possible drug causes: " + x.meds.culprits.join("; ") + "." : ""].filter(Boolean).join("\n");
-  try { await navigator.clipboard.writeText(txt); $("copied").textContent = "Copied."; } catch (e) { $("copied").textContent = "Could not copy: select and copy by hand."; }
-};
-
 function load(raw, note, errors, preset) {
   state.f = raw ? C.parse(raw) : null; preset = preset || {};
   $("symptoms").value = preset.symptoms || ""; $("volume").value = preset.volume || ""; $("onset").value = "auto"; $("usegas").checked = true;
@@ -201,7 +188,7 @@ function load(raw, note, errors, preset) {
   } else { $("wt").value = ""; $("ptsum").textContent = ""; }
   $("pstatus").textContent = note; $("clear").hidden = !raw;
   $("errs").innerHTML = errors && errors.length ? "Could not read: " + errors.map(esc).join("; ") + ". Check the scopes in the Code Console." : "";
-  draw();
+  draw(); HYPO_NOTE.reset();
 }
 ["symptoms", "onset", "volume", "usegas", "c-fluid"].forEach((id) => ($(id).onchange = draw));
 ["wt", "c-vol", "c-k"].forEach((id) => ($(id).oninput = draw));
