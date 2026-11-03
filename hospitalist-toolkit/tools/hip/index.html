@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hip fracture</title>
+  <style>
+    :root { --bg:#f5f7fa; --card:#fff; --ink:#1f2933; --muted:#5f6c7b; --accent:#0b6bcb; --line:#dde3ea;
+            --r-bg:#fde8e8; --r-ink:#9b1c1c; --a-bg:#fff1d6; --a-ink:#8a5200; --b-bg:#e3eefc; --b-ink:#0b4a99; --g-bg:#e4f4ea; --g-ink:#1d6b3a; --warn-bg:#fff4e5; --warn-line:#f0c27b; }
+    @media (prefers-color-scheme: dark) { :root { --bg:#111418; --card:#1a1f26; --ink:#e8edf2; --muted:#9aa7b5; --accent:#6aa9ff; --line:#2b333d;
+            --r-bg:#4a1d1d; --r-ink:#ffb3b3; --a-bg:#4a3511; --a-ink:#ffd38a; --b-bg:#14325c; --b-ink:#a9cdff; --g-bg:#16361f; --g-ink:#9be0b1; --warn-bg:#3a2e15; --warn-line:#6b5420; } }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); }
+    header { padding:14px 20px; border-bottom:1px solid var(--line); background:var(--card); }
+    header h1 { margin:0; font-size:19px; } header .sub { font-size:13px; color:var(--muted); margin-top:2px; }
+    main { max-width:980px; margin:16px auto 40px; padding:0 16px; display:grid; gap:14px; }
+    .banner { background:var(--warn-bg); border:1px solid var(--warn-line); border-radius:8px; padding:10px 14px; font-size:13px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:10px; font-size:13.5px; }
+    .card > summary { padding:10px 16px; font-weight:700; font-size:15px; cursor:pointer; display:flex; justify-content:space-between; gap:10px; }
+    .card > .body { padding:0 16px 14px; }
+    select, input, button { font:inherit; font-size:13px; padding:5px 8px; border:1px solid var(--line); border-radius:6px; background:var(--card); color:var(--ink); }
+    button { cursor:pointer; } button.primary { border-color:var(--accent); color:var(--accent); }
+    input[type=number] { width:80px; }
+    .row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:8px 0; }
+    .inl { display:inline-flex; gap:6px; align-items:center; }
+    .muted { color:var(--muted); } .err { color:var(--r-ink); }
+    .tiles { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px; }
+    .tile { border-radius:10px; padding:10px 14px; border:1px solid var(--line); background:var(--card); }
+    .tile .k { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; }
+    .tile .big { font-size:26px; font-weight:700; margin:2px 0; }
+    .tile .s { font-size:12.5px; }
+    .t0 { background:var(--g-bg); color:var(--g-ink); } .t1 { background:var(--b-bg); color:var(--b-ink); } .t2 { background:var(--a-bg); color:var(--a-ink); } .t3 { background:var(--r-bg); color:var(--r-ink); }
+    .t0 .k, .t1 .k, .t2 .k, .t3 .k { color:inherit; opacity:.8; }
+    .alert { border-left:4px solid; border-radius:6px; padding:8px 12px; margin:6px 0; }
+    .alert b { margin-right:6px; }
+    .alert.urgent { background:var(--r-bg); color:var(--r-ink); } .alert.action { background:var(--a-bg); color:var(--a-ink); } .alert.info { background:var(--b-bg); color:var(--b-ink); }
+    table { border-collapse:collapse; width:100%; font-size:13px; }
+    th, td { border-bottom:1px solid var(--line); padding:5px 8px; text-align:left; white-space:nowrap; }
+    th { color:var(--muted); font-weight:600; }
+    td.num { text-align:right; font-variant-numeric:tabular-nums; } td.wrap { white-space:normal; }
+    td.hi { color:var(--r-ink); font-weight:600; } td.old { color:var(--a-ink); }
+    .scroll { overflow-x:auto; }
+    .plan h3 { font-size:14px; margin:12px 0 4px; } .plan ul { margin:4px 0 8px 18px; padding:0; } .plan li { margin:3px 0; }
+    .plan .urgent h3 { color:var(--r-ink); } .plan .action h3 { color:var(--a-ink); }
+    .chip { display:inline-block; padding:1px 8px; border-radius:10px; font-size:12px; font-weight:600; }
+    .c-yes { background:var(--g-bg); color:var(--g-ink); } .c-no { background:var(--r-bg); color:var(--r-ink); } .c-unknown { background:var(--a-bg); color:var(--a-ink); }
+    .src { font-size:12px; color:var(--muted); margin-top:8px; }
+    svg text { fill:var(--muted); font-size:11px; }
+    .grid2 { display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:10px 18px; }
+    input[type=datetime-local] { width:200px; }
+    @media print { .noprint { display:none; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Hip fracture co-management</h1>
+    <div class="sub">Time to theatre, pre-op readiness, anticoagulants, post-op checks by day, pain and delirium, VTE, bone health. Read-only.</div>
+  </header>
+  <main>
+    <div class="banner"><b>Decision-support draft. It orders nothing.</b> Timings, thresholds and doses were written by Claude and have <b>not been verified</b>: check them against the VGH / Island Health hip fracture orders, anaesthesia and pharmacy before real use. Drugs, labs and procedures are found by <b>name</b>, so something not shown may still be in the chart. Your entries stay in this page only. Use made-up or Cerner sandbox patients until Island Health approves real data.</div>
+
+    <details class="card" open>
+      <summary><span>Patient and timeline</span><span class="muted" id="ptsum"></span></summary>
+      <div class="body">
+        <div id="pstatus" class="muted">Open from Cerner to read the chart, or pick a made-up patient:</div>
+        <div class="row"><select id="testsel"><option value="">Made-up patient…</option></select><button id="clear" hidden>Clear</button></div>
+        <div class="row">
+          <label class="inl">Arrived <input type="datetime-local" id="arrival"></label>
+          <label class="inl">Surgery <input type="datetime-local" id="surgery"></label>
+          <span class="muted" id="surgname"></span>
+        </div>
+        <div class="row"><b>Nottingham score:</b>
+          <label class="inl"><input type="checkbox" id="amts"> Abbreviated mental test 6/10 or less (or known dementia)</label>
+          <label class="inl"><input type="checkbox" id="inst"> Lives in a care home</label>
+          <label class="inl"><input type="checkbox" id="comorb"> 2 or more comorbidities</label>
+        </div>
+        <div class="row" id="postrow">
+          <label class="inl">Delirium screen (CAM / 4AT) <select id="cam"><option value="">Not recorded</option><option value="negative">Negative</option><option value="positive">Positive</option></select></label>
+          <label class="inl"><input type="checkbox" id="mobil"> Out of bed since surgery</label>
+          <label class="inl"><input type="checkbox" id="cath"> Urinary catheter still in</label>
+          <label class="inl"><input type="checkbox" id="bm"> Bowels moved since surgery</label>
+          <label class="inl"><input type="checkbox" id="bleed"> Active bleeding</label>
+        </div>
+        <div class="row"><label class="inl">Weight (kg) <input type="number" id="wt" min="25" max="300" step="0.1"></label><span class="muted" id="crclnote"></span></div>
+        <div id="hints" class="muted"></div>
+        <div id="errs" class="err"></div>
+      </div>
+    </details>
+
+    <div class="tiles" id="tiles"></div>
+    <details class="card" open><summary><span>Alerts</span><span class="muted" id="alertsum"></span></summary><div class="body" id="alerts"></div></details>
+
+    <details class="card" open id="sec-pre">
+      <summary><span>Pre-op readiness</span><span class="muted" id="presum"></span></summary>
+      <div class="body"><div class="scroll" id="preop"></div>
+        <div class="src">Acceptable reasons to delay (AAGBI 2011): Hgb below 80; Na below 120 or above 150; K below 2.8 or above 6.0; uncontrolled diabetes; uncontrolled heart failure; correctable arrhythmia (rate above 120); chest infection with sepsis; reversible coagulopathy. Waiting for an echo, a bed or a routine test is not one: the target is theatre within 48 h (sooner is better).</div></div>
+    </details>
+
+    <details class="card" open>
+      <summary><span>Anticoagulants and antiplatelets</span><span class="muted" id="acsum"></span></summary>
+      <div class="body"><div id="ac"></div>
+        <div class="src">NHS GGC hip fracture anticoagulation guideline (2024) for timing under general anaesthesia; ASRA intervals for spinal. Check with anaesthesia: local practice varies.</div></div>
+    </details>
+
+    <details class="card" open id="sec-post">
+      <summary><span>Post-op checks</span><span class="muted" id="postsum"></span></summary>
+      <div class="body"><div class="scroll" id="post"></div></div>
+    </details>
+
+    <details class="card" open>
+      <summary><span>Pain, delirium and bowels</span><span class="muted" id="painsum"></span></summary>
+      <div class="body"><div id="pain"></div></div>
+    </details>
+
+    <details class="card" open>
+      <summary><span>VTE prophylaxis</span><span class="muted" id="vtesum"></span></summary>
+      <div class="body"><div id="vte"></div></div>
+    </details>
+
+    <details class="card" open>
+      <summary><span>Bone health and falls</span><span class="muted" id="bonesum"></span></summary>
+      <div class="body"><div id="bone"></div>
+        <div class="src">Osteoporosis Canada 2023: after a hip fracture, treat without needing a bone density test; bisphosphonates first line. Zoledronic acid timing after surgery is local practice.</div></div>
+    </details>
+
+    <details class="card noprint" open id="sec-note">
+      <summary><span>Note draft</span><span class="muted">check, edit, then paste into your PowerChart note</span></summary>
+      <div class="body" id="note"></div>
+    </details>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+  <script src="rules.js?v=20261102a"></script>
+  <script src="chart.js?v=20261102a"></script>
+  <script src="samples.js?v=20261102a"></script>
+  <script src="../../notedraft.js?v=20261102a"></script>
+  <script src="note.js?v=20261102a"></script>
+  <script src="app.js?v=20261102a"></script>
+</body>
+</html>
