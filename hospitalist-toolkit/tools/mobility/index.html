@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mobility and discharge</title>
+  <style>
+    :root { --bg:#f5f7fa; --card:#fff; --ink:#1f2933; --muted:#5f6c7b; --accent:#0b6bcb; --line:#dde3ea;
+            --r-bg:#fde8e8; --r-ink:#9b1c1c; --a-bg:#fff1d6; --a-ink:#8a5200; --b-bg:#e3eefc; --b-ink:#0b4a99; --g-bg:#e4f4ea; --g-ink:#1d6b3a; --warn-bg:#fff4e5; --warn-line:#f0c27b; }
+    @media (prefers-color-scheme: dark) { :root { --bg:#111418; --card:#1a1f26; --ink:#e8edf2; --muted:#9aa7b5; --accent:#6aa9ff; --line:#2b333d;
+            --r-bg:#4a1d1d; --r-ink:#ffb3b3; --a-bg:#4a3511; --a-ink:#ffd38a; --b-bg:#14325c; --b-ink:#a9cdff; --g-bg:#16361f; --g-ink:#9be0b1; --warn-bg:#3a2e15; --warn-line:#6b5420; } }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); }
+    header { padding:14px 20px; border-bottom:1px solid var(--line); background:var(--card); }
+    header h1 { margin:0; font-size:19px; } header .sub { font-size:13px; color:var(--muted); margin-top:2px; }
+    main { max-width:980px; margin:16px auto 40px; padding:0 16px; display:grid; gap:14px; }
+    .banner { background:var(--warn-bg); border:1px solid var(--warn-line); border-radius:8px; padding:10px 14px; font-size:13px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:10px; font-size:13.5px; }
+    .card > summary { padding:10px 16px; font-weight:700; font-size:15px; cursor:pointer; display:flex; justify-content:space-between; gap:10px; }
+    .card > .body { padding:0 16px 14px; }
+    select, input, button { font:inherit; font-size:13px; padding:5px 8px; border:1px solid var(--line); border-radius:6px; background:var(--card); color:var(--ink); }
+    button { cursor:pointer; } button.primary { border-color:var(--accent); color:var(--accent); }
+    input[type=number] { width:80px; }
+    .row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:8px 0; }
+    .inl { display:inline-flex; gap:6px; align-items:center; }
+    .muted { color:var(--muted); } .err { color:var(--r-ink); }
+    .tiles { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px; }
+    .tile { border-radius:10px; padding:10px 14px; border:1px solid var(--line); background:var(--card); }
+    .tile .k { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; }
+    .tile .big { font-size:26px; font-weight:700; margin:2px 0; }
+    .tile .s { font-size:12.5px; }
+    .t0 { background:var(--g-bg); color:var(--g-ink); } .t1 { background:var(--b-bg); color:var(--b-ink); } .t2 { background:var(--a-bg); color:var(--a-ink); } .t3 { background:var(--r-bg); color:var(--r-ink); }
+    .t0 .k, .t1 .k, .t2 .k, .t3 .k { color:inherit; opacity:.8; }
+    .alert { border-left:4px solid; border-radius:6px; padding:8px 12px; margin:6px 0; }
+    .alert b { margin-right:6px; }
+    .alert.urgent { background:var(--r-bg); color:var(--r-ink); } .alert.action { background:var(--a-bg); color:var(--a-ink); } .alert.info { background:var(--b-bg); color:var(--b-ink); }
+    table { border-collapse:collapse; width:100%; font-size:13px; }
+    th, td { border-bottom:1px solid var(--line); padding:5px 8px; text-align:left; white-space:nowrap; }
+    th { color:var(--muted); font-weight:600; }
+    td.num { text-align:right; font-variant-numeric:tabular-nums; } td.wrap { white-space:normal; }
+    td.hi { color:var(--r-ink); font-weight:600; } td.old { color:var(--a-ink); }
+    .scroll { overflow-x:auto; }
+    .plan h3 { font-size:14px; margin:12px 0 4px; } .plan ul { margin:4px 0 8px 18px; padding:0; } .plan li { margin:3px 0; }
+    .plan .urgent h3 { color:var(--r-ink); } .plan .action h3 { color:var(--a-ink); }
+    .chip { display:inline-block; padding:1px 8px; border-radius:10px; font-size:12px; font-weight:600; }
+    .c-yes { background:var(--g-bg); color:var(--g-ink); } .c-no { background:var(--r-bg); color:var(--r-ink); } .c-unknown { background:var(--a-bg); color:var(--a-ink); }
+    .src { font-size:12px; color:var(--muted); margin-top:8px; }
+    svg text { fill:var(--muted); font-size:11px; }
+    .summary { font-size:14.5px; line-height:1.55; }
+    .chip.c-rec { background:var(--b-bg); color:var(--b-ink); }
+    details.q summary { cursor:pointer; color:var(--accent); font-size:12.5px; }
+    details.q pre { white-space:pre-wrap; font-size:12.5px; background:var(--bg); border:1px solid var(--line); border-radius:6px; padding:8px; max-height:260px; overflow:auto; }
+    @media print { .noprint { display:none; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Mobility and discharge</h1>
+    <div class="sub">Pulls mobility from PT, OT and nursing notes: where the patient is now, what is left to do, a rough time frame, and the equipment needed at discharge. Read-only.</div>
+  </header>
+  <main>
+    <div class="banner"><b>Draft summary from note text. It orders nothing.</b> Mobility is found by matching phrases in PT, OT and nursing notes (written by Claude, <b>not verified</b>): it can miss or misread things, so open the source note before relying on a line. The time frame is a rough estimate, not a prediction. Confirm with PT/OT. Use made-up or Cerner sandbox patients until Island Health approves real data.</div>
+
+    <details class="card" open>
+      <summary><span>Patient and plan</span><span class="muted" id="ptsum"></span></summary>
+      <div class="body">
+        <div id="pstatus" class="muted">Open from Cerner to read the chart, or pick a made-up patient:</div>
+        <div class="row"><select id="testsel"><option value="">Made-up patient…</option></select><button id="clear" hidden>Clear</button></div>
+        <div class="row">
+          <label class="inl">Discharge plan <select id="dest"><option value="auto">From the notes</option><option value="home">Home</option><option value="home-24h">Home with someone there all the time</option><option value="rehab">Rehab / restorative care</option><option value="facility">Care facility (LTC, assisted living)</option></select></label>
+          <label class="inl">Mobility goal <select id="goal"><option value="auto">Automatic (baseline)</option><option value="8">Independent</option><option value="7">Independent with aid</option><option value="6">Supervision</option><option value="5">Contact guard</option><option value="4">Minimal assist</option></select></label>
+          <label class="inl">Days per level if no trend yet <input type="number" id="dpl" value="2" min="0.5" max="10" step="0.5"></label>
+        </div>
+        <div id="errs" class="err"></div>
+      </div>
+    </details>
+
+    <div class="tiles" id="tiles"></div>
+
+    <details class="card" open>
+      <summary><span>Summary</span><span class="muted" id="sumsum"></span></summary>
+      <div class="body"><div class="summary" id="summary"></div></div>
+    </details>
+
+    <details class="card" open>
+      <summary><span>What needs to be done</span><span class="muted" id="todosum"></span></summary>
+      <div class="body"><div class="scroll" id="todo"></div>
+        <div class="src">Lead times are rough and assume each step starts today; steps that can run in parallel overlap, so the longest one sets the date. Wait times for rehab and home support vary by site.</div></div>
+    </details>
+
+    <details class="card" open>
+      <summary><span>Equipment for discharge</span><span class="muted" id="eqsum"></span></summary>
+      <div class="body"><div class="scroll" id="equip"></div>
+        <div class="src">"In notes" = PT/OT recommended it or the patient already has it. "Suggested" = a rule from the situation (for example after hip surgery): confirm with OT. Short-term loans: Canadian Red Cross Health Equipment Loan Program (HELP); otherwise a medical supply vendor.</div></div>
+    </details>
+
+    <details class="card" open>
+      <summary><span>Mobility over this admission</span><span class="muted" id="tlsum"></span></summary>
+      <div class="body"><div class="scroll" id="timeline"></div></div>
+    </details>
+
+    <details class="card noprint" open id="sec-note">
+      <summary><span>Note draft</span><span class="muted">check, edit, then paste into your PowerChart note</span></summary>
+      <div class="body" id="note"></div>
+    </details>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+  <script src="rules.js?v=20261102c"></script>
+  <script src="chart.js?v=20261102c"></script>
+  <script src="samples.js?v=20261102c"></script>
+  <script src="../../notedraft.js?v=20261102c"></script>
+  <script src="note.js?v=20261102c"></script>
+  <script src="app.js?v=20261102c"></script>
+</body>
+</html>
