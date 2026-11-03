@@ -4,7 +4,7 @@
    A tab is only loaded the first time you open it, and stays loaded when you switch away. */
 
 // To add a tool: put its files in tools/<folder>/ and add a line here.
-const TOOL_V = "20261102d"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
+const TOOL_V = "20261103a"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
 const TOOLS = [
   { key: "today", label: "Today (what changed)", path: "tools/today/index.html" },
   { key: "labs",  label: "Labs",                 path: "tools/labs/index.html" },
@@ -60,9 +60,10 @@ async function start(client) {
   }
   try { sessionStorage.removeItem("toolkit-target"); } catch (e) {}
 
-  window.TK = { patientId: client.patient.id }; // used by the PDF import button
+  window.TK = { patientId: client.patient.id, isPdfPatient: /^pdfpt-/.test(client.patient.id), switchPatient, backToCerner }; // used by the PDF import button
   try { $("patient").textContent = describe(await client.patient.read()); }
   catch (e) { $("patient").textContent = "Patient " + client.patient.id; }
+  if (window.TK.isPdfPatient) pdfPatientChip();
   $("msg").remove();
 
   $("tabs").innerHTML = TOOLS.map((t) => `<button data-k="${t.key}">${esc(t.label)}</button>`).join("");
@@ -102,6 +103,31 @@ function tidy(frame) {
     s.textContent = "body > header { display:none !important; } main { margin-top:12px !important; }";
     d.head.appendChild(s);
   } catch (e) { /* not same-site - leave it */ }
+}
+
+// ---- PDF-only patients (Import PDF > "Open as a separate patient") ----
+// Switch every tab to another patient: rewrite the patient in the saved sign-in record and reload. Leaving a Cerner patient for a
+// PDF-only one remembers the Cerner patient so the header can offer a way back. pdf-overlay.js answers all requests for pdfpt- IDs locally.
+function switchPatient(id, encounter) {
+  const key = JSON.parse(sessionStorage.getItem("SMART_KEY")), saved = JSON.parse(sessionStorage.getItem(key));
+  saved.tokenResponse = saved.tokenResponse || {};
+  const cur = saved.tokenResponse.patient;
+  if (cur && !/^pdfpt-/.test(cur) && /^pdfpt-/.test(id)) sessionStorage.setItem("pdfpt-return", JSON.stringify({ patient: cur, encounter: saved.tokenResponse.encounter || null, label: $("patient").textContent }));
+  saved.tokenResponse.patient = id;
+  if (encounter) saved.tokenResponse.encounter = encounter; else delete saved.tokenResponse.encounter;
+  sessionStorage.setItem(key, JSON.stringify(saved));
+  location.hash = ""; location.reload();
+}
+function backToCerner() {
+  let r = null; try { r = JSON.parse(sessionStorage.getItem("pdfpt-return") || "null"); } catch (e) {}
+  if (r && r.patient) switchPatient(r.patient, r.encounter);
+}
+function pdfPatientChip() {
+  let r = null; try { r = JSON.parse(sessionStorage.getItem("pdfpt-return") || "null"); } catch (e) {}
+  const el = $("patient");
+  el.innerHTML = `<span style="background:#fde8e8;color:#7a1b1b;border-radius:10px;padding:1px 8px;font-weight:700;margin-right:6px">PDF-only patient</span>${esc(el.textContent)}` +
+    (r && r.patient ? ` <button id="tocerner" style="margin-left:8px;background:#fff;color:#0b6bcb;border:0;border-radius:6px;padding:3px 9px;font-size:12px;cursor:pointer" title="${esc(r.label || "")}">Back to Cerner patient</button>` : "");
+  const b = document.getElementById("tocerner"); if (b) b.onclick = backToCerner;
 }
 
 // ---- standalone launch: find the patient named in the link ----
@@ -148,6 +174,7 @@ function describe(p) {
   const dob = p.birthDate ? new Date(p.birthDate) : null, now = new Date();
   let age = dob ? now.getFullYear() - dob.getFullYear() : null;
   if (dob && now < new Date(now.getFullYear(), dob.getMonth(), dob.getDate())) age--;
+  if (!(n.given || n.family) && n.text) return `${n.text} · ${p.gender || ""}${p.birthDate ? " · DOB " + p.birthDate : ""}`;
   return `${name} · ${p.gender || ""}${age != null && !isNaN(age) ? " · " + age + " y" : ""} · DOB ${p.birthDate || "?"}`;
 }
 function esc(s) {

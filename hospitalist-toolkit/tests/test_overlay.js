@@ -22,4 +22,27 @@ const bun = T.merge({ resourceType: "Bundle", entry: [] }, "Observation?patient=
 ok("no duplicate ids on repeat", T.merge(flat, "Observation?patient=p1&category=laboratory", st).length === 3);
 ok("non-search left alone", T.merge("text", "Binary/1", st) === "text");
 ok("Condition has no onsetDateTime", !items.find((x) => x.resourceType === "Condition").onsetDateTime);
-console.log(`\n${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);
+
+// ---- PDF-only patient (ID starts with pdfpt-) ----
+ok("LOCAL detects pdfpt ids", T.LOCAL("pdfpt-abc") && !T.LOCAL("12724066") && !T.LOCAL(null));
+const litems = r.items.map((it) => X.toResource(it, { patientId: "pdfpt-1", fileName: "f.pdf", now: Date.now() }));
+const lst = { items: litems, files: [], patient: { resourceType: "Patient", id: "pdfpt-1", name: [{ text: "Made-Up Test", family: "Test", given: ["Made-Up"] }], gender: "female", birthDate: "1946-03-02" } };
+ok("local Patient read", T.localResult("Patient/pdfpt-1", {}, lst, "pdfpt-1").name[0].family === "Test");
+ok("local Patient read via object arg", T.localResult({ url: "Patient/pdfpt-1" }, {}, lst, "pdfpt-1").gender === "female");
+ok("local lab search flat", T.localResult("Observation?patient=pdfpt-1&category=laboratory", { flat: true }, lst, "pdfpt-1").length === 2);
+ok("local search as Bundle", T.localResult("Observation?patient=pdfpt-1&category=vital-signs", {}, lst, "pdfpt-1").entry.length === 2);
+ok("local search pageLimit>1 gives array of bundles", Array.isArray(T.localResult("Observation?patient=pdfpt-1", { pageLimit: 5 }, lst, "pdfpt-1")));
+ok("local unknown type empty", T.localResult("Encounter?patient=pdfpt-1", { flat: true }, lst, "pdfpt-1").length === 0 && T.localResult("MedicationAdministration?patient=pdfpt-1", { flat: true }, lst, "pdfpt-1").length === 0);
+ok("local read by id", T.localResult("Observation/" + litems[0].id, {}, lst, "pdfpt-1").id === litems[0].id);
+let threw = false; try { T.localResult("Observation/nope", {}, lst, "pdfpt-1"); } catch (e) { threw = e.status === 404; } ok("local missing read 404", threw);
+// wrap: a pdfpt client never calls the server
+store["pdfimport:pdfpt-1"] = JSON.stringify(lst);
+let serverCalls = 0; const fake = { request: () => { serverCalls++; return Promise.resolve([]); }, patient: { id: "pdfpt-1" } };
+fake.patient.read = () => fake.request({ url: "Patient/pdfpt-1" }); T.wrap(fake);
+Promise.all([fake.request("Observation?patient=pdfpt-1&category=laboratory", { flat: true }), fake.patient.read()]).then(([labs, pt]) => {
+  ok("wrapped local search", labs.length === 2); ok("wrapped patient read", pt.id === "pdfpt-1"); ok("no server calls", serverCalls === 0);
+  // a real patient still goes to the server and gets merged items
+  let real = 0; const fr = { request: () => { real++; return Promise.resolve([{ id: "srv", resourceType: "Observation" }]); }, patient: { id: "p1" } }; T.wrap(fr);
+  return fr.request("Observation?patient=p1&category=laboratory", { flat: true }).then((res) => { ok("real patient hits server and merges", real === 1 && res.length === 3); });
+}).then(() => { console.log(`\n${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0); });
+

@@ -7,8 +7,23 @@
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const X = () => window.PdfExtract;
   const pid = () => (window.TK && window.TK.patientId) || null;
-  const store = () => { try { return JSON.parse(sessionStorage.getItem(KEY(pid())) || "null") || { items: [], files: [] }; } catch (e) { return { items: [], files: [] }; } };
-  const save = (st) => sessionStorage.setItem(KEY(pid()), JSON.stringify(st));
+  const storeFor = (id) => { try { return JSON.parse(sessionStorage.getItem(KEY(id)) || "null") || { items: [], files: [] }; } catch (e) { return { items: [], files: [] }; } };
+  const saveFor = (id, st) => sessionStorage.setItem(KEY(id), JSON.stringify(st));
+  const store = () => storeFor(pid()), save = (st) => saveFor(pid(), st);
+  const isPdfPt = (id) => /^pdfpt-/.test(String(id || ""));
+  /* PDF-only patients made in this browser tab */
+  const pdfPatients = () => { try { return JSON.parse(sessionStorage.getItem("pdfpatients") || "[]"); } catch (e) { return []; } };
+  const savePdfPatients = (l) => sessionStorage.setItem("pdfpatients", JSON.stringify(l));
+  const hash = (s) => { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36); };
+  function patientResource(id, f) {
+    const name = (f.given || f.family) ? [{ use: "official", text: [f.given, f.family].filter(Boolean).join(" "), family: f.family || undefined, given: f.given ? f.given.split(/\s+/) : undefined }] : [{ text: f.name || "PDF patient" }];
+    let birthDate = f.birthDate || undefined;
+    if (!birthDate && f.age) birthDate = (new Date().getFullYear() - +f.age) + "-01-01"; // age only: approximate DOB (1 January)
+    const identifier = [];
+    if (f.phn) identifier.push({ type: { text: "PHN" }, system: "urn:bc:phn", value: f.phn });
+    if (f.mrn) identifier.push({ type: { coding: [{ code: "MR" }], text: "MRN (outside)" }, value: f.mrn });
+    return { resourceType: "Patient", id, meta: { tag: [{ system: "urn:toolkit:import", code: "pdf-only-patient", display: "Created from PDF" }] }, name, gender: f.sex || undefined, birthDate, birthDateApproximate: !f.birthDate && !!f.age || undefined, identifier: identifier.length ? identifier : undefined };
+  }
 
   const css = document.createElement("style");
   css.textContent = `
@@ -37,7 +52,7 @@
   const box = modal.firstChild;
   modal.addEventListener("click", (e) => { if (e.target === modal) close(); });
   function close() { modal.classList.remove("on"); }
-  function refreshCount() { const st = pid() ? store() : { items: [], files: [] }; const el = document.getElementById("pdfcnt"); el.innerHTML = st.items.length ? `<a href="#" id="pdfman" style="color:#fff">${st.items.length} imported item${st.items.length === 1 ? "" : "s"}</a>` : ""; const a = document.getElementById("pdfman"); if (a) a.onclick = (e) => { e.preventDefault(); manage(); }; }
+  function refreshCount() { const st = pid() ? store() : { items: [], files: [] }; const el = document.getElementById("pdfcnt"); el.innerHTML = st.items.length ? `<a href="#" id="pdfman" style="color:#fff">${st.items.length} imported item${st.items.length === 1 ? "" : "s"}</a>` : pdfPatients().length ? `<a href="#" id="pdfman" style="color:#fff">PDF-only patients (${pdfPatients().length})</a>` : ""; const a = document.getElementById("pdfman"); if (a) a.onclick = (e) => { e.preventDefault(); manage(); }; }
   document.getElementById("pdfopen").onclick = () => { if (!pid()) { alert("The patient has not loaded yet."); return; } drop(); };
   const patientName = () => { const el = document.getElementById("patient"); return el ? el.textContent.trim() : ""; };
 
@@ -102,6 +117,8 @@
   const KIND = { lab: "Lab", vital: "Vital", med: "Medication", procedure: "Procedure", report: "Imaging report", condition: "Diagnosis" };
   function review(results, problems) {
     const all = []; results.forEach((r) => r.items.forEach((it) => all.push({ it, r })));
+    const demo = results.reduce((d, r) => (d.family || d.given ? d : X().demographics ? X().demographics(r.text) : {}), {});
+    const others = pdfPatients().filter((p) => p.id !== pid());
     const today = X().iso(Date.now());
     let h = `<h2>Review what was found</h2>
       <div class="warn"><b>Check before adding.</b> Reading a PDF is imperfect: values, units and dates can be wrong or missing, and a name can match the wrong test. Untick anything doubtful and fix values here. Added items appear in every tab marked as imported from PDF, not from Cerner.</div>
@@ -124,14 +141,45 @@
       h += `</table>`;
     }
     h += `<p><label><input type="checkbox" id="pdfkeep"> Also keep the PDF text as a note, so Notes, Risk screen and other tabs that read notes can see it (the AI tab only sends data out if you have set it up to)</label></p>
-      <p><label><b><input type="checkbox" id="pdfpt"> This PDF is for the patient shown at the top: ${esc(patientName())}</b></label></p>
+      <div style="border:1px solid #dde3ea;border-radius:8px;padding:8px 12px;margin:8px 0"><b>Where should this go?</b>
+        <div><label><input type="radio" name="pdfdest" value="current" checked> Add to the patient shown at the top: <b>${esc(patientName())}</b>${isPdfPt(pid()) ? " (PDF-only patient)" : ""}</label></div>
+        <div><label><input type="radio" name="pdfdest" value="new"> Open as a <b>separate patient</b> made only from this PDF (no Cerner data)</label></div>
+        ${others.length ? `<div><label><input type="radio" name="pdfdest" value="existing"> Add to another PDF-only patient: <select id="pdfexist">${others.map((p) => `<option value="${esc(p.id)}">${esc(p.label)}</option>`).join("")}</select></label></div>` : ""}
+        <div id="pdfcur" style="margin-top:6px"><label><b><input type="checkbox" id="pdfpt"> This PDF is for ${esc(patientName())}</b></label></div>
+        <div id="pdfnew" hidden style="margin-top:6px">
+          <div class="muted">Details found in the PDF are filled in: check them. Nothing here goes to Cerner; this patient exists only in this browser tab.</div>
+          <table style="width:auto"><tr><td>Name</td><td><input type="text" id="np-given" placeholder="First name" value="${esc(demo.given || "")}" size="16"> <input type="text" id="np-family" placeholder="Last name" value="${esc(demo.family || "")}" size="16"></td></tr>
+            <tr><td>Sex</td><td><select id="np-sex"><option value="">Unknown</option><option value="female"${demo.sex === "female" ? " selected" : ""}>Female</option><option value="male"${demo.sex === "male" ? " selected" : ""}>Male</option></select></td></tr>
+            <tr><td>Date of birth</td><td><input type="date" id="np-dob" value="${esc(demo.birthDate || "")}"> or age <input type="text" id="np-age" size="4" value="${demo.birthDate ? "" : esc(demo.age || "")}">${demo.birthAmbiguous ? ' <span class="bad">check day/month</span>' : ""}</td></tr>
+            <tr><td>PHN / outside MRN</td><td><input type="text" id="np-phn" placeholder="PHN" value="${esc(demo.phn || "")}" size="12"> <input type="text" id="np-mrn" placeholder="MRN" value="${esc(demo.mrn || "")}" size="12"></td></tr></table>
+        </div>
+      </div>
       <p><button class="primary" id="pdfadd" disabled>Add ticked items</button> <button id="pdfback">Back</button> <button id="pdfx2">Cancel</button> <span class="muted" id="pdfres"></span></p>`;
     box.innerHTML = h;
     const addBtn = document.getElementById("pdfadd"), pt = document.getElementById("pdfpt");
-    pt.onchange = () => { addBtn.disabled = !pt.checked; };
+    const dest = () => (box.querySelector('input[name="pdfdest"]:checked') || {}).value || "current";
+    const refreshDest = () => {
+      const d = dest();
+      document.getElementById("pdfcur").hidden = d !== "current"; document.getElementById("pdfnew").hidden = d !== "new";
+      const named = (document.getElementById("np-given").value + document.getElementById("np-family").value).trim();
+      addBtn.disabled = d === "current" ? !pt.checked : d === "new" ? !named : false;
+      addBtn.textContent = d === "current" ? "Add ticked items" : d === "new" ? "Create patient and open" : "Add and open that patient";
+    };
+    box.querySelectorAll('input[name="pdfdest"]').forEach((r) => (r.onchange = refreshDest));
+    ["np-given", "np-family"].forEach((id) => (document.getElementById(id).oninput = refreshDest));
+    pt.onchange = refreshDest; refreshDest();
     document.getElementById("pdfback").onclick = () => drop(); document.getElementById("pdfx2").onclick = close;
     addBtn.onclick = () => {
-      const ctxBase = { patientId: pid(), now: Date.now() }, st = store(), added = []; const filesAdded = {};
+      const d = dest(); let target = pid(), created = null;
+      if (d === "existing") target = document.getElementById("pdfexist").value;
+      if (d === "new") {
+        const f = { given: document.getElementById("np-given").value.trim(), family: document.getElementById("np-family").value.trim(), sex: document.getElementById("np-sex").value,
+          birthDate: document.getElementById("np-dob").value, age: document.getElementById("np-age").value.trim(), phn: document.getElementById("np-phn").value.trim(), mrn: document.getElementById("np-mrn").value.trim() };
+        target = "pdfpt-" + hash([f.given, f.family, f.birthDate, Date.now()].join("|"));
+        created = patientResource(target, f);
+      }
+      const ctxBase = { patientId: target, now: Date.now() }, st = storeFor(target), added = []; const filesAdded = {};
+      if (created) st.patient = created;
       box.querySelectorAll("tr[data-i]").forEach((tr) => {
         if (!tr.querySelector(".ck").checked) return;
         const { it: src, r } = all[+tr.dataset.i], it = Object.assign({}, src), vv = tr.querySelector(".vv"), uu = tr.querySelector(".uu"), dd = tr.querySelector(".dd").value;
@@ -147,7 +195,10 @@
       if (document.getElementById("pdfkeep").checked) results.forEach((r) => { const d = X().docResource(r.text, Object.assign({ fileName: r.fileName }, ctxBase), r.docT); if (!st.items.some((x) => x.id === d.id)) { st.items.push(d); added.push(d); (filesAdded[r.fileName] = filesAdded[r.fileName] || []).push(d.id); } });
       Object.keys(filesAdded).forEach((n) => st.files.push({ name: n, ids: filesAdded[n], at: Date.now() }));
       if (!added.length) { document.getElementById("pdfres").textContent = "Nothing was added."; return; }
-      save(st); refreshCount(); reloadTabs();
+      saveFor(target, st);
+      if (created) { const l = pdfPatients(); l.push({ id: target, label: [created.name[0].text, created.gender, created.birthDate ? "DOB " + created.birthDate : ""].filter(Boolean).join(", "), at: Date.now() }); savePdfPatients(l); }
+      if (target !== pid()) { box.innerHTML = `<h2>Opening the PDF-only patient…</h2>`; window.TK.switchPatient(target); return; }
+      refreshCount(); reloadTabs();
       box.innerHTML = `<h2>Added ${added.length} item${added.length === 1 ? "" : "s"}</h2><p>They now show in every tab, marked as imported from PDF. Tabs that were open have been reloaded.</p><p><button id="pdfx3">Close</button> <button id="pdfman2">Manage imported items</button></p>`;
       document.getElementById("pdfx3").onclick = close; document.getElementById("pdfman2").onclick = manage;
     };
@@ -160,9 +211,21 @@
     box.innerHTML = `<h2>Imported from PDF (this browser tab only)</h2>
       ${st.files.length ? `<table><tr><th>File</th><th>Items</th><th>Added</th><th></th></tr>${st.files.map((f, i) => `<tr><td>${esc(f.name)}</td><td>${f.ids.length}</td><td>${new Date(f.at).toLocaleString()}</td><td><button data-rm="${i}">Remove</button></td></tr>`).join("")}</table>` : "<p>Nothing imported.</p>"}
       <p class="muted">Imported items are kept only in this browser tab and disappear when the tab is closed.</p>
+      ${pdfPatients().length || isPdfPt(pid()) ? `<h2 style="margin-top:14px">PDF-only patients</h2>
+        <table><tr><th>Patient</th><th>Items</th><th></th></tr>${pdfPatients().map((p, i) => `<tr><td>${esc(p.label)}${p.id === pid() ? " <b>(open now)</b>" : ""}</td><td>${storeFor(p.id).items.length}</td>
+          <td>${p.id === pid() ? "" : `<button data-open="${esc(p.id)}">Open</button> `}<button data-del="${i}">Delete</button></td></tr>`).join("")}</table>
+        ${isPdfPt(pid()) && sessionStorage.getItem("pdfpt-return") ? `<p><button id="pdfback2" class="primary">Back to the Cerner patient</button></p>` : ""}` : ""}
       <p><button id="pdfclr" ${st.items.length ? "" : "disabled"}>Remove everything</button> <button id="pdfx4">Close</button></p>`;
     modal.classList.add("on");
     box.querySelectorAll("button[data-rm]").forEach((b) => (b.onclick = () => { const s = store(), f = s.files[+b.dataset.rm]; s.items = s.items.filter((x) => !f.ids.includes(x.id)); s.files.splice(+b.dataset.rm, 1); save(s); refreshCount(); reloadTabs(); manage(); }));
+    box.querySelectorAll("button[data-open]").forEach((b) => (b.onclick = () => window.TK.switchPatient(b.dataset.open)));
+    box.querySelectorAll("button[data-del]").forEach((b) => (b.onclick = () => {
+      const l = pdfPatients(), p = l[+b.dataset.del]; if (!p) return;
+      sessionStorage.removeItem(KEY(p.id)); l.splice(+b.dataset.del, 1); savePdfPatients(l);
+      if (p.id === pid()) { if (sessionStorage.getItem("pdfpt-return")) return window.TK.backToCerner(); }
+      manage();
+    }));
+    const bk = document.getElementById("pdfback2"); if (bk) bk.onclick = () => window.TK.backToCerner();
     document.getElementById("pdfclr").onclick = () => { save({ items: [], files: [] }); refreshCount(); reloadTabs(); manage(); };
     document.getElementById("pdfx4").onclick = close;
   }

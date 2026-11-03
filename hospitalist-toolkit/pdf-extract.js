@@ -104,8 +104,31 @@
   const DATE_HINT = /collected|collection|specimen|drawn|reported|date of (?:service|procedure|exam|study|visit|test)|procedure date|performed|dictated|examination date|date:/i;
   function documentDate(lines) {
     for (const ln of lines.slice(0, 80)) if (DATE_HINT.test(ln)) { const d = findDate(ln); if (d) return d; }
-    for (const ln of lines.slice(0, 40)) { const d = findDate(ln); if (d) return d; }
+    for (const ln of lines.slice(0, 40)) { if (/\b(dob|d\.o\.b|date of birth|birth ?date|born)\b/i.test(ln)) continue; const d = findDate(ln); if (d) return d; }
     return null;
+  }
+
+  /* patient details printed on the report, to prefill a "separate patient" (always shown to the physician to check) */
+  const STOP = /\s{2,}|\t|\b(dob|d\.o\.b\.?|date of birth|birth ?date|sex|gender|mrn|phn|hcn|age|collected|dos|visit|location|ward|room|provider|physician|dr\.?)\b/i;
+  const title = (w) => w.toLowerCase().replace(/(^|[\s'’-])([a-z])/g, (m, a, b) => a + b.toUpperCase());
+  function demographics(text) {
+    const out = {}, lines = String(text || "").split(/\r?\n/).slice(0, 80);
+    for (const ln of lines) {
+      let m;
+      if (!out.name && (m = ln.match(/\b(?:patient(?:\s+name)?|pt\.?\s*name|name)\s*[:#]\s*(.+)$/i))) {
+        let v = m[1]; const cut = v.search(STOP); if (cut > 0) v = v.slice(0, cut); v = v.replace(/[^A-Za-z'’,\-\s.]/g, " ").replace(/\s+/g, " ").trim().replace(/[,.]$/, "");
+        if (/^[A-Za-z'’\-]+\s*,\s*[A-Za-z'’\-]+(\s+[A-Za-z'’\-.]+)?$/.test(v)) { const [fam, giv] = v.split(/\s*,\s*/); out.family = title(fam); out.given = title(giv); }
+        else if (/^[A-Za-z'’\-.]+(\s+[A-Za-z'’\-.]+){1,3}$/.test(v)) { const w = v.split(" "); out.family = title(w.pop()); out.given = title(w.join(" ")); }
+        if (out.family) out.name = out.given + " " + out.family;
+      }
+      if (!out.birthDate && (m = ln.match(/\b(?:dob|d\.o\.b\.?|date of birth|birth ?date)\s*[:#]?\s*(.{6,24})/i))) { const d = findDate(m[1]); if (d) { out.birthDate = iso(d.t); out.birthAmbiguous = !!d.ambiguous; } }
+      if (out.age == null && (m = ln.match(/\bage\s*[:#]?\s*(\d{1,3})\b/i) || ln.match(/\b(\d{1,3})\s*(?:y\/o|yo|years? old|year-old|yrs?\b)/i))) { const a = +m[1]; if (a > 0 && a < 120) out.age = a; }
+      if (!out.sex && (m = ln.match(/\b(?:sex|gender)\s*[:#]?\s*(male|female|m|f)\b/i))) out.sex = /^f/i.test(m[1]) ? "female" : "male";
+      if (!out.phn && (m = ln.match(/\b(?:phn|personal health number|hcn)\s*[:#]?\s*(\d[\d\s]{8,14}\d)/i))) { const d = m[1].replace(/\s/g, ""); if (d.length === 10) out.phn = d; }
+      if (!out.mrn && (m = ln.match(/\b(?:mrn|medical record(?: number| no\.?| #)?|chart(?: number| no\.?| #))\s*[:#]?\s*([A-Z0-9][A-Z0-9-]{3,14})\b/i))) out.mrn = m[1];
+    }
+    if (!out.age && out.birthDate) { const b = new Date(out.birthDate), n = new Date(); out.age = n.getFullYear() - b.getFullYear() - (n < new Date(n.getFullYear(), b.getMonth(), b.getDate()) ? 1 : 0); }
+    return out;
   }
 
   function labItems(lines, docT, fileName) {
@@ -259,6 +282,6 @@
       description: "Imported PDF: " + ctx.fileName, date: when, content: [{ attachment: { contentType: "text/plain", data: b64, title: ctx.fileName } }] };
   }
 
-  root.PdfExtract = { LABS, CONDITIONS, findDate, fromLines, fromText, toResource, docResource, iso };
+  root.PdfExtract = { demographics, LABS, CONDITIONS, findDate, fromLines, fromText, toResource, docResource, iso };
   if (typeof module !== "undefined" && module.exports) module.exports = root.PdfExtract;
 })(typeof window !== "undefined" ? window : globalThis);

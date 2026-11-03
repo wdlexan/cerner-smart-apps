@@ -89,4 +89,14 @@ r = X.fromText("Collected: 03/04/2026\nSodium 140 mmol/L", {}); ok("ambiguous nu
 r = X.fromText("This is a letter about nothing in particular. See you soon.", {}); ok("nothing found in plain letter", r.items.length === 0, r.items);
 r = X.fromText("", {}); ok("empty text no crash", r.items.length === 0);
 r = X.fromText("Sodium\nPotassium: high\nCreatinine ..... 88 umol/L", {}); ok("name without number ignored, dotted leader ok", r.items.length === 1 && r.items[0].value === 88, r.items);
+
+// ---- patient details for a separate PDF patient ----
+const dm = X.demographics("OUTSIDE HOSPITAL REPORT\nPatient: TEST, MADE-UP    DOB: 1946-03-02    Sex: F\nPHN: 9123 456 789   MRN: AB12345\nCollected: 2026-10-12");
+ok("demo name last, first", dm.family === "Test" && dm.given === "Made-Up" && dm.name === "Made-Up Test", dm);
+ok("demo dob", dm.birthDate === "1946-03-02", dm); ok("demo sex", dm.sex === "female", dm); ok("demo phn", dm.phn === "9123456789", dm); ok("demo mrn", dm.mrn === "AB12345", dm);
+ok("demo age from dob", dm.age >= 80 && dm.age <= 81, dm);
+const dm2 = X.demographics("Name: John Albert Smith\nAge: 72  Gender: Male");
+ok("demo first last", dm2.family === "Smith" && dm2.given === "John Albert", dm2); ok("demo age", dm2.age === 72 && dm2.sex === "male", dm2);
+ok("demo none", Object.keys(X.demographics("Hemoglobin 98 g/L")).length === 0);
+ok("document date skips DOB line", X.fromText("Patient: TEST, A  DOB: 1946-03-02\nHemoglobin 98 g/L\nReported: 2026-10-12").docT === new Date(2026, 9, 12, 12).getTime());
 console.log(`\n${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);
