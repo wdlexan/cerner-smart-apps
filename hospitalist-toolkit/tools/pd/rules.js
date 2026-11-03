@@ -159,8 +159,10 @@
       outer: for (const t of texts) {
         const re = new RegExp(s.re.source, "gi"); let m;
         while ((m = re.exec(t.text))) {
-          const before = t.text.slice(Math.max(0, m.index - 30), m.index);
-          if (/\b(no|denies|denied|without|negative for|nil)\b[^.]*$/i.test(before)) continue;
+          // negated: "no ... falls, fever or chest pain" (cue earlier in the same sentence, nothing like "but" in between); "fall precautions"
+          const before = t.text.slice(Math.max(0, m.index - 110), m.index).split(/[.;:!?]|\n\s*\n/).pop().replace(/\s+/g, " ");
+          if (/\b(no|not|denies|denied|without|negative for|nil|absence of)\b(?![^]*\b(but|however|although|except|now|ongoing)\b)[^]*$/i.test(before)) continue;
+          if (/^\s*(precautions?|risk|prevention|alarm)\b/i.test(t.text.slice(m.index + m[0].length, m.index + m[0].length + 20))) continue;
           const a = Math.max(0, t.text.lastIndexOf(".", m.index) + 1), b = t.text.indexOf(".", m.index); 
           out[s.id] = { src: t.src, quote: t.text.slice(a, b < 0 ? undefined : b + 1).trim().slice(0, 180) }; break outer;
         }

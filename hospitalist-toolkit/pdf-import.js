@@ -88,14 +88,13 @@
     return libP;
   }
   async function pdfLines(file) {
-    const lib = await loadLib(), buf = await file.arrayBuffer(), doc = await lib.getDocument({ data: buf }).promise, lines = []; let chars = 0;
+    const lib = await loadLib(), buf = await file.arrayBuffer(), doc = await lib.getDocument({ data: buf }).promise, pages = []; let chars = 0;
     for (let p = 1; p <= doc.numPages; p++) {
-      const tc = await (await doc.getPage(p)).getTextContent(), rows = [];
-      tc.items.forEach((it) => { if (!it.str || !it.str.trim()) return; const y = it.transform[5], x = it.transform[4]; let r = rows.find((q) => Math.abs(q.y - y) < 2.5); if (!r) { r = { y, parts: [] }; rows.push(r); } r.parts.push({ x, w: it.width || 0, s: it.str }); chars += it.str.length; });
-      rows.sort((a, b) => b.y - a.y).forEach((r) => { r.parts.sort((a, b) => a.x - b.x); let s = "", end = null; r.parts.forEach((q) => { if (end != null) { const gap = q.x - end; s += gap > 12 ? "   " : gap > 1.2 ? " " : ""; } s += q.s; end = q.x + q.w; }); lines.push(s); });
-      lines.push("");
+      const tc = await (await doc.getPage(p)).getTextContent();
+      pages.push(tc.items.filter((it) => it.str && it.str.trim()).map((it) => { chars += it.str.length; return { s: it.str, x: it.transform[4], y: it.transform[5], w: it.width || 0, h: it.height || Math.abs(it.transform[3]) || 0 }; }));
     }
-    return { lines, chars, pages: doc.numPages };
+    // keep columns and table rows (pdf-extract.js layoutLines), so two-column notes and wrapped table cells read correctly
+    return { lines: X().layoutLines(pages), chars, pages: doc.numPages };
   }
 
   /* ---------- step 2: read and review ---------- */
@@ -132,7 +131,7 @@
         const d = it.t ? X().iso(it.t) : "", missing = !it.t, amb = it.ambiguous || (it.dateFrom === "document" && r.docDateAmbiguous);
         const unit = it.kind === "lab" && it.text == null ? it.unit || it.unitGuess : it.kind === "vital" ? it.unit : "";
         const noUnit = it.kind === "lab" && it.text == null && !it.unit;
-        h += `<tr data-i="${i}"><td><input type="checkbox" class="ck" checked></td><td>${KIND[it.kind]}</td><td>${esc(it.label)}${it.flag ? ` <b>${esc(it.flag)}</b>` : ""}</td>
+        h += `<tr data-i="${i}"><td><input type="checkbox" class="ck" checked></td><td>${KIND[it.kind]}</td><td>${esc(it.label)}${it.flag ? ` <b>${esc(it.flag)}</b>` : ""}${it.kind === "med" ? ` <label class="muted" title="${esc(it.heldWhy || "")}" style="white-space:nowrap"><input type="checkbox" class="hh"${it.held ? " checked" : ""}> on hold${it.held ? " (per note)" : ""}</label>` : ""}</td>
           <td>${it.kind === "condition" ? "" : `<input type="text" class="vv" value="${esc(fmtVal(it))}" size="${it.kind === "med" ? 38 : 9}">`}</td>
           <td>${it.kind === "lab" && it.text == null ? `<input type="text" class="uu" value="${esc(it.unit || "")}" size="9" placeholder="${esc(it.unitGuess)}">` : esc(unit)}${noUnit ? ` <span class="bad" title="No unit was found next to the value">?</span>` : ""}</td>
           <td><input type="date" class="dd" value="${d || today}">${missing ? ` <span class="bad" title="No date found in the PDF; today is filled in">set date</span>` : amb ? ` <span class="bad" title="Numeric date could be day/month or month/day">check day/month</span>` : ""}</td>
@@ -140,7 +139,7 @@
       });
       h += `</table>`;
     }
-    h += `<p><label><input type="checkbox" id="pdfkeep"> Also keep the PDF text as a note, so Notes, Risk screen and other tabs that read notes can see it (the AI tab only sends data out if you have set it up to)</label></p>
+    h += `<p><label><input type="checkbox" id="pdfkeep"${results.some((r) => /history of present illness|chief complaint|\bhpi\b|admission note|consult(?:ation)? note|progress note|discharge summary|physical exam/i.test(r.text)) ? " checked" : ""}> Also keep the PDF text as a note, so Notes, Risk screen and other tabs that read notes can see it (the AI tab only sends data out if you have set it up to)</label></p>
       <div style="border:1px solid #dde3ea;border-radius:8px;padding:8px 12px;margin:8px 0"><b>Where should this go?</b>
         <div><label><input type="radio" name="pdfdest" value="current" checked> Add to the patient shown at the top: <b>${esc(patientName())}</b>${isPdfPt(pid()) ? " (PDF-only patient)" : ""}</label></div>
         <div><label><input type="radio" name="pdfdest" value="new"> Open as a <b>separate patient</b> made only from this PDF (no Cerner data)</label></div>
@@ -183,12 +182,13 @@
       box.querySelectorAll("tr[data-i]").forEach((tr) => {
         if (!tr.querySelector(".ck").checked) return;
         const { it: src, r } = all[+tr.dataset.i], it = Object.assign({}, src), vv = tr.querySelector(".vv"), uu = tr.querySelector(".uu"), dd = tr.querySelector(".dd").value;
-        if (dd) it.t = new Date(dd + "T12:00:00").getTime();
+        if (dd && !(it.t && X().iso(it.t) === dd)) it.t = new Date(dd + "T12:00:00").getTime(); // keep a time read from the PDF unless the date was changed
         if (vv) { const v = vv.value.trim();
           if (it.kind === "lab") { if (it.text != null) it.text = v; else { const n = parseFloat(v.replace(/^[<>]/, "").replace(",", ".")); if (isNaN(n)) return; it.value = n; it.cmp = /^[<>]/.test(v) ? v[0] : ""; } }
           else if (it.kind === "vital") { if (it.key === "bp") { const m = /(\d+)\s*\/\s*(\d+)/.exec(v); if (!m) return; it.value = +m[1]; it.value2 = +m[2]; } else { const n = parseFloat(v); if (isNaN(n)) return; it.value = n; } }
           else if (it.kind === "med") { it.text = v; it.label = v.split(/\s+/)[0]; } }
         if (uu) it.unit = uu.value.trim();
+        const hh = tr.querySelector(".hh"); if (hh) it.held = hh.checked;
         const res = X().toResource(it, Object.assign({ fileName: r.fileName }, ctxBase)); if (!res) return;
         if (!st.items.some((x) => x.id === res.id)) { st.items.push(res); added.push(res); (filesAdded[r.fileName] = filesAdded[r.fileName] || []).push(res.id); }
       });

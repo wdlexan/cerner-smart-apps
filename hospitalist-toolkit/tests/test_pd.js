@@ -36,6 +36,11 @@ eq("npo CR conversion", N.some((i) => /400 mg\/day CR to about 300 mg\/day/.test
 eq("npo rotigotine 300 -> 10", R.npo([R.row("Carbidopa-levodopa 25/100 1 tab PO TID")], { total: 300 }).some((i) => /estimate 10 mg\/24 h/.test(i)), true);
 // detect
 const d = R.detect([{ src: "Nursing", text: "Pt seeing animals in the room overnight. Constipated, no BM x4 days." }, { src: "PT", text: "Denies falls. Freezing at doorways." }], ["Orthostatic hypotension"]);
+const T = (x) => Object.keys(R.detect([{ src: "n", text: x }], [])).sort();
+eq("negated list (no falls ... or chest pain)", T("No reported head trauma, falls, fever, cough, shortness of breath, or chest pain."), []);
+eq("negation across a line break", T("over the last 36 hours. No reported\nhead trauma, falls, fever, or chest pain."), []);
+eq("fall precautions is not a fall", T("Fall precautions active due to combined motor deficits."), []);
+eq("negation ended by 'but'", T("No fever but he fell twice this week and has back pain."), ["freeze", "pain"]);
 eq("detect hallucination", !!d.psych, true); eq("detect constipation", !!d.constip, true); eq("detect freezing", !!d.freeze, true); eq("detect OH from problem list", d.oh.src, "problem list");
 eq("negated not detected", !!R.detect([{ src: "x", text: "No hallucinations." }], []).psych, false);
 // choices

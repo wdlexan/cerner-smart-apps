@@ -7,11 +7,12 @@ function pdNote(full) {
   if (x.lateCount) T.push(`${x.lateCount} PD dose${x.lateCount > 1 ? "s" : ""} more than 30 min late in 72 h.`);
   x.overdue.forEach((t) => T.push(`${t.r.drug.name} overdue by ${t.overdue} min.`));
   x.timing.filter((t) => t.r.n && t.got24 < t.r.n).forEach((t) => T.push(`${t.r.drug.name}: ${t.got24} of ${t.r.n} doses given in 24 h.`));
-  S.timing = T.length ? T : x.timing.length ? ["Doses given on time in the last 72 h."] : [];
+  S.timing = !f.gives.length ? (x.timing.length ? ["No MAR available to check dose times."] : []) : T.length ? T : x.timing.length ? ["Doses given on time in the last 72 h."] : [];
   S.avoid = x.avoid.map((v) => `${v.sev}: ${v.name.replace(/\s+\d.*$/, "")} (${v.why.replace(/:.*$/, "").replace(/\.$/, "")}).`).concat(x.avoidGiven.map((g) => `${g.name} given ${fmtDT(g.t)}.`));
   S.symptoms = x.sym.map((id) => R.SYMPTOMS.find((s) => s.id === id).label + (state.symAuto[id] && full ? ` (${state.symAuto[id].src})` : "")).concat(x.orth ? [`Orthostatic BP ${x.orth.base} → ${x.orth.stand} (drop ${x.orth.drop}).`] : []);
   const P = [];
-  if (x.heldNoNpo.length) P.push("Restart PD medication now (do not stop abruptly).");
+  if (x.heldLd.length) P.push("Restart levodopa now (do not stop abruptly).");
+  if (x.heldOther.length) P.push(x.heldOther.map((r) => r.drug.name).join(", ") + " on hold (intended); levodopa continued.");
   if (x.npo) P.push("Nil by mouth: NG carbidopa-levodopa IR at usual times" + (x.rows.some((r) => r.drug.id === "ld-cr") ? " (CR converted to IR)" : "") + "; if no tube, rotigotine patch per calculator after neurology discussion.");
   if (x.lateCount || x.overdue.length) P.push("PD meds at exact home times (time-critical); consider self-administration.");
   x.avoid.filter((v) => /Avoid|Contraindicated/.test(v.sev)).forEach((v) => P.push(`Stop ${v.name.replace(/\s+\d.*$/, "")}.`));

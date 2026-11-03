@@ -75,17 +75,20 @@
     L("vzv", "varicella(?: zoster)?(?: igg)?|\\bvzv\\b", null, "Varicella zoster IgG", "", TXT),
     L("cmv", "cytomegalovirus|\\bcmv\\b", null, "CMV", "", TXT)
   ];
+  const URINE = /\burin(?:e|ary|alysis)\b|\bu\/?a\b(?=\s*[:(]|\s{2})|\bdipstick\b|\/hpf\b/i;
   const TEXTVAL = /^[^\n\d]{0,40}?\b(not detected|non-?reactive|not immune|negative|positive|detected|reactive|indeterminate|immune|present|absent|neg|pos)\b/i;
   const NUM = /^[\s:.\-–=]*(?:\([^)]*\)\s*)?([<>]?\s?\d{1,6}(?:[.,]\d{1,4})?)\s*/;
-  const UNIT = /^((?:x\s?)?(?:10\s?[\^*]\s?\d+|µ|u|m|n|p|k)?(?:g|mol|L|U|IU|iu|mmol|umol|µmol|mL|dL|mm|fL|s|%|mIU|ng|pg|ug|mg|kg|Hg)[A-Za-zµ\/\^*0-9.%]*(?:\/[A-Za-z0-9\^*.µ]+)*|%|x10\^?\d+\/L)/i;
+  const UNIT = /^((?:x\s?)?(?:10\s?[\^*]\s?\d+|µ|u|m|n|p|k)?(?:g|mol|L|U|IU|iu|mmol|umol|µmol|mL|dL|mm|fL|s|%|mIU|ng|pg|ug|mg|kg|Hg)[A-Za-zµ\/\^*0-9.%]*(?:\/[A-Za-z0-9\^*.µ]+)*|%|x\s?10\s?\^?\d+\s?\/\s?[µu]?L)/i;
   const RANGE = /(\d+(?:[.,]\d+)?)\s*(?:-|–|to)\s*(\d+(?:[.,]\d+)?)/;
   const FLAG = /(?:^|\s)(HH|LL|H|L|A|AA|High|Low|Critical|Abnormal)(?=\s|$|\*)/;
 
   const MONTHS = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, sept: 8, oct: 9, nov: 10, dec: 11 };
+  const MONTH_WORD = /^(jan(uary)?|feb(ruary)?|mar(ch)?|apr(il)?|may|june?|july?|aug(ust)?|sep(t(ember)?)?|oct(ober)?|nov(ember)?|dec(ember)?)$/i;
+  const mon = (w) => (MONTH_WORD.test(w) ? MONTHS[w.slice(0, 3).toLowerCase()] : undefined);
   const DATE_RES = [
     [/\b(20\d{2}|19\d{2})[-\/.](\d{1,2})[-\/.](\d{1,2})\b/, (m) => [+m[1], +m[2] - 1, +m[3]]],
-    [/\b(\d{1,2})[\s\-]([A-Za-z]{3,4})[a-z]*\.?[\s\-,]+(20\d{2}|19\d{2})\b/, (m) => [+m[3], MONTHS[m[2].toLowerCase()], +m[1]]],
-    [/\b([A-Za-z]{3,4})[a-z]*\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(20\d{2}|19\d{2})\b/, (m) => [+m[3], MONTHS[m[1].toLowerCase()], +m[2]]],
+    [/\b(\d{1,2})[\s\-]([A-Za-z]{3,9})\.?[\s\-,]+(20\d{2}|19\d{2})\b/, (m) => [+m[3], mon(m[2]), +m[1]]],
+    [/\b([A-Za-z]{3,9})\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(20\d{2}|19\d{2})\b/, (m) => [+m[3], mon(m[1]), +m[2]]],
     [/\b(\d{1,2})[\/.-](\d{1,2})[\/.-](20\d{2}|19\d{2})\b/, (m) => { const a = +m[1], b = +m[2]; return a > 12 ? [+m[3], b - 1, a] : [+m[3], a - 1, b, "ambiguous"]; }]
   ];
   function findDate(s) {
@@ -103,7 +106,10 @@
 
   const DATE_HINT = /collected|collection|specimen|drawn|reported|date of (?:service|procedure|exam|study|visit|test)|procedure date|performed|dictated|examination date|date:/i;
   function documentDate(lines) {
-    for (const ln of lines.slice(0, 80)) if (DATE_HINT.test(ln)) { const d = findDate(ln); if (d) return d; }
+    for (let i = 0; i < Math.min(lines.length, 80); i++) if (DATE_HINT.test(lines[i])) { const d = findDate(lines[i]); if (d) {
+      // a clock time on the same line or the next two ("Time: 14:30")
+      for (const l of lines.slice(i, i + 3)) { const tm = /\b(?:time[:\s]*)?([01]?\d|2[0-3]):([0-5]\d)\b/i.exec(l.replace(/\d{1,2}\/\d{1,2}\/\d{2,4}/g, "")); if (tm) { const x = new Date(d.t); x.setHours(+tm[1], +tm[2], 0, 0); d.t = x.getTime(); break; } }
+      return d; } }
     for (const ln of lines.slice(0, 40)) { if (/\b(dob|d\.o\.b|date of birth|birth ?date|born)\b/i.test(ln)) continue; const d = findDate(ln); if (d) return d; }
     return null;
   }
@@ -116,7 +122,9 @@
     for (const ln of lines) {
       let m;
       if (!out.name && (m = ln.match(/\b(?:patient(?:\s+name)?|pt\.?\s*name|name)\s*[:#]\s*(.+)$/i))) {
-        let v = m[1]; const cut = v.search(STOP); if (cut > 0) v = v.slice(0, cut); v = v.replace(/[^A-Za-z'’,\-\s.]/g, " ").replace(/\s+/g, " ").trim().replace(/[,.]$/, "");
+        let v = m[1]; const cut = v.search(STOP); if (cut > 0) v = v.slice(0, cut);
+        if (/,\s*$/.test(v.trim())) { const nx = (lines[lines.indexOf(ln) + 1] || "").trim().split(/\s{2,}/)[0]; if (/^[A-Za-z'’\-]+(\s+[A-Za-z'’\-.]+)?$/.test(nx)) v = v.trim() + " " + nx; }
+        v = v.replace(/[^A-Za-z'’,\-\s.]/g, " ").replace(/\s+/g, " ").trim().replace(/[,.]$/, "");
         if (/^[A-Za-z'’\-]+\s*,\s*[A-Za-z'’\-]+(\s+[A-Za-z'’\-.]+)?$/.test(v)) { const [fam, giv] = v.split(/\s*,\s*/); out.family = title(fam); out.given = title(giv); }
         else if (/^[A-Za-z'’\-.]+(\s+[A-Za-z'’\-.]+){1,3}$/.test(v)) { const w = v.split(" "); out.family = title(w.pop()); out.given = title(w.join(" ")); }
         if (out.family) out.name = out.given + " " + out.family;
@@ -134,6 +142,7 @@
   function labItems(lines, docT, fileName) {
     const out = []; let sectionT = null;
     lines.forEach((ln, li) => {
+      if (URINE.test(ln)) return; // urinalysis / urine chemistry: never read as blood values
       if (DATE_HINT.test(ln)) { const d = findDate(ln); if (d && !/\d+(?:\.\d+)?\s*(?:-|–)\s*\d/.test(ln.replace(d ? "" : "", ""))) sectionT = d; }
       const hits = [];
       LABS.forEach((def) => { def.re.lastIndex = 0; let m; while ((m = def.re.exec(ln))) { if (!m[0]) { def.re.lastIndex++; continue; } hits.push({ def, i: m.index, e: m.index + m[0].length }); } });
@@ -146,8 +155,9 @@
         if (def.text) { const m = TEXTVAL.exec(rest); if (!m) return; text = m[1].replace(/^neg$/i, "Negative").replace(/^pos$/i, "Positive"); text = text[0].toUpperCase() + text.slice(1).toLowerCase(); tail = rest.slice(m[0].length); }
         else {
           const m = NUM.exec(rest); if (!m) return;
-          const n = num(m[1]); if (isNaN(n.v)) return; value = n.v; cmp = n.cmp; tail = rest.slice(m[0].length);
-          const um = UNIT.exec(tail); if (um) { unit = um[1]; tail = tail.slice(um[0].length); }
+          const n = num(m[1]); if (isNaN(n.v)) return; value = n.v; cmp = n.cmp; tail = rest.slice(m[0].length).replace(/^(\S+)\s+\/\s*(?=[A-Za-zµ])/, "$1/");
+          if (/^\/\s*(?:hpf|lpf|hp|field)/i.test(tail)) return; // cells per high-power field: urine microscopy
+          const um = UNIT.exec(tail); if (um) { unit = um[1].replace(/^x\s?10\s?\^?3\s?\/\s?[µu]L$/i, "x10^9/L").replace(/^x\s?10\s?\^?6\s?\/\s?[µu]L$/i, "x10^12/L"); tail = tail.slice(um[0].length); }
           if (!unit && def.unit && !/^\s*(?:\(|\[)?\s*\d/.test(tail.slice(0, 2)) ) unit = ""; // unit not stated: leave blank, flagged below
         }
         // reference range and flag in the rest of this cell
@@ -156,7 +166,7 @@
         const lt = /[<≤]\s*(\d+(?:[.,]\d+)?)/.exec(tail), gt = /[>≥]\s*(\d+(?:[.,]\d+)?)/.exec(tail);
         if (low == null && lt && !def.text) high = num(lt[1]).v; if (low == null && gt && !def.text) low = num(gt[1]).v;
         const fm = FLAG.exec(tail); const flag = fm ? fm[1].toUpperCase() : "";
-        const dm = findDate(ln); const useT = dm ? dm.t : sectionT ? sectionT.t : docT ? docT.t : null;
+        const dm = findDate(ln); const sT = sectionT && docT && iso(sectionT.t) === iso(docT.t) ? docT.t : sectionT && sectionT.t; const useT = dm ? dm.t : sT ? sT : docT ? docT.t : null;
         out.push({ kind: "lab", key: def.key, label: def.display, value, text, cmp, unit, unitGuess: !unit ? def.unit : "", low, high, flag, loinc: def.loinc, t: useT, dateFrom: dm ? "line" : sectionT ? "section" : docT ? "document" : "none", ambiguous: !!((dm && dm.ambiguous) || (!dm && sectionT && sectionT.ambiguous)), line: ln.trim().slice(0, 200), li });
       });
     });
@@ -172,14 +182,15 @@
       if ((m = /(?:\bHR\b|heart rate|pulse)[:\s]*(\d{2,3})(?!\d)/i.exec(ln))) { const v = +m[1]; if (v >= 20 && v <= 240) add({ key: "hr", label: "Heart rate", value: v, unit: "/min" }); }
       if ((m = /(?:\bRR\b|resp(?:iratory)? rate)[:\s]*(\d{1,2})(?!\d)/i.exec(ln))) { const v = +m[1]; if (v >= 4 && v <= 70) add({ key: "rr", label: "Respiratory rate", value: v, unit: "/min" }); }
       if ((m = /(?:spo2|o2 sat(?:uration)?|oxygen saturation|sat)[:\s]*(\d{2,3})\s*%/i.exec(ln))) { const v = +m[1]; if (v >= 50 && v <= 100) add({ key: "spo2", label: "Oxygen saturation", value: v, unit: "%" }); }
-      if ((m = /(?:\btemp(?:erature)?\b)[:\s]*(\d{2}(?:\.\d)?)\s*°?\s*([CF])?/i.exec(ln))) { let v = +m[1]; const f = (m[2] || "").toUpperCase() === "F" || v > 50; if (f) v = Math.round(((v - 32) * 5) / 9 * 10) / 10; if (v >= 30 && v <= 43) add({ key: "temp", label: "Temperature", value: v, unit: "degC" }); }
+      if ((m = /(?:\btemp(?:erature)?\b(?:\s*\([^)]*\))?|^\s*T(?:\s*\([^)]*\))?\s*:)[:\s]*(\d{2}(?:\.\d)?)\s*°?\s*([CF])?/i.exec(ln))) { let v = +m[1]; const f = (m[2] || "").toUpperCase() === "F" || v > 50; if (f) v = Math.round(((v - 32) * 5) / 9 * 10) / 10; if (v >= 30 && v <= 43) add({ key: "temp", label: "Temperature", value: v, unit: "degC" }); }
       if ((m = /(?:\bweight\b|\bwt\b)[:\s]*(\d{2,3}(?:\.\d)?)\s*(kg|lbs?|lb)\b/i.exec(ln))) { let v = +m[1]; const u = m[2].toLowerCase(); if (u.startsWith("lb")) v = Math.round(v * 0.45359237 * 10) / 10; if (v >= 20 && v <= 400) add({ key: "wt", label: "Weight", value: v, unit: "kg" }); }
     });
     return out;
   }
 
-  const DOSE = /\b([A-Za-z][A-Za-z\-]{2,}(?:\s+(?:[A-Z][A-Za-z\-]+|XR|SR|ER|CR))?)\s+(\d+(?:[.,]\d+)?)\s?(mg|mcg|µg|ug|g|units?|iu|ml|mL|mEq|meq)\b([^\n]{0,70})/i;
+  const DOSE = /\b([A-Za-z][A-Za-z\-]{2,}(?:\/[A-Za-z][A-Za-z\-]{2,})?(?:\s+(?:[A-Z][A-Za-z\-]+|XR|SR|ER|CR))?):?\s+(\d+(?:[.,]\d+)?(?:\/\d+(?:[.,]\d+)?)?)\s?(mg|mcg|µg|ug|g|units?|iu|ml|mL|mEq|meq)\b([^\n]{0,70})/i;
   const FREQ = /\b(daily|once daily|bid|b\.i\.d|tid|qid|q\d+h|q\d+ ?hours?|qhs|hs|prn|weekly|monthly|every \d+|po|iv|im|sc|subcut\w*|sl|pr|inh|topical|nightly|qam|od\b|twice)\b/i;
+  const FREQ_ROUTE = /^\s*(?:IV|PO|SC|SUBCUT|IM|SL|PR)\b/i;
   const MED_HDR = /(?:medications?|meds\b|prescriptions?|rx\b|current medications|discharge medications|home medications)/i;
   const NOT_MED = /^(?:take|dose|total|result|range|normal|weight|height|age|bmi|sodium|potassium|creatinine|glucose|hemoglobin)$/i;
   function medItems(lines, docT) {
@@ -189,13 +200,20 @@
       const m = DOSE.exec(ln); if (!m) return;
       if (!(inMeds || FREQ.test(ln))) return;
       const name = m[1].trim(); if (NOT_MED.test(name.split(/\s/)[0])) return;
-      out.push({ kind: "med", key: "med", label: name, dose: m[2] + " " + m[3], text: (name + " " + m[2] + " " + m[3] + m[4]).replace(/\s+/g, " ").trim(), t: (findDate(ln) || docT || {}).t || null, line: ln.trim().slice(0, 200), li });
+      const route = /\b(IV|PO|SC|SUBCUT|IM|SL|PR)\s*$/i.exec(ln.slice(0, m.index)), rest = m[4];
+      const text = (name + " " + m[2] + " " + m[3] + (route && !FREQ_ROUTE.test(rest) ? " " + route[1].toUpperCase() : "") + rest).replace(/\s+/g, " ").trim();
+      out.push({ kind: "med", key: "med", label: name, dose: m[2] + " " + m[3], text, t: (findDate(ln) || docT || {}).t || null, line: ln.trim().slice(0, 200), li });
     });
+    // "Hold pramipexole", "pramipexole held": order kept but marked on hold (shown in the review for the physician to confirm)
+    const all = lines.join(" ");
+    out.forEach((it) => { const w = it.label.split(/[\s\/]/)[0].replace(/[^A-Za-z-]/g, ""); if (w.length < 4) return;
+      const re = new RegExp("\\b(?:hold|held|holding|withhold|withheld|on hold)\\b[^.;]{0,60}?\\b" + w + "\\b|\\b" + w + "\\b[^.;]{0,25}?\\b(?:held|on hold|withheld)\\b", "i");
+      const hm = re.exec(all); if (hm) { it.held = true; it.heldWhy = hm[0].slice(0, 120); } });
     return out;
   }
 
   const ENDO = /colonoscop\w*|sigmoidoscop\w*|ileoscop\w*|pouchoscop\w*|upper endoscop\w*|esophagogastroduodenoscop\w*|\begd\b|enteroscop\w*|capsule endoscop\w*|gastroscop\w*|bronchoscop\w*|cystoscop\w*|endoscopy/i;
-  const IMAGING = /\b(ct (?:scan|abdomen|chest|head|pelvis|angiogram)?|mri|magnetic resonance|ultrasound|sonograph\w*|echocardiogra\w*|x-?ray|radiograph\w*|chest film|mr enterography|ct enterography|pet(?:\/ct| scan))\b/i;
+  const IMAGING = /\b((?:(?:head|chest|abdo\w*|pelvi\w*|brain|spine|neck) )?ct\b(?: (?:scan|abdomen|chest|head|pelvis|angiogram))?|mri|magnetic resonance|ultrasound|sonograph\w*|echocardiogra\w*|x-?ray|radiograph\w*|chest film|mr enterography|ct enterography|pet(?:\/ct| scan))\b/i;
   function sectionAfter(text, re, n) { const m = re.exec(text); if (!m) return ""; return text.slice(m.index, m.index + (n || 700)).replace(/\s+/g, " ").trim(); }
   function procedureItems(lines, text, docT, fileName) {
     const out = [];
@@ -206,7 +224,11 @@
       out.push({ kind: "procedure", key: "endo", label: em[0][0].toUpperCase() + em[0].slice(1).toLowerCase(), text: concl, t: dm ? dm.t : null, ambiguous: !!(dm && dm.ambiguous), line: ("Report mentions: " + em[0]).slice(0, 200), li: 0 });
     } else {
       const im = IMAGING.exec(text);
-      if (im) {
+      const row = NOTE.test(text) ? lines.find((l) => { const c = cells(l); return c.length >= 2 && IMAGING.test(c[0].text); }) : null;
+      if (row) {
+        const c = cells(row).map((x) => x.text).filter((x) => !/^[—–-]$/.test(x));
+        out.push({ kind: "report", key: "imaging", label: c[0].replace(/\s*\(\s*/g, " (").trim(), text: c.slice(1).join(" — "), t: docT ? docT.t : null, ambiguous: !!(docT && docT.ambiguous), line: row.trim().replace(/\s{2,}/g, " | ").slice(0, 200), li: lines.indexOf(row) });
+      } else if (im) {
         const concl = sectionAfter(text, /impression|conclusion|summary/i, 800) || sectionAfter(text, /findings/i, 800) || text.slice(0, 800).replace(/\s+/g, " ");
         out.push({ kind: "report", key: "imaging", label: im[0].trim().replace(/^./, (c) => c.toUpperCase()), text: concl, t: docT ? docT.t : null, ambiguous: !!(docT && docT.ambiguous), line: ("Report mentions: " + im[0]).slice(0, 200), li: 0 });
       }
@@ -217,17 +239,24 @@
   const CONDITIONS = [
     ["Crohn disease", /crohn/i, "K50.9"], ["Ulcerative colitis", /ulcerative colitis|proctitis/i, "K51.9"], ["Inflammatory bowel disease", /inflammatory bowel/i, "K52.9"],
     ["Multiple myeloma", /multiple myeloma/i, "C90.00"], ["Heart failure", /heart failure|\bchf\b|\bhfref\b|\bhfpef\b/i, "I50.9"], ["COPD", /\bcopd\b|chronic obstructive/i, "J44.9"],
-    ["Chronic kidney disease", /chronic kidney disease|\bckd\b/i, "N18.9"], ["Type 2 diabetes", /type 2 diabetes|\bt2dm\b|diabetes mellitus/i, "E11.9"], ["Atrial fibrillation", /atrial fibrillation|\bafib\b|\bAF\b/, "I48.91"],
+    ["Chronic kidney disease", /chronic kidney disease|\bckd\b/i, "N18.9"], ["Type 2 diabetes", /type 2 diabetes|\bt2dm\b|diabetes mellitus/i, "E11.9"], ["Atrial fibrillation", /[Aa]trial [Ff]ibrillation|\b[Aa][Ff]ib\b|\bAF\b|ATRIAL FIBRILLATION/, "I48.91"],
     ["Hypertension", /hypertension|\bhtn\b/i, "I10"], ["Pneumonia", /pneumonia/i, "J18.9"], ["Pulmonary embolism", /pulmonary embol/i, "I26.99"], ["Deep vein thrombosis", /deep vein thrombosis|\bdvt\b/i, "I82.40"],
     ["Cirrhosis", /cirrhosis/i, "K74.60"], ["Stroke", /\bstroke\b|cerebrovascular accident|\bcva\b/i, "I63.9"], ["Dementia", /dementia/i, "F03.90"], ["Asthma", /asthma/i, "J45.909"],
-    ["Anorexia nervosa", /anorexia nervosa/i, "F50.00"], ["Cancer (as stated)", /\bcarcinoma\b|\blymphoma\b|\bleukemia\b/i, "C80.1"]
+    ["Anorexia nervosa", /anorexia nervosa/i, "F50.00"], ["Parkinson disease", /parkinson'?s?\s+disease/i, "G20"], ["Benign prostatic hyperplasia", /benign prostatic|\bbph\b/i, "N40.0"],
+    ["Mild cognitive impairment", /mild cognitive impairment|\bmci\b/i, "G31.84"], ["Urinary tract infection", /urinary tract infection|\buti\b|pyelonephritis|cystitis/i, "N39.0"], ["Delirium", /delirium/i, "F05"],
+    ["Acute kidney injury", /acute kidney injury|\baki\b/i, "N17.9"], ["Hyponatremia", /hyponatr(?:a)?emia/i, "E87.1"], ["Sepsis", /\bsepsis\b|\bseptic\b/i, "A41.9"],
+    ["Hip fracture", /hip fracture|fractured? (?:neck of )?femur|femoral neck fracture|intertrochanteric|subtrochanteric/i, "S72.0"], ["Cancer (as stated)", /\bcarcinoma\b|\blymphoma\b|\bleukemia\b/i, "C80.1"]
   ];
-  const DX_CTX = /diagnos|problem|\bdx\b|history of|\bpmh\b|\bhx\b|assessment|impression|comorbid/i, NEG = /\bno (?:history|evidence|signs?)\b|denies|negative for|rule out|\br\/o\b|family history|\bfhx\b|without/i;
+  const DX_CTX = /diagnos|problem|\bdx\b|history of|\bpmh\b|\bhx\b|assessment|impression|comorbid/i, NEG = /\bno (?:history|evidence|signs?)\b|denies|negative for|rule out|\br\/o\b|family history|\bfhx\b|without|differential|\bddx\b|\bvs\.?\s|versus|\?|possible|query|to exclude|precautions?/i;
+  const DX_SECTION = /past medical|medical history|\bpmh\b|problem list|active problems|diagnos[ie]s|assessment|impression|comorbidit/i;
   function conditionItems(lines, docT) {
-    const out = [], seen = new Set();
+    const out = [], seen = new Set(); let inDx = false;
     lines.forEach((ln, li) => {
-      if (!DX_CTX.test(ln)) return;
-      ln.split(/[.;]\s/).forEach((cl) => {
+      if (isHeading(ln)) { inDx = DX_SECTION.test(ln); return; }
+      const before = ((lines[li - 1] || "").split(/[.;:]\s/).pop() || "");
+      if (!inDx && !DX_CTX.test(ln) && !DX_CTX.test(before)) return;
+      ln.split(/[.;]\s/).forEach((cl, k) => {
+        if (k === 0 && NEG.test(before)) return;
         if (NEG.test(cl)) return;
         CONDITIONS.forEach(([name, re, icd]) => { if (re.test(cl) && !seen.has(name)) { seen.add(name); out.push({ kind: "condition", key: "dx", label: name, icd, t: (findDate(ln) || docT || {}).t || null, line: ln.trim().slice(0, 200), li }); } });
       });
@@ -235,10 +264,100 @@
     return out;
   }
 
+  /* ---------- layout: rows of text with their columns ---------- */
+  /* A cell is text separated from its neighbours by 2+ spaces. Positions (start) are character columns, so layoutLines() output and
+     "pdftotext -layout" output are handled the same way. */
+  function cells(ln) { const out = [], re = /\S+(?: \S+)*/g; let m; while ((m = re.exec(ln))) out.push({ start: m.index, text: m[0] }); return out.filter((c) => !/^[•●▪◦·\-*]$/.test(c.text)); }
+  const isHeading = (ln) => { const c = cells(ln), t = ln.trim(); return c.length === 1 && t.length >= 4 && t.length <= 60 && t === t.toUpperCase() && /[A-Z]{3}/.test(t) && !/\d{2}/.test(t); };
+  const headCell = (t) => t.length >= 5 && t === t.toUpperCase() && /[A-Z]{4}/.test(t);
+  const NOTE = /history of present illness|chief complaint|\bhpi\b|admission note|consult(?:ation)? note|progress note|discharge summary|physical exam/i;
+  const VITAL_HDR = /^(?:t|temp(?:erature)?|bp|blood pressure|hr|heart rate|pulse|p|rr|resp(?:iratory)?(?: rate)?|spo2|sao2|o2 sat(?:uration)?|sat|wt|weight|gcs|pain)\b/i;
+  const pad = (cs) => cs.reduce((s, c) => (s.length ? s + " ".repeat(Math.max(3, c.start - s.length)) : " ".repeat(c.start)) + c.text, "");
+
+  /* Turn a page laid out in columns and tables into lines the readers below can use:
+     - two columns side by side under two headings (PAST MEDICAL HISTORY | HOME MEDICATIONS) -> left column, then right column
+     - a header row of vital signs with the values on the next row -> "BP: 138/82" lines
+     - a table row whose cells wrap over several lines ("Serum" / 1.1 mg/dL / "Creatinine") -> one line per row
+     Blank lines separate rows; layoutLines() and pdftotext both leave them. */
+  function structure(lines) {
+    const out = [];
+    // 1. side-by-side columns
+    for (let i = 0; i < lines.length; i++) {
+      const c = cells(lines[i]);
+      if (c.length === 2 && headCell(c[0].text) && headCell(c[1].text) && c[1].start - c[0].start > 20) {
+        const split = c[1].start - 3, L = [c[0].text], R = [c[1].text];
+        let j = i + 1, list = true;
+        for (; j < lines.length; j++) {
+          const cj = cells(lines[j]);
+          if (!cj.length) { const nx = lines.slice(j + 1).find((l) => l.trim()); if (!nx || !cells(nx).some((x) => x.start >= split)) break; continue; }
+          if (isHeading(lines[j]) || (cj.length === 1 && cj[0].start < split && cj[0].start + cj[0].text.length > split + 10)) break;
+          const l = cj.filter((x) => x.start < split), r = cj.filter((x) => x.start >= split).map((x) => ({ start: Math.max(0, x.start - c[1].start), text: x.text }));
+          if (l.length > 1 || r.length > 1) { list = false; break; } // a grid or table, not two lists side by side (e.g. a page title row)
+          if (l.length) L.push(pad(l)); if (r.length) R.push(pad(r));
+        }
+        if (list && j > i + 1) { out.push(...L, "", ...R, ""); i = j - 1; continue; }
+      }
+      out.push(lines[i]);
+    }
+    // 2. rows separated by blank lines
+    const groups = []; let g = [];
+    out.forEach((ln) => { if (ln.trim()) g.push(ln); else { if (g.length) groups.push(g); g = []; } }); if (g.length) groups.push(g);
+    const res = [];
+    groups.forEach((grp, gi) => {
+      // vital signs header with the values on the next row
+      const hc = grp.length === 1 ? cells(grp[0]) : [];
+      if (hc.length >= 3 && hc.filter((c) => VITAL_HDR.test(c.text)).length >= 3 && groups[gi + 1]) {
+        res.push(...grp);
+        const vc = cells(groups[gi + 1][0]);
+        if (vc.length >= 3 && vc.some((c) => /\d/.test(c.text))) vc.forEach((v) => { const h = hc.reduce((b, c) => (Math.abs(c.start - v.start) < Math.abs(b.start - v.start) ? c : b)); res.push(h.text + ": " + v.text); });
+        res.push(""); return;
+      }
+      // a row whose cells wrap over several lines
+      const cl = grp.map(cells), cols = [];
+      cl.flat().map((c) => c.start).sort((a, b) => a - b).forEach((s) => { if (!cols.length || s - cols[cols.length - 1] > 3) cols.push(s); });
+      const colOf = (c) => { let k = 0; cols.forEach((s, i) => { if (s <= c.start + 3) k = i; }); return k; };
+      const key = (cs) => cs.map(colOf).join(",");
+      const same = cl.every((cs) => key(cs) === key(cl[0])), prose = cl.some((cs) => cs.length === 1 && cs[0].text.length >= 70);
+      if (grp.length >= 2 && grp.length <= 6 && cols.length >= 2 && !same && !prose) {
+        const merged = cols.map(() => "");
+        cl.forEach((cs) => cs.forEach((c) => { const k = colOf(c); merged[k] = merged[k] ? merged[k] + (/-$/.test(merged[k]) ? "" : " ") + c.text : c.text; }));
+        res.push(pad(cols.map((s, k) => ({ start: s, text: merged[k] })).filter((c) => c.text)), ""); return;
+      }
+      res.push(...grp, "");
+    });
+    return res;
+  }
+
+  /* pdf.js text items -> layout lines. pages: [[{s, x, y, w, h}]]. Columns are kept as character positions, and a blank line is left
+     between rows further apart than normal line spacing (table rows, paragraphs). */
+  function layoutLines(pages) {
+    const lines = [];
+    pages.forEach((items) => {
+      items = items.filter((it) => it.s && it.s.trim()); if (!items.length) return;
+      const ws = items.filter((it) => it.s.length >= 3 && it.w > 0).map((it) => it.w / it.s.length).sort((a, b) => a - b), cw = ws.length ? ws[Math.floor(ws.length / 2)] : 5;
+      const minX = Math.min(...items.map((it) => it.x)), rows = [];
+      items.forEach((it) => { let r = rows.find((q) => Math.abs(q.y - it.y) < 2.5); if (!r) { r = { y: it.y, h: 0, parts: [] }; rows.push(r); } r.h = Math.max(r.h, it.h || 0); r.parts.push(it); });
+      rows.sort((a, b) => b.y - a.y);
+      let prev = null;
+      rows.forEach((r) => {
+        if (prev && prev.y - r.y > 1.55 * Math.max(r.h, prev.h, 6)) lines.push("");
+        r.parts.sort((a, b) => a.x - b.x); let s = "", end = null;
+        r.parts.forEach((q) => {
+          const col = Math.round((q.x - minX) / cw);
+          if (end == null) s = " ".repeat(Math.max(0, col)); else { const gap = q.x - end; s += gap > Math.max(6, 1.6 * cw) ? " ".repeat(Math.max(3, col - s.length)) : gap > 1.2 ? " " : ""; }
+          s += q.s; end = q.x + q.w;
+        });
+        lines.push(s.replace(/\s+$/, "")); prev = r;
+      });
+      lines.push("", "");
+    });
+    return lines;
+  }
+
   /* lines: array of strings (one per visual row). */
   function fromLines(lines, opts) {
     opts = opts || {};
-    lines = lines.map((s) => String(s).replace(/ /g, " ").replace(/[ \t]+$/g, "")).filter((s) => s.trim());
+    lines = structure(lines.map((s) => String(s).replace(/\u00a0/g, " ").replace(/μ/g, "µ").replace(/\t/g, "   ").replace(/[ \t]+$/g, ""))).filter((s) => s.trim());
     const text = lines.join("\n"), docT = documentDate(lines);
     const items = [].concat(labItems(lines, docT, opts.fileName), vitalItems(lines, docT), medItems(lines, docT), procedureItems(lines, text, docT, opts.fileName), conditionItems(lines, docT));
     const seen = new Set();
@@ -268,7 +387,7 @@
       const L = { hr: ["8867-4", "Heart rate"], rr: ["9279-1", "Respiratory rate"], spo2: ["59408-5", "Oxygen saturation"], temp: ["8310-5", "Body temperature"], wt: ["29463-7", "Body weight"] }[it.key];
       return Object.assign({ resourceType: "Observation", category: cat, code: { coding: [{ system: "http://loinc.org", code: L[0], display: L[1] }], text: L[1] }, effectiveDateTime: when, valueQuantity: { value: it.value, unit: it.unit } }, base);
     }
-    if (it.kind === "med") return { resourceType: "MedicationRequest", id, status: "active", intent: "order", subject: base.subject, meta: base.meta, authoredOn: when, medicationCodeableConcept: { text: it.text }, dosageInstruction: [{ text: it.text }] };
+    if (it.kind === "med") return { resourceType: "MedicationRequest", id, status: it.held ? "on-hold" : "active", intent: "order", subject: base.subject, meta: base.meta, authoredOn: when, medicationCodeableConcept: { text: it.text } }; // the text already holds dose and directions
     if (it.kind === "procedure") return { resourceType: "Procedure", id, status: "completed", subject: base.subject, meta: base.meta, code: { text: it.label }, performedDateTime: when, note: [{ text: it.text }] };
     if (it.kind === "report") return { resourceType: "DiagnosticReport", id, status: "final", subject: base.subject, meta: base.meta, category: [{ coding: [{ code: "imaging" }] }], code: { text: it.label }, effectiveDateTime: when, issued: when, conclusion: it.text };
     if (it.kind === "condition") return { resourceType: "Condition", id, subject: base.subject, meta: base.meta, category: [{ coding: [{ system: "http://terminology.hl7.org/CodeSystem/condition-category", code: "problem-list-item" }] }], clinicalStatus: { coding: [{ system: "http://terminology.hl7.org/CodeSystem/condition-clinical", code: "active" }] }, code: { coding: [{ system: "http://hl7.org/fhir/sid/icd-10", code: it.icd, display: it.label }], text: it.label }, recordedDate: when };
@@ -282,6 +401,6 @@
       description: "Imported PDF: " + ctx.fileName, date: when, content: [{ attachment: { contentType: "text/plain", data: b64, title: ctx.fileName } }] };
   }
 
-  root.PdfExtract = { demographics, LABS, CONDITIONS, findDate, fromLines, fromText, toResource, docResource, iso };
+  root.PdfExtract = { layoutLines, structure, cells, demographics, LABS, CONDITIONS, findDate, fromLines, fromText, toResource, docResource, iso };
   if (typeof module !== "undefined" && module.exports) module.exports = root.PdfExtract;
 })(typeof window !== "undefined" ? window : globalThis);

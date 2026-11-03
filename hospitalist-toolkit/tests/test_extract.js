@@ -99,4 +99,78 @@ const dm2 = X.demographics("Name: John Albert Smith\nAge: 72  Gender: Male");
 ok("demo first last", dm2.family === "Smith" && dm2.given === "John Albert", dm2); ok("demo age", dm2.age === 72 && dm2.sex === "male", dm2);
 ok("demo none", Object.keys(X.demographics("Hemoglobin 98 g/L")).length === 0);
 ok("document date skips DOB line", X.fromText("Patient: TEST, A  DOB: 1946-03-02\nHemoglobin 98 g/L\nReported: 2026-10-12").docT === new Date(2026, 9, 12, 12).getTime());
+
+/* ---- formatted clinical note: two columns, vitals header row, wrapped table cells (MADE-UP patient, layout as pdftotext/layoutLines give it) ---- */
+const note = [
+  " RIVERSIDE TEST HOSPITAL                                   ADMISSION NOTE",
+  " Department of Medicine                                    Date: March 3, 2026",
+  "                                                           Time: 09:45",
+  "",
+  "  Patient Name: Testcase,     MRN: 111-222-33      DOB: 05/06/1950 (75 y/o)     Gender: Female",
+  "  Jane",
+  "",
+  "HISTORY OF PRESENT ILLNESS",
+  "",
+  "Ms. Testcase is a 75-year-old woman with a history of Parkinson's Disease admitted with confusion. Differential",
+  "diagnosis includes sepsis or drug effect.",
+  "",
+  "PAST MEDICAL HISTORY                          HOME MEDICATIONS",
+  "",
+  "   Atrial Fibrillation                         Carbidopa/Levodopa: 25/100 mg PO QID",
+  "",
+  "   Benign Prostatic Hyperplasia                Apixaban: 5 mg PO BID",
+  "",
+  "PHYSICAL EXAMINATION",
+  "",
+  " T (Oral)           BP              HR            RR         SpO2",
+  "",
+  " 38.2 °C            102/64 mmHg     112 bpm       22 bpm     91% on 2 L",
+  "",
+  "Neuro: confused, rigid.",
+  "",
+  " Test            Result                          Reference Range   Comment",
+  "",
+  "                                                 3.5 - 5.0 mmol /",
+  " Potassium       5.6 mmol/L                                        High",
+  "                                                 L",
+  "",
+  "                 Cloudy, Nitrite (+),                              Consistent with",
+  " Urinalysis                                      Negative",
+  "                 WBC > 50/hpf                                      infection",
+  "",
+  " Serum",
+  "                 160 umol/L                      45 - 90 umol/L    AKI",
+  " Creatinine",
+  "",
+  " Chest CT        Right lower lobe consolidation.                   Pneumonia",
+  "",
+  "ASSESSMENT",
+  "",
+  "Urinary tract infection with delirium. Acute kidney injury."
+];
+const nr = X.fromLines(note, { fileName: "note.pdf" }), nI = (k, l) => nr.items.find((i) => i.kind === k && (!l || i.label === l || i.key === l));
+const nd = X.demographics(nr.text);
+ok("note: name wrapped onto next line", nd.family === "Testcase" && nd.given === "Jane", nd);
+ok("note: written date + time", nr.docT === new Date(2026, 2, 3, 9, 45).getTime(), new Date(nr.docT));
+ok("note: vitals from header row", nI("vital", "temp").value === 38.2 && nI("vital", "bp").value === 102 && nI("vital", "hr").value === 112 && nI("vital", "rr").value === 22 && nI("vital", "spo2").value === 91, nr.items.filter((i) => i.kind === "vital"));
+ok("note: right-column meds", nI("med", "Carbidopa/Levodopa") && /25\/100 mg PO QID/.test(nI("med", "Carbidopa/Levodopa").text) && nI("med", "Apixaban"), nr.items.filter((i) => i.kind === "med"));
+ok("note: left-column history", nI("condition", "Atrial fibrillation") && nI("condition", "Benign prostatic hyperplasia") && nI("condition", "Parkinson disease"), nr.items.filter((i) => i.kind === "condition").map((i) => i.label));
+ok("note: assessment diagnoses", nI("condition", "Urinary tract infection") && nI("condition", "Delirium") && nI("condition", "Acute kidney injury"));
+ok("note: differential across a line break is not a diagnosis", !nI("condition", "Sepsis"));
+ok("note: wrapped table row (Serum / Creatinine)", nI("lab", "creat") && nI("lab", "creat").value === 160 && nI("lab", "creat").low === 45, nI("lab", "creat"));
+ok("note: range and unit split over lines", nI("lab", "k") && nI("lab", "k").value === 5.6 && nI("lab", "k").high === 5, nI("lab", "k"));
+ok("note: urine WBC per hpf never read as blood WBC", !nI("lab", "wbc"), nI("lab", "wbc"));
+ok("note: imaging row", nI("report") && nI("report").label === "Chest CT" && /consolidation/.test(nI("report").text), nI("report"));
+ok("units: x10^3/µL read as x10^9/L", X.fromText("WBC  12.8 x10^3 / µL  4.5 - 11.0").items[0].unit === "x10^9/L");
+ok("urine line skipped", X.fromText("Urine sodium 20 mmol/L").items.filter((i) => i.kind === "lab").length === 0);
+ok("page title row is not two columns", X.structure(["HOSPITAL NAME HERE            ADMISSION NOTE", "  Name: A, B     MRN: 1     DOB: 2000-01-01"]).some((l) => /Name: A, B\s+MRN/.test(l)));
+// layoutLines from pdf.js-style items: columns kept, wide gap = new row group
+const ll = X.layoutLines([[{ s: "Sodium", x: 50, y: 700, w: 30, h: 9 }, { s: "124 mmol/L", x: 150, y: 700, w: 45, h: 9 }, { s: "Next row", x: 50, y: 680, w: 40, h: 9 }]]);
+ok("layoutLines columns and row gap", /^Sodium\s{3,}124 mmol\/L$/.test(ll[0]) && ll[1] === "" && ll[2] === "Next row", ll);
+
+const hm = X.fromText("HOME MEDICATIONS\nPramipexole: 0.5 mg PO TID\nRopinirole 1 mg PO TID\nPLAN\nHold dopamine agonist (Pramipexole) for hallucinations.\nStarted IV Ceftriaxone 1g daily.").items.filter((i) => i.kind === "med");
+ok("med held per note", hm.find((i) => i.label === "Pramipexole").held === true && !hm.find((i) => i.label === "Ropinirole").held, hm);
+ok("med route before name kept", /Ceftriaxone 1 g IV daily/.test(hm.find((i) => i.label === "Ceftriaxone").text), hm.find((i) => i.label === "Ceftriaxone"));
+const hr = X.toResource(Object.assign({}, hm[0], { held: true }), { fileName: "f", patientId: "p", now: 0 });
+ok("held med -> on-hold order, text once", hr.status === "on-hold" && !hr.dosageInstruction && /0\.5 mg/.test(hr.medicationCodeableConcept.text), hr);
 console.log(`\n${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);

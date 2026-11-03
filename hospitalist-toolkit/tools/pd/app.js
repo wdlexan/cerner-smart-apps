@@ -26,6 +26,7 @@ function ctx() {
   x.lateCount = x.timing.reduce((s, t) => s + t.late.length, 0);
   x.overdue = x.timing.filter((t) => t.overdue);
   x.heldNoNpo = x.rows.filter((r) => r.held && !$("npo").checked);
+  x.heldLd = x.heldNoNpo.filter((r) => r.drug.cls === "levodopa"); x.heldOther = x.heldNoNpo.filter((r) => r.drug.cls !== "levodopa");
   x.avoid = R.avoid(f.meds.filter((m) => !m.isPd && !m.given), x.onMaob, x.onApo);
   // haloperidol / metoclopramide actually given
   x.avoidGiven = f.gives.filter((g) => !g.drug && R.AVOID.slice(0, 2).some((a) => a.re.test(g.name)) && now - g.t <= 3 * DAY);
@@ -55,7 +56,9 @@ function draw() {
 
 function drawAlerts(x) {
   const a = [];
-  if (x.heldNoNpo.length) a.push(["urgent", "PD medication on hold: " + x.heldNoNpo.map((r) => r.name.split(" PO")[0]).join(", ") + ".", "Do not stop PD drugs abruptly. If the patient can swallow, restart; if not, tick nil by mouth for the plan."]);
+  if (x.heldLd.length) a.push(["urgent", "Levodopa on hold: " + x.heldLd.map((r) => r.name.split(" PO")[0]).join(", ") + ".", "Do not stop levodopa abruptly (risk of parkinsonism-hyperpyrexia syndrome). If the patient can swallow, restart; if not, tick nil by mouth for the plan."]);
+  if (x.heldOther.length) a.push([x.heldLd.length ? "action" : "info", "On hold: " + x.heldOther.map((r) => r.name.split(" PO")[0]).join(", ") + ".",
+    "Holding an agonist, amantadine or anticholinergic can be deliberate (hallucinations, delirium, hypotension): confirm it is intended and keep levodopa going." + (x.heldOther.some((r) => r.drug.cls === "agonist") ? " A dopamine agonist stopped suddenly at a high dose can cause withdrawal (anxiety, apathy, pain, low mood): watch, and taper if stopping long term." : "")]);
   if ($("npo").checked && x.rows.length) a.push(["urgent", "Nil by mouth on PD medication.", "See the nil-by-mouth plan: NG levodopa first; patch if no tube."]);
   x.overdue.forEach((t) => a.push(["urgent", `${t.r.drug.name}: next dose overdue by about ${t.overdue} min.`, "Give now."]));
   if (x.lateCount) a.push(["action", `${x.lateCount} late PD dose${x.lateCount > 1 ? "s" : ""} in 72 h (more than 30 min).`, "Ask nursing to set exact times (patient's home schedule) and allow self-administration if able."]);
@@ -83,6 +86,7 @@ function drawMeds(x) {
 
 function drawTiming(x) {
   if (!x.timing.length) { $("timing").innerHTML = '<div class="muted">No scheduled oral PD medication to check.</div>'; $("timesum").textContent = ""; return; }
+  if (!state.f.gives.length) { $("timing").innerHTML = '<div class="muted">No medication administration record (MAR) for this patient, so dose times cannot be checked. (For a PDF-only patient this is expected.)</div>'; $("timesum").textContent = "no MAR"; return; }
   $("timing").innerHTML = x.timing.map((t) => {
     const late = new Set(t.late.map((l) => l.t));
     const doses = t.gives.filter((g) => x.now - g.t <= 72 * HR).sort((a, b) => a.t - b.t).map((g) => `<span class="flag ${late.has(g.t) ? "f-avoid" : "f-good"}">${fmtDT(g.t)}${late.has(g.t) ? " (+" + t.late.find((l) => l.t === g.t).by + " min)" : ""}</span>`).join(" ");
