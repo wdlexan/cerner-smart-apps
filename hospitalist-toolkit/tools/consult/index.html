@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Consult summary</title>
+  <style>
+    :root { --bg:#f5f7fa; --card:#fff; --ink:#1f2933; --muted:#5f6c7b; --accent:#0b6bcb; --line:#dde3ea;
+            --r-bg:#fde8e8; --r-ink:#9b1c1c; --a-bg:#fff1d6; --a-ink:#8a5200; --b-bg:#e3eefc; --b-ink:#0b4a99; --g-bg:#e4f4ea; --g-ink:#1d6b3a; --warn-bg:#fff4e5; --warn-line:#f0c27b; }
+    @media (prefers-color-scheme: dark) { :root { --bg:#111418; --card:#1a1f26; --ink:#e8edf2; --muted:#9aa7b5; --accent:#6aa9ff; --line:#2b333d;
+            --r-bg:#4a1d1d; --r-ink:#ffb3b3; --a-bg:#4a3511; --a-ink:#ffd38a; --b-bg:#14325c; --b-ink:#a9cdff; --g-bg:#16361f; --g-ink:#9be0b1; --warn-bg:#3a2e15; --warn-line:#6b5420; } }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); }
+    header { padding:14px 20px; border-bottom:1px solid var(--line); background:var(--card); }
+    header h1 { margin:0; font-size:19px; } header .sub { font-size:13px; color:var(--muted); margin-top:2px; }
+    main { max-width:980px; margin:16px auto 40px; padding:0 16px; display:grid; gap:14px; }
+    .banner { background:var(--warn-bg); border:1px solid var(--warn-line); border-radius:8px; padding:10px 14px; font-size:13px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:10px; font-size:13.5px; }
+    .card > summary { padding:10px 16px; font-weight:700; font-size:15px; cursor:pointer; display:flex; justify-content:space-between; gap:10px; }
+    .card > .body { padding:0 16px 14px; }
+    select, input, button { font:inherit; font-size:13px; padding:5px 8px; border:1px solid var(--line); border-radius:6px; background:var(--card); color:var(--ink); }
+    button { cursor:pointer; } button.primary { border-color:var(--accent); color:var(--accent); }
+    input[type=number] { width:80px; }
+    .row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:8px 0; }
+    .inl { display:inline-flex; gap:6px; align-items:center; }
+    .muted { color:var(--muted); } .err { color:var(--r-ink); }
+    .tiles { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px; }
+    .tile { border-radius:10px; padding:10px 14px; border:1px solid var(--line); background:var(--card); }
+    .tile .k { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; }
+    .tile .big { font-size:26px; font-weight:700; margin:2px 0; }
+    .tile .s { font-size:12.5px; }
+    .t0 { background:var(--g-bg); color:var(--g-ink); } .t1 { background:var(--b-bg); color:var(--b-ink); } .t2 { background:var(--a-bg); color:var(--a-ink); } .t3 { background:var(--r-bg); color:var(--r-ink); }
+    .t0 .k, .t1 .k, .t2 .k, .t3 .k { color:inherit; opacity:.8; }
+    .alert { border-left:4px solid; border-radius:6px; padding:8px 12px; margin:6px 0; }
+    .alert b { margin-right:6px; }
+    .alert.urgent { background:var(--r-bg); color:var(--r-ink); } .alert.action { background:var(--a-bg); color:var(--a-ink); } .alert.info { background:var(--b-bg); color:var(--b-ink); }
+    table { border-collapse:collapse; width:100%; font-size:13px; }
+    th, td { border-bottom:1px solid var(--line); padding:5px 8px; text-align:left; white-space:nowrap; }
+    th { color:var(--muted); font-weight:600; }
+    td.num { text-align:right; font-variant-numeric:tabular-nums; } td.wrap { white-space:normal; }
+    td.hi { color:var(--r-ink); font-weight:600; } td.old { color:var(--a-ink); }
+    .scroll { overflow-x:auto; }
+    .plan h3 { font-size:14px; margin:12px 0 4px; } .plan ul { margin:4px 0 8px 18px; padding:0; } .plan li { margin:3px 0; }
+    .plan .urgent h3 { color:var(--r-ink); } .plan .action h3 { color:var(--a-ink); }
+    .chip { display:inline-block; padding:1px 8px; border-radius:10px; font-size:12px; font-weight:600; }
+    .c-yes { background:var(--g-bg); color:var(--g-ink); } .c-no { background:var(--r-bg); color:var(--r-ink); } .c-unknown { background:var(--a-bg); color:var(--a-ink); }
+    .src { font-size:12px; color:var(--muted); margin-top:8px; }
+    svg text { fill:var(--muted); font-size:11px; }
+    textarea { font:inherit; font-size:13px; padding:8px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--ink); width:100%; }
+    textarea.out { font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; min-height:260px; resize:vertical; }
+    label.blk { display:block; margin:8px 0 3px; font-weight:600; } input.wide { width:100%; }
+    .grid2 { display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:4px 18px; }
+    .stale { background:var(--a-bg); color:var(--a-ink); border-radius:6px; padding:6px 10px; margin:6px 0; }
+    @media print { .noprint { display:none; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Consult summary</h1>
+    <div class="sub">A short Teams message and a fuller consult request, built from the chart for the specialty you pick. Read-only.</div>
+  </header>
+  <main>
+    <div class="banner"><b>Draft for you to check before sending.</b> The text is built from the chart by name-matching (written by Claude, <b>not verified</b>), so check every number. Nothing is sent from this page: you copy it and press send in Teams yourself. Send only what the specialist needs, to the right person, and confirm Island Health allows clinical summaries in Teams chats. Use made-up or Cerner sandbox patients until Island Health approves real data.</div>
+
+    <details class="card" open>
+      <summary><span>Consult</span><span class="muted" id="ptsum"></span></summary>
+      <div class="body">
+        <div id="pstatus" class="muted">Open from Cerner to read the chart, or pick a made-up patient:</div>
+        <div class="row"><select id="testsel"><option value="">Made-up patient…</option></select><button id="clear" hidden>Clear</button></div>
+        <div class="row">
+          <label class="inl">Specialty <select id="spec"><option value="gi">GI</option><option value="renal">Nephrology</option><option value="cardio">Cardiology</option><option value="liver">Hepatology</option><option value="general">Other…</option></select></label>
+          <input type="text" id="specname" placeholder="Specialty name" hidden>
+          <label class="inl">Urgency <select id="urgency"><option value="emergent">Emergent (now)</option><option value="urgent" selected>Urgent (today)</option><option value="routine">Routine (24-48 h)</option></select></label>
+        </div>
+        <label class="blk" for="question">Question for the specialist</label>
+        <textarea id="question" rows="2" placeholder="One clear question, e.g. Timing of endoscopy? Is this HRS-AKI, start terlipressin?"></textarea>
+        <div class="grid2">
+          <div><label class="blk" for="loc">Ward / bed</label><input type="text" id="loc" class="wide"></div>
+          <div><label class="blk" for="reason">Admitted for</label><input type="text" id="reason" class="wide"></div>
+          <div><label class="blk" for="code">Code status</label><select id="code"><option value="">Not stated</option><option>Full code</option><option>MOST M1</option><option>MOST M2</option><option>MOST M3</option><option>MOST C0</option><option>MOST C1</option><option>MOST C2</option></select></div>
+          <div><label class="blk" for="callback">Callback</label><input type="text" id="callback" class="wide"></div>
+        </div>
+        <label class="blk" for="findings">Key findings not in the labs (ECG, imaging, exam)</label><input type="text" id="findings" class="wide" placeholder="e.g. ECG: 1 mm ST depression V4-V6; CT: no free air">
+        <label class="blk" for="done">Done so far</label><textarea id="done" rows="2"></textarea>
+        <div class="row" id="girow"><b>For the Glasgow-Blatchford score:</b> <label class="inl"><input type="checkbox" id="melena"> Melena</label><label class="inl"><input type="checkbox" id="syncope"> Syncope</label></div>
+        <div class="row">
+          <label class="inl"><input type="checkbox" id="fullname"> Use full name (default: initials)</label>
+          <label class="inl"><input type="checkbox" id="mrn" checked> Include MRN</label>
+          <label class="inl"><input type="checkbox" id="uselink" checked> Add "Open patient" link</label>
+        </div>
+        <div id="errs" class="err"></div>
+      </div>
+    </details>
+
+    <details class="card" open>
+      <summary><span>Teams message</span><span class="muted" id="teamsum"></span></summary>
+      <div class="body">
+        <div class="stale" id="t-stale" hidden>The chart or your entries changed after you edited this. <button type="button" id="t-redo">Rebuild</button> (your edits will be replaced)</div>
+        <textarea class="out" id="teams" style="min-height:230px" aria-label="Teams message"></textarea>
+        <div class="row">
+          <label class="inl">Send to (Teams email, optional) <input type="text" id="to" size="30" placeholder="name@islandhealth.ca"></label>
+          <button class="primary" id="t-open">Copy and open Teams</button><button id="t-copy">Copy</button><span class="muted" id="t-msg"></span>
+        </div>
+        <div class="muted">With an email, Teams opens a chat with that person and the message ready to send (check it arrived complete; the full text is also on your clipboard). Without one, Teams opens and you paste into the chat you choose.</div>
+      </div>
+    </details>
+
+    <details class="card" open>
+      <summary><span>Full consult request</span><span class="muted">for the PowerChart consult order or your note</span></summary>
+      <div class="body">
+        <div class="stale" id="f-stale" hidden>The chart or your entries changed after you edited this. <button type="button" id="f-redo">Rebuild</button></div>
+        <textarea class="out" id="full" style="min-height:320px" aria-label="Full consult request"></textarea>
+        <div class="row"><button class="primary" id="f-copy">Copy</button><span class="muted" id="f-msg"></span></div>
+      </div>
+    </details>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+  <script src="../liver/scores.js?v=20261102b"></script>
+  <script src="rules.js?v=20261102b"></script>
+  <script src="chart.js?v=20261102b"></script>
+  <script src="samples.js?v=20261102b"></script>
+  <script src="app.js?v=20261102b"></script>
+</body>
+</html>
