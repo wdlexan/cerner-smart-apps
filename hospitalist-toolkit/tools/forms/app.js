@@ -87,8 +87,37 @@ function resolveSrc(src) {
     return "";
 }
 
+// ---------- blank mode (no patient: type everything yourself) ----------
+// Turn on with the "Blank form" button, or open index.html?blank=1 (also works outside Cerner).
+let BLANK = new URLSearchParams(location.search).get("blank") === "1";
+let CHART_PT = null; // patient from the chart, kept so you can switch back
+
+function setBlank(on) {
+    BLANK = on;
+    PT = on ? null : CHART_PT;
+    // rebuild forms so no chart values linger in blank mode
+    el("forms").innerHTML = "";
+    for (const k of Object.keys(built)) delete built[k];
+    renderBanner();
+    renderModeBtn();
+    showHome();
+}
+
+function renderModeBtn() {
+    const btn = el("modeBtn");
+    if (!btn) return;
+    // in blank mode with no chart patient there is nothing to switch back to
+    btn.hidden = BLANK && !CHART_PT;
+    btn.textContent = BLANK ? "Use chart patient" : "Blank form (no patient)";
+    const sub = el("homeSubtitle");
+    if (sub) sub.textContent = BLANK
+        ? "Blank mode: only your physician details are filled in. Type the patient's details and clinical parts, then create the PDF."
+        : "The patient's details from the chart are filled in automatically. You complete the clinical parts.";
+}
+
 function renderBanner() {
     const b = el("ptBanner");
+    if (BLANK) { b.textContent = "Blank form – no patient loaded. Type the patient's details."; return; }
     if (!PT) { b.textContent = "No patient loaded"; return; }
     const parts = [PT.fullName || "(no name)"];
     if (PT.dob) parts.push(`DOB ${fmtDate(PT.dob, "dmon")}`);
@@ -435,21 +464,28 @@ function download(bytes, filename) {
 document.addEventListener("DOMContentLoaded", () => {
     el("search").addEventListener("input", renderHome);
     document.addEventListener("change", e => { if (e.target.tagName === "SELECT") e.target.dataset.touched = "1"; });
+    el("modeBtn").addEventListener("click", () => setBlank(!BLANK));
     renderHome();
     renderBanner();
+    renderModeBtn();
 });
 
 function patientLoaded(p) {
-    PT = normalizePatient(p);
-    renderBanner();
-    for (const form of FORMS) if (built[form.id]) prefill(form);
+    CHART_PT = normalizePatient(p);
+    if (!BLANK) {
+        PT = CHART_PT;
+        renderBanner();
+        for (const form of FORMS) if (built[form.id]) prefill(form);
+    }
+    renderModeBtn();
 }
 
-FHIR.oauth2.ready()
+(typeof FHIR === "undefined" ? Promise.reject(new Error("FHIR client library not loaded")) : FHIR.oauth2.ready())
     .then(client => client.patient.read())
     .then(p => { console.log("FHIR Patient Resource:", p); patientLoaded(p); })
     .catch(err => {
         console.warn("No SMART session:", err);
+        if (BLANK) { renderModeBtn(); return; } // blank mode needs no patient
         const isLocal = ["localhost", "127.0.0.1"].includes(location.hostname);
         if (isLocal) {
             // Test data ONLY when running locally — never silently on a real launch
@@ -463,4 +499,5 @@ FHIR.oauth2.ready()
         } else {
             el("ptBanner").textContent = "Could not load the patient from Cerner. Enter details manually.";
         }
+        renderModeBtn();
     });

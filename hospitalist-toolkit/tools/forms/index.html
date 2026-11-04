@@ -39,6 +39,12 @@
         }
         .topbar .who { max-width: 860px; margin: 0 auto; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
         .topbar .app { color: var(--accent); }
+        .modeBtn {
+            margin-left: auto; background: #fff; color: var(--accent);
+            border: 1px solid var(--accent); border-radius: 6px; padding: 4px 10px;
+            font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+        }
+        .modeBtn:hover { background: var(--accent); color: #fff; }
         .wrap { max-width: 860px; margin: 20px auto 0; padding: 0 16px; }
         .card {
             background: var(--card);
@@ -103,12 +109,12 @@
     </style>
 </head>
 <body>
-    <div class="topbar"><div class="who"><span class="app">Forms</span><span id="ptBanner">Loading patient…</span></div></div>
+    <div class="topbar"><div class="who"><span class="app">Forms</span><span id="ptBanner">Loading patient…</span><button type="button" id="modeBtn" class="modeBtn" hidden>Blank form (no patient)</button></div></div>
 
     <div class="wrap">
         <div class="card" id="home">
             <h1>Choose a form</h1>
-            <p class="subtitle">The patient's details from the chart are filled in automatically. You complete the clinical parts.</p>
+            <p class="subtitle" id="homeSubtitle">The patient's details from the chart are filled in automatically. You complete the clinical parts.</p>
             <input type="search" id="search" placeholder="Search forms…" aria-label="Search forms">
             <div id="formList"></div>
         </div>
