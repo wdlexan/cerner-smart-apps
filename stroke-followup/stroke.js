@@ -733,13 +733,23 @@
     if (ctx.failed.length) H.push('<div class="sf-alert sf-a-red"><strong>Incomplete:</strong> some data didn’t load. <button type="button" class="sf-btn sf-retry">Try again</button><ul>' + ctx.failed.map(f => '<li>' + esc(f) + (ctx.reasons[f] ? ' — ' + esc(ctx.reasons[f]) : '') + '</li>').join('') + '</ul></div>');
     if (ctx.age != null && ctx.age < 18) H.push('<div class="sf-alert sf-a-red">This patient is under 18. These are adult rules.</div>');
     H.push(headerHtml(ctx, A, ans));
-    H.push('<section class="sf-section"><h3 class="sf-h">Alerts</h3>' + alertsHtml(al) + '</section>');
-    H.push('<section class="sf-section"><h3 class="sf-h">Timeline</h3>' + timelineHtml(tl) + '<div class="sf-card">' + bpChart(ctx, A) + '</div></section>');
-    H.push('<section class="sf-section"><h3 class="sf-h">Posterior circulation check</h3>' + posteriorHtml(post, ans, A) + '</section>');
-    H.push('<section class="sf-section"><h3 class="sf-h">Prognosis</h3>' + prognosisHtml(prog, ans, A) + '</section>');
-    H.push('<section class="sf-section"><h3 class="sf-h">Workup and secondary prevention</h3>' + workupHtml(wk, A, ans, ctx) + '</section>');
-    H.push('<section class="sf-section"><h3 class="sf-h">Summary for the note / discharge handoff</h3><textarea class="sf-summary" rows="12" readonly>' + esc(summaryText(ctx, A, al, tl, post, prog, wk)) +
-      '</textarea><button type="button" class="sf-btn sf-copy">Copy summary</button> <span class="sf-copied" aria-live="polite"></span></section>');
+    // Collapsible sections. Each heading shows a one-line status so a closed section still says what matters.
+    const open = parts.open || {};
+    const sec = (key, title, status, cls, body) => '<details class="sf-section" data-sec="' + key + '"' + (open[key] === false ? '' : ' open') + '>' +
+      '<summary class="sf-h"><span class="sf-chev" aria-hidden="true"><svg viewBox="0 0 14 14"><path d="M5 3l4 4-4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="sf-h-t">' + esc(title) + '</span>' +
+      (status ? '<span class="sf-h-s ' + (cls || '') + '">' + esc(status) + '</span>' : '') + '</summary><div class="sf-sec-body">' + body + '</div></details>';
+    const reds = al.filter(a => a.level === 'red').length, ambers = al.filter(a => a.level === 'amber').length;
+    const tlNow = tl.filter(r => r.status === 'overdue').length;
+    const wkMissing = wk.items.filter(i => i.status === 'missing').length;
+    H.push('<div class="sf-toolbar"><button type="button" class="sf-btn sf-all" data-all="open">Expand all</button> <button type="button" class="sf-btn sf-all" data-all="close">Collapse all</button></div>');
+    H.push(sec('alerts', 'Alerts', al.length ? [reds ? reds + ' red' : '', ambers ? ambers + ' amber' : ''].filter(Boolean).join(', ') || plural(al.length, 'alert') : 'None', reds ? 'sf-hs-red' : ambers ? 'sf-hs-amber' : 'sf-hs-ok', alertsHtml(al)));
+    H.push(sec('timeline', 'Timeline and BP', tlNow ? tlNow + ' overdue' : (A.anchor ? 'Post-treatment' : 'No lytic/EVT'), tlNow ? 'sf-hs-red' : '', timelineHtml(tl) + '<div class="sf-card">' + bpChart(ctx, A) + '</div>'));
+    H.push(sec('posterior', 'Posterior circulation check', post.needMri ? 'MRI needed' : post.repeatMri ? 'Consider repeat MRI' : post.suspect ? 'Features present, MRI done' : 'No features found',
+      post.needMri ? 'sf-hs-red' : post.repeatMri ? 'sf-hs-amber' : '', posteriorHtml(post, ans, A)));
+    H.push(sec('prognosis', 'Prognosis', prog.thrive != null ? 'THRIVE ' + prog.thrive + ' · ASTRAL ' + prog.astral : 'Needs NIHSS', '', prognosisHtml(prog, ans, A)));
+    H.push(sec('workup', 'Workup and secondary prevention', (wkMissing ? wkMissing + ' missing' : 'Nothing missing') + (wk.esus ? ' · ESUS' : ''), wkMissing ? 'sf-hs-amber' : 'sf-hs-ok', workupHtml(wk, A, ans, ctx)));
+    H.push(sec('summary', 'Summary for the note / discharge handoff', '', '', '<textarea class="sf-summary" rows="12" readonly>' + esc(summaryText(ctx, A, al, tl, post, prog, wk)) +
+      '</textarea><button type="button" class="sf-btn sf-copy">Copy summary</button> <span class="sf-copied" aria-live="polite"></span>'));
     H.push('<p class="sf-disclaimer">Decision support only, from FHIR data and what you enter. Follow neurology and local stroke order sets. Rules are in stroke-criteria.js (sources listed there). Tested on made-up patients only.</p></div>');
     return H.join('');
   }
@@ -764,6 +774,10 @@
     const lookback = opts.lookbackDays || CONFIG.lookbackDays;
     const pid = (client && client.patient && client.patient.id) || opts.patientKey || 'demo';
     if (container.__sfPid !== pid) { container.__sfPid = pid; container.__sfAns = {}; }
+    // Which sections are open: kept across Refresh and patients, and remembered in this browser if allowed.
+    if (!container.__sfOpen) { container.__sfOpen = {}; try { container.__sfOpen = JSON.parse(localStorage.getItem('stroke-open-sections') || '{}') || {}; } catch (e) {} }
+    const openState = container.__sfOpen;
+    const saveOpen = () => { try { localStorage.setItem('stroke-open-sections', JSON.stringify(openState)); } catch (e) {} };
     const ans = container.__sfAns;
     const status = {};
     const onProgress = (label, st, count, msg) => {
@@ -784,11 +798,19 @@
     const draw = () => {
       const y = typeof window !== 'undefined' ? window.scrollY : 0;
       last = evaluate(ctx, ans);
-      container.innerHTML = render(ctx, last.A, ans, last);
+      container.innerHTML = render(ctx, last.A, ans, Object.assign({ open: openState }, last));
       wire();
       if (typeof window !== 'undefined') window.scrollTo(0, y);
     };
     const wire = () => {
+      container.querySelectorAll('details[data-sec]').forEach(d => {
+        d.addEventListener('toggle', () => { openState[d.getAttribute('data-sec')] = d.open; saveOpen(); });
+      });
+      container.querySelectorAll('.sf-all').forEach(b => b.addEventListener('click', () => {
+        const o = b.getAttribute('data-all') === 'open';
+        container.querySelectorAll('details[data-sec]').forEach(d => { d.open = o; openState[d.getAttribute('data-sec')] = o; });
+        saveOpen();
+      }));
       container.querySelectorAll('[data-k]').forEach(el => {
         el.addEventListener('change', () => {
           const k = el.getAttribute('data-k');

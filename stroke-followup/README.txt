@@ -37,6 +37,9 @@ What the screen shows
               antiphospholipid antibodies, protein C/S/antithrombin (deferred if on heparin/warfarin),
               D-dimer, blood cultures, drug screen, pregnancy test, ESR/CRP. RoPE score if PFO.
   Summary     Text for the note or discharge handoff, with outstanding outpatient items.
+  Sections    Click a heading to open or close it; Expand all / Collapse all buttons. Each heading
+              shows a short status (e.g. "1 red, 2 amber", "MRI needed"). Open/closed choice is
+              remembered in this browser.
 
 Code Console settings (if registered as its own app)
   SMART launch URI  = https://wdlexan.github.io/cerner-smart-apps/stroke-followup/launch.html
