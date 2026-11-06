@@ -57,6 +57,19 @@
   <main>
     <div class="banner"><b>Decision-support draft. It orders nothing.</b> The rule table (interactions, timing, thresholds) was written by Claude and has <b>not been verified</b>: have a transplant pharmacist or nephrologist review rules-data.js before real use, and follow the transplant team where it differs. Drugs are found by <b>name</b> and labs by code and name, so something not shown may still be in the chart. Tick-boxes and targets stay in this page only. Use made-up or Cerner sandbox patients until Island Health approves real data.</div>
 
+    <details class="card" open id="ward">
+      <summary><span>On the ward: common errors to avoid</span><a class="muted noprint" href="https://claude.ai/artifact/MDFUe7afCPcoXVH2TFaYzm" target="_blank" rel="noopener" style="color:var(--accent);font-weight:400;font-size:13px" onclick="event.stopPropagation()">Open as a separate sheet</a></summary>
+      <div class="body"><ol class="tight" style="margin-left:20px">
+        <li><b>Confirm the exact product and dose</b> on admission (Prograf vs Advagraf vs Envarsus; CellCept vs Myfortic). Don't substitute brands.</li>
+        <li><b>Don't hold or cut immunosuppression</b> without the transplant team. If NPO, ask for a route plan (sublingual or IV tacrolimus, IV mycophenolate) rather than holding.</li>
+        <li><b>Check every new drug for interactions.</b> Levels rise with clarithromycin, erythromycin, azoles, diltiazem, verapamil, amiodarone and Paxlovid; they fall with rifampin, phenytoin, carbamazepine and St John's wort.</li>
+        <li><b>Recheck a trough 2–3 days after</b> starting or stopping an interacting drug (5–7 days for sirolimus), and with diarrhea, AKI or a route change.</li>
+        <li><b>Avoid nephrotoxins:</b> NSAIDs, aminoglycosides, IV contrast where possible. Watch potassium with TMP-SMX at treatment doses and with ACE inhibitors or ARBs.</li>
+        <li><b>Think infection early:</b> CMV, PJP, BK and fungal infection; check whether prophylaxis is still due.</li>
+        <li><b>No live vaccines.</b></li>
+      </ol></div>
+    </details>
+
     <details class="card" open>
       <summary><span>Patient and situation</span><span class="muted" id="ptsum"></span></summary>
       <div class="body">
@@ -105,11 +118,11 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
-  <script src="../../pdf-overlay.js?v=20261105b"></script>
-  <script src="rules-data.js?v=20261105b"></script>
-  <script src="engine.js?v=20261105b"></script>
-  <script src="chart.js?v=20261105b"></script>
-  <script src="samples.js?v=20261105b"></script>
-  <script src="app.js?v=20261105b"></script>
+  <script src="../../pdf-overlay.js?v=20261105c"></script>
+  <script src="rules-data.js?v=20261105c"></script>
+  <script src="engine.js?v=20261105c"></script>
+  <script src="chart.js?v=20261105c"></script>
+  <script src="samples.js?v=20261105c"></script>
+  <script src="app.js?v=20261105c"></script>
 </body>
 </html>
