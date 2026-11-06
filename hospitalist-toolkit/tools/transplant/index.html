@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kidney transplant</title>
+  <style>
+    :root { --bg:#f5f7fa; --card:#fff; --ink:#1f2933; --muted:#5f6c7b; --accent:#0b6bcb; --line:#dde3ea;
+            --r-bg:#fde8e8; --r-ink:#9b1c1c; --a-bg:#fff1d6; --a-ink:#8a5200; --b-bg:#e3eefc; --b-ink:#0b4a99; --g-bg:#e4f4ea; --g-ink:#1d6b3a; --warn-bg:#fff4e5; --warn-line:#f0c27b; }
+    @media (prefers-color-scheme: dark) { :root { --bg:#111418; --card:#1a1f26; --ink:#e8edf2; --muted:#9aa7b5; --accent:#6aa9ff; --line:#2b333d;
+            --r-bg:#4a1d1d; --r-ink:#ffb3b3; --a-bg:#4a3511; --a-ink:#ffd38a; --b-bg:#14325c; --b-ink:#a9cdff; --g-bg:#16361f; --g-ink:#9be0b1; --warn-bg:#3a2e15; --warn-line:#6b5420; } }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); }
+    header { padding:14px 20px; border-bottom:1px solid var(--line); background:var(--card); }
+    header h1 { margin:0; font-size:19px; } header .sub { font-size:13px; color:var(--muted); margin-top:2px; }
+    main { max-width:980px; margin:16px auto 40px; padding:0 16px; display:grid; grid-template-columns:minmax(0,1fr); gap:14px; }
+    .banner { background:var(--warn-bg); border:1px solid var(--warn-line); border-radius:8px; padding:10px 14px; font-size:13px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:10px; font-size:13.5px; }
+    .card > summary { padding:10px 16px; font-weight:700; font-size:15px; cursor:pointer; display:flex; justify-content:space-between; gap:10px; }
+    .card > .body { padding:0 16px 14px; }
+    select, input, button { font:inherit; font-size:13px; padding:5px 8px; border:1px solid var(--line); border-radius:6px; background:var(--card); color:var(--ink); }
+    button { cursor:pointer; } select { max-width:100%; }
+    input[type=number] { width:70px; }
+    .row { display:flex; flex-wrap:wrap; gap:10px 16px; align-items:center; margin:8px 0; }
+    .inl { display:inline-flex; gap:6px; align-items:center; }
+    .muted { color:var(--muted); } .err { color:var(--r-ink); }
+    .tiles { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px; }
+    .tile { border-radius:10px; padding:10px 14px; border:1px solid var(--line); background:var(--card); }
+    .tile .k { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; }
+    .tile .big { font-size:22px; font-weight:700; margin:2px 0; }
+    .tile .s { font-size:12.5px; }
+    .t0 { background:var(--g-bg); color:var(--g-ink); } .t1 { background:var(--b-bg); color:var(--b-ink); } .t2 { background:var(--a-bg); color:var(--a-ink); } .t3 { background:var(--r-bg); color:var(--r-ink); }
+    .t0 .k, .t1 .k, .t2 .k, .t3 .k { color:inherit; opacity:.8; }
+    .alert { border-left:4px solid; border-radius:6px; padding:8px 12px; margin:8px 0; }
+    .alert .h { font-weight:700; } .alert .h .sev { margin-right:6px; text-transform:uppercase; font-size:11.5px; letter-spacing:.04em; }
+    .alert .meta { font-size:12.5px; margin-top:3px; } .alert .act { margin-top:4px; }
+    .alert.critical { background:var(--r-bg); color:var(--r-ink); } .alert.major { background:var(--a-bg); color:var(--a-ink); }
+    .alert.moderate { background:var(--b-bg); color:var(--b-ink); } .alert.info { background:transparent; color:var(--muted); border-left-color:var(--line); }
+    table { border-collapse:collapse; width:100%; font-size:13px; }
+    th, td { border-bottom:1px solid var(--line); padding:5px 8px; text-align:left; vertical-align:top; }
+    th { color:var(--muted); font-weight:600; white-space:nowrap; }
+    td.num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; } td.hi { color:var(--r-ink); font-weight:600; }
+    .scroll { overflow-x:auto; }
+    .chip { display:inline-block; padding:1px 8px; border-radius:10px; font-size:12px; font-weight:600; white-space:nowrap; }
+    .c-done { background:var(--g-bg); color:var(--g-ink); } .c-upcoming { background:var(--b-bg); color:var(--b-ink); } .c-due { background:var(--a-bg); color:var(--a-ink); } .c-overdue { background:var(--r-bg); color:var(--r-ink); }
+    ul.tight { margin:4px 0 8px 18px; padding:0; } ul.tight li { margin:3px 0; }
+    h3 { font-size:14px; margin:12px 0 4px; }
+    .src { font-size:12px; color:var(--muted); margin-top:8px; }
+    @media print { .noprint { display:none; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Kidney transplant: interactions, levels and what to watch</h1>
+    <div class="sub">For transplant patients admitted for something else. Read-only.</div>
+  </header>
+  <main>
+    <div class="banner"><b>Decision-support draft. It orders nothing.</b> The rule table (interactions, timing, thresholds) was written by Claude and has <b>not been verified</b>: have a transplant pharmacist or nephrologist review rules-data.js before real use, and follow the transplant team where it differs. Drugs are found by <b>name</b> and labs by code and name, so something not shown may still be in the chart. Tick-boxes and targets stay in this page only. Use made-up or Cerner sandbox patients until Island Health approves real data.</div>
+
+    <details class="card" open>
+      <summary><span>Patient and situation</span><span class="muted" id="ptsum"></span></summary>
+      <div class="body">
+        <div id="pstatus" class="muted">Open from Cerner to read the chart, or pick a made-up patient:</div>
+        <div class="row"><select id="testsel"><option value="">Made-up patient…</option></select><button id="clear" hidden>Clear</button></div>
+        <div class="row" id="ctxrow"></div>
+        <div class="row" id="targetrow"></div>
+        <div id="errs" class="err"></div>
+      </div>
+    </details>
+
+    <div class="tiles" id="tiles"></div>
+
+    <details class="card" open>
+      <summary><span>Drug interactions and drugs to avoid</span><span class="muted" id="alertsum"></span></summary>
+      <div class="body" id="alerts"></div>
+    </details>
+
+    <details class="card" open>
+      <summary><span>Drug levels: when to test</span><span class="muted" id="levelsum"></span></summary>
+      <div class="body" id="levels"></div>
+    </details>
+
+    <details class="card" open>
+      <summary><span>Labs to watch</span><span class="muted" id="labsum"></span></summary>
+      <div class="body"><div class="scroll" id="labs"></div></div>
+    </details>
+
+    <details class="card" open>
+      <summary><span>Situation checks</span><span class="muted" id="ctxsum"></span></summary>
+      <div class="body" id="context"></div>
+    </details>
+
+    <details class="card">
+      <summary><span>Side effects to watch for</span><span class="muted" id="watchsum"></span></summary>
+      <div class="body" id="watch"></div>
+    </details>
+
+    <details class="card">
+      <summary><span>Immunosuppressants found</span><span class="muted" id="immsum"></span></summary>
+      <div class="body" id="imm"></div>
+    </details>
+
+    <div class="src">Rule table <span id="rulever"></span> (rules-data.js). Unverified summary of product labelling and general transplant pharmacology; not a substitute for the transplant team or pharmacy.</div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+  <script src="../../pdf-overlay.js?v=20261105a"></script>
+  <script src="rules-data.js?v=20261105a"></script>
+  <script src="engine.js?v=20261105a"></script>
+  <script src="chart.js?v=20261105a"></script>
+  <script src="samples.js?v=20261105a"></script>
+  <script src="app.js?v=20261105a"></script>
+</body>
+</html>
