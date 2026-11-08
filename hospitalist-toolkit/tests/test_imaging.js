@@ -55,4 +55,35 @@ ok("no reports -> na", run(base({}))[0].status === "na");
 // 9. evaluate() includes section 5
 const ev = DX.evaluate(DX.buildContext(base({ reports: [rep("Pneumobilia.")] }), { now, lookbackDays: 7 }));
 ok("section 5 present", ev.sections.some((s) => s.id === "imaging"));
+
+// 10. each added finding: unexplained -> review; explained by a note -> ok; negated -> nothing
+const CASES = [
+  ["bladderair", "Air in the urinary bladder lumen.", "Foley catheter inserted on admission.", "No air in the bladder."],
+  ["organinfarct", "Wedge-shaped hypoenhancing area in the spleen, likely splenic infarct.", "Known atrial fibrillation on apixaban.", "No splenic infarct."],
+  ["effusion", "New moderate right pleural effusion.", "Admitted with decompensated heart failure.", "No pleural effusion."],
+  ["pulminfarct", "Peripheral wedge-shaped opacity in the right lower lobe.", "Pulmonary embolism diagnosed on admission, on heparin.", "No pulmonary infarct."],
+  ["adrenal", "Left adrenal hemorrhage.", "Admitted after a motor vehicle collision (trauma).", "No adrenal hemorrhage."],
+  ["collection", "Right psoas abscess measuring 4 cm.", "Day 5 after L4-5 laminectomy.", "No psoas abscess."],
+  ["veinclot", "Portal vein thrombosis.", "Known cirrhosis from alcohol.", "No portal vein thrombosis."],
+  ["hydro", "Moderate left hydronephrosis.", "Known left ureteric stone, stent placed last month.", "No hydronephrosis."],
+  ["bone", "Multiple lytic lesions in the pelvis and femur.", "Known multiple myeloma on treatment.", "No lytic lesions."],
+  ["nodes", "Enlarged mediastinal lymph nodes up to 2.3 cm.", "Known lymphoma, in remission.", "No lymphadenopathy."],
+  ["brain", "Acute left subdural hematoma, 8 mm.", "Fall with head strike this morning, on apixaban.", "No intracranial hemorrhage."]
+];
+const label = (id) => DX.IMG_FINDINGS.find((f) => f.id === id).label;
+CASES.forEach(([id, finding, cause, neg]) => {
+  let it = run(base({ reports: [rep(finding)] }));
+  ok(id + ": unexplained -> review", it.some((i) => i.status === "review" && i.title === "Unaccounted: " + label(id)), titles(it));
+  it = run(base({ reports: [rep(finding)], notes: [note(cause)] }));
+  ok(id + ": cause in a note -> accounted for", it.some((i) => i.status === "ok" && i.title === "Accounted for: " + label(id)), titles(it));
+  it = run(base({ reports: [rep(neg)] }));
+  ok(id + ": negated -> not flagged", !it.some((i) => i.title.endsWith(label(id))), titles(it));
+});
+// a negated cause does not account for the finding
+let it2 = run(base({ reports: [rep("Moderate left hydronephrosis.")], notes: [note("No history of kidney stones or urinary retention.")] }));
+ok("negated cause -> still unaccounted, shown as 'chart says not done'", it2.some((i) => /Unaccounted: Hydronephrosis/.test(i.title) && i.evidence.some((e) => /Chart says not done/.test(e))), it2);
+// small effusions are not flagged
+ok("small bilateral effusions not flagged", !run(base({ reports: [rep("Small bilateral pleural effusions.")] })).some((i) => /effusion/i.test(i.title)));
+// splenic infarct is not read as a brain infarct
+ok("acute splenic infarct is not a brain infarct", !run(base({ reports: [rep("Acute splenic infarct.")] })).some((i) => /brain/i.test(i.title)));
 console.log(fail ? fail + " FAILED" : "all passed"); process.exit(fail ? 1 : 0);

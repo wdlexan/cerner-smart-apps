@@ -8,7 +8,9 @@
  *                          back pain with fever or bacteremia → must-do list, ticked from the chart
  *   3. Does the data fit?  the working diagnosis against findings that argue for and against it
  *   4. Unexplained results abnormal labs and imaging follow-up recommendations that no note mentions
- *   5. Imaging findings    findings that need a cause (pneumobilia, absent gallbladder, portal gas, free air) checked against the chart;
+ *   5. Imaging findings    findings that need a cause (pneumobilia, absent gallbladder, portal gas, free air, bladder air, organ infarcts,
+ *                          effusions, pulmonary infarct, adrenal bleed, spinal/psoas collections, venous thrombosis, hydronephrosis,
+ *                          bone lesions, lymph nodes, brain bleed/infarct) checked against the chart;
  *                          Rigler's triad (gallstone ileus); hedged report statements to close the loop on
  * Read-only: nothing is written to the chart.
  *
@@ -725,7 +727,52 @@
       consider: ['Bowel ischemia', 'Benign pneumatosis (diagnosis of exclusion)'], next: 'Urgent: lactate, exam, discuss with surgery' },
     { id: 'freeair', label: 'Free intraperitoneal air', re: /free (?:intraperitoneal )?air|pneumoperitoneum/i,
       explain: [['Recent abdominal surgery, laparoscopy, PEG or peritoneal dialysis', /laparotomy|laparoscop\w* (?:on|this admission|post)|post-?op(?:erative)? day|\bPOD ?\d|\bPEG\b|peritoneal dialysis/i]],
-      consider: ['Perforated viscus'], next: 'Urgent: discuss with surgery now' }
+      consider: ['Perforated viscus'], next: 'Urgent: discuss with surgery now' },
+    { id: 'bladderair', label: 'Air in the bladder', re: /(?:air|gas) (?:with)?in the (?:urinary )?bladder(?: wall| lumen)?|emphysematous cystitis|pneumaturia/i,
+      explain: [['Urinary catheter or recent bladder instrumentation', /foley|urinary catheter|indwelling catheter|suprapubic catheter|cystoscop\w*|\bTURP\b|\bTURBT\b|bladder irrigation/i]],
+      consider: ['Colovesical or enterovesical fistula (diverticulitis, Crohn disease, colon cancer)', 'Emphysematous cystitis (often with diabetes)'],
+      next: 'Urine culture; look for diverticulitis or colon cancer on the CT; discuss with urology' },
+    { id: 'organinfarct', label: 'Splenic or renal infarct', re: /(?:splenic|renal|kidney) infarct\w*|infarct\w* (?:of|in|within) the (?:spleen|(?:left |right )?kidney)|wedge-shaped (?:\w+ )?(?:area|defect|region)s? (?:in|of|within) the (?:spleen|(?:left |right )?kidney)/i,
+      explain: [['Atrial fibrillation', /atrial fibrillation|atrial flutter|\bAF\b|a-?fib/i], ['Endocarditis', /endocarditis/i], ['Recent angiography, embolization or vascular procedure', /emboli[sz]ation|angiogra\w*|\bEVAR\b|\bTAVI\b|\bTAVR\b/i], ['Sickle cell disease or a known clotting disorder', /sickle|antiphospholipid|myeloproliferative|JAK2/i]],
+      consider: ['Endocarditis (blood cultures x3, echo)', 'Undiagnosed AF or LV thrombus', 'Clotting disorder'],
+      next: 'Blood cultures x3, echo (TEE if endocarditis is possible), telemetry or Holter for AF' },
+    { id: 'effusion', label: 'New or large pleural or pericardial effusion', re: /(?:new|large|moderate|enlarging|increasing|loculated) (?:\w+ )?(?:pleural|pericardial) effusions?|(?:pleural|pericardial) effusions? (?:is |are |has |have )?(?:new|enlarg\w*|increas\w*|larger|loculated)/i,
+      explain: [['Heart failure or volume overload', /heart failure|\bCHF\b|\bHFrEF\b|\bHFpEF\b|volume overload/i], ['Recent cardiac or thoracic surgery', /sternotomy|\bCABG\b|thoracotomy|cardiac surgery|thoracic surgery|pericardiotomy/i],
+        ['Known cancer', /carcinoma|cancer|malignan\w*|lymphoma|metasta\w*|mesothelioma|myeloma/i], ['Pneumonia or empyema', /pneumonia|empyema|parapneumonic/i], ['Cirrhosis, nephrotic syndrome or kidney failure', /cirrhosis|nephrotic|dialysis|\bESRD\b|\bESKD\b/i]],
+      consider: ['Infection (empyema, TB)', 'Cancer', 'Pulmonary embolism', 'Pericarditis or tamponade (pericardial)'],
+      next: 'Consider diagnostic thoracentesis; echo if pericardial, and check for tamponade' },
+    { id: 'pulminfarct', label: 'Pulmonary infarct or wedge-shaped opacity', re: /pulmonary infarct\w*|wedge-shaped (?:peripheral |pleural-based )?(?:opacit\w*|consolidation)|hampton'?s hump/i,
+      explain: [['Known pulmonary embolism', /pulmonary embol\w*|\bPE\b/i]],
+      consider: ['Pulmonary embolism not yet diagnosed', 'Septic emboli (endocarditis, IV drug use)', 'Vasculitis'],
+      next: 'CT pulmonary angiogram if not done; leg dopplers; blood cultures if febrile' },
+    { id: 'adrenal', label: 'Adrenal hemorrhage', re: /adrenal (?:hemorrhage|haemorrhage|hematoma|haematoma|bleed)/i,
+      explain: [['Trauma', /trauma|motor vehicle|\bMVC\b|\bMVA\b/i]],
+      consider: ['Anticoagulant-related', 'Sepsis (Waterhouse-Friderichsen)', 'Antiphospholipid syndrome', 'Adrenal insufficiency if bilateral'],
+      next: 'If bilateral or hypotensive: cortisol and consider stress-dose steroids now; review anticoagulation' },
+    { id: 'collection', label: 'Psoas, paraspinal or epidural collection', re: /(?:psoas|iliopsoas|paraspinal|spinal epidural|epidural) (?:abscess|collection|phlegmon)|(?:abscess|collection|phlegmon) (?:in|within|of|involving) the (?:left |right )?(?:psoas|iliopsoas|epidural space)/i,
+      explain: [['Recent spinal procedure or surgery', /laminectomy|discectomy|spinal (?:fusion|surgery)|epidural (?:injection|catheter|anesth\w*|analgesia)|lumbar puncture/i]],
+      consider: ['Abscess, often S. aureus (blood cultures)', 'Spinal epidural abscess (neuro exam; MRI of the whole spine)', 'Endocarditis seeding'],
+      next: 'Urgent: blood cultures, neuro exam, MRI spine if epidural; discuss with spine surgery or IR' },
+    { id: 'veinclot', label: 'Portal, mesenteric or splenic vein thrombosis', re: /(?:portal|superior mesenteric|mesenteric|splenic) vein (?:thrombos\w*|thrombus|occlusion|clot)|\bSMV (?:thrombos\w*|thrombus)|\bPVT\b|portal vein (?:is )?(?:occluded|non-?opacified)/i,
+      explain: [['Cirrhosis', /cirrhosis/i], ['Known cancer', /carcinoma|cancer|malignan\w*|lymphoma|metasta\w*|mesothelioma|myeloma/i], ['Pancreatitis or intra-abdominal infection', /pancreatitis|appendicitis|diverticulitis|cholangitis|intra-abdominal (?:abscess|infection)/i], ['Known clotting disorder', /antiphospholipid|factor v leiden|myeloproliferative|JAK2|polycythemia|\bPNH\b/i]],
+      consider: ['Clotting disorder (JAK2, PNH, antiphospholipid)', 'Hidden cancer', 'Bowel ischemia if the SMV is involved'],
+      next: 'Anticoagulation decision; lactate and abdominal exam for ischemia; consider hematology' },
+    { id: 'hydro', label: 'Hydronephrosis', re: /hydronephrosis|hydroureteronephrosis|hydroureter\b/i,
+      explain: [['Known stone, stent or nephrostomy', /(?:renal|ureteric|ureteral|kidney) (?:stone|calcul\w*)|nephrolithiasis|urolithiasis|(?:ureteric|ureteral|JJ|double-?J) stent|nephrostomy/i], ['Known urinary retention or enlarged prostate', /urinary retention|\bBPH\b|benign prostatic/i], ['Pregnancy', /pregnan\w*/i]],
+      consider: ['Obstruction needing drainage (urgent if infected or with AKI)', 'Pelvic, bladder or retroperitoneal cancer', 'Retroperitoneal fibrosis'],
+      next: 'Bladder scan and creatinine trend; urgent urology if fever or AKI' },
+    { id: 'bone', label: 'Lytic or blastic bone lesions', re: /(?:lytic|osteolytic|blastic|osteoblastic|sclerotic|permeative|destructive) (?:bone |osseous |skeletal |bony )?lesions?|(?:bone|osseous|skeletal) metasta\w*|pathologic(?:al)? fracture/i,
+      explain: [['Known metastatic cancer or myeloma', /carcinoma|cancer|malignan\w*|lymphoma|metasta\w*|mesothelioma|myeloma|plasmacytoma/i], ['Paget disease', /paget/i]],
+      consider: ['Myeloma (SPEP, free light chains, calcium, creatinine)', 'Hidden primary cancer (breast, prostate, lung, kidney, thyroid)', 'Pathological fracture (including a hip fracture through a lesion)'],
+      next: 'Calcium, SPEP and free light chains, PSA in men; tell orthopedics before fixation; oncology referral' },
+    { id: 'nodes', label: 'Enlarged lymph nodes', re: /(?:pathologic(?:al)?(?:ly enlarged)?|enlarged|bulky|necrotic|conglomerate|bulky) (?:\w+ ){0,3}(?:lymph nodes?|nodes|lymphadenopathy)|lymphadenopathy/i,
+      explain: [['Known lymphoma, leukemia or cancer', /carcinoma|cancer|malignan\w*|lymphoma|metasta\w*|mesothelioma|myeloma|leuk(?:a)?emia|\bCLL\b/i], ['Known infection or sarcoidosis', /sarcoid\w*|tuberculosis|\bTB\b|\bHIV\b|mononucleosis|\bEBV\b/i]],
+      consider: ['Lymphoma or metastatic cancer', 'TB, HIV, sarcoidosis'],
+      next: 'Make sure follow-up is booked (biopsy or repeat imaging) and name who owns it in the discharge summary' },
+    { id: 'brain', label: 'Intracranial bleed or new brain infarct', re: /(?:intracranial|intracerebral|subdural|subarachnoid|intraparenchymal|intraventricular) (?:hemorrhage|haemorrhage|hematoma|haematoma|bleed)|(?:acute|new|subacute) (?:ischemic |lacunar |cortical |embolic |territorial )?(?:infarct\w*|stroke)|(?:cerebral|cerebellar|brain|lacunar|cortical|embolic|MCA|PCA|ACA) (?:territory )?infarct\w*|\bICH\b|\bSAH\b|\bSDH\b/i,
+      explain: [['Known stroke or bleed this admission', /stroke|\bCVA\b|\bTIA\b|subdural|intracranial (?:hemorrhage|haemorrhage|bleed)|\bICH\b|\bSAH\b|\bSDH\b/i], ['Head injury or fall with head strike', /head injury|head trauma|head strike|hit (?:her|his|their) head|\bTBI\b/i]],
+      consider: ['Anticoagulant or antiplatelet to hold or reverse', 'Embolic source if infarct (AF, endocarditis)', 'Unwitnessed fall in hospital'],
+      next: 'Urgent: review anticoagulants now; neurology or neurosurgery; check for an unwitnessed fall' }
   ];
   const NEG_BEFORE = /\b(?:no|not|never|without|denies|denied|negative for|nil|r\/o|rule out|ruled out)\b[^.;:\n]{0,30}$/i;
   const HEDGE_BEFORE = /\b(?:presum\w*|likely|probabl[ey]|possibl[ey]|query|suspect\w*|favou?r\w*|correlat\w*|\?)[^.;:\n]{0,30}$/i;
