@@ -12,6 +12,9 @@
  *                          effusions, pulmonary infarct, adrenal bleed, spinal/psoas collections, venous thrombosis, hydronephrosis,
  *                          bone lesions, lymph nodes, brain bleed/infarct) checked against the chart;
  *                          Rigler's triad (gallstone ileus); CRAB pattern (myeloma); hedged report statements to close the loop on
+ *   6. Imaging review      timeline of all studies; organ seen before but absent now; "old" lesion that earlier imaging called normal;
+ *                          note calls imaging unremarkable when the report lists findings; left/right mismatch; addenda and
+ *                          preliminary reports; imaging ordered with no report; "normal" report that the data argue against
  * Read-only: nothing is written to the chart.
  *
  * Usage (after FHIR.oauth2.ready()):
@@ -105,6 +108,7 @@
   const toTime = v => { const t = v ? Date.parse(v) : NaN; return isNaN(t) ? null : t; };
   const pad2 = n => String(n).padStart(2, '0');
   const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const fmtDate = t => { const d = new Date(t); return MONTHS[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear(); };
   const fmtTime = t => { const d = new Date(t); return MONTHS[d.getMonth()] + ' ' + d.getDate() + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes()); };
   const round = (v, d = 0) => { const f = Math.pow(10, d); return Math.round(v * f) / f; };
   const fhirDate = t => new Date(t).toISOString().replace(/\.\d{3}Z$/, 'Z');
@@ -222,7 +226,7 @@
       const name = ccText(r.code);
       const text = [r.conclusion, (r.conclusionCode || []).map(ccText).join(' '),
         (r.presentedForm || []).map(p => (p.data ? b64decode(p.data) : '')).map(stripHtml).join(' ')].filter(Boolean).join(' ');
-      return { time: toTime(r.effectiveDateTime || (r.effectivePeriod && r.effectivePeriod.start) || r.issued), name, kind: kindOf(r.code), text,
+      return { id: r.id, status: r.status, time: toTime(r.effectiveDateTime || (r.effectivePeriod && r.effectivePeriod.start) || r.issued), name, kind: kindOf(r.code), text,
         imaging: /\brad|imaging|\bri\b|ct\b|x-?ray|mri|ultrasound|\bus\b/.test(cats) || /\b(?:ct|x-?ray|xr|cxr|mri|ultrasound|\bus\b|radiograph|chest)\b/i.test(name) };
     }).filter(r => r.time != null).sort((a, b) => a.time - b.time);
   }
@@ -253,7 +257,7 @@
   function parseOrders(list) {
     return (list || []).filter(r => r && (r.resourceType === 'ServiceRequest' || r.resourceType === 'Procedure'))
       .filter(r => !['entered-in-error', 'revoked', 'not-done'].includes(r.status))
-      .map(r => ({ name: ccText(r.code), time: toTime(r.authoredOn || r.occurrenceDateTime || r.performedDateTime || (r.performedPeriod && r.performedPeriod.start)) }))
+      .map(r => ({ type: r.resourceType, name: ccText(r.code), time: toTime(r.authoredOn || r.occurrenceDateTime || r.performedDateTime || (r.performedPeriod && r.performedPeriod.start)) }))
       .filter(o => o.time != null);
   }
 
@@ -275,7 +279,7 @@
       age: patient && patient.birthDate ? ageAt(patient.birthDate, now) : null,
       meds: parseMeds(r.medRequests), admins: r.medAdmins == null ? null : parseAdmins(r.medAdmins),
       obs: parseObservations(r.observations).filter(o => o.time >= from - 2 * DAY),
-      reports: parseReports(r.reports), orders: parseOrders(r.orders), conditions: parseConditions(r.conditions),
+      reports: parseReports((r.reports || []).concat(r.pastReports || []).filter((x, i, a) => !x || !x.id || a.findIndex(y => y && y.id === x.id) === i)), orders: parseOrders(r.orders), conditions: parseConditions(r.conditions),
       procedures: (r.procedures || []).filter(x => x && x.resourceType === 'Procedure' && !['entered-in-error', 'not-done'].includes(x.status))
         .map(x => ({ name: [ccText(x.code), (x.note || []).map(n => n.text).join(' ')].filter(Boolean).join(' '), time: toTime(x.performedDateTime || (x.performedPeriod && x.performedPeriod.start)) })).filter(x => x.name),
       notes: r.notes == null ? null : r.notes.filter(n => n.time >= from && n.time <= now).sort((a, b) => a.time - b.time),
@@ -807,13 +811,8 @@
   function imagingFindings(ctx) {
     const need = ['Microbiology reports', 'Nursing notes'];
     if (waiting(ctx, need)) return [R('loading', 'Imaging findings', 'Waiting for data to load…')];
-    const reports = ctx.reports.filter(x => x.imaging && x.time >= ctx.from - 30 * DAY);
-    // Imported PDFs often hold the radiology report inside the note text: read report-like sections of notes too.
-    const noteReports = (ctx.notes || []).map(n => {
-      const i = (n.text || '').search(/\b(?:CT|MRI|ultrasound|X-?ray|radiograph)\b[^\n]{0,60}\n?[\s\S]{0,40}(?:FINDINGS|IMPRESSION)/i);
-      return i < 0 ? null : { time: n.time, name: (n.title || 'Note') + ' (report text)', text: n.text.slice(i, i + 3000), imaging: true };
-    }).filter(Boolean);
-    const all = reports.concat(noteReports);
+    // recent imaging only (older studies are compared in section 6); includes reports inside notes and imported PDFs
+    const all = allImaging(ctx).filter(r => r.time >= ctx.from - 30 * DAY);
     if (!all.length) return [R(ctx.has('Microbiology reports') ? 'na' : 'unknown', 'Imaging findings', ctx.has('Microbiology reports') ? 'No imaging reports in the window' : 'Couldn’t check: reports didn’t load')];
     const reportTexts = all.map(r => r.text.replace(/\s+/g, ' '));
     const notesText = (ctx.notes || []).map(n => n.text || '').join('\n');
@@ -835,7 +834,9 @@
       const causes = f.explain.map(([label, re]) => ({ label, re, r: findCause(ctx, re, reportTexts) }));
       const found = causes.filter(c => c.r.yes.length);
       const denied = causes.filter(c => !c.r.yes.length && c.r.no.length);
-      const assumed = denied.filter(c => reportTexts.some(t => c.re.test(t))); // the report offers a cause the chart says did not happen
+      // the report offers a cause as the explanation ("presumed post-cholecystectomy", "correlation for prior sphincterotomy") that the chart says did not happen
+      const ASSUME = /presum\w*|\bprior\b|\bpost-?\w|in keeping with|consistent with|related to|due to|secondary to|status post|\bs\/p\b|correlation for/i;
+      const assumed = denied.filter(c => all.some(r => r.text.split(/(?<=\.)\s+|\n+/).some(sn => c.re.test(sn) && ASSUME.test(sn))));
       const hedged = quotes.find(q => HEDGE.test(q.quote));
       const repLines = quotes.slice(0, 3).map(q => 'Report (' + (q.rep.name || 'imaging') + ', ' + fmtTime(q.rep.time) + '): “' + q.quote + '”');
       if (found.length) {
@@ -927,6 +928,220 @@
   }
 
   // ------------------------------------------------------------------
+  // Imaging reports from every source: DiagnosticReports, plus radiology reports pasted inside notes or imported PDFs
+  // (split into one report per study heading, each with its own exam date).
+  // ------------------------------------------------------------------
+  const STUDY_HEAD = /^[ \t]*((?:CT|CTA|MRI|MR|MRCP|ULTRASOUND|US|X-?RAY|XR|CXR|RADIOGRAPH|CHEST X-?RAY|CHEST FILM|NUCLEAR|BONE SCAN|ECHOCARDIOGRAM)\b[^\n]{0,80})$/gim;
+  const MODALITY = [['CT', /\bCTA?\b|computed tomograph/i], ['MRI', /\bMRI?\b|\bMRCP\b|magnetic resonance/i], ['Ultrasound', /ultrasound|sonograph|\bUS\b|echocardiogra/i],
+    ['X-ray', /x-?ray|\bXR\b|\bCXR\b|radiograph|chest film|\bfilms?\b/i]];
+  const modalityOf = s => (MODALITY.find(([, re]) => re.test(s || '')) || ['Imaging'])[0];
+  function parseLooseDate(s) {
+    let m = /(20\d{2}|19\d{2})-(\d{1,2})-(\d{1,2})(?:[ T]+(\d{1,2}):(\d{2}))?/.exec(s || '');
+    if (m) return new Date(+m[1], +m[2] - 1, +m[3], m[4] ? +m[4] : 12, m[5] ? +m[5] : 0).getTime();
+    m = /\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+(\d{1,2}),?\s+(20\d{2}|19\d{2})(?:\s+(\d{1,2}):(\d{2}))?/i.exec(s || '');
+    if (m) return new Date(+m[3], MONTHS.findIndex(x => x.toLowerCase() === m[1].slice(0, 3).toLowerCase()), +m[2], m[4] ? +m[4] : 12, m[5] ? +m[5] : 0).getTime();
+    return null;
+  }
+  function noteBlocks(n) {
+    const t = n.text || '', heads = [];
+    let m; STUDY_HEAD.lastIndex = 0;
+    while ((m = STUDY_HEAD.exec(t))) {
+      const line = m[1].trim(), after = t.slice(m.index + m[0].length, m.index + m[0].length + 400);
+      if (line.length < 4 || line !== line.toUpperCase() || !/FINDINGS|IMPRESSION|date of (?:exam|study|service)/i.test(after)) continue;
+      heads.push({ i: m.index, line });
+    }
+    return heads.map((h, k) => {
+      let end = k + 1 < heads.length ? heads[k + 1].i : t.length;
+      const rest = t.slice(h.i + h.line.length + 1, end), stop = rest.search(/\n[ \t]*(?!FINDINGS|IMPRESSION|ADDENDUM|COMPARISON|INDICATION|TECHNIQUE|HISTORY)[A-Z][A-Z ()\/&-]{6,}\n/);
+      if (stop >= 0) end = h.i + h.line.length + 1 + stop;
+      const text = t.slice(h.i, end).split('\n').filter(l => !/\bPage \d+\s*$/.test(l)).join('\n').trim(), dm = /date of (?:exam|study|service|procedure)[:\s]*([^\n]{6,30})/i.exec(text);
+      return { id: 'note-' + n.time + '-' + k, time: (dm && parseLooseDate(dm[1])) || n.time, name: h.line.replace(/\s+/g, ' '), text, status: 'final', imaging: true, fromNote: n.title || 'Note' };
+    });
+  }
+  function allImaging(ctx) {
+    if (ctx.__img) return ctx.__img;
+    const blocks = [];
+    for (const n of ctx.notes || []) {
+      const b = noteBlocks(n);
+      if (b.length) blocks.push(...b);
+      else { // no study headings: fall back to the first report-like section of the note
+        const i = (n.text || '').search(/\b(?:CT|MRI|ultrasound|X-?ray|radiograph)\b[^\n]{0,60}\n?[\s\S]{0,40}(?:FINDINGS|IMPRESSION)/i);
+        if (i >= 0) blocks.push({ id: 'note-' + n.time, time: n.time, name: (n.title || 'Note') + ' (report text)', text: n.text.slice(i, i + 3000), status: 'final', imaging: true, fromNote: n.title || 'Note' });
+      }
+    }
+    const norm = s => String(s || '').replace(/\s+/g, ' ').trim().toLowerCase();
+    const seen = new Set();
+    const reports = ctx.reports.filter(r => r.imaging).filter(r => { // drop a report already shown as a note block (PDF imports create both)
+      const head = norm(r.text).slice(0, 60);
+      if (r.id && seen.has(r.id)) return false; if (r.id) seen.add(r.id);
+      return !(head.length > 20 && blocks.some(b => norm(b.text).includes(head)));
+    });
+    ctx.__img = reports.concat(blocks).filter(r => r.time != null).sort((a, b) => a.time - b.time);
+    return ctx.__img;
+  }
+
+  // ------------------------------------------------------------------
+  // 6. Imaging review: timeline and discrepancies
+  //   - an organ seen on earlier imaging is now reported absent, with no surgery in the chart
+  //   - a lesion called "old" that earlier imaging of the same bone called normal
+  //   - a note calls the imaging unremarkable when the report lists findings
+  //   - left/right mismatch between reports and notes
+  //   - addenda, amended or corrected reports, and reports still preliminary
+  //   - imaging ordered with no report; a "normal" report that the patient's data argue against
+  // UNVERIFIED draft rules written by Claude: edit freely.
+  // ------------------------------------------------------------------
+  const ORGANS = [
+    { name: 'Gallbladder', absent: /gall ?bladder (?:is |was )?(?:not (?:seen|visuali[sz]ed|identified)|absent|surgically absent|removed)|(?:absent|non-?visuali[sz]ed) gall ?bladder|post-?cholecystectomy/i, present: /gall ?bladder/i, surgery: /cholecystectomy|\blap(?:aroscopic)? chole\b/i },
+    { name: 'Spleen', absent: /spleen (?:is |was )?(?:not (?:seen|visuali[sz]ed|identified)|absent|surgically absent)|post-?splenectomy|asplenia/i, present: /\bspleen\b|\bsplenic\b/i, surgery: /splenectomy/i },
+    { name: 'Appendix', absent: /appendix (?:is |was )?(?:not (?:seen|visuali[sz]ed|identified)|absent|surgically absent)|post-?appendectomy/i, present: /appendix (?:is |was )?(?:normal|visuali[sz]ed|unremarkable|seen)|(?:normal|unremarkable) appendix/i, surgery: /appendectomy|appendicectomy/i },
+    { name: 'Left kidney', absent: /left kidney (?:is |was )?(?:not (?:seen|visuali[sz]ed|identified)|absent|surgically absent)|left nephrectomy|absent left kidney/i, present: /left kidney/i, surgery: /(?:left )?nephrectomy/i },
+    { name: 'Right kidney', absent: /right kidney (?:is |was )?(?:not (?:seen|visuali[sz]ed|identified)|absent|surgically absent)|right nephrectomy|absent right kidney/i, present: /right kidney/i, surgery: /(?:right )?nephrectomy/i }
+  ];
+  const SIG = /pneumobilia|lytic|blastic|mass\b|nodule|lesion|abscess|collection|thrombos|infarct|hemorrhage|haemorrhage|hematoma|free air|pneumoperitoneum|pneumatosis|portal (?:venous )?gas|hydronephrosis|effusion|fracture|obstruction|dilat|not visuali[sz]ed|absent|compression deformity|perforat|ischemi|lymphadenopathy|enlarged (?:\w+ )?(?:lymph )?nodes?/i;
+  const DOWNPLAY = /(?:\b(?:CT|CTA|MRI|x-?rays?|XR|CXR|films?|radiographs?|ultrasound|\bUS\b|imaging|scan)\b)[^.\n]{0,80}?\b(?:otherwise (?:unremarkable|normal|negative)|unremarkable|nothing (?:else|acute)|no (?:other )?(?:acute )?(?:findings|abnormalit\w*)|(?:fracture|SBO|obstruction) only|negative)\b/gi;
+  const SIDE_PART = /\b(left|right|lt|rt)\b[\s-]+(?:[\w-]+[\s-]+){0,3}?(hip|femur|femoral|subtrochanteric|intertrochanteric|neck of femur|knee|tibia|tibial|ankle|shoulder|humerus|humeral|wrist|radius|radial|kidney|renal|ureter\w*|pleural|lung|leg|arm)\b/gi;
+  const PART_GROUP = p => (/hip|femur|femoral|trochanteric|neck of femur/i.test(p) ? 'hip/femur' : /kidney|renal|ureter/i.test(p) ? 'kidney' : /pleural|lung/i.test(p) ? 'chest' : /tibia|ankle|knee|leg/i.test(p) ? 'leg' : /shoulder|humer|arm|wrist|radi/i.test(p) ? 'arm' : p.toLowerCase());
+  const sideOf = s => (/^(?:left|lt)$/i.test(s) ? 'left' : 'right');
+  const OLD_CLAIM = /\b(?:old|healed|healing|chronic|longstanding|remote)\b/i, NEW_CLAIM = /age indeterminate|indeterminate age/i;
+  const BONE_SITE = /\b(?:(?:left|right) )?(\d{1,2})(?:st|nd|rd|th) rib\b|\b([TL]\d{1,2})\b(?:\s*vertebra\w*)?/i;
+  const BONE_NORMAL = /no (?:acute )?(?:rib )?fractures?|ribs? (?:are |is )?intact|no (?:focal |destructive |lytic )?(?:bone|osseous|bony|lytic) lesions?|bones? (?:are |is )?(?:normal|unremarkable)|no compression (?:deformity|fracture)|vertebral (?:body )?heights? (?:are |is )?(?:preserved|maintained)|(?:thoracic|lumbar) spine (?:is )?unremarkable/i;
+  const ADDENDUM = /\b(?:ADDENDUM|AMENDED REPORT|CORRECTED REPORT|REVISED REPORT|REPORT AMENDED|REPORT CORRECTED)\b/;
+
+  function imagingReview(ctx) {
+    const need = ['Microbiology reports', 'Nursing notes', 'Past imaging'];
+    if (waiting(ctx, need)) return [R('loading', 'Imaging review', 'Waiting for data to load…')];
+    const all = allImaging(ctx);
+    if (!all.length) return [R(ctx.has('Microbiology reports') ? 'na' : 'unknown', 'Imaging review', ctx.has('Microbiology reports') ? 'No imaging reports found' : 'Couldn’t check: reports didn’t load')];
+    const notes = ctx.notes || [], out = [];
+    const notesText = notes.map(n => n.text || '').join('\n');
+    const reportTexts = all.map(r => r.text.replace(/\s+/g, ' '));
+    const label = r => (r.name || modalityOf(r.text)) + ', ' + fmtDate(r.time);
+    const sentences = r => r.text.split(/(?<=\.)\s+|\n+/).map(s => s.replace(/\s+/g, ' ').trim()).filter(s => s.length > 3);
+    // a note is "not a report" when it isn't itself the source of the report blocks (PDF notes hold both)
+    const noteProse = n => { let t = n.text || ''; all.filter(r => r.fromNote && r.fromNote === (n.title || 'Note')).forEach(r => { t = t.replace(r.text, ' '); }); return t; };
+
+    // 1. organ present before, absent now
+    for (const o of ORGANS) {
+      const absentNow = all.filter(r => { const m = r.text.match(o.absent); return m && !isNeg(r.text, m.index); });
+      if (!absentNow.length) continue;
+      const firstAbsent = absentNow[0];
+      const before = all.filter(r => r.time < firstAbsent.time - DAY && !o.absent.test(r.text) && sentences(r).some(s => o.present.test(s) && !o.absent.test(s)));
+      if (!before.length) continue;
+      const surgery = findCause(ctx, o.surgery, reportTexts).yes;
+      const prev = last(before), prevQ = sentences(prev).find(s => o.present.test(s) && !o.absent.test(s));
+      const nowQ = SENT(firstAbsent.text, firstAbsent.text.search(o.absent));
+      out.push(R(surgery.length ? 'ok' : 'review', (surgery.length ? 'Explained: ' : '⚠ ') + o.name + ' seen on ' + label(prev) + ', absent on ' + label(firstAbsent),
+        surgery.length ? 'Surgery found in the chart: “' + surgery[0].quote + '”' : 'No surgery found in the chart between the two studies. Something has happened to the ' + o.name.toLowerCase() + '.',
+        ['Earlier (' + label(prev) + '): “' + prevQ + '”', 'Later (' + label(firstAbsent) + '): “' + nowQ + '”'],
+        surgery.length ? {} : { next: o.name === 'Gallbladder' ? 'Ask radiology to compare with the earlier study: contracted around stones, fistulized (gallstone ileus), or a reporting error?' : 'Ask radiology to compare with the earlier study' }));
+    }
+
+    // 2. a bone lesion called old, but earlier imaging of that bone was normal
+    for (const r of all) {
+      for (const s of sentences(r)) {
+        if (!(OLD_CLAIM.test(s) || NEW_CLAIM.test(s))) continue;
+        const site = s.match(BONE_SITE); if (!site) continue;
+        const siteWord = site[1] ? site[1] + (/^1$/.test(site[1]) ? 'st' : /^2$/.test(site[1]) ? 'nd' : /^3$/.test(site[1]) ? 'rd' : 'th') + ' rib' : site[2].toUpperCase();
+        const region = site[1] ? /\b(?:ribs?|chest|thora\w*)\b/i : /\b(?:spine|vertebra\w*|thora\w*|lumbar|T\d|L\d)\b/i;
+        const earlier = all.filter(x => x.time < r.time - 30 * DAY && region.test(x.name + ' ' + x.text) && BONE_NORMAL.test(x.text));
+        if (!earlier.length) continue;
+        const e = last(earlier), eS = sentences(e).find(x => BONE_NORMAL.test(x) && region.test(x)) || sentences(e).find(x => BONE_NORMAL.test(x));
+        out.push(R('review', '⚠ ' + siteWord + ' called ' + (OLD_CLAIM.test(s) ? '“old”' : '“age indeterminate”') + ', but ' + label(e) + ' was normal',
+          'Earlier imaging of the same area reported no lesion, so this is probably new.',
+          ['Now (' + label(r) + '): “' + s + '”', 'Earlier (' + label(e) + '): “' + eS + '”'],
+          { next: 'Ask radiology to compare the two studies directly; a new lytic or expansile lesion needs a work-up' }));
+      }
+    }
+
+    // 3. a note calls imaging unremarkable when the report lists findings
+    for (const n of notes) {
+      const prose = noteProse(n); DOWNPLAY.lastIndex = 0; let m; const done = new Set();
+      while ((m = DOWNPLAY.exec(prose))) {
+        const q = SENT(prose, m.index + 1), mod = modalityOf(m[0]);
+        if (done.has(q)) continue; done.add(q);
+        const reps = all.filter(r => r.time <= n.time + 12 * HOUR && r.time >= n.time - 14 * DAY && (mod === 'Imaging' || modalityOf(r.name + ' ' + r.text) === mod));
+        const isSig = s => SIG.test(s) && !/^(?:no|without)\b/i.test(s) && !isNeg(s, s.search(SIG)) && !/^(?:FINDINGS|IMPRESSION|ADDENDUM|date of)\b/i.test(s) && !/NOT A REAL PERSON/.test(s);
+        const sig = []; reps.forEach(r => sentences(r).filter(isSig).forEach(s => { if (!sig.some(x => x.s === s)) sig.push({ r, s }); }));
+        // drop findings the note itself names ("fracture only", "SBO")
+        const qn = q.toLowerCase().replace(/\bsbo\b/g, 'small bowel obstruction dilated').replace(/\bfractures?\b/g, 'fracture');
+        const others = sig.filter(x => { const k = (x.s.match(SIG) || [''])[0].toLowerCase(); return k && !qn.includes(k); });
+        if (others.length < 2) continue;
+        out.push(R('review', 'Note vs. report: “' + q.slice(0, 90) + (q.length > 90 ? '…' : '') + '”',
+          (n.title || 'A note') + ' (' + fmtTime(n.time) + ') reads the imaging as unremarkable, but the report lists ' + others.length + ' other findings.',
+          others.slice(0, 4).map(x => label(x.r) + ': “' + x.s + '”'),
+          { next: 'Re-read the full report; copy-forward summaries often drop the findings that matter' }));
+      }
+    }
+
+    // 4. left/right mismatch between reports and notes
+    const sides = (text) => { const out2 = {}; let m; SIDE_PART.lastIndex = 0; while ((m = SIDE_PART.exec(text))) { const g = PART_GROUP(m[2]); (out2[g] = out2[g] || new Set()).add(sideOf(m[1])); } return out2; };
+    const repSides = {}; all.forEach(r => { const s = sides(r.text); Object.keys(s).forEach(g => { repSides[g] = repSides[g] || new Set(); s[g].forEach(x => repSides[g].add(x)); }); });
+    for (const n of notes) {
+      const prose = noteProse(n); let m; SIDE_PART.lastIndex = 0;
+      while ((m = SIDE_PART.exec(prose))) {
+        const g = PART_GROUP(m[2]), side = sideOf(m[1]), rs = repSides[g];
+        if (!rs || rs.size !== 1 || rs.has(side) || g === 'chest') continue;
+        const repSide = Array.from(rs)[0], r = all.find(x => (sides(x.text)[g] || new Set()).has(repSide));
+        let rq = ''; { const body = r.text.replace(/^[^\n]*\n/, ''); let mm; SIDE_PART.lastIndex = 0; while ((mm = SIDE_PART.exec(body))) { if (PART_GROUP(mm[2]) === g) { rq = SENT(body, mm.index); break; } } }
+        out.push(R('review', '⚠ Wrong side? Note says ' + side + ' ' + g + ', imaging says ' + repSide,
+          (n.title || 'A note') + ' (' + fmtTime(n.time) + ') names the ' + side + ' side; every imaging report names the ' + repSide + '.',
+          ['Note: “' + SENT(prose, m.index) + '”', 'Imaging (' + label(r) + '): “' + (rq || r.name) + '”'],
+          { next: 'Confirm the side at the bedside and with the team today, before any procedure or consent' }));
+        break;
+      }
+    }
+
+    // 5. addenda, amended or corrected reports, still preliminary
+    for (const r of all) {
+      const am = r.text.match(ADDENDUM), changed = am || ['amended', 'corrected', 'appended'].includes(r.status);
+      if (changed) {
+        const at = am ? (parseLooseDate(r.text.slice(am.index, am.index + 80)) || r.time) : r.time;
+        const addText = am ? r.text.slice(am.index).replace(/\s+/g, ' ').slice(0, 260) : 'Report status: ' + r.status;
+        const after = notes.filter(n => n.time > at && !(r.fromNote && n.title === r.fromNote && n.time === r.time));
+        const ack = after.some(n => /addendum|amended|corrected report|revised report|radiology (?:called|updated|revised)/i.test(noteProse(n)));
+        out.push(R(ack ? 'ok' : 'review', 'Report changed after it was first read: ' + label(r),
+          ack ? 'A later note mentions the change.' : (after.length ? 'No note after ' + fmtTime(at) + ' mentions the change.' : 'No note has been written since the change (' + fmtTime(at) + ').'),
+          ['“' + addText + (addText.length >= 260 ? '…' : '') + '”'], ack ? {} : { next: 'Read the addendum now and tell the team; check whether the plan still fits' }));
+      } else if (r.status === 'preliminary' && ctx.now - r.time > 12 * HOUR) {
+        out.push(R('review', 'Still preliminary after ' + Math.round((ctx.now - r.time) / HOUR) + ' h: ' + label(r), 'The final report may differ from the wet read.', [], { next: 'Check for the final report, or call radiology' }));
+      }
+    }
+
+    // 6. imaging ordered with no report
+    const imgOrders = (ctx.orders || []).filter(o => o.type === 'ServiceRequest' && /\b(?:CT|CTA|MRI|MRCP|x-?ray|XR|CXR|ultrasound|US|radiograph|doppler|echo\w*|bone scan)\b/i.test(o.name) && ctx.now - o.time > 24 * HOUR && o.time >= ctx.from);
+    for (const o of imgOrders) {
+      const mod = modalityOf(o.name);
+      if (all.some(r => r.time >= o.time - 2 * HOUR && (mod === 'Imaging' || modalityOf(r.name + ' ' + r.text) === mod))) continue;
+      out.push(R('review', 'Ordered, no report found: ' + o.name, 'Ordered ' + fmtTime(o.time) + ' (' + Math.round((ctx.now - o.time) / HOUR) + ' h ago).', [], { next: 'Was it done? If done, find the report; if not, decide whether it is still needed' }));
+    }
+
+    // 7. a "normal" report the patient's data argue against
+    const lastAfter = (k, t) => ctx.series(k).filter(o => o.time >= t && o.time <= t + 2 * DAY);
+    for (const r of all.filter(x => x.time >= ctx.from - 2 * DAY)) {
+      if (/\b(?:chest|CXR|lungs?)\b/i.test(r.name + ' ' + r.text) && /lungs? (?:are )?clear|no acute (?:cardiopulmonary|chest)|normal chest/i.test(r.text)) {
+        const low = lastAfter('spo2', r.time).filter(o => o.value < 90);
+        if (low.length) out.push(R('review', 'Chest imaging “clear” but SpO2 ' + minBy(low, o => o.value).value + '%: ' + label(r),
+          'Hypoxia with clear lungs on imaging needs another explanation.', ['Report: “' + SENT(r.text, r.text.search(/lungs? (?:are )?clear|no acute|normal chest/i)) + '”'],
+          { next: 'Consider pulmonary embolism, shunt, hypoventilation or a film that is now out of date' }));
+      }
+      if (/no (?:intra- ?or extrahepatic )?biliary (?:duct(?:al)? )?dilat/i.test(r.text)) {
+        const hi = lastAfter('bili', r.time).filter(o => o.value > 40);
+        if (hi.length) out.push(R('review', 'No biliary dilatation but bilirubin ' + maxBy(hi, o => o.value).value + ': ' + label(r),
+          'Rising bilirubin without dilated ducts.', [], { next: 'Hemolysis, drugs, hepatitis, sepsis; repeat imaging if it keeps rising' }));
+      }
+    }
+
+    // timeline
+    const tl = all.slice().reverse().slice(0, 12).map(r => {
+      const imp = r.text.match(/IMPRESSION:?\s*([\s\S]{0,170})/i), body = (imp ? imp[1] : r.text.replace(/^[^\n]*\n/, '')).replace(/\s+/g, ' ').trim();
+      return fmtDate(r.time) + ' · ' + (r.name || modalityOf(r.text)) + (r.status && r.status !== 'final' ? ' (' + r.status + ')' : '') + (ADDENDUM.test(r.text) ? ' [addendum]' : '') + (r.fromNote ? ' [from ' + r.fromNote + ']' : '') + ' — ' + body.slice(0, 170) + (body.length > 170 ? '…' : '');
+    });
+    out.push(R('na', 'Imaging timeline (' + all.length + ' stud' + (all.length === 1 ? 'y' : 'ies') + ', newest first)', 'Every imaging report found, including older studies and reports inside notes or imported PDFs.', tl));
+    if (!out.some(i => i.status === 'review')) out.unshift(R('ok', 'Imaging review', 'No discrepancies found between the reports, the notes and the data'));
+    return out;
+  }
+
+  // ------------------------------------------------------------------
   // Evaluate
   // ------------------------------------------------------------------
   function evaluate(ctx) {
@@ -936,12 +1151,14 @@
     const fit = safe(() => dataFit(ctx), 'Does the data fit?');
     const ux = safe(() => unexplained(ctx), 'Unexplained results');
     const im = safe(() => imagingFindings(ctx), 'Imaging findings');
+    const rv = safe(() => imagingReview(ctx), 'Imaging review');
     const sections = [
       { id: 'improving', title: '1. Not improving', items: [].concat(ni) },
       { id: 'bundles', title: '2. Can’t-miss checks', items: [].concat(bu) },
       { id: 'fit', title: '3. Does the data fit the working diagnosis?', items: fit.items || [].concat(fit), detected: fit.detected || {} },
       { id: 'unexplained', title: '4. Unexplained results', items: [].concat(ux) },
-      { id: 'imaging', title: '5. Imaging findings: are they accounted for?', items: [].concat(im) }
+      { id: 'imaging', title: '5. Imaging findings: are they accounted for?', items: [].concat(im) },
+      { id: 'review', title: '6. Imaging review: timeline and discrepancies', items: [].concat(rv) }
     ];
     const all = sections.flatMap(s => s.items);
     return { ctx, sections, counts: { review: all.filter(i => i.status === 'review').length },
@@ -1004,12 +1221,12 @@
     const pid = client.patient.id;
     const from = opts.from, to = opts.to, ge = fhirDate(from - 2 * DAY);
     const failed = [], pending = new Set(), reasons = {};
-    const out = { patient: null, encounters: [], medRequests: [], medAdmins: null, observations: [], reports: [], orders: [], procedures: [], conditions: [], notes: null };
+    const out = { patient: null, encounters: [], medRequests: [], medAdmins: null, observations: [], reports: [], orders: [], procedures: [], pastReports: [], conditions: [], notes: null };
     const progress = opts.onProgress || function () {};
     const partial = opts.onPartial || function () {};
     const snapshot = () => Object.assign({}, out, { failed: failed.slice(), pending: Array.from(pending), reasons: Object.assign({}, reasons) });
     const FAILED = {};
-    const LABELS = ['Patient', 'Admission', 'Active medications', 'Problem list', 'Lab results', 'Microbiology reports', 'Orders', 'Past procedures', 'Nursing notes'];
+    const LABELS = ['Patient', 'Admission', 'Active medications', 'Problem list', 'Lab results', 'Microbiology reports', 'Orders', 'Past procedures', 'Past imaging', 'Nursing notes'];
     LABELS.forEach(l => pending.add(l));
     const safe = async (label, fn) => {
       progress(label, 'loading');
@@ -1055,6 +1272,7 @@
         () => fhirSearch(client, 'ServiceRequest?patient=' + pid + '&_count=100', 3),
         () => fhirSearch(client, 'Procedure?patient=' + pid + '&date=ge' + ge + '&_count=100', 3)
       ]), []),
+      run('Past imaging', 'pastReports', () => fhirSearch(client, 'DiagnosticReport?patient=' + pid + '&_count=100', 3), []), // older studies to compare against
       run('Past procedures', 'procedures', () => fhirSearch(client, 'Procedure?patient=' + pid + '&_count=100', 3), []), // surgical history, any date (cholecystectomy, ERCP)
       run('Nursing notes', 'notes', () => opts.getNotes ? opts.getNotes({ from, to }) : loadNotes(client, pid, from, to), null)
     ]);
@@ -1168,5 +1386,5 @@
     }
   }
 
-  return { CONFIG, FIT_RULES, UNEXPLAINED, IMG_FINDINGS, imagingFindings, mount, loadResources, buildContext, evaluate, render, kindOf, detectWorkingDx };
+  return { CONFIG, FIT_RULES, UNEXPLAINED, IMG_FINDINGS, imagingFindings, imagingReview, allImaging, mount, loadResources, buildContext, evaluate, render, kindOf, detectWorkingDx };
 });

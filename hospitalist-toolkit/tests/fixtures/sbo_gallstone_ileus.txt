@@ -69,6 +69,7 @@ NG output 1.4 L overnight. Pain unchanged. No flatus.
 2026-11-05 07:30 BP: 142/80 HR: 98 RR: 20 Temp: 37.4 C SpO2: 91%
 Water-soluble contrast challenge #1 given yesterday 18:00.
 24 h abdominal X-ray: contrast in dilated small bowel, none in colon. Failed.
+CT: SBO with RLQ transition, otherwise unremarkable.
 Plan: continue conservative management, repeat contrast challenge tomorrow.
 
 GENERAL SURGERY PROGRESS NOTE - HD3
@@ -187,6 +188,15 @@ IMPRESSION:
 1. Small bowel obstruction with RLQ transition point, likely adhesive.
 2. Pneumobilia, likely incidental. Clinical correlation for prior sphincterotomy.
 3. Gallbladder not visualized, presumed post-cholecystectomy.
+
+ULTRASOUND ABDOMEN (OUTPATIENT)
+Date of exam: 2024-03-12 10:05
+FINDINGS:
+Gallbladder distended with multiple mobile gallstones, the largest 2.2 cm.
+No gallbladder wall thickening or pericholecystic fluid. Common bile duct 5 mm.
+No pneumobilia. Liver and spleen normal.
+IMPRESSION:
+Cholelithiasis without cholecystitis.
 
 
 

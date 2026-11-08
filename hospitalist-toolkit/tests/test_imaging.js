@@ -107,4 +107,47 @@ ok("acute splenic infarct is not a brain infarct", !run(base({ reports: [rep("Ac
 }
 // CRAB needs bone findings plus one feature, or three features
 ok("CRAB: lytic lesion alone (normal labs) -> no pattern", !run(base({ reports: [rep("Lytic lesion in the left femur.")], observations: [] })).some((i) => /CRAB/.test(i.title)));
+
+// ---------- 6. Imaging review ----------
+const rev = (r) => DX.imagingReview(DX.buildContext(r, { now, lookbackDays: 7 }));
+const repD = (name, text, iso, status) => ({ resourceType: "DiagnosticReport", id: "d" + Math.random(), status: status || "final", category: [{ coding: [{ code: "imaging" }] }], code: { text: name }, effectiveDateTime: iso, conclusion: text });
+const T = (items) => items.map((i) => i.status + ":" + i.title);
+{
+  // PDF patients
+  const load = (f, g, dob) => { const t = fs.readFileSync(path.join(__dirname, "fixtures/" + f), "utf8"), e = X.fromText(t, { fileName: f }), c = { patientId: "pdfpt", fileName: f, now }, r = e.items.map((it) => X.toResource(it, c)).filter(Boolean);
+    return base({ patient: { resourceType: "Patient", id: "p", gender: g, birthDate: dob }, observations: r.filter((x) => x.resourceType === "Observation"), reports: r.filter((x) => x.resourceType === "DiagnosticReport"), conditions: r.filter((x) => x.resourceType === "Condition"), notes: [{ time: e.docT, title: "Imported PDF", text: e.text }] }); };
+  let it = rev(load("sbo_gallstone_ileus.txt", "female", "1960-05-21"));
+  ok("Gwen: gallbladder seen on 2024 US, absent on CT", T(it).some((x) => /review:⚠ Gallbladder seen on ULTRASOUND.*Mar 12, 2024.*absent on CT/.test(x)), T(it));
+  ok("Gwen: note downplays CT", T(it).some((x) => /Note vs. report: “CT: SBO with RLQ transition, otherwise unremarkable/.test(x)), T(it));
+  ok("Gwen: timeline has 2 studies (PDF report not duplicated)", T(it).some((x) => /Imaging timeline \(2 studies/.test(x)), T(it));
+  ok("Gwen: no wrong-side flag", !T(it).some((x) => /Wrong side/.test(x)));
+  it = rev(load("hip_fracture_lytic.txt", "male", "1952-02-11"));
+  ok("Harold: rib called old but normal in 2025", T(it).some((x) => /6th rib called “old”, but X-RAY CHEST.*Oct 2, 2025/.test(x)), T(it));
+  ok("Harold: T8 age indeterminate vs normal spine", it.some((i) => /T8/.test(i.title) && i.evidence.some((e) => /vertebral body heights/.test(e))), T(it));
+  ok("Harold: note 'fracture only, otherwise unremarkable'", T(it).some((x) => /Note vs. report: “X-rays: fracture only/.test(x)), T(it));
+  ok("Harold: wrong side (consent right, imaging left)", it.some((i) => /Wrong side\? Note says right hip\/femur, imaging says left/.test(i.title) && i.evidence.some((e) => /Consent signed for right femur/.test(e))), T(it));
+  ok("Harold: addendum with no later note", it.some((i) => /Report changed after it was first read/.test(i.title) && i.status === "review" && /No note has been written since/.test(i.summary)), T(it));
+  ok("Harold: timeline 3 studies, footer stripped", it.some((i) => /timeline \(3 studies/.test(i.title) && !i.evidence.join(" ").includes("NOT A REAL PERSON")), it.find((i) => /timeline/.test(i.title)));
+}
+// organ removed with surgery in the chart -> explained
+let iv = rev(base({ reports: [repD("US abdomen", "Gallbladder contains stones.", "2023-01-10T10:00:00"), repD("CT abdomen", "Gallbladder surgically absent.", "2026-11-05T10:00:00")], notes: [note("Laparoscopic cholecystectomy in 2024.")] }));
+ok("organ absent after surgery -> explained", T(iv).some((x) => /^ok:Explained: Gallbladder/.test(x)), T(iv));
+// addendum acknowledged in a later note
+iv = rev(base({ reports: [repD("CT head", "No acute findings. ADDENDUM (2026-11-06 08:00): small left subdural hematoma.", "2026-11-05T22:00:00")], notes: [{ time: new Date("2026-11-06T10:00:00").getTime(), title: "Progress note", text: "Radiology addendum reviewed: small subdural, apixaban held." }] }));
+ok("addendum acknowledged -> ok", iv.some((i) => /Report changed/.test(i.title) && i.status === "ok"), T(iv));
+// preliminary for more than 12 h
+iv = rev(base({ reports: [repD("CT chest", "Preliminary: no PE.", new Date(now - 20 * H).toISOString(), "preliminary")] }));
+ok("still preliminary after 20 h", T(iv).some((x) => /Still preliminary after 20 h/.test(x)), T(iv));
+// ordered but no report
+iv = rev(base({ orders: [{ resourceType: "ServiceRequest", status: "active", code: { text: "MRI lumbar spine" }, authoredOn: new Date(now - 40 * H).toISOString() }], reports: [repD("CT abdomen", "Normal.", new Date(now - 30 * H).toISOString())] }));
+ok("MRI ordered 40 h ago with no MRI report", T(iv).some((x) => /Ordered, no report found: MRI lumbar spine/.test(x)), T(iv));
+// clear chest X-ray with low SpO2
+const sat = (v, h) => ({ resourceType: "Observation", id: "s" + h, status: "final", category: [{ coding: [{ code: "vital-signs" }] }], code: { coding: [{ system: "http://loinc.org", code: "59408-5" }], text: "SpO2" }, effectiveDateTime: new Date(now - h * H).toISOString(), valueQuantity: { value: v, unit: "%" } });
+iv = rev(base({ reports: [repD("XR chest", "Lungs are clear. No acute cardiopulmonary process.", new Date(now - 10 * H).toISOString())], observations: [sat(86, 6)] }));
+ok("clear chest film but SpO2 86", T(iv).some((x) => /Chest imaging “clear” but SpO2 86%/.test(x)), T(iv));
+// no discrepancies -> ok + timeline
+iv = rev(base({ reports: [repD("XR chest", "Lungs are clear.", new Date(now - 10 * H).toISOString())], observations: [sat(97, 6)] }));
+ok("clean -> ok and timeline", iv[0].status === "ok" && T(iv).some((x) => /timeline \(1 study/.test(x)), T(iv));
+// section 6 in evaluate
+ok("section 6 present", DX.evaluate(DX.buildContext(base({}), { now, lookbackDays: 7 })).sections.some((x) => x.id === "review"));
 console.log(fail ? fail + " FAILED" : "all passed"); process.exit(fail ? 1 : 0);

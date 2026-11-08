@@ -66,6 +66,8 @@ Date of service: 2026-11-07 07:50
 Pain controlled. For OR today, booked as second case.
 2026-11-07 07:30 BP: 138/80 HR: 88 RR: 18 Temp: 37.0 C SpO2: 95%
 Creatinine improving slowly with fluids. Medicine consult pending.
+X-rays: fracture only, otherwise unremarkable.
+Consent signed for right femur intramedullary nail.
 
 LABORATORY RESULTS
 Collected: Nov 7, 2026 05:30
@@ -131,6 +133,17 @@ Expansile lytic lesion of the right 6th rib, likely an old healed fracture.
 Mild compression deformity of T8, age indeterminate.
 IMPRESSION:
 No acute cardiopulmonary process. Possible old rib fracture.
+ADDENDUM (2026-11-07 15:40): Compared with the chest X-ray of 2025-10-02, the
+expansile lesion of the right 6th rib is new. Recommend further evaluation for a
+lytic lesion (myeloma or metastasis).
+
+X-RAY CHEST (FAMILY DOCTOR REFERRAL)
+Date of exam: 2025-10-02 11:00
+FINDINGS:
+Lungs clear. Normal heart size. Ribs intact. No focal bone lesion.
+Thoracic vertebral body heights are preserved.
+IMPRESSION:
+Normal chest.
 
 
 
