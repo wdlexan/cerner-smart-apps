@@ -37,6 +37,22 @@
       obs: vit({ sbp: 126, hr: 72, rr: 16, t: 36.8, spo2: 98 }).concat([obs("2823-3", "Potassium", 4.2, "mmol/L", 0.5), obs("2951-2", "Sodium", 139, "mmol/L", 0.5), obs("2160-0", "Creatinine", 70, "umol/L", 0.5), obs("98979-8", "eGFR", 95, "mL/min/1.73m2", 0.5), obs("718-7", "Hemoglobin", 135, "g/L", 0.5), obs("6690-2", "WBC", 7, "10*9/L", 0.5), obs("777-3", "Platelets", 250, "10*9/L", 0.5), obs("2345-7", "Glucose", 5.2, "mmol/L", 0.5)]) } },
     { label: "F: old values only (31 days): expect them NOT used unless 'Include older values' is ticked", raw: {
       patient: pt(66, "male"), conds: ["Heart failure"].map(cond), meds: ["Spironolactone 25 mg PO"].map(med), allergies: [],
-      obs: [obs("2823-3", "Potassium", 6.2, "mmol/L", 31), bp(82, 50, 31), obs("8867-4", "Heart rate", 50, "/min", 31, V)] } }
+      obs: [obs("2823-3", "Potassium", 6.2, "mmol/L", 31), bp(82, 50, 31), obs("8867-4", "Heart rate", 50, "/min", 31, V)] } },
+    // G and H are the same made-up patients as the test PDFs in hospitalist-toolkit/tests/fixtures/ (dates shifted to "now")
+    { label: "G: 66 F SBO on general surgery, new AF on IV digoxin, low K, rising creatinine (same as PDF patient Gwen)", raw: {
+      patient: pt(66, "female"), conds: ["Small bowel obstruction, presumed adhesive", "Atrial fibrillation, new onset", "COPD", "Hypertension", "Obstructive sleep apnea", "Morbid obesity"].map(cond),
+      meds: ["Digoxin 0.25 mg IV", "Enoxaparin 40 mg SC daily", "Hydromorphone 0.5 mg IV q3h prn", "Ondansetron 4 mg IV q8h prn", "Pantoprazole 40 mg IV daily", "Tiotropium 18 mcg inhaled daily", "Salbutamol 100 mcg inhaled prn", "Potassium chloride 20 mEq IV", "Plasma-Lyte 125 mL/h IV"].map(med),
+      allergies: [alg("Codeine", "nausea", "low")],
+      obs: vit({ sbp: 112, hr: 128, rr: 24, t: 38.1, spo2: 91 }).concat([obs("2160-0", "Creatinine", 124, "umol/L", 0.3), obs("2160-0", "Creatinine", 92, "umol/L", 1.3), obs("2160-0", "Creatinine", 78, "umol/L", 3.3),
+        obs("2823-3", "Potassium", 3.1, "mmol/L", 0.3), obs("2951-2", "Sodium", 134, "mmol/L", 0.3), obs("718-7", "Hemoglobin", 129, "g/L", 0.3), obs("718-7", "Hemoglobin", 134, "g/L", 1.3),
+        obs("6690-2", "WBC", 14.8, "10*9/L", 0.3), obs("777-3", "Platelets", 241, "10*9/L", 0.3), obs("2345-7", "Glucose", 9.1, "mmol/L", 0.3), obs("2524-7", "Lactate", 2.4, "mmol/L", 0.3), obs("6301-6", "INR", 1.2, "", 0.3)]) } },
+    { label: "H: 74 M hip fracture on orthopedics, AKI, anemia, high calcium (same as PDF patient Harold)", raw: {
+      patient: pt(74, "male"), conds: ["Hip fracture, left subtrochanteric", "Acute kidney injury", "Hypertension", "Type 2 diabetes mellitus"].map(cond),
+      meds: ["Acetaminophen 1000 mg PO q6h", "Hydromorphone 0.5 mg PO q4h prn", "Enoxaparin 40 mg SC daily", "Normal saline 100 mL/h IV"].map(med)
+        .concat([Object.assign(med("Ramipril 10 mg PO daily"), { status: "on-hold" })]),
+      allergies: [],
+      obs: vit({ sbp: 140, hr: 90, rr: 18, t: 37.1, spo2: 95 }).concat([obs("2160-0", "Creatinine", 151, "umol/L", 0.3), obs("2160-0", "Creatinine", 168, "umol/L", 1.3),
+        obs("718-7", "Hemoglobin", 94, "g/L", 0.3), obs("718-7", "Hemoglobin", 98, "g/L", 1.3), obs("2823-3", "Potassium", 4.6, "mmol/L", 0.3), obs("2951-2", "Sodium", 137, "mmol/L", 0.3),
+        obs("6690-2", "WBC", 6.1, "10*9/L", 1.3), obs("777-3", "Platelets", 168, "10*9/L", 1.3), obs("2345-7", "Glucose", 7.4, "mmol/L", 1.3), obs("6301-6", "INR", 1.0, "", 1.3)]) } }
   ];
 })();
