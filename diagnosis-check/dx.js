@@ -8,6 +8,8 @@
  *                          back pain with fever or bacteremia → must-do list, ticked from the chart
  *   3. Does the data fit?  the working diagnosis against findings that argue for and against it
  *   4. Unexplained results abnormal labs and imaging follow-up recommendations that no note mentions
+ *   5. Imaging findings    findings that need a cause (pneumobilia, absent gallbladder, portal gas, free air) checked against the chart;
+ *                          Rigler's triad (gallstone ileus); hedged report statements to close the loop on
  * Read-only: nothing is written to the chart.
  *
  * Usage (after FHIR.oauth2.ready()):
@@ -272,6 +274,8 @@
       meds: parseMeds(r.medRequests), admins: r.medAdmins == null ? null : parseAdmins(r.medAdmins),
       obs: parseObservations(r.observations).filter(o => o.time >= from - 2 * DAY),
       reports: parseReports(r.reports), orders: parseOrders(r.orders), conditions: parseConditions(r.conditions),
+      procedures: (r.procedures || []).filter(x => x && x.resourceType === 'Procedure' && !['entered-in-error', 'not-done'].includes(x.status))
+        .map(x => ({ name: [ccText(x.code), (x.note || []).map(n => n.text).join(' ')].filter(Boolean).join(' '), time: toTime(x.performedDateTime || (x.performedPeriod && x.performedPeriod.start)) })).filter(x => x.name),
       notes: r.notes == null ? null : r.notes.filter(n => n.time >= from && n.time <= now).sort((a, b) => a.time - b.time),
       failed: uniq((r.failed || []).concat(r.pending || [])), pending: (r.pending || []).slice(), reasons: r.reasons || {},
       chosenDx: opts.chosenDx || null
@@ -698,6 +702,144 @@
   }
 
   // ------------------------------------------------------------------
+  // 5. Imaging findings: are they accounted for?
+  // Findings that always have a cause. Each is "accounted for" only if the chart shows a cause (a note, the problem list or a Procedure).
+  // A cause mentioned only as an assumption ("presumed post-cholecystectomy", "correlation for prior sphincterotomy") does not count.
+  // UNVERIFIED draft lists written by Claude: edit freely.
+  // ------------------------------------------------------------------
+  const IMG_FINDINGS = [
+    { id: 'pneumobilia', label: 'Pneumobilia (air in the bile ducts)',
+      re: /pneumobilia|(?:air|gas) (?:with)?in the (?:central |intrahepatic |extrahepatic |common )*(?:bile ducts?|biliary (?:tree|ducts?))|biliary (?:air|gas)\b/i,
+      explain: [['ERCP or sphincterotomy', /\bERCP\b|sphincterotom/i], ['Biliary stent or drain', /biliary stent|\bCBD stent|\bPTBD\b|biliary drain/i],
+        ['Biliary-enteric surgery', /whipple|pancreaticoduodenectomy|hepaticojejunostomy|choledocho(?:duodeno|jejuno)stomy|biliary.enteric anastomosis/i]],
+      consider: ['Cholecystoenteric fistula and gallstone ileus', 'Emphysematous cholecystitis', 'Cholangitis with gas-forming organisms'],
+      next: 'Ask radiology to re-review for a fistula and an ectopic gallstone; correlate with LFTs and the clinical picture' },
+    { id: 'gb', label: 'Gallbladder absent or not visualized',
+      re: /gall ?bladder (?:is |was )?(?:not (?:seen|visuali[sz]ed|identified)|absent|surgically absent|non-?visuali[sz]ed)|(?:absent|non-?visuali[sz]ed) gall ?bladder|(?:presumed |likely |probabl[ey] )?post-?cholecystectomy/i,
+      explain: [['Cholecystectomy', /cholecystectomy|\blap(?:aroscopic)? chole\b/i]],
+      consider: ['Contracted gallbladder with a cholecystoenteric fistula (gallstone ileus)', 'Chronic cholecystitis or porcelain gallbladder', 'Gallbladder agenesis (rare)'],
+      next: 'Confirm surgical history with the patient; ask radiology whether the gallbladder is contracted around stones or fistulized' },
+    { id: 'portalgas', label: 'Portal venous gas', re: /portal (?:venous )?gas|portomesenteric (?:venous )?gas/i, explain: [],
+      consider: ['Mesenteric ischemia', 'Severe intra-abdominal infection'], next: 'Urgent: discuss with surgery now' },
+    { id: 'pneumatosis', label: 'Pneumatosis intestinalis', re: /pneumatosis/i, explain: [],
+      consider: ['Bowel ischemia', 'Benign pneumatosis (diagnosis of exclusion)'], next: 'Urgent: lactate, exam, discuss with surgery' },
+    { id: 'freeair', label: 'Free intraperitoneal air', re: /free (?:intraperitoneal )?air|pneumoperitoneum/i,
+      explain: [['Recent abdominal surgery, laparoscopy, PEG or peritoneal dialysis', /laparotomy|laparoscop\w* (?:on|this admission|post)|post-?op(?:erative)? day|\bPOD ?\d|\bPEG\b|peritoneal dialysis/i]],
+      consider: ['Perforated viscus'], next: 'Urgent: discuss with surgery now' }
+  ];
+  const NEG_BEFORE = /\b(?:no|not|never|without|denies|denied|negative for|nil|r\/o|rule out|ruled out)\b[^.;:\n]{0,30}$/i;
+  const HEDGE_BEFORE = /\b(?:presum\w*|likely|probabl[ey]|possibl[ey]|query|suspect\w*|favou?r\w*|correlat\w*|\?)[^.;:\n]{0,30}$/i;
+  const HEDGE = /presum\w*|clinical(?:ly)? correlat\w*|correlate clinically|favou?red to (?:be|represent)|cannot (?:be )?exclude|likely incidental|probably incidental|incidental(?:ly)?\b|of uncertain significance|indeterminate/i;
+  // Sentence around position i. Ends at ". " (not decimals like 2.4), a blank line, or a new numbered/heading line; wrapped lines are joined.
+  const BOUND = /\.(?=\s)|\n[ \t]*\n|\n(?=[ \t]*(?:\d+\.\s|[A-Z][A-Z /]{3,}:))/g;
+  const SENT = (t, i) => {
+    let s = 0, e = t.length, m; BOUND.lastIndex = 0;
+    while ((m = BOUND.exec(t))) { if (m.index < i) s = m.index + m[0].length; else { e = m.index + (m[0] === '.' ? 1 : 0); break; } }
+    return t.slice(s, e).replace(/\s+/g, ' ').trim();
+  };
+  const isNeg = (t, i) => NEG_BEFORE.test(t.slice(Math.max(0, i - 40), i));
+
+  // Find a cause in the chart: positive mentions count; negated ones are kept as "chart says not done".
+  function findCause(ctx, re, reportTexts) {
+    const yes = [], no = [];
+    const scan = (text, where, time) => {
+      const g = new RegExp(re.source, 'gi'); let m;
+      while ((m = g.exec(text || ''))) {
+        const before = text.slice(Math.max(0, m.index - 40), m.index), sent = SENT(text, m.index);
+        if (reportTexts.some(r => r.includes(sent))) continue; // the radiology report's own assumption is not a cause
+        if (NEG_BEFORE.test(before)) no.push({ where, time, quote: sent });
+        else if (!HEDGE_BEFORE.test(before)) yes.push({ where, time, quote: sent });
+      }
+    };
+    (ctx.notes || []).forEach(n => scan(n.text, n.title || 'Note', n.time));
+    ctx.conditions.forEach(c => scan(c.text, 'Problem list', c.recorded));
+    (ctx.procedures || []).forEach(p => scan(p.name, 'Procedure', p.time));
+    return { yes, no };
+  }
+
+  function imagingFindings(ctx) {
+    const need = ['Microbiology reports', 'Nursing notes'];
+    if (waiting(ctx, need)) return [R('loading', 'Imaging findings', 'Waiting for data to load…')];
+    const reports = ctx.reports.filter(x => x.imaging && x.time >= ctx.from - 30 * DAY);
+    // Imported PDFs often hold the radiology report inside the note text: read report-like sections of notes too.
+    const noteReports = (ctx.notes || []).map(n => {
+      const i = (n.text || '').search(/\b(?:CT|MRI|ultrasound|X-?ray|radiograph)\b[^\n]{0,60}\n?[\s\S]{0,40}(?:FINDINGS|IMPRESSION)/i);
+      return i < 0 ? null : { time: n.time, name: (n.title || 'Note') + ' (report text)', text: n.text.slice(i, i + 3000), imaging: true };
+    }).filter(Boolean);
+    const all = reports.concat(noteReports);
+    if (!all.length) return [R(ctx.has('Microbiology reports') ? 'na' : 'unknown', 'Imaging findings', ctx.has('Microbiology reports') ? 'No imaging reports in the window' : 'Couldn’t check: reports didn’t load')];
+    const reportTexts = all.map(r => r.text.replace(/\s+/g, ' '));
+    const notesText = (ctx.notes || []).map(n => n.text || '').join('\n');
+    const out = [], hits = {};
+
+    for (const f of IMG_FINDINGS) {
+      for (const rep of all) {
+        const g = new RegExp(f.re.source, 'gi'); let m;
+        while ((m = g.exec(rep.text))) { if (!isNeg(rep.text, m.index)) { hits[f.id] = hits[f.id] || { rep, quote: SENT(rep.text, m.index) }; break; } }
+        if (hits[f.id]) break;
+      }
+      const h = hits[f.id]; if (!h) continue;
+      const causes = f.explain.map(([label, re]) => ({ label, r: findCause(ctx, re, reportTexts) }));
+      const found = causes.filter(c => c.r.yes.length);
+      const denied = causes.filter(c => !c.r.yes.length && c.r.no.length);
+      const hedged = HEDGE.test(h.quote);
+      const when = fmtTime(h.rep.time);
+      if (found.length) {
+        out.push(R('ok', 'Accounted for: ' + f.label, 'Cause in the chart: ' + found.map(c => c.label).join(', '),
+          ['Report (' + (h.rep.name || 'imaging') + ', ' + when + '): “' + h.quote + '”'].concat(found.map(c => 'Chart: “' + c.r.yes[0].quote + '” (' + c.r.yes[0].where + ')'))));
+        continue;
+      }
+      const ev = ['Report (' + (h.rep.name || 'imaging') + ', ' + when + '): “' + h.quote + '”'];
+      denied.forEach(c => ev.push('Chart says not done: “' + c.r.no[0].quote + '” (' + c.r.no[0].where + (c.r.no[0].time ? ', ' + fmtTime(c.r.no[0].time) : '') + ')'));
+      let summary = f.explain.length ? 'No ' + f.explain.map(([l]) => (/^[A-Z][a-z]/.test(l) ? l[0].toLowerCase() + l.slice(1) : l)).join('; no ') + ' found in the chart.' : 'Needs a cause and usually urgent action.';
+      if (denied.length) summary += ' ⚠ The report or a note assumes a cause the chart says did not happen.';
+      else if (hedged) summary += ' The report hedges (“' + (h.quote.match(HEDGE) || [''])[0] + '”), so treat it as an open question.';
+      out.push(R('review', 'Unaccounted: ' + f.label, summary, ev.concat(['Consider: ' + f.consider.join('; ')]), { next: f.next, findingId: f.id }));
+    }
+
+    // Rigler's triad: small bowel obstruction + pneumobilia + gallbladder gone or an ectopic stone/intraluminal focus -> gallstone ileus
+    const sboRe = /small bowel obstruction|\bSBO\b|dilated (?:fluid-filled )?small bowel loops[^.]{0,80}transition/i;
+    const stoneRe = /ectopic (?:gall)?stone|gallstone (?:in|within) the (?:small bowel|ileum|jejunum|duodenum)|intraluminal (?:\d[\d.]* ?cm )?(?:\w+ ){0,3}(?:focus|density|calcifi\w*|stone|filling defect)[^.]{0,60}transition|(?:focus|density|stone)[^.]{0,40}at the transition point/i;
+    const sbo = all.some(r => sboRe.test(r.text)) || ctx.conditions.some(c => c.active && sboRe.test(c.text)) || sboRe.test(notesText);
+    const stone = all.map(r => { const m = r.text.match(stoneRe); return m ? SENT(r.text, m.index) : null; }).find(Boolean);
+    const gbUnacc = out.some(i => i.findingId === 'gb'), pbUnacc = out.some(i => i.findingId === 'pneumobilia');
+    if (sbo && hits.pneumobilia && (hits.gb || stone)) {
+      const clues = [];
+      if (ctx.patient && ctx.patient.gender === 'female') clues.push('Female');
+      if (ctx.age != null && ctx.age >= 65) clues.push('Age ' + ctx.age);
+      if (!/laparotomy|bowel resection|colectomy|hemicolectomy|appendicectomy|appendectomy|hysterectomy|open (?:abdominal )?surgery|adhesiolysis/i.test(notesText)) clues.push('No laparotomy found in the notes (adhesions less likely)');
+      if (/contrast challenge[^.]{0,120}fail|fail\w*[^.]{0,40}contrast|no contrast in (?:the )?colon/i.test(notesText)) clues.push('Water-soluble contrast challenge failed');
+      const alp = ctx.series('alp'), bili = ctx.series('bili');
+      if (alp.length && last(alp).value > 120) clues.push('ALP ' + last(alp).value + ' U/L');
+      if (bili.length && last(bili).value > 20) clues.push('Bilirubin ' + last(bili).value + ' µmol/L');
+      if (/right upper quadrant|\bRUQ\b|biliary colic|gallstones?|cholelithiasis/i.test(notesText)) clues.push('Biliary symptoms or gallstones mentioned in notes');
+      const named = /gallstone ileus|rigler/i.test(notesText);
+      out.unshift(R('review', 'Pattern: Rigler’s triad → consider gallstone ileus',
+        'Small bowel obstruction with pneumobilia' + (hits.gb ? ' and a missing gallbladder' : '') + (stone ? ' and an intraluminal focus' : '') + '. Each was labelled benign on its own; together they point to a stone obstructing the bowel.' +
+        (named ? ' Gallstone ileus is already mentioned in a note: has it been confirmed or excluded with radiology and surgery?' : ''),
+        (stone ? ['Possible ectopic stone: “' + stone + '”'] : []).concat(clues.length ? ['Also fits: ' + clues.join('; ')] : []),
+        { next: 'Ask radiology to re-review the CT for an ectopic gallstone at the transition point and a cholecystoduodenal fistula; discuss with General Surgery today (Watch-ahead tab → Second look has a script)',
+          checklist: [
+            { state: 'done', text: 'Small bowel obstruction' },
+            { state: hits.pneumobilia ? (pbUnacc ? 'missing' : 'done') : 'unknown', text: 'Pneumobilia' + (pbUnacc ? ' (no cause found)' : '') },
+            { state: hits.gb ? (gbUnacc ? 'missing' : 'done') : 'ask', text: 'Gallbladder absent or not seen' + (gbUnacc ? ' (no cholecystectomy found)' : '') },
+            { state: stone ? 'missing' : 'ask', text: stone ? 'Intraluminal focus at the transition point: is it a gallstone?' : 'Ectopic gallstone: ask radiology to look for one' }
+          ] }));
+    }
+
+    // Other hedged statements: radiology asked a question; has anyone answered it?
+    // (skip sentences already covered by a card above: a listed finding, its causes, or the possible stone)
+    const covered = s => s === stone || IMG_FINDINGS.some(f => hits[f.id] && (f.re.test(s) || f.explain.some(([, re]) => re.test(s))));
+    const open = [];
+    all.forEach(r => { const g = new RegExp(HEDGE.source, 'gi'); let m; while ((m = g.exec(r.text))) { const s = SENT(r.text, m.index); if (!covered(s) && !open.includes(s) && s.length > 12) open.push(s); } });
+    if (open.length) out.push(R('review', 'Report statements to close the loop on', open.length + ' hedged statement' + (open.length === 1 ? '' : 's') + ' in the imaging reports. Has each one been answered?',
+      open.slice(0, 8).map(s => '“' + s + '”'), { next: 'Answer each in your note, or ask radiology to clarify' }));
+
+    if (!out.length) return [R('ok', 'Imaging findings', 'No findings from the checked list, and no hedged statements')];
+    return out;
+  }
+
+  // ------------------------------------------------------------------
   // Evaluate
   // ------------------------------------------------------------------
   function evaluate(ctx) {
@@ -706,11 +848,13 @@
     const bu = safe(() => bundles(ctx), 'Can’t-miss checks');
     const fit = safe(() => dataFit(ctx), 'Does the data fit?');
     const ux = safe(() => unexplained(ctx), 'Unexplained results');
+    const im = safe(() => imagingFindings(ctx), 'Imaging findings');
     const sections = [
       { id: 'improving', title: '1. Not improving', items: [].concat(ni) },
       { id: 'bundles', title: '2. Can’t-miss checks', items: [].concat(bu) },
       { id: 'fit', title: '3. Does the data fit the working diagnosis?', items: fit.items || [].concat(fit), detected: fit.detected || {} },
-      { id: 'unexplained', title: '4. Unexplained results', items: [].concat(ux) }
+      { id: 'unexplained', title: '4. Unexplained results', items: [].concat(ux) },
+      { id: 'imaging', title: '5. Imaging findings: are they accounted for?', items: [].concat(im) }
     ];
     const all = sections.flatMap(s => s.items);
     return { ctx, sections, counts: { review: all.filter(i => i.status === 'review').length },
@@ -773,12 +917,12 @@
     const pid = client.patient.id;
     const from = opts.from, to = opts.to, ge = fhirDate(from - 2 * DAY);
     const failed = [], pending = new Set(), reasons = {};
-    const out = { patient: null, encounters: [], medRequests: [], medAdmins: null, observations: [], reports: [], orders: [], conditions: [], notes: null };
+    const out = { patient: null, encounters: [], medRequests: [], medAdmins: null, observations: [], reports: [], orders: [], procedures: [], conditions: [], notes: null };
     const progress = opts.onProgress || function () {};
     const partial = opts.onPartial || function () {};
     const snapshot = () => Object.assign({}, out, { failed: failed.slice(), pending: Array.from(pending), reasons: Object.assign({}, reasons) });
     const FAILED = {};
-    const LABELS = ['Patient', 'Admission', 'Active medications', 'Problem list', 'Lab results', 'Microbiology reports', 'Orders', 'Nursing notes'];
+    const LABELS = ['Patient', 'Admission', 'Active medications', 'Problem list', 'Lab results', 'Microbiology reports', 'Orders', 'Past procedures', 'Nursing notes'];
     LABELS.forEach(l => pending.add(l));
     const safe = async (label, fn) => {
       progress(label, 'loading');
@@ -824,6 +968,7 @@
         () => fhirSearch(client, 'ServiceRequest?patient=' + pid + '&_count=100', 3),
         () => fhirSearch(client, 'Procedure?patient=' + pid + '&date=ge' + ge + '&_count=100', 3)
       ]), []),
+      run('Past procedures', 'procedures', () => fhirSearch(client, 'Procedure?patient=' + pid + '&_count=100', 3), []), // surgical history, any date (cholecystectomy, ERCP)
       run('Nursing notes', 'notes', () => opts.getNotes ? opts.getNotes({ from, to }) : loadNotes(client, pid, from, to), null)
     ]);
     return snapshot();
@@ -936,5 +1081,5 @@
     }
   }
 
-  return { CONFIG, FIT_RULES, UNEXPLAINED, mount, loadResources, buildContext, evaluate, render, kindOf, detectWorkingDx };
+  return { CONFIG, FIT_RULES, UNEXPLAINED, IMG_FINDINGS, imagingFindings, mount, loadResources, buildContext, evaluate, render, kindOf, detectWorkingDx };
 });

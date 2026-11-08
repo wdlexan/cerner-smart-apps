@@ -1,0 +1,195 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: TESTPATIENT, Gwen          DOB: 1960-05-21     Sex: F
+MRN: TEST60417                      Location: 6A General Surgery, Bed 12
+Admitted: 2026-11-04 (General Surgery)   Attending: Dr. A. Surgeon (made-up)
+
+GENERAL SURGERY ADMISSION NOTE
+Date of service: 2026-11-04 09:40
+Chief complaint: Abdominal pain, vomiting and no flatus for 2 days.
+
+HISTORY OF PRESENT ILLNESS
+66-year-old woman with 3 days of intermittent crampy central abdominal pain,
+bilious vomiting x 6, no bowel movement or flatus for 48 h. Two weeks of
+intermittent right upper quadrant discomfort after meals that settled on its own.
+No fever at home. No prior bowel obstruction. Only prior abdominal surgery:
+laparoscopic tubal ligation (1992). Never had a cholecystectomy.
+No history of ERCP or sphincterotomy.
+
+PAST MEDICAL HISTORY
+COPD (GOLD 3, home O2 not required, baseline SpO2 92%)
+Morbid obesity (BMI 47)
+Hypertension
+Obstructive sleep apnea, CPAP at night
+
+HOME MEDICATIONS
+Tiotropium 18 mcg inhaled daily
+Salbutamol 100 mcg inhaled q4h prn
+Acetaminophen 500 mg PO prn
+Amlodipine 5 mg PO daily (held on admission, NPO)
+
+ALLERGIES: Codeine (nausea)
+
+EXAMINATION
+2026-11-04 08:50 BP: 148/84 HR: 96 RR: 20 Temp: 37.2 C SpO2: 92% Weight: 128 kg
+Distended, tympanic abdomen, diffusely tender, worst in RLQ. No peritonism.
+Healed laparoscopic port scars. No hernias.
+
+ASSESSMENT AND PLAN
+Small bowel obstruction, presumed adhesive (prior tubal ligation).
+NPO, NG tube to drainage, IV fluids, analgesia.
+Water-soluble contrast challenge after NG decompression.
+CT reviewed: pneumobilia noted, likely incidental.
+
+LABORATORY RESULTS
+Collected: Nov 4, 2026 06:30
+Test                      Result          Units           Reference          Flag
+
+Hemoglobin                    138         g/L             120 - 160
+White Blood Cell Count        11.2        x10^9/L         4.0 - 11.0         H
+Platelets                     286         x10^9/L         150 - 400
+Sodium                        138         mmol/L          135 - 145
+Potassium                     3.6         mmol/L          3.5 - 5.0
+Creatinine                    78          umol/L          45 - 90
+Glucose                       7.8         mmol/L          3.6 - 7.8
+Lactate                       1.4         mmol/L          0.5 - 2.0
+Lipase                        42          U/L             10 - 60
+Total Bilirubin               14          umol/L          0 - 20
+Alkaline Phosphatase          168         U/L             40 - 120           H
+ALT                           48          U/L             0 - 35             H
+INR                           1.1         ratio           0.8 - 1.2
+
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | TESTPATIENT, Gwen MRN TEST60417          Page 1
+GENERAL SURGERY PROGRESS NOTE - HD2
+Date of service: 2026-11-05 08:15
+NG output 1.4 L overnight. Pain unchanged. No flatus.
+2026-11-05 07:30 BP: 142/80 HR: 98 RR: 20 Temp: 37.4 C SpO2: 91%
+Water-soluble contrast challenge #1 given yesterday 18:00.
+24 h abdominal X-ray: contrast in dilated small bowel, none in colon. Failed.
+Plan: continue conservative management, repeat contrast challenge tomorrow.
+
+GENERAL SURGERY PROGRESS NOTE - HD3
+Date of service: 2026-11-06 08:05
+Still no flatus. NG output 1.1 L. Mild increase in abdominal pain.
+2026-11-06 07:45 BP: 138/76 HR: 104 RR: 22 Temp: 37.6 C SpO2: 90%
+Water-soluble contrast challenge #2: 24 h film shows no contrast in colon. Failed.
+Plan: continue NG and IV fluids, reassess for OR if no progress in 24 h.
+
+LABORATORY RESULTS
+Collected: Nov 6, 2026 06:20
+Test                      Result          Units           Reference          Flag
+
+Hemoglobin                    134         g/L             120 - 160
+White Blood Cell Count        12.6        x10^9/L         4.0 - 11.0         H
+Sodium                        136         mmol/L          135 - 145
+Potassium                     3.4         mmol/L          3.5 - 5.0          L
+Creatinine                    92          umol/L          45 - 90            H
+Magnesium                     0.68        mmol/L          0.70 - 1.00        L
+Lactate                       1.7         mmol/L          0.5 - 2.0
+
+NURSING NOTE - HD4
+Date of service: 2026-11-07 02:40
+Patient woke with palpitations and shortness of breath. Monitor shows irregular
+rhythm, rate 140s-150s. On-call surgery resident notified.
+2026-11-07 02:35 BP: 104/62 HR: 152 RR: 26 Temp: 37.9 C SpO2: 88%
+O2 increased to 4 L nasal prongs, SpO2 92%.
+
+ECG
+Date of exam: 2026-11-07 02:50
+Atrial fibrillation with rapid ventricular response, rate 148. Normal axis.
+No acute ST elevation. QTc 468 ms. No prior ECG on file.
+
+GENERAL SURGERY ON-CALL NOTE - HD4
+Date of service: 2026-11-07 03:20
+New atrial fibrillation with RVR, likely secondary to physiological stress of SBO.
+Digoxin 0.25 mg IV given x 2 doses (03:00 and 07:00). Medicine/hospitalist consult
+requested in the morning for AF management.
+
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | TESTPATIENT, Gwen MRN TEST60417           Page 2
+LABORATORY RESULTS
+Collected: Nov 7, 2026 05:10
+Test                      Result          Units           Reference          Flag
+
+Hemoglobin                    129         g/L             120 - 160
+White Blood Cell Count        14.8        x10^9/L         4.0 - 11.0         H
+Platelets                     241         x10^9/L         150 - 400
+Sodium                        134         mmol/L          135 - 145          L
+Potassium                     3.1         mmol/L          3.5 - 5.0          L
+Creatinine                    124         umol/L          45 - 90            H
+Magnesium                     0.62        mmol/L          0.70 - 1.00        L
+Glucose                       9.1         mmol/L          3.6 - 7.8          H
+Lactate                       2.4         mmol/L          0.5 - 2.0          H
+Troponin                      41          ng/L            0 - 14             H
+TSH                           1.9         mIU/L           0.3 - 4.0
+Total Bilirubin               22          umol/L          0 - 20             H
+Alkaline Phosphatase          182         U/L             40 - 120           H
+ALT                           52          U/L             0 - 35             H
+INR                           1.2         ratio           0.8 - 1.2
+
+ACTIVE MEDICATION ORDERS (2026-11-07)
+Digoxin 0.25 mg IV q4h x 2 doses (completed 07:00)
+Enoxaparin 40 mg SC daily
+Hydromorphone 0.5 mg IV q3h prn pain
+Ondansetron 4 mg IV q8h prn nausea
+Pantoprazole 40 mg IV daily
+Tiotropium 18 mcg inhaled daily
+Salbutamol 100 mcg inhaled q4h prn
+KCl 20 mEq IV x 2 runs
+Plasma-Lyte 125 mL/h IV
+
+ACTIVE PROBLEM LIST
+Small bowel obstruction, presumed adhesive
+Atrial fibrillation, new onset HD4
+COPD
+Hypertension
+Obstructive sleep apnea
+Morbid obesity
+
+CONSULT REQUEST - MEDICINE / HOSPITALIST
+Date of service: 2026-11-07 08:00
+From: General Surgery. Reason for consult: new atrial fibrillation with RVR on HD4,
+presumed due to stress of SBO. Please assess and manage AF.
+
+HOSPITALIST CONSULT NOTE (DRAFT, INCOMPLETE)
+Date of service: 2026-11-07 10:30
+Consulted by General Surgery for new AF with RVR.
+2026-11-07 10:15 BP: 112/68 HR: 128 RR: 24 Temp: 38.1 C SpO2: 91%
+Pneumobilia on CT not explained: no ERCP, no sphincterotomy, no biliary surgery.
+Gallbladder reported absent but patient has never had a cholecystectomy.
+An AI clinical decision tool suggested gallstone ileus (Rigler triad: SBO,
+pneumobilia, ectopic gallstone), a diagnosis new to me.
+Possible gallstone ileus?
+To discuss with General Surgery and Radiology.
+
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | TESTPATIENT, Gwen MRN TEST60417            Page 3
+RADIOLOGY REPORTS
+CT ABDOMEN AND PELVIS WITH CONTRAST
+Date of exam: 2026-11-04 07:15
+FINDINGS:
+Multiple dilated fluid-filled small bowel loops up to 3.6 cm. Transition point in the
+right lower quadrant; distal ileum and colon decompressed. No free air. No pneumatosis.
+Small volume free fluid in the pelvis.
+Air in the central intrahepatic bile ducts and common bile duct (pneumobilia).
+Gallbladder not visualized, presumably surgically absent.
+Subtle wall thickening of the first part of the duodenum adjacent to the gallbladder fossa.
+Ill-defined 2.4 cm heterogeneous intraluminal focus at the transition point with a
+faint peripheral rim, favoured to be fecalized small bowel content.
+IMPRESSION:
+1. Small bowel obstruction with RLQ transition point, likely adhesive.
+2. Pneumobilia, likely incidental. Clinical correlation for prior sphincterotomy.
+3. Gallbladder not visualized, presumed post-cholecystectomy.
+
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | TESTPATIENT, Gwen MRN TEST60417                    Page 4
+
