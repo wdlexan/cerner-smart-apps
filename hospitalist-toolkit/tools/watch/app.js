@@ -55,7 +55,7 @@ function drawDx() {
   if (!state.f) { box.innerHTML = ""; if (typeof drawAI === "function") drawAI(); return; }
   dl.forEach(({ d, on, how }) => {
     const b = document.createElement("button"); b.className = "chip"; b.setAttribute("aria-pressed", on); b.textContent = d.title + (how ? ` (${how})` : "");
-    b.onclick = () => { state.dxOver[d.id] = !on; drawDx(); }; chips.appendChild(b);
+    b.onclick = () => { state.dxOver[d.id] = !on; drawDx(); drawSL(); }; chips.appendChild(b);
   });
   const sel = dl.filter((x) => x.on);
   box.innerHTML = sel.length ? sel.map(({ d }) => `<details class="card" style="margin-bottom:8px" open><summary><div class="title">${esc(d.title)}</div><span class="badge low">COURSE AND PLAN</span></summary><div class="body">
@@ -67,7 +67,7 @@ function drawDx() {
     ${srcLine(d.source)}</div></details>`).join("") : '<div class="empty">No diagnosis selected. Tick one above to see what may happen, the contingency plan, the expected course and treatment length.</div>';
   if (typeof drawAI === "function") drawAI();
 }
-function draw() { drawPatient(); drawWatch(); drawDx(); }
+function draw() { drawRole(); drawPatient(); drawWatch(); drawDx(); drawSL(); }
 
 /* ---------- AI draft panel (see ai.js, ai-config.js) ---------- */
 function aiList(a) { return a && a.length ? `<ul>${a.map((x) => `<li>${esc(x.t)}${x.s ? `<div class="muted">Based on: ${esc(x.s)}</div>` : ""}</li>`).join("")}</ul>` : '<div class="muted">none</div>'; }
@@ -85,7 +85,7 @@ function renderAI(R, isSample) {
     "", "Contingency plan:", ...(R.contingency || []).map((c) => `- if ${c.if}: ${c.then}`), "", "Rough course: " + R.course, "", "Treatment length:", ...(R.length || []).map((l) => `- ${l.what}: ${l.range} (${l.basis})`), "", "Missing or would change this:", ...(R.uncertainty || []).map((u) => "- " + u)].join("\n");
   $("aicopy").disabled = false;
 }
-function aiText() { return window.WAAI.buildText(state, dxList().filter((x) => x.on).map((x) => x.d.title)); }
+function aiText() { return slRoleLine() + "\n" + window.WAAI.buildText(state, dxList().filter((x) => x.on).map((x) => x.d.title)); }
 function drawAI() {
   const a = window.WAAI.allowed(state), ep = window.WA_AI_ENDPOINT || "";
   $("aimode").textContent = ep ? " Connected to: " + ep : " No AI address is set, so the button shows a fixed sample.";
@@ -114,6 +114,7 @@ function planText() {
     d.ifthen.forEach(([i, t]) => L.push(`- if ${i}: ${t}`));
     L.push("Course: " + d.course); d.length.forEach(([k, v]) => L.push(`${k}: ${v}`)); L.push(`Source: ${d.source.text} [${d.source.status.toUpperCase()}]`);
   });
+  L.push("", slText());
   L.push("", "Thresholds and statements are unverified drafts. Check against your sources.");
   return L.join("\n");
 }

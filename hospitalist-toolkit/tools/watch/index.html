@@ -43,16 +43,24 @@
     .empty { color:var(--muted); font-size:14px; padding:14px; text-align:center; border:1px dashed var(--line); border-radius:10px; }
     .okbox { background:var(--ok-bg); color:var(--ok-ink); border-radius:8px; padding:8px 12px; font-size:13.5px; }
     .err { color:var(--hi-ink); font-size:12.5px; }
+    label input[type=checkbox] { margin-right:6px; }
     @media print { button, select, .chips { display:none !important; } details.card { break-inside:avoid; } details.card:not([open]) > .body { display:block; } }
   </style>
 </head>
 <body>
   <header>
-    <h1>Watch-ahead: what to watch, what may happen, and a contingency plan</h1>
+    <h1>Watch-ahead: what to watch, what may happen, a contingency plan, and a second look</h1>
     <div class="sub" id="meta"></div>
   </header>
   <main>
     <div class="banner"><b>Reference aid. Not a clinical decision.</b> It reads the chart and applies fixed rules. It cannot see the bedside, the notes or what you know about the patient. Thresholds, drug lists and course statements are an unreviewed draft: check them against your sources. Prognosis is a qualitative course, not a statistic. No doses are given. Use made-up or sandbox patients only until Island Health approves real data.</div>
+
+    <div class="panel" id="rolepanel">
+      <h2>Your role for this patient</h2>
+      <div class="muted">Changes the bias prompts, the checklist and the communication scripts below.</div>
+      <div class="chips" id="rolechips" style="margin-top:6px"></div>
+      <div id="roledetail"></div>
+    </div>
 
     <div class="panel" id="panel">
       <h2>Chart data</h2>
@@ -78,6 +86,12 @@
       <div id="dx"></div>
     </div>
 
+    <div>
+      <h2 class="sec">Second look: bias check, what may be missing, raising a concern</h2>
+      <div class="muted">A reflection aid for you. Nothing here is saved or sent.</div>
+      <div id="sl" style="margin-top:6px"></div>
+    </div>
+
     <div class="panel" id="aipanel">
       <h2>AI draft (optional, second layer)</h2>
       <div class="muted">The rules above always run first. The AI adds a separate draft in plain language: what to watch, what may happen, a contingency plan, a rough course and treatment length. It is written by a model, so every line needs checking against the chart. It never gives doses or mortality figures.
@@ -96,6 +110,8 @@
   <script src="samples.js"></script>
   <script src="ai-config.js?v=2"></script>
   <script src="ai.js"></script>
-  <script src="app.js"></script>
+  <script src="secondlook.js?v=20261108a"></script>
+  <script src="sl-ui.js?v=20261108a"></script>
+  <script src="app.js?v=20261108a"></script>
 </body>
 </html>
