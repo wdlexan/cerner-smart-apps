@@ -81,9 +81,30 @@ CASES.forEach(([id, finding, cause, neg]) => {
 });
 // a negated cause does not account for the finding
 let it2 = run(base({ reports: [rep("Moderate left hydronephrosis.")], notes: [note("No history of kidney stones or urinary retention.")] }));
-ok("negated cause -> still unaccounted, shown as 'chart says not done'", it2.some((i) => /Unaccounted: Hydronephrosis/.test(i.title) && i.evidence.some((e) => /Chart says not done/.test(e))), it2);
+ok("negated cause -> still unaccounted, shown as 'chart says no'", it2.some((i) => /Unaccounted: Hydronephrosis/.test(i.title) && i.evidence.some((e) => /Chart says no/.test(e))), it2);
 // small effusions are not flagged
 ok("small bilateral effusions not flagged", !run(base({ reports: [rep("Small bilateral pleural effusions.")] })).some((i) => /effusion/i.test(i.title)));
 // splenic infarct is not read as a brain infarct
 ok("acute splenic infarct is not a brain infarct", !run(base({ reports: [rep("Acute splenic infarct.")] })).some((i) => /brain/i.test(i.title)));
+
+// 11. second made-up PDF patient: hip fracture through a lytic lesion (myeloma missed)
+{
+  const txt2 = fs.readFileSync(path.join(__dirname, "fixtures/hip_fracture_lytic.txt"), "utf8");
+  const ex2 = X.fromText(txt2, { fileName: "TestPatient_HipFracture_Lytic.pdf" }), c2 = { patientId: "pdfpt-2", fileName: ex2.fileName, now };
+  const r2 = ex2.items.map((it) => X.toResource(it, c2)).filter(Boolean);
+  const it = run(base({ patient: { resourceType: "Patient", id: "p2", gender: "male", birthDate: "1952-02-11" }, observations: r2.filter((r) => r.resourceType === "Observation"),
+    reports: r2.filter((r) => r.resourceType === "DiagnosticReport"), conditions: r2.filter((r) => r.resourceType === "Condition"), notes: [{ time: ex2.docT, title: "Imported PDF", text: ex2.text }] }));
+  const crab = it[0];
+  ok("hip PDF: CRAB pattern first", crab && /CRAB/.test(crab.title), titles(it));
+  ok("hip PDF: all five CRAB boxes flagged", crab && crab.checklist.filter((c) => c.state === "missing").length === 5, crab && crab.checklist);
+  ok("hip PDF: protein gap 62", crab && crab.checklist.some((c) => /gap 62/.test(c.text)));
+  const bone = it.find((i) => /Unaccounted: Lytic/.test(i.title));
+  ok("hip PDF: both lytic lesions quoted (rib and fracture site)", bone && bone.evidence.some((e) => /6th rib/.test(e)) && bone.evidence.some((e) => /fracture site/.test(e)), bone && bone.evidence);
+  ok("hip PDF: 'No known cancer' shown as chart says no", bone && bone.evidence.some((e) => /Chart says no: .No known cancer/.test(e)), bone && bone.evidence);
+  ok("hip PDF: no false contradiction warning", bone && !/⚠/.test(bone.summary), bone && bone.summary);
+  ok("hip PDF: no Rigler", !it.some((i) => /Rigler/.test(i.title)));
+  ok("hip PDF: small effusion not flagged", !it.some((i) => /effusion/i.test(i.title)));
+}
+// CRAB needs bone findings plus one feature, or three features
+ok("CRAB: lytic lesion alone (normal labs) -> no pattern", !run(base({ reports: [rep("Lytic lesion in the left femur.")], observations: [] })).some((i) => /CRAB/.test(i.title)));
 console.log(fail ? fail + " FAILED" : "all passed"); process.exit(fail ? 1 : 0);

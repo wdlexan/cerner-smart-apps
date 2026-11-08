@@ -1,0 +1,139 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: TESTPATIENT, Harold              DOB: 1952-02-11     Sex: M
+MRN: TEST60922                            Location: 5B Orthopedics, Bed 4
+Admitted: 2026-11-06 (Orthopedics)         Attending: Dr. B. Bones (made-up)
+
+ORTHOPEDICS ADMISSION NOTE
+Date of service: 2026-11-06 14:10
+Chief complaint: Left hip pain after a fall.
+
+HISTORY OF PRESENT ILLNESS
+74-year-old man who slipped while stepping off a curb at walking pace and landed
+on his left side. Unable to weight-bear. No head strike, no loss of consciousness.
+Family reports 3 months of mid-back pain, fatigue and about 6 kg weight loss.
+Seen by family doctor for the back pain, treated as mechanical.
+Family doctor letter: Creatinine 92 umol/L on Oct 2, 2025.
+
+PAST MEDICAL HISTORY
+Hypertension
+Type 2 diabetes (diet controlled)
+Osteoarthritis of both knees
+No known cancer.
+
+HOME MEDICATIONS
+Ramipril 10 mg PO daily
+Naproxen 500 mg PO bid prn back pain
+Acetaminophen 1000 mg PO tid
+
+ALLERGIES: No known drug allergies
+
+EXAMINATION
+2026-11-06 13:40 BP: 152/88 HR: 92 RR: 18 Temp: 36.9 C SpO2: 95% Weight: 78 kg
+Left leg shortened and externally rotated. Distal neurovascular status intact.
+Tender over the mid thoracic spine.
+
+ASSESSMENT AND PLAN
+Left subtrochanteric femur fracture after a low-energy fall.
+AKI likely from dehydration after the fall and naproxen. IV fluids.
+Anemia likely from fracture-related blood loss.
+Plan intramedullary nail tomorrow. Hold ramipril and naproxen.
+Medicine/hospitalist consult for pre-operative medical optimization.
+
+LABORATORY RESULTS
+Collected: Nov 6, 2026 12:50
+Test                      Result           Units           Reference       Flag
+
+Hemoglobin                    98           g/L             135 - 175       L
+MCV                           92           fL              80 - 100
+White Blood Cell Count        6.1          x10^9/L         4.0 - 11.0
+Platelets                     168          x10^9/L         150 - 400
+Sodium                        136          mmol/L          135 - 145
+Potassium                     4.8          mmol/L          3.5 - 5.0
+Creatinine                    168          umol/L          60 - 110        H
+Calcium                       2.92         mmol/L          2.10 - 2.55     H
+Albumin                       30           g/L             35 - 50         L
+Total Protein                 92           g/L             60 - 80         H
+Glucose                       7.4          mmol/L          3.6 - 7.8
+INR                           1.0          ratio           0.8 - 1.2
+
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | TESTPATIENT, Harold MRN TEST60922         Page 1
+ORTHOPEDICS PROGRESS NOTE - HD2
+Date of service: 2026-11-07 07:50
+Pain controlled. For OR today, booked as second case.
+2026-11-07 07:30 BP: 138/80 HR: 88 RR: 18 Temp: 37.0 C SpO2: 95%
+Creatinine improving slowly with fluids. Medicine consult pending.
+
+LABORATORY RESULTS
+Collected: Nov 7, 2026 05:30
+Test                      Result           Units           Reference       Flag
+
+Hemoglobin                    94           g/L             135 - 175       L
+Sodium                        137          mmol/L          135 - 145
+Potassium                     4.6          mmol/L          3.5 - 5.0
+Creatinine                    151          umol/L          60 - 110        H
+Calcium                       2.88         mmol/L          2.10 - 2.55     H
+Magnesium                     0.84         mmol/L          0.70 - 1.00
+Phosphate                     1.21         mmol/L          0.80 - 1.45
+
+ACTIVE MEDICATION ORDERS (2026-11-07)
+Acetaminophen 1000 mg PO q6h
+Hydromorphone 0.5 mg PO q4h prn pain
+Enoxaparin 40 mg SC daily (held from midnight for OR)
+Normal saline 100 mL/h IV
+Ramipril 10 mg PO daily (on hold)
+
+ACTIVE PROBLEM LIST
+Hip fracture, left subtrochanteric
+Acute kidney injury
+Hypertension
+Type 2 diabetes
+
+CONSULT REQUEST - MEDICINE / HOSPITALIST
+Date of service: 2026-11-07 08:10
+From: Orthopedics. Reason for consult: pre-operative medical optimization for hip
+fracture fixation today. AKI improving. Please clear for OR.
+
+HOSPITALIST CONSULT NOTE (DRAFT, INCOMPLETE)
+Date of service: 2026-11-07 09:30
+Consulted by Orthopedics for pre-operative assessment.
+2026-11-07 09:15 BP: 140/82 HR: 90 RR: 18 Temp: 37.1 C SpO2: 95%
+Low-energy fall with a subtrochanteric (not neck of femur) fracture.
+Back pain and weight loss for 3 months. High calcium, new kidney injury, anemia on
+arrival before much blood loss, and a wide gap between total protein and albumin.
+Radiology called the fracture-site lucency osteopenia and the rib lesion an old fracture.
+Possible pathological fracture? Myeloma?
+To discuss with Orthopedics before fixation.
+
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | TESTPATIENT, Harold MRN TEST60922                Page 2
+RADIOLOGY REPORTS
+X-RAY LEFT HIP AND FEMUR
+Date of exam: 2026-11-06 12:20
+FINDINGS:
+Displaced subtrochanteric fracture of the left femur.
+Ill-defined lytic lesion at the fracture site, favoured to represent osteopenia.
+Generalized osteopenia. Mild degenerative change of the left hip joint.
+IMPRESSION:
+1. Displaced left subtrochanteric fracture.
+2. Lucency at the fracture site likely osteopenic bone. Clinical correlation.
+
+X-RAY CHEST (PRE-OPERATIVE)
+Date of exam: 2026-11-06 12:35
+FINDINGS:
+Lungs clear. Small left pleural effusion. Normal heart size.
+Expansile lytic lesion of the right 6th rib, likely an old healed fracture.
+Mild compression deformity of T8, age indeterminate.
+IMPRESSION:
+No acute cardiopulmonary process. Possible old rib fracture.
+
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | TESTPATIENT, Harold MRN TEST60922       Page 3
+

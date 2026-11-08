@@ -11,7 +11,7 @@
  *   5. Imaging findings    findings that need a cause (pneumobilia, absent gallbladder, portal gas, free air, bladder air, organ infarcts,
  *                          effusions, pulmonary infarct, adrenal bleed, spinal/psoas collections, venous thrombosis, hydronephrosis,
  *                          bone lesions, lymph nodes, brain bleed/infarct) checked against the chart;
- *                          Rigler's triad (gallstone ileus); hedged report statements to close the loop on
+ *                          Rigler's triad (gallstone ileus); CRAB pattern (myeloma); hedged report statements to close the loop on
  * Read-only: nothing is written to the chart.
  *
  * Usage (after FHIR.oauth2.ready()):
@@ -51,7 +51,7 @@
     sbp: ['8480-6'], spo2: ['59408-5', '2708-6', '20564-1'], o2flow: ['3151-8', '19941-4'], fio2: ['3150-0', '19996-8'],
     wbc: ['6690-2', '26464-8', '804-5'], hgb: ['718-7', '30313-1', '20509-6'], plt: ['777-3', '26515-7'],
     eos: ['711-2', '26449-9'], na: ['2951-2', '2947-0'], k: ['2823-3', '6298-4'], creat: ['2160-0', '38483-4', '14682-9'],
-    ca: ['17861-6', '2000-8'], ica: ['1994-3', '19072-8'], alp: ['6768-6'], alt: ['1742-6', '1743-4'],
+    ca: ['17861-6', '2000-8'], ica: ['1994-3', '19072-8'], tp: ['2885-2'], alb: ['1751-7'], alp: ['6768-6'], alt: ['1742-6', '1743-4'],
     bili: ['1975-2', '42719-5'], inr: ['6301-6', '34714-6'], tsh: ['3016-3', '11580-8'], glucose: ['2345-7', '2339-0', '41653-7'],
     lactate: ['2524-7', '32693-4', '2518-9'], crp: ['1988-5', '30522-7'], pct: ['33959-8', '75241-0'],
     bnp: ['30934-4', '42637-9'], ntbnp: ['33762-6', '83107-3', '83108-1'], cortisol: ['2143-6', '2141-0'],
@@ -69,7 +69,7 @@
     [/leukocyte esterase/, 'ule'], [/nitrite/, 'unit'],
     [/ionized calcium|calcium,? ionized/, 'ica'], [/\bcalcium\b/, 'ca'], [/alkaline phosphatase|\balp\b/, 'alp'],
     [/\balt\b|alanine aminotransferase/, 'alt'], [/bilirubin/, 'bili'], [/\binr\b/, 'inr'], [/\btsh\b|thyrotropin/, 'tsh'],
-    [/magnesium/, 'mg'], [/eosinophil/, 'eos'], [/glucose/, 'glucose'],
+    [/magnesium/, 'mg'], [/total protein|protein,? total/, 'tp'], [/^albumin|albumin,? serum|serum albumin/, 'alb'], [/eosinophil/, 'eos'], [/glucose/, 'glucose'],
     [/h(a)?emoglobin\b/, 'hgb'], [/\bwbc\b|white blood cell|leukocyte count/, 'wbc'], [/platelet/, 'plt'],
     [/\bsodium\b/, 'na'], [/\bpotassium\b/, 'k'], [/creatinine/, 'creat']
   ];
@@ -778,7 +778,7 @@
   const HEDGE_BEFORE = /\b(?:presum\w*|likely|probabl[ey]|possibl[ey]|query|suspect\w*|favou?r\w*|correlat\w*|\?)[^.;:\n]{0,30}$/i;
   const HEDGE = /presum\w*|clinical(?:ly)? correlat\w*|correlate clinically|favou?red to (?:be|represent)|cannot (?:be )?exclude|likely incidental|probably incidental|incidental(?:ly)?\b|of uncertain significance|indeterminate/i;
   // Sentence around position i. Ends at ". " (not decimals like 2.4), a blank line, or a new numbered/heading line; wrapped lines are joined.
-  const BOUND = /\.(?=\s)|\n[ \t]*\n|\n(?=[ \t]*(?:\d+\.\s|[A-Z][A-Z /]{3,}:))/g;
+  const BOUND = /\.(?=\s)|\n[ \t]*\n|\n(?=[ \t]*(?:\d+\.\s|[A-Z]))/g;
   const SENT = (t, i) => {
     let s = 0, e = t.length, m; BOUND.lastIndex = 0;
     while ((m = BOUND.exec(t))) { if (m.index < i) s = m.index + m[0].length; else { e = m.index + (m[0] === '.' ? 1 : 0); break; } }
@@ -819,28 +819,36 @@
     const notesText = (ctx.notes || []).map(n => n.text || '').join('\n');
     const out = [], hits = {};
 
+    const lcFirst = l => (/^[A-Z][a-z]/.test(l) && !/^(?:Paget|Crohn|Whipple)/.test(l) ? l[0].toLowerCase() + l.slice(1) : l);
     for (const f of IMG_FINDINGS) {
+      const quotes = []; // every distinct sentence that reports this finding (up to 3), e.g. a rib lesion and a fracture-site lesion
       for (const rep of all) {
         const g = new RegExp(f.re.source, 'gi'); let m;
-        while ((m = g.exec(rep.text))) { if (!isNeg(rep.text, m.index)) { hits[f.id] = hits[f.id] || { rep, quote: SENT(rep.text, m.index) }; break; } }
-        if (hits[f.id]) break;
+        while ((m = g.exec(rep.text))) {
+          if (isNeg(rep.text, m.index)) continue;
+          const q = SENT(rep.text, m.index);
+          if (!quotes.some(x => x.quote === q)) quotes.push({ rep, quote: q });
+        }
       }
-      const h = hits[f.id]; if (!h) continue;
-      const causes = f.explain.map(([label, re]) => ({ label, r: findCause(ctx, re, reportTexts) }));
+      if (!quotes.length) continue;
+      const h = hits[f.id] = quotes[0];
+      const causes = f.explain.map(([label, re]) => ({ label, re, r: findCause(ctx, re, reportTexts) }));
       const found = causes.filter(c => c.r.yes.length);
       const denied = causes.filter(c => !c.r.yes.length && c.r.no.length);
-      const hedged = HEDGE.test(h.quote);
-      const when = fmtTime(h.rep.time);
+      const assumed = denied.filter(c => reportTexts.some(t => c.re.test(t))); // the report offers a cause the chart says did not happen
+      const hedged = quotes.find(q => HEDGE.test(q.quote));
+      const repLines = quotes.slice(0, 3).map(q => 'Report (' + (q.rep.name || 'imaging') + ', ' + fmtTime(q.rep.time) + '): “' + q.quote + '”');
       if (found.length) {
         out.push(R('ok', 'Accounted for: ' + f.label, 'Cause in the chart: ' + found.map(c => c.label).join(', '),
-          ['Report (' + (h.rep.name || 'imaging') + ', ' + when + '): “' + h.quote + '”'].concat(found.map(c => 'Chart: “' + c.r.yes[0].quote + '” (' + c.r.yes[0].where + ')'))));
+          repLines.concat(found.map(c => 'Chart: “' + c.r.yes[0].quote + '” (' + c.r.yes[0].where + ')'))));
         continue;
       }
-      const ev = ['Report (' + (h.rep.name || 'imaging') + ', ' + when + '): “' + h.quote + '”'];
-      denied.forEach(c => ev.push('Chart says not done: “' + c.r.no[0].quote + '” (' + c.r.no[0].where + (c.r.no[0].time ? ', ' + fmtTime(c.r.no[0].time) : '') + ')'));
-      let summary = f.explain.length ? 'No ' + f.explain.map(([l]) => (/^[A-Z][a-z]/.test(l) ? l[0].toLowerCase() + l.slice(1) : l)).join('; no ') + ' found in the chart.' : 'Needs a cause and usually urgent action.';
-      if (denied.length) summary += ' ⚠ The report or a note assumes a cause the chart says did not happen.';
-      else if (hedged) summary += ' The report hedges (“' + (h.quote.match(HEDGE) || [''])[0] + '”), so treat it as an open question.';
+      const ev = repLines.slice();
+      denied.forEach(c => ev.push('Chart says no: “' + c.r.no[0].quote + '” (' + c.r.no[0].where + (c.r.no[0].time ? ', ' + fmtTime(c.r.no[0].time) : '') + ')'));
+      let summary = f.explain.length ? 'No ' + f.explain.map(([l]) => lcFirst(l)).join('; no ') + ' found in the chart.' : 'Needs a cause and usually urgent action.';
+      if (assumed.length) summary += ' ⚠ The report assumes ' + assumed.map(c => lcFirst(c.label)).join(' or ') + ', but the chart says it did not happen.';
+      else if (denied.length) summary += ' The chart says ' + denied.map(c => lcFirst(c.label)).join(' and ') + ' is absent, so nothing explains it yet.';
+      if (hedged && !assumed.length) summary += ' The report hedges (“' + (hedged.quote.match(HEDGE) || [''])[0] + '”): treat it as an open question.';
       out.push(R('review', 'Unaccounted: ' + f.label, summary, ev.concat(['Consider: ' + f.consider.join('; ')]), { next: f.next, findingId: f.id }));
     }
 
@@ -874,9 +882,41 @@
           ] }));
     }
 
+    let fracQuote = null;
+    // CRAB pattern: bone lesions or fractures with high calcium, kidney injury, anemia or a wide protein gap -> myeloma (or metastatic cancer)
+    {
+      const lastV = k => { const a = ctx.series(k).filter(o => o.time >= ctx.from); return a.length ? last(a) : null; };
+      const ca = lastV('ca'), ica = lastV('ica'), cr = lastV('creat'), hb = lastV('hgb'), tp = lastV('tp'), alb = lastV('alb');
+      const fracRe = /compression (?:deformity|fracture)|pathologic(?:al)? fracture|insufficiency fracture|vertebral (?:body )?(?:collapse|fracture)/i;
+      const fracQ = fracQuote = all.map(r => { const m = r.text.match(fracRe); return m && !isNeg(r.text, m.index) ? SENT(r.text, m.index) : null; }).find(Boolean);
+      const C = (ca && ca.value > 2.6) || (ica && ica.value > 1.32), Rk = (cr && cr.value >= 130) || ctx.conditions.some(c => c.active && /acute kidney injury|\bAKI\b/i.test(c.text));
+      const A = hb && hb.value < 100, gap = tp && alb && tp.value - alb.value >= 40, B = !!hits.bone || !!fracQ;
+      const n = [C, Rk, A, gap].filter(Boolean).length;
+      if ((B && n >= 1) || n >= 3) {
+        const named = /myeloma|plasma cell|paraprotein|\bSPEP\b|free light chain/i.test(notesText);
+        const clues = [];
+        if (/subtrochanteric|low[- ]energy|ground[- ]level fall|walking pace/i.test(notesText)) clues.push('Low-energy fall or a subtrochanteric fracture');
+        if (/weight loss|night sweats/i.test(notesText)) clues.push('Weight loss');
+        if (/(?:back|bone|rib) pain/i.test(notesText)) clues.push('Bone or back pain');
+        if (ctx.age != null && ctx.age >= 60) clues.push('Age ' + ctx.age);
+        out.unshift(R('review', 'Pattern: CRAB features → consider myeloma or metastatic cancer',
+          'Bone findings with ' + [C && 'high calcium', Rk && 'kidney injury', A && 'anemia', gap && 'a wide protein gap'].filter(Boolean).join(', ').replace(/, ([^,]*)$/, ' and $1') + '. Each may have another explanation; together they need a myeloma work-up, ideally before any fixation.' +
+          (named ? ' Myeloma is already mentioned in a note: has the work-up been sent?' : ''),
+          [hits.bone ? 'Bone: “' + hits.bone.quote + '”' : null, fracQ ? 'Spine or fracture: “' + fracQ + '”' : null, clues.length ? 'Also fits: ' + clues.join('; ') : null].filter(Boolean),
+          { next: 'SPEP with immunofixation and serum free light chains; corrected or ionized calcium; skeletal survey or low-dose whole-body CT; avoid nephrotoxins; tell orthopedics before fixation (a pathological fracture may change the operation and needs tissue)',
+            checklist: [
+              { state: C ? 'missing' : 'ask', text: 'Calcium high' + (ca ? ' (' + ca.value + ' mmol/L)' : ica ? ' (ionized ' + ica.value + ')' : ': not measured?') },
+              { state: Rk ? 'missing' : 'ask', text: 'Kidney injury' + (cr ? ' (creatinine ' + cr.value + ')' : '') },
+              { state: A ? 'missing' : 'ask', text: 'Anemia' + (hb ? ' (Hgb ' + hb.value + ')' : '') },
+              { state: B ? 'missing' : 'ask', text: 'Bone lesions or fracture' + (B ? '' : ': none reported; look at the films') },
+              { state: gap ? 'missing' : tp && alb ? 'done' : 'ask', text: tp && alb ? 'Protein gap ' + Math.round(tp.value - alb.value) + ' g/L (total protein minus albumin)' : 'Protein gap: check total protein and albumin' }
+            ] }));
+      }
+    }
+
     // Other hedged statements: radiology asked a question; has anyone answered it?
     // (skip sentences already covered by a card above: a listed finding, its causes, or the possible stone)
-    const covered = s => s === stone || IMG_FINDINGS.some(f => hits[f.id] && (f.re.test(s) || f.explain.some(([, re]) => re.test(s))));
+    const covered = s => s === stone || s === fracQuote || IMG_FINDINGS.some(f => hits[f.id] && (f.re.test(s) || f.explain.some(([, re]) => re.test(s))));
     const open = [];
     all.forEach(r => { const g = new RegExp(HEDGE.source, 'gi'); let m; while ((m = g.exec(r.text))) { const s = SENT(r.text, m.index); if (!covered(s) && !open.includes(s) && s.length > 12) open.push(s); } });
     if (open.length) out.push(R('review', 'Report statements to close the loop on', open.length + ' hedged statement' + (open.length === 1 ? '' : 's') + ' in the imaging reports. Has each one been answered?',
