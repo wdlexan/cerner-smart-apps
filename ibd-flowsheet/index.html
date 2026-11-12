@@ -85,6 +85,12 @@
   <main>
     <div class="banner"><b>Decision-support draft. Not a clinical decision, and it orders nothing.</b> Drug lists, lab matching, score cut-offs and reminders were written by Claude and have <b>not been verified</b>: check them against your IBD guidelines and local policy before real use. Labs, drugs and endoscopy are found by <b>name</b> in the chart, so something not shown may still exist; the page says "not found", never "not done". Entries you type stay in this page only (lost on reload). Use made-up or Cerner sandbox patients only until Island Health approves real data.</div>
 
+    <div class="panel noprint" id="refpdfs"><b>Reference PDFs</b> <span class="muted">(open in a new tab; draft, check before use)</span>
+      <div class="row">
+        <a href="docs/IBD_medications_dosing_side_effects.pdf" target="_blank" rel="noopener">IBD medications: doses, side effects and monitoring (PDF)</a>
+        <a href="docs/IBD_treatment_flow_diagram.pdf" target="_blank" rel="noopener">Treatment flow diagram: which medication, when, UC and Crohn (PDF)</a>
+      </div></div>
+
     <details class="card" id="panel" open>
       <summary><span>Patient</span><span class="muted" id="ptsum"></span></summary>
       <div class="body">
@@ -179,11 +185,11 @@
     <div class="panel noprint"><button class="primary" id="copy">Copy IBD summary note</button> <span class="muted" id="copied"></span></div>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
-  <script src="data.js?v=20261030a"></script>
-  <script src="rules.js?v=20261030a"></script>
-  <script src="pathway.js?v=20261030a"></script>
-  <script src="chart.js?v=20261030a"></script>
-  <script src="samples.js?v=20261030a"></script>
-  <script src="app.js?v=20261030a"></script>
+  <script src="data.js?v=20261112a"></script>
+  <script src="rules.js?v=20261112a"></script>
+  <script src="pathway.js?v=20261112a"></script>
+  <script src="chart.js?v=20261112a"></script>
+  <script src="samples.js?v=20261112a"></script>
+  <script src="app.js?v=20261112a"></script>
 </body>
 </html>
