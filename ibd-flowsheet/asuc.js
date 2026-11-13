@@ -101,25 +101,31 @@
   function num(el, id) { const v = $in(el, id).value; return v === "" ? null : Number(v); }
 
   const list = (secs) => secs.map(([h, items]) => `<div class="lab">${esc(h)}</div><ul class="chk">${items.map((t) => `<li><input type="checkbox"><span class="t">${esc(t)}</span></li>`).join("")}</ul>`).join("");
-  const SCORES_HTML = `
-      <div class="lab">Truelove-Witts (severe = 6 or more bloody stools/day plus at least one sign)</div>
-      <div class="row">
-        <label class="inl">Bloody stools/day <input type="number" min="0" id="as-st"></label>
-        <label class="inl">HR <input type="number" min="0" id="as-hr"></label>
-        <label class="inl">Temp °C <input type="number" step="0.1" id="as-t"></label>
-        <label class="inl">Hb g/L <input type="number" min="0" id="as-hb"></label>
-        <label class="inl">ESR <input type="number" min="0" id="as-esr"></label>
-        <span id="as-tw" style="font-weight:700"></span></div>
-      <div class="lab">Day 3 on IV steroids</div>
-      <div class="row">
-        <label class="inl">Stools on day 3 <input type="number" min="0" id="as-d3"></label>
-        <label class="inl">CRP day 3 (mg/L) <input type="number" min="0" id="as-crp"></label>
-        <span id="as-ox" style="font-weight:700"></span></div>
-      <div class="row">
-        <label class="inl">Mean stools/day, days 1 to 3 <input type="number" min="0" step="0.1" id="as-mean"></label>
-        <label class="inl"><input type="checkbox" id="as-dil"> Colonic dilatation > 5.5 cm</label>
-        <label class="inl">Albumin on admission (g/L) <input type="number" min="0" id="as-alb"></label>
-        <span id="as-ho" style="font-weight:700"></span></div>
+  /* Each score in its own box: coloured border, title, when to use it. Inline styles so it looks the same on the IBD and Calculators tabs. */
+  const box = (color, tint, title, when, body, resId) => `
+      <div style="border:2px solid ${color};border-left-width:6px;border-radius:8px;background:${tint};padding:8px 12px 10px;margin:10px 0">
+        <div style="font-weight:700;font-size:15px;color:${color}">${title}</div>
+        <div style="font-size:12.5px;color:#555;margin:2px 0 4px">${when}</div>
+        ${body}
+        <div id="${resId}" style="font-weight:700;margin-top:4px;color:${color}"></div>
+      </div>`;
+  const SCORES_HTML =
+    box("#0b6bcb", "#f3f8fe", "Truelove-Witts", "On admission: is this acute severe UC? Severe = 6 or more bloody stools/day plus at least one sign.", `
+        <div class="row">
+          <label class="inl">Bloody stools/day <input type="number" min="0" id="as-st"></label>
+          <label class="inl">HR &gt; 90 <input type="number" min="0" id="as-hr"></label>
+          <label class="inl">Temp &gt; 37.8 °C <input type="number" step="0.1" id="as-t"></label>
+          <label class="inl">Hb &lt; 105 g/L <input type="number" min="0" id="as-hb"></label>
+          <label class="inl">ESR &gt; 30 <input type="number" min="0" id="as-esr"></label></div>`, "as-tw") +
+    box("#c26a00", "#fff8ef", "Oxford criteria (day 3)", "Day 3 of IV steroids: is the patient responding? Non-response = more than 8 stools/day, or 3 to 8 stools/day with CRP &gt; 45 mg/L.", `
+        <div class="row">
+          <label class="inl">Stools on day 3 <input type="number" min="0" id="as-d3"></label>
+          <label class="inl">CRP day 3 (mg/L) <input type="number" min="0" id="as-crp"></label></div>`, "as-ox") +
+    box("#6a3fb5", "#f7f3fd", "Ho index", "Day 3 of IV steroids: risk that steroids fail. Mean stools days 1 to 3 (&lt;4: 0, 4 to 6: 1, &gt;6 to 9: 2, &gt;9: 4) + colon &gt; 5.5 cm (4) + albumin &lt; 30 g/L (1).", `
+        <div class="row">
+          <label class="inl">Mean stools/day, days 1 to 3 <input type="number" min="0" step="0.1" id="as-mean"></label>
+          <label class="inl"><input type="checkbox" id="as-dil"> Colonic dilatation &gt; 5.5 cm</label>
+          <label class="inl">Albumin on admission (g/L) <input type="number" min="0" id="as-alb"></label></div>`, "as-ho") + `
       <div class="muted" id="as-src"></div>`;
 
   /* scoresOnly: just the three calculators (Calculators tab); otherwise the full ASUC card with checklists (IBD tab) */
