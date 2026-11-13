@@ -103,9 +103,9 @@
   const list = (secs) => secs.map(([h, items]) => `<div class="lab">${esc(h)}</div><ul class="chk">${items.map((t) => `<li><input type="checkbox"><span class="t">${esc(t)}</span></li>`).join("")}</ul>`).join("");
   /* Each score in its own box: coloured border, title, when to use it. Inline styles so it looks the same on the IBD and Calculators tabs. */
   const box = (color, tint, title, when, body, resId) => `
-      <div style="border:2px solid ${color};border-left-width:6px;border-radius:8px;background:${tint};padding:8px 12px 10px;margin:10px 0">
+      <div style="border:2px solid ${color};border-left-width:6px;border-radius:8px;background:${color}14;padding:8px 12px 10px;margin:10px 0">
         <div style="font-weight:700;font-size:15px;color:${color}">${title}</div>
-        <div style="font-size:12.5px;color:#555;margin:2px 0 4px">${when}</div>
+        <div style="font-size:12.5px;color:var(--muted,#555);margin:2px 0 4px">${when}</div>
         ${body}
         <div id="${resId}" style="font-weight:700;margin-top:4px;color:${color}"></div>
       </div>`;
