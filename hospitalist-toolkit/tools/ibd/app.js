@@ -242,6 +242,8 @@ function setChart(raw, note, errors, source) {
   $("pstatus").textContent = note; $("clear").hidden = !raw;
   $("errs").innerHTML = errors && errors.length ? "Could not read: " + errors.map(esc).join("; ") + ". Check that the scopes are enabled in the Code Console. You can still enter things by hand." : "";
   drawAll(); symPreview();
+  // ASUC card: fill HR, temp, Hb, ESR, CRP and albumin for Truelove-Witts, Oxford and Ho from the same chart read
+  if (window.IBDAsuc) window.IBDAsuc.prefill(document.getElementById("asuc"), state.f);
 }
 $("clear").onclick = () => { $("testsel").value = ""; setChart(null, "Open from Cerner to read the chart, or pick a made-up patient:"); };
 const sel = $("testsel"), SAMPLES = window.IBD_SAMPLES || [];

@@ -12,16 +12,49 @@
       padding: 12px;
       background: #f6f6f8
     }
+    /* Ulcerative colitis card (Truelove-Witts, Oxford, Ho) - same look as the other calculator cards */
+    #uc-card { background:#fff; border:1px solid #d8d8d8; border-radius:8px; margin:0 0 16px; overflow:hidden; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+    #uc-card > h3 { margin:0; padding:10px 14px; font-size:16px; background:#f3eef8; color:#5b2a86; cursor:pointer; user-select:none; }
+    #uc-card > h3:hover { background:#ebe2f4; }
+    #uc-card.collapsed #asuc-calc { display:none; }
+    #asuc-calc { padding:10px 14px 14px; font-size:14px; }
+    #asuc-calc .row { display:flex; flex-wrap:wrap; gap:8px 12px; align-items:center; margin:6px 0; }
+    #asuc-calc label.inl { display:inline-flex; gap:5px; align-items:center; margin:2px 12px 2px 0; }
+    #asuc-calc input[type=number] { width:72px; }
+    #asuc-calc .lab { font-family:ui-monospace,Consolas,monospace; font-size:11.5px; color:#6b7785; letter-spacing:.06em; margin:12px 0 4px; text-transform:uppercase; }
+    #asuc-calc .muted { color:#6b7785; font-size:12.5px; }
   </style>
 </head>
 
 <body>
   <div id="calcTab">Loading…</div>
+
+  <div id="uc-card">
+    <h3>Ulcerative colitis: Truelove-Witts · Oxford · Ho index</h3>
+    <div id="asuc-calc" data-manual="1"></div>
+  </div>
+
   <script src="calculators.js"></script>
+  <!-- UC scores come from the IBD tab, so both tabs always score the same way -->
+  <script src="../ibd/data.js?v=20261112a"></script>
+  <script src="../ibd/chart.js?v=20261112a"></script>
+  <script src="../ibd/asuc.js?v=20261112c"></script>
   <script>
+    const uc = document.getElementById("asuc-calc");
+    IBDAsuc.render(uc, { scoresOnly: true });
+    const card = document.getElementById("uc-card");
+    try { if (localStorage.getItem("calc-uc-collapsed") === "1") card.classList.add("collapsed"); } catch (e) {}
+    card.querySelector("h3").onclick = () => {
+      card.classList.toggle("collapsed");
+      try { localStorage.setItem("calc-uc-collapsed", card.classList.contains("collapsed") ? "1" : "0"); } catch (e) {}
+    };
+
     // Picks up the toolkit's existing Cerner sign-in, like the other tools
     FHIR.oauth2.ready()
-      .then(client => HospitalistCalculators.mount(document.getElementById("calcTab"), client))
+      .then(client => {
+        HospitalistCalculators.mount(document.getElementById("calcTab"), client);
+        IBDAsuc.fromClient(uc, client).catch(e => console.warn("UC scores: could not read the chart", e));
+      })
       .catch(err => {
         // Still usable for manual entry if the sign-in can't be read
         console.warn("Calculators: no Cerner connection – manual entry only", err);

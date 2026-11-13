@@ -14,4 +14,20 @@ eq(A.ho(8, false, 35).band, "Intermediate", "Ho 2");
 eq(A.ho(10, false, 35).score, 4, "Ho >9 stools");
 eq(A.ho(3, true, 28).failure, "85%", "Ho dilated");
 eq(A.ho(null, true, 20), null, "Ho needs stools");
+// chart suggestions
+const H = 36e5, T = 1e12;
+const fx = {
+  vitals: [{ t: T - 30 * H, hr: 130 }, { t: T - 20 * H, hr: 98, temp: 38.1 }, { t: T - 2 * H, hr: 88, temp: 37.2 }],
+  labs: { hgb: [{ t: T - 50 * H, v: 120 }, { t: T - 5 * H, v: 98 }], esr: [], crp: [{ t: T - 3 * H, v: 62 }],
+          alb: [{ t: T - 400 * H, v: 40 }, { t: T - 70 * H, v: 27 }, { t: T - 4 * H, v: 31 }] }
+};
+const s = A.suggest(fx);
+eq(s.hr && s.hr.v, 98, "HR = highest in 24 h before latest (130 is older)");
+eq(s.temp && s.temp.v, 38.1, "temp = highest in last 24 h");
+eq(s.hgb && s.hgb.v, 98, "Hb latest");
+eq(s.esr, null, "ESR missing");
+eq(s.crp && s.crp.v, 62, "CRP latest");
+eq(s.alb && s.alb.v, 27, "albumin = earliest in 14 days before latest");
+eq(A.suggest(null).hr, null, "no chart");
+eq(A.truelove({ stools: 7, hr: s.hr.v, temp: s.temp.v, hgb: s.hgb.v }).sys.length, 3, "chart values feed TW");
 console.log(`${p} passed, ${f} failed`); process.exit(f ? 1 : 0);
