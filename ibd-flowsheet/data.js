@@ -81,6 +81,7 @@
     { g: "stool", id: "cmv", label: "CMV", unit: "", loinc: [], re: /cytomegalo|\bcmv\b/i, text: true },
     { g: "drug", id: "ifxab", label: "Anti-infliximab antibodies", unit: "", loinc: [], re: /(anti|antibod).*infliximab|infliximab.*(antibod|ab\b)/i },
     { g: "drug", id: "ifx", label: "Infliximab level", unit: "ug/mL", loinc: [], re: /infliximab/i },
+    { g: "drug", id: "adaab", label: "Anti-adalimumab antibodies", unit: "", loinc: [], re: /(anti|antibod).*adalimumab|adalimumab.*(antibod|ab\b)/i },
     { g: "drug", id: "ada", label: "Adalimumab level", unit: "ug/mL", loinc: [], re: /adalimumab/i },
     { g: "drug", id: "vedo", label: "Vedolizumab level", unit: "ug/mL", loinc: [], re: /vedolizumab/i },
     { g: "drug", id: "uste", label: "Ustekinumab level", unit: "ug/mL", loinc: [], re: /ustekinumab/i },

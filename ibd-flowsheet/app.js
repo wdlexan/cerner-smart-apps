@@ -241,7 +241,27 @@ function drawPath() {
 }
 $("p-sit").onchange = $("p-hist").onchange = () => drawPath();
 document.querySelectorAll("[data-pf]").forEach((cb) => (cb.onchange = () => { state.pf[cb.dataset.pf] = cb.checked; drawPath(); }));
-function drawAll() { drawPt(); drawTiles(); drawAlerts(); drawFlow(); drawMeds(); drawPath(); drawEndo(); drawSym(); drawScreen(); }
+/* ---------- anti-TNF drug levels and antibodies ---------- */
+function drawTdm() {
+  const T = window.IBDTdm, el = $("tdm"); if (!T || !el) return;
+  const s = S(), f = s.f, now = nowT();
+  const active = !!state.flaring || (state.disease === "uc" && !!R.severeUC(s, now));
+  const cur = R.meds(s, now).filter((m) => m.status === "current" && T.DRUGS[m.drug.id]);
+  const show = (e) => (e ? (e.v != null ? fmtV(e.v) + " ug/mL" : esc(e.text || "")) + " (" + fmtD(e.t) + ")" : "none on record");
+  let h = "";
+  if (!cur.length) h += '<div class="empty">No current infliximab or adalimumab found. Trough and antibody testing applies to anti-TNF drugs; targets for vedolizumab and ustekinumab are less established and are not used here.</div>';
+  cur.forEach((m) => {
+    const r = T.assess({ drugId: m.drug.id, startT: m.first ? m.first.t : null }, f.labs || {}, now, active);
+    h += `<div class="lab">${esc(r.drug.name)}${r.weeks != null ? " · week " + Math.round(r.weeks) + " since first dose/order on record" : ""}</div>`;
+    h += `<table><tr><th>Latest trough level</th><th>Antibodies (within 2 weeks of it)</th><th>Target</th></tr><tr><td>${show(r.last)}</td><td>${r.ab ? esc(r.ab.text || fmtV(r.ab.v)) + " (" + fmtD(r.ab.t) + ")" : "none on record"}</td><td>${esc(r.drug.targetText)}</td></tr></table>`;
+    r.flags.concat(r.interp ? [r.interp] : []).forEach((x) => { h += `<div class="alert ${x.level === "action" ? "action" : x.level === "ok" ? "info" : "info"}">${esc(x.text)}</div>`; });
+  });
+  h += `<div class="lab">How to read a result</div><table><tr><th>Trough</th><th>Antibodies</th><th>Usual meaning</th><th>Usual step</th></tr>${T.TABLE.map((r) => "<tr>" + r.map((c) => "<td>" + esc(c) + "</td>").join("") + "</tr>").join("")}</table>`;
+  h += `<div class="muted" style="margin-top:6px">When to test: every loss of response or flare (reactive, AGA 2017, after confirming inflammation and excluding infection); once after induction (infliximab week 12 to 14, adalimumab week 6 to 8) and at least once in maintenance (expert consensus 2021; AGA makes no recommendation on proactive testing); before a drug holiday, dose reduction or restart. Always draw just before the next dose and send antibodies with the level. Antibody titre cut-offs depend on the lab's assay. Start date is the first dose or order found in the chart, which may miss earlier treatment. Draft rules written by Claude, not verified.</div>`;
+  el.innerHTML = h;
+  $("tdmsum").textContent = cur.length ? cur.map((m) => m.drug.label.split(" (")[0]).join(", ") : "no anti-TNF now";
+}
+function drawAll() { drawPt(); drawTiles(); drawAlerts(); drawFlow(); drawMeds(); drawTdm(); drawPath(); drawEndo(); drawSym(); drawScreen(); }
 $("disease").onchange = () => { state.disease = $("disease").value; drawAll(); symPreview(); };
 $("setting").onchange = () => { state.setting = $("setting").value; drawAll(); };
 $("flaring").onchange = () => { state.flaring = $("flaring").checked; drawAll(); };

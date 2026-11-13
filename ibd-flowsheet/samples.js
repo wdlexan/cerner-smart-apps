@@ -67,6 +67,15 @@
         obs: [].concat(vit(now, 1, 37.4, 92, 116), [
           lab(now, "1988-5", "C reactive protein", 22, "mg/L", 1, 0, 8), lab(now, "", "Fecal calprotectin", 1450, "ug/g", 3), txt(now, "Clostridioides difficile toxin B PCR", "Detected", 3), lab(now, "718-7", "Hemoglobin", 124, "g/L", 1, 120, 160)]),
         admins: [], medreqs: [req(now, "Mesalamine 2.4 g oral daily", 18, "active"), req(now, "Vancomycin 125 mg oral four times daily", 2, "active")],
-        procs: [] } }) }
+        procs: [] } }) },
+    { label: "G: Crohn disease, infliximab monotherapy, low level with antibodies", build: (now) => ({ disease: "cd", setting: "outpatient", flaring: true,
+      entries: [{ t: now - 4 * 864e5, stools: 6, wellbeing: 2, pain: 2, mass: 0, comps: 0 }],
+      raw: { patient: pt(29, "male"), conditions: [cond("Crohn disease of large intestine", "K50.1", 365 * 3, now)],
+        obs: [].concat(vit(now, 4, 37.1, 84, 120), [wt(now, 74, 4)], [
+          lab(now, "1988-5", "C reactive protein", 31, "mg/L", 4, 0, 8), lab(now, "", "Fecal calprotectin", 720, "ug/g", 6), lab(now, "718-7", "Hemoglobin", 124, "g/L", 4, 130, 170), lab(now, "1751-7", "Albumin", 34, "g/L", 4, 35, 50),
+          lab(now, "", "Infliximab trough level", 9.4, "ug/mL", 280), lab(now, "", "Infliximab trough level", 1.6, "ug/mL", 5), txt(now, "Antibodies to infliximab", "Detected", 5),
+          txt(now, "QuantiFERON TB Gold", "Negative", 500), txt(now, "Hepatitis B surface antigen", "Negative", 500)]),
+        admins: [adm(now, "Infliximab (Inflectra) 5 mg/kg IV", 5), adm(now, "Infliximab (Inflectra) 5 mg/kg IV", 61), adm(now, "Infliximab (Inflectra) 5 mg/kg IV", 117), adm(now, "Infliximab (Inflectra) 5 mg/kg IV", 173), adm(now, "Infliximab (Inflectra) 5 mg/kg IV", 229), adm(now, "Infliximab (Inflectra) 5 mg/kg IV", 285), adm(now, "Infliximab (Inflectra) 5 mg/kg IV", 313), adm(now, "Infliximab (Inflectra) 5 mg/kg IV", 327)],
+        medreqs: [req(now, "Infliximab 5 mg/kg IV every 8 weeks", 330)], procs: [] } }) }
   ];
 })();
