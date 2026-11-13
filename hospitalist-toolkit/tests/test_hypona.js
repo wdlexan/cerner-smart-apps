@@ -70,4 +70,26 @@ eq("overcorrected: no saline block", p.some((b) => b.items.some((i) => /0.9% sal
 p = R.plan({ lim: R.limits(false), st: null, wt: 70, na: 123, symptoms: "none", meds: {}, causeLabel: "siad", furst: R.furst(80, 40, 123), uosm: 600 });
 eq("plan SIAD urea", p.some((b) => b.items.some((i) => /urea 15-30/.test(i))), true);
 eq("plan SIAD avoid saline", p.some((b) => b.items.some((i) => /Avoid 0.9% saline: urine/.test(i))), true);
+// typed-in cause helper
+// FE urate: urine urate 3, serum urate 0.15, urine creat 8 mmol/L, serum creat 60 umol/L -> 100*3*0.06/(0.15*8) = 15%
+near("FE urate", R.fe(3, 0.15, 8, 60), 15, 0.01);
+// FENa: uNa 60, sNa 120, uCr 8, sCr 60 -> 100*60*0.06/(120*8) = 0.375%
+near("FENa", R.fe(60, 120, 8, 60), 0.375, 0.001);
+eq("FE missing value", R.fe(3, null, 8, 60), null);
+let I = R.interpret({ na: 122, sosm: 255, uosm: 450, una: 55, uk: 40, glu: 5, urea: 4 });
+eq("interpret: hypotonic", I.find((l) => l.k === "Serum osmolality").level, "ok");
+eq("interpret: gap small", /10 or less/.test(I.find((l) => l.k === "Osmolal gap").text), true);
+near("interpret: Furst", I.find((l) => /Furst/.test(l.k)).v, 0.8, 0.01);
+I = R.interpret({ na: 125, sosm: 290, glu: 6, urea: 5 });
+eq("interpret: normal sOsm flagged", I.find((l) => l.k === "Serum osmolality").level, "flag");
+eq("interpret: gap > 10", /above 10/.test(I.find((l) => l.k === "Osmolal gap").text), true);  // 290 - 261 = 29
+eq("interpret: uOsm 80", /ADH is off/.test(R.interpret({ uosm: 80 })[0].text), true);
+eq("interpret: diuretic flags uNa", R.interpret({ una: 50, diuretic: true })[0].level, "flag");
+// end-to-end cause from typed values
+eq("cause SIAD", R.cause({ na: 122, sosm: 255, uosm: 450, una: 55, volume: "eu", diuretic: false }).label, "siad");
+eq("cause polydipsia", R.cause({ na: 118, sosm: 245, uosm: 70, una: 15, volume: "eu" }).label, "lowuosm");
+eq("cause hypovolemic", R.cause({ na: 126, sosm: 262, uosm: 520, una: 12, volume: "hypo" }).label, "hypovolemic");
+eq("cause hypervolemic", R.cause({ na: 127, sosm: 265, uosm: 400, una: 10, volume: "hyper" }).label, "hypervolemic");
+eq("cause pseudo", R.cause({ na: 128, sosm: 285 }).label, "nonhypotonic");
+
 console.log(fail ? fail + " FAILED" : "all passed"); process.exit(fail ? 1 : 0);

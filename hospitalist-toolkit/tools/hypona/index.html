@@ -46,6 +46,17 @@
     .c-yes { background:var(--g-bg); color:var(--g-ink); } .c-no { background:var(--r-bg); color:var(--r-ink); } .c-unknown { background:var(--a-bg); color:var(--a-ink); }
     .src { font-size:12px; color:var(--muted); margin-top:8px; }
     svg text { fill:var(--muted); font-size:11px; }
+    .mgrid { display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:10px; margin:8px 0; }
+    .mgrid fieldset { border:1px solid var(--line); border-radius:8px; padding:6px 12px 8px; margin:0; display:grid; gap:6px; }
+    .mgrid legend { font-weight:600; font-size:13px; padding:0 4px; }
+    .mgrid label:not(.inl) { display:grid; grid-template-columns:90px 80px auto; align-items:center; gap:6px; }
+    .mgrid .u { font-size:12px; color:var(--muted); }
+    .mgrid label select { grid-column:span 2; justify-self:start; }
+    input.typed { border-color:var(--accent); font-weight:600; }
+    .verdict { border-radius:10px; padding:10px 14px; margin:10px 0 6px; }
+    .verdict .big { font-size:18px; font-weight:700; }
+    tr.match td { background:var(--b-bg); color:var(--b-ink); font-weight:600; }
+    td.lv-flag { color:var(--a-ink); font-weight:600; } td.lv-ok { color:var(--g-ink); font-weight:600; }
     @media print { .noprint { display:none; } }
   </style>
 </head>
@@ -74,6 +85,42 @@
         </div>
         <div id="hints" class="muted"></div>
         <div id="errs" class="err"></div>
+      </div>
+    </details>
+
+    <details class="card" open id="sec-manual">
+      <summary><span>Cause helper: enter serum and urine values</span><span class="muted" id="msum"></span></summary>
+      <div class="body">
+        <div class="muted">Type values from the lab, or leave a box empty to use the chart value (shown in grey). Works without a patient loaded. Values you type are also used in the plan and note below.</div>
+        <div class="mgrid">
+          <fieldset><legend>Serum</legend>
+            <label>Sodium <input type="number" id="m-na" step="1" min="90" max="170"> <span class="u">mmol/L</span></label>
+            <label>Osmolality <input type="number" id="m-sosm" step="1" min="180" max="400"> <span class="u">mOsm/kg</span></label>
+            <label>Glucose <input type="number" id="m-glu" step="0.1" min="0" max="100"> <span class="u">mmol/L</span></label>
+            <label>Urea <input type="number" id="m-urea" step="0.1" min="0" max="80"> <span class="u">mmol/L</span></label>
+          </fieldset>
+          <fieldset><legend>Urine (spot)</legend>
+            <label>Osmolality <input type="number" id="m-uosm" step="1" min="20" max="1500"> <span class="u">mOsm/kg</span></label>
+            <label>Sodium <input type="number" id="m-una" step="1" min="0" max="400"> <span class="u">mmol/L</span></label>
+            <label>Potassium <input type="number" id="m-uk" step="1" min="0" max="300"> <span class="u">mmol/L</span></label>
+          </fieldset>
+          <fieldset><legend>Patient</legend>
+            <label>Volume status <select id="m-volume"><option value="">Not chosen</option><option value="hypo">Low (dry)</option><option value="eu">Normal</option><option value="hyper">High (edema, ascites)</option></select></label>
+            <label class="inl"><input type="checkbox" id="m-diur"> On a diuretic (past week)</label>
+            <label class="inl"><input type="checkbox" id="m-ckd"> Chronic kidney disease</label>
+          </fieldset>
+        </div>
+        <details style="margin:6px 0"><summary class="muted" style="cursor:pointer">More (optional): fractional excretion of urate and sodium, useful when on a diuretic</summary>
+          <div class="mgrid"><fieldset><legend>Serum</legend>
+            <label>Creatinine <input type="number" id="m-scr" step="1" min="10" max="2000"> <span class="u">umol/L</span></label>
+            <label>Uric acid <input type="number" id="m-suric" step="0.01" min="0" max="2"> <span class="u">mmol/L</span></label></fieldset>
+          <fieldset><legend>Urine (same sample)</legend>
+            <label>Creatinine <input type="number" id="m-ucr" step="0.1" min="0" max="50"> <span class="u">mmol/L</span></label>
+            <label>Uric acid <input type="number" id="m-uuric" step="0.01" min="0" max="20"> <span class="u">mmol/L</span></label></fieldset></div>
+        </details>
+        <div class="row"><button id="m-clear">Clear typed values</button><span class="muted" id="m-src"></span></div>
+        <div id="m-out"></div>
+        <div class="src">European 2014 algorithm (Spasovski) for the steps; Furst ratio; fractional excretion of urate (Fenske 2008). Unverified draft: interpret with the clinical picture.</div>
       </div>
     </details>
 
@@ -119,11 +166,11 @@
 
   <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
 <script src="../../pdf-overlay.js?v=20261103a"></script>
-  <script src="rules.js?v=20261101b"></script>
-  <script src="chart.js?v=20261101b"></script>
-  <script src="samples.js?v=20261101b"></script>
-  <script src="../../notedraft.js?v=20261101b"></script>
-  <script src="note.js?v=20261101b"></script>
-  <script src="app.js?v=20261101b"></script>
+  <script src="rules.js?v=20261113a"></script>
+  <script src="chart.js?v=20261113a"></script>
+  <script src="samples.js?v=20261113a"></script>
+  <script src="../../notedraft.js?v=20261113a"></script>
+  <script src="note.js?v=20261113a"></script>
+  <script src="app.js?v=20261113a"></script>
 </body>
 </html>

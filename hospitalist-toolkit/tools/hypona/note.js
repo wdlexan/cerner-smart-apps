@@ -18,7 +18,7 @@ function hypoNote(full) {
   const x = ctx(); if (!x.last) return null;
   const f = state.f, now = x.now, st = x.st, c = x.cause, lim = x.lim, sym = $("symptoms").value, vol = $("volume").value;
   const used = [x.last, x.sosm, x.uosm, x.una, x.uk, x.glu, x.k].filter(Boolean);
-  const stamp = Math.max(...used.map((e) => e.t));
+  const stamp = Math.max(...used.filter((e) => e.src !== "typed").map((e) => e.t));
   const S = {};
   const lo48 = st ? st.rs.low48 : x.last;
 
@@ -51,7 +51,8 @@ function hypoNote(full) {
   // workup
   const wk = [x.sosm && "sOsm " + Math.round(x.sosm.v), x.uosm && "uOsm " + Math.round(x.uosm.v), x.una && "uNa " + Math.round(x.una.v), x.uk && "uK " + Math.round(x.uk.v),
     x.tsh && "TSH " + x.tsh.v, x.cort && "cortisol " + Math.round(x.cort.v), x.uric && "uric acid " + (Math.round(x.uric.v * 100) / 100), x.glu && x.glu.v > 10 && "glucose " + r1(x.glu.v)].filter(Boolean);
-  S.cause = [wk.length ? wk.join(", ") + "." : "No workup values found.",
+  const typedIn = [x.sosm, x.uosm, x.una, x.uk, x.glu, x.urea, x.uric, x.creat].some((e) => e && e.src === "typed");
+  S.cause = [wk.length ? wk.join(", ") + "." + (typedIn ? " (Some values entered by hand.)" : "") : "No workup values found.",
     x.siad && x.siad.met ? "Meets SIAD criteria." : full && x.siad && c && /siad|highuna/.test(c.label) ? "SIAD criteria not all confirmed: " + x.siad.criteria.filter((i) => i.state !== true).map((i) => i.label.toLowerCase()).join("; ") + "." : "",
     x.furst ? `Furst ratio ${r1(x.furst.ratio)}.` : ""];
 

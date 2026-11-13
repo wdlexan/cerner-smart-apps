@@ -247,6 +247,39 @@
     return P;
   }
 
-  const api = { limits, severity, glucoseCorrected, calcOsm, tonicity, tbw, adrogue, FLUIDS, furst, rises, ceiling, rate, status, onset, cause, siad, bolus, rescue, plan, H, DAY };
+  /* ---- typed-in values (cause helper) ----
+     Fractional excretion in %: urine and serum of the same substance in the same units; urine creatinine mmol/L, serum creatinine umol/L. */
+  function fe(ux, sx, ucrMmol, scrUmol) {
+    if (![ux, sx, ucrMmol, scrUmol].every(ok) || sx <= 0 || ucrMmol <= 0) return null;
+    return (100 * ux * (scrUmol / 1000)) / (sx * ucrMmol);
+  }
+  /* Plain-language reading of each value. m: { na, sosm, glu, urea, uosm, una, uk, diuretic, scr, ucr, suric, uuric }
+     Returns [{ k, v, text, level }] with level "ok" | "flag" | "info". */
+  function interpret(m) {
+    const L = [], add = (k, v, text, level) => L.push({ k, v, text, level: level || "info" });
+    if (ok(m.na)) {
+      const sev = severity(m.na), cna = glucoseCorrected(m.na, m.glu);
+      add("Serum sodium", m.na, sev === "none" ? "Not low." : `${sev === "profound" ? "Profound (below 125)" : sev === "moderate" ? "Moderate (125-129)" : "Mild (130-134)"} hyponatremia.`, sev === "none" ? "ok" : "flag");
+      if (ok(m.glu) && cna - m.na >= 1) add("Glucose-corrected sodium", r1(cna), `Glucose ${m.glu}: adds about ${r1(cna - m.na)} mmol/L.` + (cna >= 135 ? " Corrected sodium is normal: the low sodium is from glucose." : ""), cna >= 135 ? "flag" : "info");
+    }
+    if (ok(m.sosm)) {
+      add("Serum osmolality", m.sosm, m.sosm < 275 ? "Below 275: hypotonic (true) hyponatremia." : m.sosm <= 295 ? "275-295 (normal): not hypotonic. Think pseudohyponatremia (lipids, protein) or an isotonic extra osmole." : "Above 295: hypertonic. Think glucose, mannitol or another extra osmole.", m.sosm < 275 ? "ok" : "flag");
+      if (ok(m.na)) {
+        const calc = calcOsm(m.na, m.glu, m.urea), gap = m.sosm - calc;
+        add("Osmolal gap", Math.round(gap), `Calculated osmolality ${Math.round(calc)} (2×Na + glucose + urea${ok(m.glu) && ok(m.urea) ? "" : ", 5 used for any missing"}). ` + (gap > 10 ? "Gap above 10: unmeasured osmoles (alcohols, mannitol, glycine) or pseudohyponatremia." : "Gap 10 or less."), gap > 10 ? "flag" : "info");
+        if (ok(m.urea) && m.urea > 10) add("Effective osmolality", Math.round(tonicity(m.na, m.glu)), `Urea ${m.urea} raises measured osmolality but does not hold water in the blood: use 2×Na + glucose for tonicity.`, "info");
+      }
+    } else if (ok(m.na)) add("Serum osmolality", "–", `Not entered. Calculated from Na${ok(m.glu) ? ", glucose" : ""}${ok(m.urea) ? ", urea" : ""}: ${Math.round(calcOsm(m.na, m.glu, m.urea))}. Measure it to rule out pseudohyponatremia.`, "info");
+    if (ok(m.uosm)) add("Urine osmolality", m.uosm, m.uosm <= 100 ? "100 or less: ADH is off (maximally dilute). Water intake beyond the kidney's capacity: polydipsia or low solute intake." : m.uosm > 500 ? "Above 500: strongly concentrated, ADH very active. Fluid restriction alone is unlikely to work." : "Above 100: ADH is active (appropriate in low volume, inappropriate in SIAD).", m.uosm <= 100 ? "flag" : "info");
+    if (ok(m.una)) add("Urine sodium", m.una, (m.una <= 30 ? "30 or less: the kidney is holding on to sodium: low effective arterial volume (dry, or HF / cirrhosis / nephrotic)." : "Above 30: the kidney is losing sodium: SIAD, diuretics, kidney or adrenal salt loss, or vomiting (bicarbonaturia).") + (m.diuretic ? " On a diuretic: urine sodium is hard to interpret (use fractional excretion of urate below)." : ""), m.diuretic ? "flag" : "info");
+    if (ok(m.una) && ok(m.uk) && ok(m.na)) { const f = furst(m.una, m.uk, m.na); add("Furst ratio (uNa + uK) / sNa", r1(f.ratio), f.advice + (f.ratio >= 1 ? " Urine is saltier than plasma: free water is being retained." : ""), f.ratio >= 1 ? "flag" : "info"); }
+    const feu = fe(m.uuric, m.suric, m.ucr, m.scr);
+    if (feu != null) add("Fractional excretion of urate", r1(feu) + "%", feu > 12 ? "Above 12%: supports SIAD (or salt wasting), even on diuretics." : feu < 8 ? "Below 8%: supports low volume (dehydration or diuretic-related)." : "8-12%: indeterminate.", "info");
+    const fen = fe(m.una, m.na, m.ucr, m.scr);
+    if (fen != null) add("Fractional excretion of sodium", r1(fen) + "%", (fen < 0.5 ? "Below 0.5%: sodium-avid kidney: low effective volume." : "0.5% or more: kidney is not holding sodium (SIAD, diuretics, salt loss).") + (m.diuretic ? " Unreliable on diuretics." : ""), "info");
+    return L;
+  }
+
+  const api = { fe, interpret, limits, severity, glucoseCorrected, calcOsm, tonicity, tbw, adrogue, FLUIDS, furst, rises, ceiling, rate, status, onset, cause, siad, bolus, rescue, plan, H, DAY };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.HypoRules = api;
 })(typeof window !== "undefined" ? window : globalThis);

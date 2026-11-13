@@ -14,6 +14,64 @@ const LABEL = { siad: "SIAD likely", highuna: "Urine Na above 30: choose volume 
   nonhypotonic: "Not hypotonic", incomplete: "Workup incomplete" };
 const state = { f: null, risk: {}, auto: {} };
 
+/* ---- cause helper: typed values, falling back to the chart ---- */
+const MF = ["na", "sosm", "glu", "urea", "uosm", "una", "uk", "scr", "ucr", "suric", "uuric"];
+function typed() { const o = {}; MF.forEach((k) => { const v = parseFloat($("m-" + k).value); o[k] = isFinite(v) ? v : null; }); return o; }
+function chartVals() {
+  if (!state.f) return {};
+  const f = state.f, now = Date.now(), L = (id, d) => C.latest(f.s[id], d * DAY, now), U = (id, d) => C.latest(f.u[id], d * DAY, now);
+  const na = f.na.filter((e) => $("usegas").checked || e.src !== "gas");
+  return { na: na[na.length - 1] || null, sosm: L("sosm", 7), glu: L("glu", 1), urea: L("urea", 3), uosm: U("uosm", 7), una: U("una", 7), uk: U("uk", 7), scr: L("creat", 3), ucr: U("ucr", 7), suric: L("uric", 14) };
+}
+/* merged values: typed wins, else chart. Returns { v: {key: number}, src: {key: "typed"|"chart"} } */
+function merged() {
+  const t = typed(), c = chartVals(), v = {}, src = {};
+  MF.forEach((k) => { if (t[k] != null) { v[k] = t[k]; src[k] = "typed"; } else if (c[k]) { v[k] = k === "suric" ? Math.round(c[k].v * 100) / 100 : r1(c[k].v); src[k] = "chart"; } else v[k] = null; });
+  return { v, src, chart: c };
+}
+const PATTERNS = [
+  { h: "Hyperglycemia, pseudohyponatremia, extra osmoles", s: "275 or more", u: "any", n: "any", vol: "any", labels: ["hyperglycemia", "nonhypotonic"] },
+  { h: "Primary polydipsia, low solute (beer potomania, tea and toast)", s: "below 275", u: "100 or less", n: "usually low", vol: "normal", labels: ["lowuosm"] },
+  { h: "Fluid loss outside the kidney (diarrhea, third spacing, remote diuretics)", s: "below 275", u: "above 100", n: "30 or less", vol: "low", labels: ["hypovolemic", "lowvol"] },
+  { h: "Heart failure, cirrhosis, nephrotic syndrome", s: "below 275", u: "above 100", n: "30 or less (higher on diuretics)", vol: "high", labels: ["hypervolemic", "lowvol"] },
+  { h: "Diuretics, vomiting, primary adrenal insufficiency, salt wasting", s: "below 275", u: "above 100", n: "above 30", vol: "low", labels: ["renalloss", "diuretic", "highuna"] },
+  { h: "SIAD, hypothyroidism, secondary adrenal insufficiency", s: "below 275", u: "above 100", n: "above 30", vol: "normal", labels: ["siad", "highuna"] }];
+
+function drawManual() {
+  const { v, src, chart } = merged(), t = typed();
+  MF.forEach((k) => { const el = $("m-" + k), c = chart[k]; el.placeholder = c ? String(k === "suric" ? Math.round(c.v * 100) / 100 : r1(c.v)) : ""; el.title = c ? "Chart: " + el.placeholder + " (" + fmtDT(c.t) + ")" : ""; el.classList.toggle("typed", t[k] != null); });
+  const nTyped = MF.filter((k) => t[k] != null).length, nChart = MF.filter((k) => src[k] === "chart").length;
+  $("m-src").textContent = (nTyped ? nTyped + " typed" : "") + (nTyped && nChart ? ", " : "") + (nChart ? nChart + " from the chart (grey)" : "");
+  $("m-clear").hidden = !nTyped;
+  if (v.na == null) { $("m-out").innerHTML = '<div class="muted">Enter at least the serum sodium.</div>'; $("msum").textContent = ""; return; }
+  const vol = $("volume").value, diuretic = $("m-diur").checked;
+  const c = R.cause({ na: v.na, glu: v.glu, sosm: v.sosm, uosm: v.uosm, una: v.una, volume: vol, diuretic, ckd: $("m-ckd").checked });
+  const sd = R.siad({ na: v.na, glu: v.glu, sosm: v.sosm, uosm: v.uosm, una: v.una, volume: vol, diuretic, urea: v.urea, uric: v.suric,
+    tsh: state.f ? (C.latest(state.f.s.tsh, 90 * DAY) || {}).v : null, cortisol: state.f ? (C.latest(state.f.s.cort, 90 * DAY) || {}).v : null });
+  const lines = R.interpret(Object.assign({ diuretic }, v));
+  const tag = (k) => (src[k] === "chart" ? ' <span class="muted">(chart)</span>' : "");
+  const KEY = { "Serum sodium": "na", "Serum osmolality": "sosm", "Urine osmolality": "uosm", "Urine sodium": "una" };
+  $("msum").textContent = LABEL[c.label] || "";
+  const cls = c.label === "incomplete" || /highuna|lowvol/.test(c.label) ? "t2" : c.label === "lowuosm" || c.label === "hyperglycemia" || c.label === "nonhypotonic" ? "t3" : "t1";
+  const chip = (s) => `<span class="chip c-${s === true ? "yes" : s === false ? "no" : "unknown"}">${s === true ? "Met" : s === false ? "Not met" : "Unknown"}</span>`;
+  const next = [];
+  if (c.missing.length) next.push("Send: " + c.missing.map((k) => ({ sosm: "serum osmolality", uosm: "urine osmolality", una: "urine sodium (with urine potassium and creatinine)" }[k])).join(", ") + ".");
+  if (!vol && !/hyperglycemia|nonhypotonic|lowuosm/.test(c.label)) next.push("Choose volume status: it decides between the causes listed.");
+  if (diuretic && /siad|highuna|diuretic|renalloss/.test(c.label) && R.fe(v.uuric, v.suric, v.ucr, v.scr) == null) next.push("On a diuretic: urine sodium cannot separate SIAD from diuretic effect. Add serum and urine uric acid and creatinine (More, below) for the fractional excretion of urate.");
+  if (/siad|highuna|renalloss/.test(c.label)) next.push("Before calling it SIAD: TSH and morning cortisol; review drugs, pain, nausea, lung and brain causes.");
+  $("m-out").innerHTML =
+    `<div class="verdict ${cls}"><div class="k" style="font-size:12px;text-transform:uppercase;opacity:.8">Most likely</div><div class="big">${esc(LABEL[c.label] || "–")}</div>` +
+    (c.likely.length ? `<div>${esc(c.likely.join("; "))}.</div>` : "") + (c.warn ? `<div style="margin-top:4px"><b>${esc(c.warn)}</b></div>` : "") + `</div>` +
+    (next.length ? `<div class="alert action"><b>Next</b>${ul(next.map(esc))}</div>` : "") +
+    `<h3 style="font-size:14px;margin:12px 0 4px">What each value means</h3><div class="scroll"><table>` +
+    lines.map((l) => `<tr><td>${esc(l.k)}${KEY[l.k] ? tag(KEY[l.k]) : ""}</td><td class="num lv-${l.level}">${esc(l.v)}</td><td class="wrap">${esc(l.text)}</td></tr>`).join("") + `</table></div>` +
+    `<h3 style="font-size:14px;margin:12px 0 4px">Steps</h3><ol style="margin:4px 0 4px 18px;padding:0">${c.steps.map((s) => "<li>" + esc(s) + "</li>").join("")}</ol>` +
+    `<h3 style="font-size:14px;margin:12px 0 4px">Typical patterns <span class="muted" style="font-weight:400">(highlighted: matches these values)</span></h3><div class="scroll"><table><tr><th>Cause</th><th>Serum osm</th><th>Urine osm</th><th>Urine Na</th><th>Volume</th></tr>` +
+    PATTERNS.map((p) => `<tr class="${p.labels.includes(c.label) && (!vol || p.vol === "any" || p.vol === { hypo: "low", eu: "normal", hyper: "high" }[vol]) ? "match" : ""}"><td class="wrap">${esc(p.h)}</td><td>${p.s}</td><td>${p.u}</td><td class="wrap">${p.n}</td><td>${p.vol}</td></tr>`).join("") + `</table></div>` +
+    `<h3 style="font-size:14px;margin:12px 0 4px">SIAD criteria</h3><div class="scroll"><table>${sd.criteria.map((i) => `<tr><td class="wrap">${esc(i.label)}</td><td>${chip(i.state)}</td><td class="muted">${esc(i.value)}</td></tr>`).join("")}</table></div>` +
+    `<div style="margin-top:6px">${sd.met ? "<b>All essential SIAD criteria met.</b>" : sd.failed ? "At least one essential criterion is not met: SIAD less likely." : "Not all criteria known yet."}${sd.support.length ? " Supporting: " + esc(sd.support.join("; ")) + "." : ""}</div>`;
+}
+
 function ctx() {
   const f = state.f, now = Date.now(), x = {};
   x.now = now;
@@ -23,6 +81,12 @@ function ctx() {
   x.glu = L("glu", 1); x.urea = L("urea", 3); x.creat = L("creat", 3); x.k = L("k", 2); x.sosm = L("sosm", 7); x.tsh = L("tsh", 90); x.cort = L("cort", 90); x.uric = L("uric", 14);
   x.tg = L("tg", 90); x.prot = L("prot", 14); x.mg = L("mg", 3); x.phos = L("phos", 3);
   x.uosm = U("uosm", 7); x.una = U("una", 7); x.uk = U("uk", 7);
+  // values typed in the cause helper replace the chart value (sodium only for the cause, never the trend)
+  const T = typed(), typedE = (v) => ({ v, t: now, src: "typed" });
+  ["sosm", "glu", "urea", "uosm", "una", "uk"].forEach((k) => { if (T[k] != null) x[k] = typedE(T[k]); });
+  if (T.scr != null) x.creat = typedE(T.scr);
+  if (T.suric != null) x.uric = typedE(T.suric);
+  x.causeNa = T.na != null ? T.na : x.last ? x.last.v : null;
   x.wt = parseFloat($("wt").value); if (!isFinite(x.wt)) x.wt = null;
   x.sex = f.sex; x.age = f.age;
   x.water = R.tbw(x.wt, f.age, f.sex);
@@ -32,15 +96,15 @@ function ctx() {
   x.onsetAuto = R.onset(x.na);
   x.acute = $("onset").value === "acute" || ($("onset").value === "auto" && x.onsetAuto === "acute");
   const rec = (cat, days) => C.recent(f, cat, days, now);
-  x.diuretic = rec("thiazide", 7).length + rec("loop", 7).length > 0;
+  x.diuretic = $("m-diur").checked;
   x.meds = {
     hypotonic: C.names(rec("hypotonic", 1)), isotonic: C.names(rec("isotonic", 1)), hypertonic: C.names(rec("hypertonic", 1)),
     culprits: [], salttab: C.names(rec("salttab", 1)), urea: C.names(rec("urea", 1)), tolvaptan: C.names(rec("tolvaptan", 2)), desmo: C.names(rec("desmo", 2)), steroid: C.names(rec("steroid", 2)), kcl: C.names(rec("kcl", 1)) };
   const CUL = { thiazide: "Thiazide", ssri: "SSRI / SNRI", tca: "Tricyclic", mirtaz: "Mirtazapine / trazodone", aed: "Antiepileptic", antipsych: "Antipsychotic", ppi: "PPI (rare)", opioid: "Opioid", nsaid: "NSAID", chemo: "Chemotherapy", tmp: "Trimethoprim", amio: "Amiodarone", sulfonylurea: "Chlorpropamide", oxytocin: "Oxytocin" };
   Object.keys(CUL).forEach((k) => { const n = C.names(rec(k, 3)); if (n.length) x.meds.culprits.push(n.join(", ") + " (" + CUL[k] + ")"); });
-  x.cause = x.last ? R.cause({ na: x.last.v, glu: x.glu && x.glu.v, sosm: x.sosm && x.sosm.v, uosm: x.uosm && x.uosm.v, una: x.una && x.una.v, volume: $("volume").value, diuretic: x.diuretic, ckd: !!f.prob.ckd }) : null;
-  x.furst = x.last && x.una && x.uk ? R.furst(x.una.v, x.uk.v, x.last.v) : null;
-  x.siad = x.last ? R.siad({ na: x.last.v, glu: x.glu && x.glu.v, sosm: x.sosm && x.sosm.v, uosm: x.uosm && x.uosm.v, una: x.una && x.una.v, volume: $("volume").value, diuretic: x.diuretic,
+  x.cause = x.last ? R.cause({ na: x.causeNa, glu: x.glu && x.glu.v, sosm: x.sosm && x.sosm.v, uosm: x.uosm && x.uosm.v, una: x.una && x.una.v, volume: $("volume").value, diuretic: x.diuretic, ckd: $("m-ckd").checked }) : null;
+  x.furst = x.last && x.una && x.uk ? R.furst(x.una.v, x.uk.v, x.causeNa) : null;
+  x.siad = x.last ? R.siad({ na: x.causeNa, glu: x.glu && x.glu.v, sosm: x.sosm && x.sosm.v, uosm: x.uosm && x.uosm.v, una: x.una && x.una.v, volume: $("volume").value, diuretic: x.diuretic,
     tsh: x.tsh && x.tsh.v, cortisol: x.cort && x.cort.v, uric: x.uric && Math.round(x.uric.v * 100) / 100, urea: x.urea && r1(x.urea.v) }) : null;
   // urine output over the last 3 h
   const uo = f.uo.filter((e) => now - e.t <= 3 * HR);
@@ -52,6 +116,7 @@ function tile(cls, k, big, s) { return `<div class="tile ${cls}"><div class="k">
 
 function draw() {
   const f = state.f;
+  drawManual();
   if (!f) { ["tiles", "alerts", "spark", "trend", "plan", "tests", "steps", "siad", "meds", "calc", "hints", "riskrow"].forEach((id) => ($(id).innerHTML = "")); ["alertsum", "trendsum", "plansum", "causesum", "ptsum"].forEach((id) => ($(id).textContent = "")); $("alerts").innerHTML = '<div class="muted">No patient loaded.</div>'; HYPO_NOTE.update(); return; }
   const x = ctx();
   drawRisk(x);
@@ -143,9 +208,9 @@ function drawWorkup(x) {
     ["Urine osmolality", x.uosm, "mOsm/kg", "Is ADH on?"], ["Urine sodium", x.una, "mmol/L", "Volume vs SIAD / salt loss"], ["Urine potassium", x.uk, "mmol/L", "With urine Na: fluid restriction plan"],
     ["TSH", x.tsh, "mU/L", "Hypothyroidism"], ["Cortisol", x.cort, "nmol/L", "Adrenal insufficiency (morning sample)"], ["Uric acid", x.uric, "mmol/L", "Low in SIAD"], ["Triglycerides", x.tg, "mmol/L", "Very high: pseudohyponatremia"], ["Total protein", x.prot, "g/L", "Very high: pseudohyponatremia"]];
   const fmt = (e, id) => (id === "Uric acid" ? (Math.round(e.v * 100) / 100) : r1(e.v));
-  $("tests").innerHTML = `<table><tr><th>Test</th><th>Latest</th><th>When</th><th>Why</th></tr>` + T.map(([n, e, u, why]) => e ? `<tr><td>${n}</td><td class="num">${fmt(e, n)} ${u}</td><td>${fmtDT(e.t)}</td><td class="muted wrap">${why}</td></tr>`
+  $("tests").innerHTML = `<table><tr><th>Test</th><th>Latest</th><th>When</th><th>Why</th></tr>` + T.map(([n, e, u, why]) => e ? `<tr><td>${n}</td><td class="num">${fmt(e, n)} ${u}</td><td>${e.src === "typed" ? "typed in" : fmtDT(e.t)}</td><td class="muted wrap">${why}</td></tr>`
     : `<tr><td>${n}</td><td class="old" colspan="2">Not found</td><td class="muted wrap">${why}</td></tr>`).join("") + "</table>" +
-    (x.sosm && x.last ? `<div class="muted" style="margin-top:6px">Calculated osmolality ${Math.round(R.calcOsm(x.last.v, x.glu && x.glu.v, x.urea && x.urea.v))}; osmolal gap ${Math.round(x.sosm.v - R.calcOsm(x.last.v, x.glu && x.glu.v, x.urea && x.urea.v))} (above 10: unmeasured osmoles or pseudohyponatremia).</div>` : "");
+    (x.sosm && x.last ? `<div class="muted" style="margin-top:6px">Calculated osmolality ${Math.round(R.calcOsm(x.causeNa, x.glu && x.glu.v, x.urea && x.urea.v))}; osmolal gap ${Math.round(x.sosm.v - R.calcOsm(x.causeNa, x.glu && x.glu.v, x.urea && x.urea.v))} (above 10: unmeasured osmoles or pseudohyponatremia).</div>` : "");
   const c = x.cause;
   $("causesum").textContent = c ? LABEL[c.label] || "" : "";
   $("steps").innerHTML = c ? "<ol style='margin:4px 0 4px 18px;padding:0'>" + c.steps.map((s) => "<li>" + esc(s) + "</li>").join("") + "</ol>" + (c.likely.length ? "<b>Consider:</b> " + esc(c.likely.join("; ")) + "." : "") : "";
@@ -183,15 +248,23 @@ function load(raw, note, errors, preset) {
     const f = state.f, now = Date.now(), k = C.latest(f.s.k, 2 * DAY, now);
     state.auto = { na105: f.na.some((e) => now - e.t <= 7 * DAY && e.v <= 105), hypoK: !!(k && k.v < 3.5), alcohol: !!f.prob.alcohol, malnut: !!f.prob.malnutrition, liver: !!f.prob.cirrhosis };
     state.risk = Object.assign({}, state.auto);
+    $("m-diur").checked = C.recent(f, "thiazide", 7, now).length + C.recent(f, "loop", 7, now).length > 0; $("m-ckd").checked = !!f.prob.ckd;
     const w = f.weights[f.weights.length - 1]; $("wt").value = w ? r1(w.v) : "";
     $("ptsum").textContent = [f.sex, f.age != null ? f.age + " y" : ""].filter(Boolean).join(", ");
-  } else { $("wt").value = ""; $("ptsum").textContent = ""; }
+  } else { $("wt").value = ""; $("ptsum").textContent = ""; $("m-diur").checked = false; $("m-ckd").checked = false; }
+  $("m-volume").value = $("volume").value;
   $("pstatus").textContent = note; $("clear").hidden = !raw;
   $("errs").innerHTML = errors && errors.length ? "Could not read: " + errors.map(esc).join("; ") + ". Check the scopes in the Code Console." : "";
   draw(); HYPO_NOTE.reset();
 }
 ["symptoms", "onset", "volume", "usegas", "c-fluid"].forEach((id) => ($(id).onchange = draw));
 ["wt", "c-vol", "c-k"].forEach((id) => ($(id).oninput = draw));
+MF.forEach((k) => ($("m-" + k).oninput = draw));
+["m-diur", "m-ckd"].forEach((id) => ($(id).onchange = draw));
+// one volume status: the helper's box and the one above stay in step
+$("m-volume").onchange = () => { $("volume").value = $("m-volume").value; draw(); };
+$("volume").addEventListener("change", () => ($("m-volume").value = $("volume").value));
+$("m-clear").onclick = () => { MF.forEach((k) => ($("m-" + k).value = "")); draw(); };
 $("clear").onclick = () => { $("testsel").value = ""; load(null, "Open from Cerner to read the chart, or pick a made-up patient:"); };
 const SAMPLES = window.HYPO_SAMPLES || [];
 SAMPLES.forEach((p, i) => { const o = document.createElement("option"); o.value = i; o.textContent = p.label; $("testsel").appendChild(o); });
