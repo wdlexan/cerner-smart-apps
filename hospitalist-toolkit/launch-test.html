@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Hospitalist Toolkit – TEST MODE</title>
+</head>
+<body style="font-family:system-ui,sans-serif">
+  <p id="msg">Opening the toolkit in test mode (no Cerner login)…</p>
+  <script>
+    // TEST MODE - skips the Cerner login.
+    // Points the toolkit at Cerner's public, read-only "open" sandbox (synthetic patients only, no sign-in).
+    // It saves a pretend sign-in record exactly where the fhirclient library keeps a real one,
+    // then opens index.html. shell.js and every tab then run unchanged.
+    //
+    // Use:  launch-test.html                     -> default test patient
+    //       launch-test.html?patient=12742400    -> another sandbox patient
+    //       launch-test.html?patient=...&tab=labs -> open on a given tab
+    // A normal launch.html / launch-standalone.html launch replaces this record, so nothing else changes.
+
+    const OPEN_SERVER = "https://fhir-open.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d";
+    const DEFAULT_PATIENT = "12724066"; // SMART, Nancy (Cerner sandbox test patient)
+
+    const q = new URLSearchParams(location.search);
+    const patient = (q.get("patient") || DEFAULT_PATIENT).trim();
+    const tab = (q.get("tab") || "").trim();
+
+    try {
+      // Clear anything left over from a real or link launch
+      ["toolkit-target", "pdfpt-return"].forEach((k) => sessionStorage.removeItem(k));
+
+      const key = "test-" + Date.now();
+      const state = {
+        key: key,
+        serverUrl: OPEN_SERVER,
+        clientId: "test-mode",
+        tokenResponse: { patient: patient } // no access_token: the open sandbox needs none
+      };
+      sessionStorage.setItem("SMART_KEY", JSON.stringify(key));
+      sessionStorage.setItem(key, JSON.stringify(state));
+      sessionStorage.setItem("toolkit-test", "1"); // shows the TEST MODE label in the header
+
+      location.replace("index.html" + (tab ? "#" + encodeURIComponent(tab) : ""));
+    } catch (e) {
+      document.getElementById("msg").innerHTML =
+        "<b style='color:#b00020'>Could not start test mode:</b> " + (e.message || e) +
+        "<br>This browser may be blocking session storage.";
+    }
+  </script>
+</body>
+</html>

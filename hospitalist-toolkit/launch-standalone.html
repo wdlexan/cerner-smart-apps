@@ -22,6 +22,9 @@
     let CLIENT_ID = "09c38f54-fb4d-4664-87b6-67b57983ac01";
     try { CLIENT_ID = localStorage.getItem("toolkit-client-id") || CLIENT_ID; } catch (e) {}
 
+    // A real launch: drop the TEST MODE label left by launch-test.html
+    try { sessionStorage.removeItem("toolkit-test"); } catch (e) {}
+
     function fail(text) {
       document.getElementById("msg").innerHTML = "<pre style='color:#b00020;white-space:pre-wrap'>" + text + "</pre>";
     }
