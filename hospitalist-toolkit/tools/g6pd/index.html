@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>G6PD Check</title>
+  <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+  <style>
+    :root {
+      --bg: #f6f7f9; --card: #fff; --ink: #1f2933; --muted: #5f6b7a; --line: #dde2e8;
+      --red: #b42318; --red-bg: #fdecea; --amber: #b54708; --amber-bg: #fef4e6;
+      --green: #067647; --green-bg: #e7f6ee; --blue: #175cd3; --blue-bg: #eaf1fd; --gray-bg: #f0f1f3;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--bg); color: var(--ink); }
+    header { background: #1d2939; color: #fff; padding: 10px 18px; display: flex; gap: 16px; align-items: baseline; flex-wrap: wrap; }
+    header h1 { font-size: 17px; margin: 0; }
+    header .pt { font-size: 13px; opacity: .9; }
+    main { max-width: 1100px; margin: 0 auto; padding: 14px 18px 40px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; margin-bottom: 14px; }
+    .card h2 { font-size: 15px; margin: 0 0 10px; }
+    .banner { border-radius: 8px; padding: 12px 16px; margin-bottom: 14px; font-weight: 600; border: 1px solid transparent; }
+    .banner.red { background: var(--red-bg); color: var(--red); border-color: #f5c2bd; }
+    .banner.amber { background: var(--amber-bg); color: var(--amber); border-color: #f9d7a8; }
+    .banner.green { background: var(--green-bg); color: var(--green); border-color: #b5e3c8; }
+    .banner.blue { background: var(--blue-bg); color: var(--blue); border-color: #bcd3f7; }
+    .banner small { display: block; font-weight: 400; margin-top: 4px; color: var(--ink); }
+    .grid { display: grid; grid-template-columns: 1fr 2fr; gap: 14px; }
+    .grid.hemo { grid-template-columns: 1fr 1fr; }
+    @media (max-width: 800px) { .grid, .grid.hemo { grid-template-columns: 1fr; } }
+    .flag-H, .flag-HH { color: var(--red); font-weight: 600; }
+    .flag-L, .flag-LL { color: var(--blue); font-weight: 600; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
+    .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+    .pill.high { background: var(--red-bg); color: var(--red); }
+    .pill.medium { background: var(--amber-bg); color: var(--amber); }
+    .pill.low { background: var(--green-bg); color: var(--green); }
+    .pill.norec, .pill.none { background: var(--gray-bg); color: var(--muted); }
+    .pill.methb { background: var(--blue-bg); color: var(--blue); }
+    .muted { color: var(--muted); }
+    .status-line { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+    .status-line.deficient { color: var(--red); }
+    .status-line.normal { color: var(--green); }
+    .status-line.unknown { color: var(--amber); }
+    ul.src { margin: 6px 0 0; padding-left: 18px; }
+    .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    input[type=text], select { font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+    input[type=text] { flex: 1; min-width: 200px; }
+    label.chk { font-size: 13px; color: var(--muted); display: flex; gap: 6px; align-items: center; }
+    #lookupResult { margin-top: 8px; }
+    .ref-section { display: none; }
+    .ref-section.show { display: block; }
+    .ref-section h3 { font-size: 15px; margin: 4px 0 8px; border-bottom: 2px solid var(--line); padding-bottom: 4px; }
+    .ref-section + .ref-section.show { margin-top: 18px; }
+    .err { color: var(--red); }
+    footer { font-size: 12px; color: var(--muted); margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>G6PD Check</h1>
+    <span class="pt" id="ptBanner">Loading patient…</span>
+  </header>
+
+  <main>
+    <div id="overall" class="banner blue">Checking chart…</div>
+
+    <!-- Recognizing acute hemolysis: kept near the top -->
+    <section class="card">
+      <h2>Recognizing acute hemolysis</h2>
+      <div class="grid hemo">
+        <div>
+          <p style="margin-top:0"><b>Timing:</b> 24–72 h after exposure; Hb nadir ~7–10 days.</p>
+          <p><b>Clinical:</b> fatigue, dyspnea, tachycardia, jaundice, dark/cola urine, back or abdominal pain, fever.</p>
+          <ul style="margin-bottom:0">
+            <li>↓ Hb; ↑ reticulocytes (lag 3–5 days)</li>
+            <li>↑ indirect bilirubin, ↑ LDH, ↓ haptoglobin</li>
+            <li>UA blood positive with few RBCs (hemoglobinuria)</li>
+            <li><b>DAT negative</b></li>
+            <li>Smear: bite and blister cells; Heinz bodies</li>
+            <li>Creatinine and K⁺ (pigment AKI)</li>
+            <li>Low SpO₂ / cyanosis → co-oximetry methemoglobin</li>
+          </ul>
+        </div>
+        <div>
+          <div class="muted" style="font-size:12px;margin-bottom:4px">Latest results in chart (last 14 days, with previous value)</div>
+          <div id="hemoLabs" class="muted">Loading labs…</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="grid">
+      <!-- G6PD status -->
+      <section class="card">
+        <h2>G6PD status in chart</h2>
+        <div id="g6pdStatus" class="muted">Searching labs, problem list and allergies…</div>
+      </section>
+
+      <!-- Medication comparison -->
+      <section class="card">
+        <h2>Current medications vs CPIC G6PD risk</h2>
+        <label class="chk"><input type="checkbox" id="showAll"> Show medications with no G6PD listing too</label>
+        <div id="medTable" class="muted" style="margin-top:8px">Loading medications…</div>
+      </section>
+    </div>
+
+    <!-- Quick drug lookup -->
+    <section class="card">
+      <h2>Check a drug before ordering</h2>
+      <div class="row">
+        <input type="text" id="lookup" placeholder="Type a drug name, e.g. rasburicase, Septra, nitrofurantoin">
+      </div>
+      <div id="lookupResult"></div>
+    </section>
+
+    <!-- Reference sheet with dropdown -->
+    <section class="card">
+      <div class="row" style="justify-content: space-between; margin-bottom: 10px;">
+        <h2 style="margin:0">G6PD reference</h2>
+        <select id="sectionSelect" aria-label="Choose a section">
+          <option value="key">Key facts</option>
+          <option value="testing">Testing pitfalls</option>
+          <option value="high">High risk – avoid</option>
+          <option value="medium">Medium risk – caution</option>
+          <option value="low">Low-to-no risk / no recommendation</option>
+          <option value="triggers">Non-drug triggers</option>
+          <option value="mgmt">Management</option>
+          <option value="scenarios">Common inpatient scenarios</option>
+          <option value="pearls">Pearls</option>
+          <option value="refs">References</option>
+          <option value="all">— Show all sections —</option>
+        </select>
+      </div>
+
+      <div class="ref-section" data-sec="key">
+        <h3>Key facts</h3>
+        <ul>
+          <li>X-linked enzyme deficiency: RBCs cannot regenerate NADPH, so oxidant stress (drugs, infection, fava beans) causes <b>acute hemolytic anemia</b>.</li>
+          <li>Most common in African, Mediterranean, Middle Eastern, South and Southeast Asian ancestry.</li>
+          <li><b>Males</b> are deficient or normal. <b>Heterozygous females</b> are variable (X-inactivation); a normal qualitative screen does not exclude risk, so use a <b>quantitative</b> assay.</li>
+          <li>Severity depends on variant: African A– usually mild, self-limited; Mediterranean variants can cause severe hemolysis.</li>
+          <li><b>Infection</b> is the most common in-hospital trigger.</li>
+        </ul>
+      </div>
+
+      <div class="ref-section" data-sec="testing">
+        <h3>Testing pitfalls</h3>
+        <ul>
+          <li><b>False-normal during or right after hemolysis</b> (young RBCs and reticulocytes have more enzyme). Repeat ~3 months later.</li>
+          <li><b>Recent transfusion</b> masks deficiency.</li>
+          <li>Test before rasburicase, pegloticase, primaquine, tafenoquine or dapsone when time allows; tafenoquine needs a documented quantitative result.</li>
+          <li>Once confirmed, enter as a structured Cerner health issue / alert so pharmacy checking fires on future orders.</li>
+        </ul>
+      </div>
+
+      <div class="ref-section" data-sec="high">
+        <h3>High risk – avoid</h3>
+        <table>
+          <tr><th>Drug</th><th>Typical use</th><th>Alternative / action</th></tr>
+          <tr><td><b>Rasburicase</b></td><td>Tumour lysis</td><td>Allopurinol + hydration; febuxostat. Also causes methemoglobinemia.</td></tr>
+          <tr><td><b>Pegloticase</b></td><td>Refractory gout</td><td>Other urate-lowering therapy; test before use.</td></tr>
+          <tr><td><b>Dapsone</b></td><td>PJP prophylaxis, dermatology</td><td>Atovaquone, pentamidine; TMP-SMX if tolerated.</td></tr>
+          <tr><td><b>Primaquine</b> (standard dose)</td><td>Vivax/ovale radical cure; PJP</td><td>ID consult; PJP: TMP-SMX, atovaquone, IV pentamidine.</td></tr>
+          <tr><td><b>Tafenoquine</b></td><td>Malaria</td><td>Contraindicated if deficient or untested.</td></tr>
+          <tr><td><b>Methylene blue</b></td><td>MetHb, vasoplegia, ifosfamide encephalopathy</td><td>Ineffective and hemolytic. MetHb: stop cause, O₂, exchange transfusion, hyperbaric O₂. Vasoplegia: hydroxocobalamin.</td></tr>
+          <tr><td><b>Toluidine blue</b></td><td>Surgical stain</td><td>Flag to surgery / endoscopy.</td></tr>
+        </table>
+      </div>
+
+      <div class="ref-section" data-sec="medium">
+        <h3>Medium risk – use with caution</h3>
+        <table>
+          <tr><th>Drug</th><th>Notes</th></tr>
+          <tr><td><b>Nitrofurantoin</b></td><td>Prefer fosfomycin, cephalexin or TMP-SMX for cystitis when reasonable.</td></tr>
+          <tr><td><b>Primaquine</b> low weekly dose (0.75 mg/kg or 45 mg weekly × 8 wk)</td><td>Specialist-directed <i>P. vivax</i> regimen with monitoring.</td></tr>
+        </table>
+      </div>
+
+      <div class="ref-section" data-sec="low">
+        <h3>Low-to-no risk at usual doses (CPIC)</h3>
+        <p>Usable with standard precautions even though many labels still warn:</p>
+        <ul>
+          <li><b>Antibiotics:</b> sulfamethoxazole (TMP-SMX), sulfadiazine, sulfisoxazole, ciprofloxacin, ofloxacin, norfloxacin, nalidixic acid, chloramphenicol</li>
+          <li><b>Antimalarial / rheum:</b> chloroquine, hydroxychloroquine, quinine, sulfasalazine</li>
+          <li><b>Analgesic:</b> aspirin ≤ 1 g/day</li>
+          <li><b>Diabetes:</b> glyburide, tolbutamide</li>
+          <li><b>Other:</b> vitamin K, vitamin C (usual doses), phenazopyridine, dimercaprol, doxorubicin, 4-aminosalicylic acid, mafenide</li>
+        </ul>
+        <p><b>No CPIC recommendation (insufficient evidence):</b> aspirin &gt; 1 g/day, gliclazide, glipizide, glimepiride, chlorpropamide, tolazamide, moxifloxacin, mesalamine, probenecid, sodium nitrite, dabrafenib, trametinib, nicorandil, sulfacetamide, nitrofural, mepacrine.</p>
+        <p><b>Caution:</b> megadose IV vitamin C has case reports of hemolysis and AKI.</p>
+      </div>
+
+      <div class="ref-section" data-sec="triggers">
+        <h3>Non-drug triggers</h3>
+        <ul>
+          <li><b>Infection</b> (pneumonia, hepatitis, CMV, typhoid, COVID-19)</li>
+          <li><b>Fava beans</b></li>
+          <li><b>Naphthalene</b> (mothballs)</li>
+          <li><b>DKA</b>, severe acidosis</li>
+          <li>Some herbal products (e.g. <i>Coptis</i>/huanglian); henna in infants</li>
+        </ul>
+      </div>
+
+      <div class="ref-section" data-sec="mgmt">
+        <h3>Management</h3>
+        <ol>
+          <li>Stop the offending drug; treat any precipitating infection.</li>
+          <li>IV fluids for hemoglobinuria; monitor creatinine and K⁺.</li>
+          <li>Daily CBC, retic, bilirubin, LDH until Hb stable.</li>
+          <li>Transfuse for symptomatic or severe anemia or brisk ongoing hemolysis.</li>
+          <li>Hematology consult for severe hemolysis, non-A– variant or chronic hemolysis.</li>
+          <li>Record as a structured Cerner health issue / alert; note the trigger in the discharge summary.</li>
+        </ol>
+      </div>
+
+      <div class="ref-section" data-sec="scenarios">
+        <h3>Common inpatient scenarios</h3>
+        <table>
+          <tr><th>Scenario</th><th>Avoid</th><th>Do instead</th></tr>
+          <tr><td><b>TLS</b></td><td>Rasburicase without G6PD in at-risk ancestry</td><td>Send G6PD before first dose; allopurinol + hydration meanwhile; discuss urgent cases with hematology/pharmacy.</td></tr>
+          <tr><td><b>PJP prophylaxis</b></td><td>Dapsone</td><td>TMP-SMX first line; sulfa-allergic: atovaquone or pentamidine.</td></tr>
+          <tr><td><b>PJP treatment</b></td><td>Primaquine + clindamycin</td><td>TMP-SMX; atovaquone or IV pentamidine with ID.</td></tr>
+          <tr><td><b>Methemoglobinemia</b></td><td>Methylene blue</td><td>Stop agent, O₂, transfusion/exchange, hyperbaric O₂; call BC Drug and Poison Information Centre.</td></tr>
+          <tr><td><b>Vasoplegia</b></td><td>Methylene blue</td><td>Hydroxocobalamin (red urine/serum; interferes with co-oximetry and dialysis blood-leak alarms).</td></tr>
+          <tr><td><b>Cystitis</b></td><td>Nitrofurantoin</td><td>Fosfomycin, cephalexin or TMP-SMX.</td></tr>
+          <tr><td><b>Malaria</b></td><td>Primaquine / tafenoquine untested</td><td>Chloroquine/HCQ, quinine, artemisinin therapy per ID; radical cure after quantitative G6PD.</td></tr>
+          <tr><td><b>Coombs-negative hemolysis</b></td><td>Trusting a mid-episode normal G6PD</td><td>Ask about fava beans, drugs, infection; smear; repeat G6PD in ~3 months.</td></tr>
+        </table>
+      </div>
+
+      <div class="ref-section" data-sec="pearls">
+        <h3>Pearls</h3>
+        <ul>
+          <li>Significant methemoglobinemia: SpO₂ plateaus ~85% regardless of true saturation; look for an SpO₂–PaO₂ gap.</li>
+          <li>A– variant hemolysis is usually self-limited, but stop the drug anyway; Mediterranean variants can drop Hb 4–5 g/dL.</li>
+          <li>Treat a heterozygous female with an intermediate quantitative result as deficient for high-risk drugs.</li>
+        </ul>
+      </div>
+
+      <div class="ref-section" data-sec="refs">
+        <h3>References</h3>
+        <ul>
+          <li>Gammal RS, et al. Expanded CPIC Guideline for Medication Use in the Context of G6PD Genotype. <i>Clin Pharmacol Ther.</i> 2023;113(5):973–985. doi:10.1002/cpt.2735</li>
+          <li>CPIC G6PD page (updates): <a href="https://cpicpgx.org/gene/g6pd/" target="_blank" rel="noopener">cpicpgx.org/gene/g6pd</a></li>
+        </ul>
+      </div>
+    </section>
+
+    <footer>
+      Decision support only. Medication matching is by name and may miss combination products or local naming; confirm with pharmacy.
+      Risk categories: CPIC 2023. <span id="modeNote"></span>
+    </footer>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

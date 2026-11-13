@@ -29,6 +29,6 @@ What the screen shows (top to bottom)
 To check before real use
   - Confirm the local Cerner lab codes for G6PD and the hemolysis labs (app.js: G6PD_LOINC, HEMO).
   - Name matching may miss combination products or local naming; confirm with pharmacy.
-  - Toolkit tab: app.js exposes window.G6PD = { loadAll, renderAll, classify, RULES }.
+  - Also a Hospitalist Toolkit tab: hospitalist-toolkit/tools/g6pd/ (same index.html and app.js; keep the two copies in step).
 
 Source: Gammal RS et al. Clin Pharmacol Ther 2023;113(5):973–985 (CPIC G6PD guideline).
