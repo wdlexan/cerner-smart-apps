@@ -277,6 +277,7 @@ function setChart(raw, note, errors, source) {
   drawAll(); symPreview();
   // ASUC card: fill HR, temp, Hb, ESR, CRP and albumin for Truelove-Witts, Oxford and Ho from the same chart read
   if (window.IBDAsuc) window.IBDAsuc.prefill(document.getElementById("asuc"), state.f);
+  if (window.IBDLabCards) window.IBDLabCards.update(state.f);
 }
 $("clear").onclick = () => { $("testsel").value = ""; setChart(null, "Open from Cerner to read the chart, or pick a made-up patient:"); };
 const sel = $("testsel"), SAMPLES = window.IBD_SAMPLES || [];

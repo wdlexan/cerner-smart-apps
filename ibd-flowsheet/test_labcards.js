@@ -1,0 +1,18 @@
+const L = require("./labcards.js"); let p = 0, f = 0;
+const t = (n, c) => { c ? p++ : (f++, console.log("FAIL", n)); };
+t("blank", L.albuminAdvice({ alb: "" }).level === "none" && L.albuminAdvice({ alb: "" }).lines.length === 0);
+t("normal", L.albuminAdvice({ alb: 38 }).lines.length === 0);
+t("mild", L.albuminAdvice({ alb: 33 }).level === "info");
+t("low", L.albuminAdvice({ alb: 28 }).level === "action" && /colectomy/.test(L.albuminAdvice({ alb: 28 }).lines.join(" ")));
+t("very low", L.albuminAdvice({ alb: 22 }).level === "urgent");
+t("corr Ca", L.albuminAdvice({ alb: 30, ca: 2.0 }).corrCa === 2.2);
+t("no Ca", L.albuminAdvice({ alb: 30 }).corrCa === null);
+t("mentions anti-TNF", /Infliximab/.test(L.albuminAdvice({ alb: 30 }).lines.join(" ")));
+t("high IHC", L.cmvAdvice({ bx: "high" }).level === "action" && /ganciclovir/.test(L.cmvAdvice({ bx: "high" }).lines.join(" ")));
+t("low IHC", L.cmvAdvice({ bx: "low" }).level === "info");
+t("neg", L.cmvAdvice({ bx: "neg" }).level === "none");
+t("no trigger", L.cmvAdvice({ bx: "none" }).level === "none");
+t("steroid refractory", L.cmvAdvice({ bx: "none", steroidIV: true }).level === "action");
+t("thio only", L.cmvAdvice({ bx: "none", thio: true }).level === "info");
+t("cdiff line", /difficile/.test(L.cmvAdvice({ bx: "none", steroidIV: true }).lines.join(" ")) && !/difficile/.test(L.cmvAdvice({ bx: "none", steroidIV: true, cdiffNeg: true }).lines.join(" ")));
+console.log(p + " passed, " + f + " failed");
