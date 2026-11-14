@@ -14,3 +14,7 @@ Two cards in the IBD tab (ibd-flowsheet/labcards.js), UNVERIFIED drafts from gen
 - CMV: when to suspect (steroid-refractory UC, thiopurine, deep ulcers), biopsy with IHC, how to read low versus high density, ganciclovir outline, what to do with immunosuppression and the surgeon. Shows any CMV result already in the chart.
 - Albumin: fills from the chart; explains severity (under 30 g/L), anti-TNF clearance, protein-bound drugs, corrected calcium calculator, VTE and surgery risk, nutrition.
 - Tests: node ibd-flowsheet/test_labcards.js
+
+## 17. IBD: Crohn disease outside the gut (extraintestinal manifestations)
+
+Card in the IBD tab (ibd-flowsheet/eim.js): eye, skin and mouth, joints and spine, liver and biliary, kidney, bone and nutrition, clots, heart, nerves. Each item says what it looks like, what to do, urgency (same day / this admission / routine) and whether it tracks the gut. Includes a "do not miss" box, the user's "pearls for hospitalists", and a search box. UNVERIFIED draft from general knowledge (ECCO consensus); the pearls' original reference numbers were not supplied. Tests: node ibd-flowsheet/test_eim.js

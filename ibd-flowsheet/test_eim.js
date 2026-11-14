@@ -1,0 +1,14 @@
+const E = require("./eim.js"); let p = 0, f = 0; const t = (n, c) => { c ? p++ : (f++, console.log("FAIL", n)); };
+const items = E.SYSTEMS.flatMap((s) => s.items);
+t("has systems", E.SYSTEMS.length >= 7);
+t("all fields", items.every((i) => i.n && i.look && i.act && i.why && E.UR[i.urgency] && E.REL[i.rel]));
+t("unique names", new Set(items.map((i) => i.n)).size === items.length);
+t("uveitis urgent", items.find((i) => /Uveitis/.test(i.n)).urgency === "urgent");
+t("PG: avoid debridement", /debridement/.test(items.find((i) => /Pyoderma/.test(i.n)).act));
+t("VTE urgent", items.find((i) => /thromboembolism/.test(i.n)).urgency === "urgent");
+t("find red eye", E.find("red eye").length >= 1);
+t("find blank", E.find("").length === 0);
+t("find none", E.find("zzzz").length === 0);
+t("find system", E.find("liver").length >= 2);
+t("pearls", E.PEARLS.length === 4);
+console.log(p + " passed, " + f + " failed");
