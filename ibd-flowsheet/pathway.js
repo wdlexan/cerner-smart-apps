@@ -35,7 +35,7 @@
         lines: ["Confirm active inflammation first (calprotectin, CRP, endoscopy) and exclude infection (C. difficile, CMV).", "Anti-TNF: therapeutic drug monitoring. Low level and no antibodies: optimise the dose or interval. Antibodies: switch within class with an immunomodulator, or switch class.", "Out of class: use the 'previously exposed' tiers below."], next: "" },
       { id: "asuc", title: "Acute severe colitis (admitted)", src: "general practice",
         lines: ["Admit. Exclude C. difficile. IV corticosteroid (for example methylprednisolone or hydrocortisone) and VTE prophylaxis; avoid opioids and anti-motility drugs.", "Assess response at about day 3 (stool frequency and CRP). Non-response: rescue with infliximab or cyclosporine, involve surgery early.", "Dose, timing and thresholds: take from your local ASUC protocol (not in the sources read here)."], next: "" },
-      { id: "surg", title: "Surgery", src: "general practice", lines: ["Refractory disease, toxic megacolon, perforation, or dysplasia or cancer. Involve colorectal surgery early rather than late."], next: "" }
+      { id: "surg", title: "Surgery", src: "general practice", lines: ["Refractory disease, toxic megacolon, perforation, or dysplasia or cancer. Involve colorectal surgery early rather than late. Triggers and abscess drainage rules: see the card 'when to drain an abscess and when to involve a surgeon' above."], next: "" }
     ],
     cd: [
       { id: "mild", title: "Mild, ileocecal, no high-risk features", src: "general practice",
@@ -45,7 +45,7 @@
       { id: "switch", title: "Not responding to the first advanced therapy", src: "general practice",
         lines: ["Confirm inflammation (calprotectin, CRP, endoscopy or imaging) and exclude other causes: infection, strictures, bile-acid diarrhoea, bacterial overgrowth.", "Anti-TNF: therapeutic drug monitoring, then optimise or switch within class with immunomodulator, or switch class.", "Use the 'previously exposed' tiers below."], next: "" },
       { id: "perianal", title: "Perianal fistulizing disease", src: "general practice",
-        lines: ["Define anatomy first (examination under anaesthesia, MRI pelvis), drain sepsis, consider seton.", "Anti-TNF (infliximab, with or without a thiopurine, or adalimumab) has the most evidence. Other classes have less data. Surgical and GI joint care."], next: "" },
+        lines: ["Define anatomy first (examination under anaesthesia, MRI pelvis), drain sepsis, consider seton.", "Anti-TNF (infliximab, with or without a thiopurine, or adalimumab) has the most evidence. Other classes have less data. Surgical and GI joint care. Any perianal abscess needs prompt drainage; see the abscess card above."], next: "" },
       { id: "stricture", title: "Stricturing (fibrostenotic) disease", src: "general practice",
         lines: ["Inflammatory narrowing may respond to medical therapy; a fibrotic stricture does not. Endoscopic dilation or surgery is usually needed for obstructive symptoms."], next: "" },
       { id: "postop", title: "After ileocecal resection", src: "general practice",
