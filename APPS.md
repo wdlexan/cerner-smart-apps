@@ -18,3 +18,7 @@ Two cards in the IBD tab (ibd-flowsheet/labcards.js), UNVERIFIED drafts from gen
 ## 17. IBD: Crohn disease outside the gut (extraintestinal manifestations)
 
 Card in the IBD tab (ibd-flowsheet/eim.js): eye, skin and mouth, joints and spine, liver and biliary, kidney, bone and nutrition, clots, heart, nerves. Each item says what it looks like, what to do, urgency (same day / this admission / routine) and whether it tracks the gut. Includes a "do not miss" box, the user's "pearls for hospitalists", and a search box. UNVERIFIED draft from general knowledge (ECCO consensus); the pearls' original reference numbers were not supplied. Tests: node ibd-flowsheet/test_eim.js
+
+## 18. IBD: VTE prophylaxis card
+
+Card in the IBD tab (ibd-flowsheet/vte.js): who gets prophylaxis (every admitted flare, rectal bleeding is not a reason to hold), start timing, agent and typical dose (enoxaparin 40 mg daily; UFH or 30 mg if CrCl under 30; obesity note), when to hold (severe bleeding, platelets under 50), and duration (until discharge and mobile; about 28 days after major abdominal or pelvic surgery, often extended after UC colectomy). Platelets fill from the chart. UNVERIFIED draft from general knowledge: confirm with local protocol and pharmacy. Tests: node ibd-flowsheet/test_vte.js

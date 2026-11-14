@@ -1,0 +1,17 @@
+const V = require("./vte.js"); let p = 0, f = 0; const t = (n, c) => { c ? p++ : (f++, console.log("FAIL", n)); };
+const j = (a) => a.lines.join(" ");
+const base = { ctx: "medical", flare: true, bleed: "none", plt: "", crcl: "", kg: "", prior: false, surg: "major" };
+t("flare gives drug", V.vteAdvice(base).level === "action" && /enoxaparin 40 mg/.test(j(V.vteAdvice(base))));
+t("rectal bleed not a reason", /NOT a reason/.test(j(V.vteAdvice({ ...base, bleed: "rectal" }))));
+t("severe bleed holds", V.vteAdvice({ ...base, bleed: "severe" }).level === "urgent");
+t("low platelets hold", V.vteAdvice({ ...base, plt: 40 }).level === "urgent");
+t("plt 60 monitor", /monitor the count/.test(j(V.vteAdvice({ ...base, plt: 60 }))));
+t("renal", /30 mg/.test(j(V.vteAdvice({ ...base, crcl: 20 }))));
+t("obese", /every 12 h/.test(j(V.vteAdvice({ ...base, kg: 140 }))));
+t("not flare", V.vteAdvice({ ...base, flare: false }).level === "info");
+t("medical duration", /until discharge/.test(j(V.vteAdvice(base))));
+t("colectomy 28 d", /28 days/.test(j(V.vteAdvice({ ...base, ctx: "surgery", surg: "colectomy" }))) && /colectomy for UC/.test(j(V.vteAdvice({ ...base, ctx: "surgery", surg: "colectomy" }))));
+t("minor surgery", !/28 days/.test(j(V.vteAdvice({ ...base, ctx: "surgery", surg: "minor" }))));
+t("neuraxial", /catheter/.test(j(V.vteAdvice({ ...base, ctx: "surgery", neuraxial: true }))));
+t("prior VTE", /Prior VTE/.test(j(V.vteAdvice({ ...base, prior: true }))));
+console.log(p + " passed, " + f + " failed");
