@@ -744,7 +744,14 @@ function renderWorkup() {
     </div>`;
 }
 
-function renderTreat() {
+function keepOpen(sel, fn) {
+  const el = $(sel), st = {};
+  el.querySelectorAll("details[data-k]").forEach(d => st[d.dataset.k] = d.open);
+  fn();
+  el.querySelectorAll("details[data-k]").forEach(d => { if (d.dataset.k in st) d.open = st[d.dataset.k]; });
+}
+function renderTreat() { keepOpen("#tab-treat", renderTreatInner); }
+function renderTreatInner() {
   const R = evaluate();
   const fits = new Set(R.filter(r => r.lvl >= 2).map(r => r.id));
   const hr = V("hr"), eg = L("egfr"), cc = crcl(), mh = medHits();
@@ -761,12 +768,16 @@ function renderTreat() {
   if (anti) chk.push([fits.has("dlb") || fits.has("pdd") ? "bad" : "warn", `On antipsychotic: ${anti.meds.join(", ")}` + (fits.has("dlb") || fits.has("pdd") ? " — Lewy features present: STOP haloperidol/typicals (severe sensitivity reactions)" : " — reassess need; mortality/stroke risk in dementia")]);
   const acNote = ac ? `On ${ac.meds.join(", ")} — anticoagulation is a relative contraindication.` : "";
 
-  const sec = (id, title, body) => `<details ${fits.has(id) ? "open" : ""}><summary>${esc(title)} ${fits.has(id) ? '<span class="pill ok">fits this patient</span>' : ""}</summary>${body}</details>`;
+  const nAlert = chk.filter(([c]) => c === "bad" || c === "warn").length, nBad = chk.filter(([c]) => c === "bad").length;
+  const badge = (txt, cls) => `<span class="cnt ${cls}">${txt}</span>`;
+  const grp = (k, title, b, body, open) => `<details class="card grp" data-k="${k}" ${open ? "open" : ""}><summary><span>${title}</span>${b}</summary><div class="grpbody">${body}</div></details>`;
+  const sec = (id, title, body) => `<details data-k="sec-${id}" ${fits.has(id) ? "open" : ""}><summary>${esc(title)} ${fits.has(id) ? '<span class="pill ok">fits this patient</span>' : ""}</summary>${body}</details>`;
   $("#tab-treat").innerHTML = `${deliriumBanner()}
-    <div class="card"><h2>Safety checks before starting a drug</h2>${chk.map(([c, t]) => `<div><span class="pill ${c}">${c === "ok" ? "OK" : c === "grey" ? "?" : "!"}</span> ${esc(t)}</div>`).join("")}
-      ${on("acute") ? '<p class="small"><b>Delirium active:</b> usually defer starting dementia drugs until recovered and the diagnosis is confirmed.</p>' : ""}</div>
+    ${grp("safety", "Safety checks before starting a drug", nAlert ? badge(`${nAlert} alert${nAlert > 1 ? "s" : ""}`, nBad ? "bad" : "warn") : badge("All OK", "ok"),
+      chk.map(([c, t]) => `<div><span class="pill ${c}">${c === "ok" ? "OK" : c === "grey" ? "?" : "!"}</span> ${esc(t)}</div>`).join("") +
+      (on("acute") ? '<p class="small"><b>Delirium active:</b> usually defer starting dementia drugs until recovered and the diagnosis is confirmed.</p>' : ""), nBad > 0)}
 
-    <div class="card"><h2>For every type (non-drug, first)</h2><ul class="small">
+    ${grp("every", "For every type (non-drug, first)", badge("8 items", ""), `<ul class="small">
       <li><b>Deprescribe</b> anticholinergics, benzodiazepines and sedatives (see Workup tab).</li>
       <li><b>Hearing aids / glasses</b>, treat depression and sleep apnea, correct B12/thyroid.</li>
       <li><b>Exercise</b> (aerobic + strength), social and cognitive activity, Mediterranean-style diet; manage BP, diabetes, lipids, smoking, alcohol.</li>
@@ -775,9 +786,9 @@ function renderTreat() {
       <li><b>Supports</b>: Alzheimer Society of BC First Link, Island Health home and community care, adult day programs, caregiver respite; OT home assessment.</li>
       <li><b>Behaviour (BPSD)</b>: DICE approach — Describe, Investigate (pain, constipation, retention, infection, meds), Create plan, Evaluate. Non-drug first.</li>
       <li><b>Follow-up</b>: specialist (geriatrics / neurology / memory clinic) for atypical, young-onset, rapid, or diagnostic uncertainty.</li>
-    </ul></div>
+    </ul>`)}
 
-    <div class="card"><h2>By type</h2>
+    ${grp("bytype", "By type", fits.size ? badge(`${fits.size} fit${fits.size > 1 ? "" : "s"} this patient`, "hit") : badge("none fit yet", ""), `
     ${sec("ad", "Alzheimer disease", `<ul class="small">
       <li><b>Cholinesterase inhibitor</b> (mild–moderate–severe): donepezil, rivastigmine or galantamine — similar efficacy; choose by side effects and route. Reassess benefit at 3–6 months.</li>
       <li><b>Memantine</b>: moderate–severe AD, alone or added to a ChEI; useful when ChEI not tolerated.</li>
@@ -847,9 +858,9 @@ function renderTreat() {
       <li><b>Thiamine</b>: IV high dose if Wernicke suspected (e.g. 500 mg IV TID × 3 days, then 250 mg daily), otherwise oral thiamine; give before glucose.</li>
       <li>Abstinence support (naltrexone/acamprosate if appropriate), nutrition, re-test cognition after months of abstinence.</li></ul>`)}
     ${sec("dep", "Depression contributing", `<p class="small">SSRI (sertraline, escitalopram/citalopram — check QTc), behavioural activation; avoid TCAs and paroxetine (anticholinergic). Re-test cognition once mood improves.</p>`)}
-    </div>
+    `)}
 
-    <div class="card"><h2>Dementia drug dosing (Canadian products)</h2>
+    ${grp("dosing", "Dementia drug dosing (Canadian products)", badge("5 drugs", ""), `
       <table>
         <tr><th>Drug</th><th>Start</th><th>Titrate</th><th>Target / max</th><th>Key cautions</th></tr>
         <tr><td>Donepezil</td><td>5 mg qHS (or AM if vivid dreams)</td><td>after 4–6 weeks</td><td>10 mg daily</td><td>Bradycardia, syncope, GI, weight loss, insomnia/dreams, urinary incontinence</td></tr>
@@ -858,8 +869,7 @@ function renderTreat() {
         <tr><td>Galantamine ER</td><td>8 mg daily with breakfast</td><td>every 4 weeks</td><td>16–24 mg daily</td><td>Avoid if CrCl &lt;9 or severe hepatic impairment; max 16 mg if moderate renal/hepatic</td></tr>
         <tr><td>Memantine</td><td>5 mg daily</td><td>by 5 mg weekly</td><td>10 mg BID (20 mg/day)</td><td>Dizziness, confusion, constipation; CrCl &lt;30: max 5 mg BID</td></tr>
       </table>
-      <p class="small muted">All ChEIs: check HR/ECG first, warn about GI effects, stop or reduce if HR &lt;50, syncope or weight loss. Switching between ChEIs is reasonable if one is not tolerated. Check current product monographs and BC PharmaCare coverage (Special Authority may apply).</p>
-    </div>`;
+      <p class="small muted">All ChEIs: check HR/ECG first, warn about GI effects, stop or reduce if HR &lt;50, syncope or weight loss. Switching between ChEIs is reasonable if one is not tolerated. Check current product monographs and BC PharmaCare coverage (Special Authority may apply).</p>`)}`;
 }
 
 const REF = [
