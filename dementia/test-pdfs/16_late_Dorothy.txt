@@ -1,0 +1,56 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, Dorothy                    DOB: 1938-04-27     Sex: F
+MRN: TESTDEM16                            Age: 88
+Admitted: 2026-11-14 (Hospitalist)
+
+HOSPITALIST CONSULT NOTE - ORTHOPEDICS
+Date of service: 2026-11-14 14:10
+88 F admitted with a right hip fracture after a fall. Daughter reports very slowly
+progressive memory loss over 6 years: repeats stories and forgets recent conversations, but
+language, attention and finding her way around are fine. Daughter manages her medications
+(blister pack) and bills. No hallucinations, no tremor, does not act out dreams. Memory
+clinic 2025: other domains relatively spared on testing; amyloid PET was negative. Alert and
+attentive, 4AT 0. MoCA 21/30 (recall 0/5; clock, cube, fluency and trails normal).
+2026-11-14 08:00 BP: 138/72 HR: 68 RR: 16 Temp: 36.8 C SpO2: 96% Weight: 54 kg
+
+LABORATORY RESULTS
+Collected: 2026-11-14 05:30
+Test                      Result           Units           Reference       Flag
+
+Vitamin B12                   380              pmol/L          148 - 600       
+TSH                           2.7              mIU/L           0.35 - 5        
+Calcium                       2.3              mmol/L          2.1 - 2.55      
+Glucose                       6                mmol/L          3.6 - 7.8       
+Sodium                        138              mmol/L          135 - 145       
+Hemoglobin                    122              g/L             120 - 160       
+Creatinine                    76               umol/L          45 - 90         
+eGFR                          61               mL/min/1.73m2   60 - 200        
+
+ACTIVE MEDICATION ORDERS (2026-11-15)
+Amlodipine 5 mg PO daily
+Acetaminophen 1 g PO QID
+Hydromorphone 0.5 mg PO q4h PRN pain
+Enoxaparin 40 mg SC daily
+
+ACTIVE PROBLEM LIST
+Hip fracture, right intertrochanteric
+Hypertension
+Osteoarthritis
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Dorothy MRN TESTDEM16         Page 1
+RADIOLOGY REPORTS
+MRI BRAIN
+Date of exam: 2025-10-11 11:00
+FINDINGS:
+Severe bilateral hippocampal atrophy, MTA score 4, with a hippocampal sclerosis pattern, out
+of proportion to the mild generalized atrophy. Parietal lobes relatively preserved. No
+significant white matter disease. No infarcts.
+IMPRESSION:
+Disproportionate hippocampal atrophy.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Dorothy MRN TESTDEM16         Page 2

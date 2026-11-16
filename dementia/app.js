@@ -29,6 +29,8 @@ const FEATURES = [
   { id: "iadl", g: "Course & function", label: "Decline interferes with independence (IADLs: finances, meds, cooking, driving) — dementia rather than MCI", where: "notes", re: /(?:needs?|requires?|requiring) (?:help|assistance|support) with (?:his |her |their )?(?:finances|bills|medications|meds|banking|cooking|shopping)|(?:family|wife|husband|daughter|son) (?:now )?(?:manages|does|handles) (?:his |her |their |the )?(?:finances|bills|medications|meds)|blister pack|no longer (?:able to )?(?:drive|driving|cook|manage)|stopped driving|dependent for (?:i?adls|iadl)/i },
   { id: "early", g: "Course & function", label: "Symptom onset before age 65 (young-onset)", where: "manual" },
   // Cognitive domains
+  { id: "age80", g: "Course & function", label: "Age 80 or older (LATE is mainly a disease of the oldest old)", where: "age" },
+  { id: "memonly", g: "Cognitive profile", label: "Memory impaired with other domains relatively spared (pure amnestic)", where: "notes", re: /other (?:cognitive )?domains (?:are |were )?(?:relatively )?(?:spared|preserved|intact)|isolated (?:memory|amnestic)|pure(?:ly)? amnestic|amnestic single[- ]domain/i },
   { id: "amnestic", g: "Cognitive profile", label: "Memory-led (repeats questions, misplaces items, forgets recent events)", where: "notes", re: /memory (?:loss|impair|decline|problems|difficult|concerns)|short[- ]term memory|forgetful|repeat(?:s|ing) (?:the same )?(?:questions|stories|himself|herself|themselves)|misplac/i },
   { id: "executive", g: "Cognitive profile", label: "Executive dysfunction (planning, multitasking, judgement)", where: "notes", re: /executive (?:dys)?function|poor (?:planning|judg(?:e)?ment|insight)|difficulty (?:planning|organizing|multitask)/i },
   { id: "speed", g: "Cognitive profile", label: "Slowed processing / psychomotor slowing", where: "notes", re: /slow(?:ed)? (?:processing|thinking|mentation)|psychomotor (?:slowing|retardation)|bradyphrenia/i },
@@ -87,6 +89,7 @@ const FEATURES = [
   // Imaging (from CT/MRI reports)
   { id: "imgdone", g: "Imaging findings", label: "CT or MRI head on file", where: "imgany" },
   { id: "mta", g: "Imaging findings", label: "Medial temporal / hippocampal atrophy (AD pattern)", where: "imaging", re: /(?:mesial|medial) temporal (?:lobe )?atrophy|hippocamp\w* (?:volume loss|atrophy)|MTA score [2-4]/i },
+  { id: "hipdisp", g: "Imaging findings", label: "Severe hippocampal atrophy / hippocampal sclerosis out of proportion to other atrophy (LATE)", where: "imaging", re: /hippocampal sclerosis|(?:severe|marked) (?:bilateral )?hippocamp\w* (?:atrophy|volume loss)|hippocamp\w* (?:atrophy|volume loss) out of proportion|disproportionate hippocamp|MTA score 4/i },
   { id: "parietal", g: "Imaging findings", label: "Parietal / precuneus / posterior atrophy", where: "imaging", re: /parietal (?:lobe )?(?:atrophy|volume loss)|precuneus|posterior cortical atrophy/i },
   { id: "ftatrophy", g: "Imaging findings", label: "Frontal and/or anterior temporal atrophy (FTD pattern)", where: "imaging", re: /frontal (?:lobe |predominant )?(?:atrophy|volume loss)|frontotemporal (?:atrophy|volume loss)|anterior temporal (?:lobe )?atrophy|knife[- ]edge/i },
   { id: "svd", g: "Imaging findings", label: "Small-vessel disease / white-matter change", where: "imaging", re: /white matter (?:hypo|hyper)?(?:intens|dens|change|disease|lesion)|periventricular (?:white matter )?(?:hypo|hyper|change)|small[- ]vessel (?:ischemic )?(?:disease|change)|microangiopath|leuko-?araiosis|fazekas (?:grade |score )?[1-3]/i },
@@ -300,9 +303,16 @@ function preFill() {
     if (f.where === "notes" || f.where === "both") for (const n of notes) { snip = findMatch(n.text, f.re); if (snip) { src = `${n.title} ${fmtDate(n.date)}`; break; } }
     if (!snip && (f.where === "cond" || f.where === "both")) { snip = findMatch(condText, f.re); if (snip) src = "Problem list"; }
     if (!snip && f.where === "imaging") for (const im of S.imaging) { snip = findMatch(im.text, f.re); if (snip) { src = `${im.title} ${fmtDate(im.date)}`; break; } }
+    if (f.where === "age" && S.patient?.birthDate) { const a = Math.floor((Date.now() - new Date(S.patient.birthDate)) / 31557600000); if (a >= 80) { snip = "age " + a; src = "Demographics"; } }
     if (f.where === "imgany" && S.imaging.length) { snip = S.imaging.map(i => `${i.title} ${fmtDate(i.date)}`).join("; "); src = "Imaging"; }
     if (f.id === "pdfirst" && snip) snip += " — confirm motor symptoms preceded cognitive change by ≥1 year";
     S.feat[f.id] = { on: !!snip, src: snip ? "chart" : null, snip: snip ? `${src}: ${snip}` : "" };
+  }
+  // Amyloid / p-tau result mentioned in notes or reports
+  const allTxt = S.docs.concat(S.imaging).map(n => n.text).join("\n");
+  if (S.bio.amyloid === "nd") {
+    if (findMatch(allTxt, /amyloid PET (?:scan )?(?:was |is )?negative|negative amyloid|amyloid[- ]negative|(?:p-?tau ?217|amyloid 42\/40)[^.]{0,30}(?:normal|negative|low probability)/i)) S.bio.amyloid = "neg";
+    else if (findMatch(allTxt, /amyloid PET (?:scan )?(?:was |is )?positive|positive amyloid|amyloid[- ]positive|(?:p-?tau ?217|amyloid 42\/40)[^.]{0,30}(?:elevated|positive|high probability)/i)) S.bio.amyloid = "pos";
   }
   (S.demo?.preset || []).forEach(id => { S.feat[id] = { on: true, src: "user", snip: "Preset for this test patient (bedside item)" }; });
   // Cognitive scores in notes
@@ -382,7 +392,7 @@ function evaluate() {
     if (on("lvppa")) { why.push("logopenic aphasia (usually AD)"); lvl++; }
     if (on("visuo") && !on("amnestic")) why.push("visuospatial-led (possible posterior cortical atrophy variant)");
     if (amy === "pos") { why.push("amyloid/p-tau biomarker POSITIVE"); lvl += 2; }
-    if (amy === "neg") { why.push("amyloid/p-tau biomarker NEGATIVE — AD unlikely"); lvl = Math.min(lvl, 1) - 1; }
+    if (amy === "neg") { why.push("amyloid/p-tau biomarker NEGATIVE — AD unlikely"); lvl = Math.min(lvl, 1) - 1; next.push("Amyloid-negative memory loss: consider LATE (see below), hippocampal sclerosis, PART, depression, medications"); }
     if (amy === "nd") next.push("If early-stage and treatment-eligible, or atypical/young: plasma p-tau217 (LifeLabs/Dynacare) → confirm with amyloid PET or CSF");
     next.push("MRI brain (coronal hippocampal views) if not done", "Exclude reversible contributors (Workup tab)");
     add({ id: "ad", name: dementiaLevel ? "Alzheimer disease" : "Alzheimer disease (MCI vs dementia — function not yet documented)", lvl: lvl >= 4 ? 3 : lvl >= 2 ? 2 : lvl >= 1 ? 1 : 0, why, next });
@@ -460,6 +470,18 @@ function evaluate() {
     add({ id: "rpd", name: cjd ? "Rapidly progressive dementia — prion disease (CJD) concern" : "Rapidly progressive dementia", lvl: cjd ? 3 : 2,
       why: [on("rapid") && "rapid course", on("myoclonus") && "myoclonus/ataxia", on("cjdmri") && "CJD-pattern DWI", S.bio.rtquic === "pos" && "RT-QuIC positive"].filter(Boolean),
       next: ["Urgent neurology", "MRI brain with DWI/FLAIR", "EEG (periodic sharp-wave complexes; non-convulsive status)", "LP: cell count, protein, glucose, oligoclonal bands, 14-3-3, total tau, RT-QuIC", "Serum + CSF autoimmune encephalitis panel (NMDA, LGI1, CASPR2…), paraneoplastic panel, consider CT chest/abdo/pelvis", "TSH, anti-TPO (steroid-responsive encephalopathy), HIV, syphilis, B12, ammonia, drugs/toxins", "If CJD suspected: notify infection prevention (instrument handling) and public health"] });
+  }
+  // LATE (Wolk et al. 2025)
+  {
+    const base = on("amnestic") && (on("gradual") || on("memonly")) && (on("mta") || on("hipdisp"));
+    const why = [on("age80") && "age ≥80", on("amnestic") && "memory-led", on("gradual") && "slow progression", on("memonly") && "other domains relatively spared", on("hipdisp") ? "hippocampal atrophy out of proportion / sclerosis" : on("mta") && "hippocampal atrophy", amy === "neg" && "amyloid NEGATIVE", amy === "pos" && "amyloid positive"].filter(Boolean);
+    let lvl = 0, name = "Limbic-predominant age-related TDP-43 encephalopathy (LATE)";
+    if (base && amy === "neg") { lvl = 3; name = "LATE — PROBABLE (amyloid negative)"; }
+    else if (base && amy === "pos" && on("hipdisp")) { lvl = 2; name = "LATE — POSSIBLE, with Alzheimer disease (LATE + AD: faster course)"; }
+    else if (base && amy === "nd" && (on("age80") || on("hipdisp"))) { lvl = 2; name = "LATE — POSSIBLE (amyloid not tested)"; }
+    else if (on("amnestic") && on("age80") && (on("mta") || on("hipdisp"))) lvl = 1;
+    add({ id: "late", name, lvl, why,
+      next: ["Amyloid test (p-tau217 or Aβ42/40 blood test, amyloid PET or CSF): negative → probable LATE; positive → AD ± LATE", "MRI with coronal hippocampal views: severe hippocampal atrophy / sclerosis, relatively spared parietal cortex", "FDG-PET (if available): medial temporal hypometabolism with relative sparing of parietal cortex", "There is no blood or imaging test for TDP-43 — diagnosis is clinical and confirmed only at autopsy"] });
   }
   // PSP (MDS 2017)
   {
@@ -643,7 +665,7 @@ function renderSubtype() {
   const R = evaluate();
   $("#tab-subtype").innerHTML = `${deliriumBanner()}
     <div class="card"><h2>Fit against each dementia type</h2>
-      <p class="small muted">Driven by the checklist on tab 2. Uses DLB consensus (McKeith 2017), bvFTD (Rascovsky 2011), PPA (Gorno-Tempini 2011), VASCOG-style vascular criteria, the PD 1-year rule, and simplified MDS PSP (2017), CBS (Armstrong 2013), MDS MSA (2022) and ALS (Gold Coast 2020) criteria. Many older patients have mixed pathology.</p>
+      <p class="small muted">Driven by the checklist on tab 2. Uses DLB consensus (McKeith 2017), bvFTD (Rascovsky 2011), PPA (Gorno-Tempini 2011), VASCOG-style vascular criteria, the PD 1-year rule, LATE (Wolk 2025), and simplified MDS PSP (2017), CBS (Armstrong 2013), MDS MSA (2022) and ALS (Gold Coast 2020) criteria. Many older patients have mixed pathology.</p>
       ${R.map(r => { const [c, t] = lvlInfo(r.lvl); return `<div class="fit ${c}"><b class="t">${esc(r.name)}</b> <span class="pill ${c === "strong" ? "ok" : c === "mod" ? "warn" : "grey"}">${t}</span>
         <div class="small"><b>Why:</b> ${esc(r.why.join("; ") || "no supporting features checked")}</div>
         ${r.lvl >= 1 ? `<div class="small"><b>Next:</b><ul>${r.next.map(n => `<li>${esc(n)}</li>`).join("")}</ul></div>` : ""}</div>`; }).join("")}
@@ -669,6 +691,7 @@ function renderWorkup() {
     rpd: "Urgent MRI DWI, EEG, LP (RT-QuIC, 14-3-3, autoimmune panel), paraneoplastic work-up.",
     alc: "Thiamine first; LFTs, Mg, PO4; re-test after abstinence.",
     dep: "PHQ-9 / GDS; treat and re-test.",
+    late: "MRI coronal hippocampal views (MTA score, hippocampal sclerosis); amyloid status (p-tau217 / PET / CSF) — negative supports LATE; FDG-PET if available; no TDP-43 test exists.",
     psp: "Eye movements (vertical saccades, downgaze), pull test; MRI midbrain (hummingbird, midbrain/pons ratio); levodopa trial; swallow assessment.",
     cbs: "MRI (asymmetric frontoparietal atrophy); amyloid biomarker (AD-CBS); DaT-SPECT may be abnormal; neuropsychology for apraxia/cortical sensory loss.",
     msa: "Orthostatic vitals, post-void residual, MRI (hot cross bun, putaminal rim), autonomic testing, sleep study / laryngoscopy for stridor; DaT-SPECT abnormal (does not separate from PD).",
@@ -743,7 +766,7 @@ function renderTreat() {
     ${sec("ad", "Alzheimer disease", `<ul class="small">
       <li><b>Cholinesterase inhibitor</b> (mild–moderate–severe): donepezil, rivastigmine or galantamine — similar efficacy; choose by side effects and route. Reassess benefit at 3–6 months.</li>
       <li><b>Memantine</b>: moderate–severe AD, alone or added to a ChEI; useful when ChEI not tolerated.</li>
-      <li><b>Anti-amyloid antibodies</b> (MCI or mild dementia due to AD with confirmed amyloid): lecanemab (Health Canada conditional approval Oct 2025, APOE ε4 non-carriers/heterozygotes) and donanemab (approved May 2026). Need amyloid PET/CSF, APOE genotype, baseline MRI and scheduled MRIs for ARIA, infusion capacity. Not yet on public drug plans — specialist-led. ${esc(acNote)} ${on("bleeds") ? "<b>Imaging shows microbleeds/siderosis — likely ineligible.</b>" : ""} ${S.bio.apoe === "e4hom" ? "<b>APOE ε4 homozygote — excluded from lecanemab in Canada.</b>" : ""}</li>
+      <li><b>Anti-amyloid antibodies</b> (MCI or mild dementia due to AD with confirmed amyloid): lecanemab (Health Canada conditional approval Oct 2025, APOE ε4 non-carriers/heterozygotes) and donanemab (approved May 2026). Need amyloid PET/CSF, APOE genotype, baseline MRI and scheduled MRIs for ARIA, infusion capacity. Not yet on public drug plans — specialist-led. ${esc(acNote)} ${on("bleeds") ? "<b>Imaging shows microbleeds/siderosis — likely ineligible.</b>" : ""} ${S.bio.apoe === "e4hom" ? "<b>APOE ε4 homozygote — excluded from lecanemab in Canada.</b>" : ""} ${S.bio.amyloid === "neg" ? "<b>Amyloid negative — not a candidate.</b>" : ""}</li>
       <li><b>Agitation/psychosis</b> after non-drug measures: risperidone is the only Health Canada–indicated antipsychotic (short-term, severe AD aggression/psychosis); citalopram or trazodone are alternatives. Review and taper every 3 months.</li></ul>`)}
     ${sec("dlb", "Dementia with Lewy bodies", `<ul class="small">
       <li><b>Cholinesterase inhibitor</b> — often a larger benefit than in AD, including hallucinations and fluctuations (rivastigmine or donepezil). Memantine can be added.</li>
@@ -772,6 +795,11 @@ function renderTreat() {
     ${sec("rpd", "Rapidly progressive dementia / CJD", `<ul class="small">
       <li>Treat the treatable: autoimmune encephalitis → steroids/IVIG/plasma exchange (neurology); infection; metabolic; malignancy.</li>
       <li>CJD: no disease-modifying therapy — supportive and palliative care; infection prevention notification; report to public health and the Canadian CJD Surveillance System.</li></ul>`)}
+    ${sec("late", "LATE (limbic-predominant age-related TDP-43 encephalopathy)", `<ul class="small">
+      <li><b>No disease-specific treatment.</b> A cholinesterase inhibitor trial is reasonable (symptomatic memory benefit is plausible; no LATE-specific trials). Memantine for moderate–severe stages.</li>
+      <li><b>Anti-amyloid antibodies do not treat LATE.</b> Amyloid-negative patients are not candidates; in mixed LATE + AD, co-pathology may reduce benefit — specialist decision.</li>
+      <li><b>Prognosis</b>: pure LATE usually progresses more slowly than Alzheimer disease; LATE + AD progresses faster than either alone. Useful for planning and goals-of-care conversations.</li>
+      <li>Same general care as other dementias: deprescribing, hearing/vision, exercise, safety, capacity and supports.</li></ul>`)}
     ${sec("psp", "Progressive supranuclear palsy", `<ul class="small">
       <li><b>No disease-modifying treatment.</b> Levodopa trial (titrate to ~1000 mg/day over 1–2 months; stop if no benefit) — a minority get modest help early. Amantadine sometimes tried.</li>
       <li><b>Falls</b>: PT, weighted wheeled walker, hip protectors, home safety; avoid sedatives.</li>
@@ -828,6 +856,7 @@ const REF = [
   ["Primary progressive aphasia", "Rare", "Language first: semantic (loses word meaning), non-fluent (agrammatic, effortful), logopenic (word-finding pauses, poor repetition → AD).", "Language exam.", "Left anterior temporal / fronto-insular / temporoparietal atrophy", "Speech therapy; treat logopenic as AD"],
   ["Normal pressure hydrocephalus", "Uncommon, treatable", "Gait disturbance first (magnetic, wide-based), then urinary urgency/incontinence and slowed cognition.", "Gait apraxia.", "Ventriculomegaly (Evans >0.3), DESH", "Tap test → VP shunt"],
   ["Creutzfeldt–Jakob / rapidly progressive", "Rare", "Decline over weeks–months; myoclonus, ataxia, visual and behavioural change.", "Myoclonus, startle, ataxia, pyramidal/extrapyramidal signs.", "DWI cortical ribboning, caudate/putamen; EEG PSWCs; CSF RT-QuIC", "Supportive; exclude autoimmune/treatable causes"],
+  ["LATE (limbic-predominant age-related TDP-43 encephalopathy)", "Very common at autopsy over 80 (~40%); co-exists with AD in about half", "Slowly progressive amnestic syndrome in the oldest old; other domains relatively spared; mimics AD.", "Often none beyond memory loss.", "Severe hippocampal atrophy / sclerosis out of proportion; amyloid negative (probable) or present with disproportionate hippocampal loss (possible)", "ChEI trial; not an anti-amyloid candidate if amyloid negative; slower course"],
   ["Progressive supranuclear palsy (PSP)", "Uncommon; age 60s+", "Early falls (backwards), slowed thinking, apathy, executive problems, dysarthria/dysphagia.", "Vertical supranuclear gaze palsy (downgaze), slow vertical saccades, axial rigidity, surprised stare, applause sign; little tremor.", "Midbrain atrophy (hummingbird), low midbrain/pons ratio", "Supportive; levodopa trial; falls and swallow care"],
   ["Corticobasal syndrome (CBS)", "Rare", "Asymmetric clumsy, stiff limb; apraxia; alien limb; non-fluent speech; executive and visuospatial deficits; memory relatively spared early.", "Asymmetric rigidity, dystonia, myoclonus, cortical sensory loss.", "Asymmetric frontoparietal atrophy; amyloid testing (≈¼ are AD)", "Supportive; levodopa trial; myoclonus/dystonia treatment; treat as AD if amyloid+"],
   ["Multiple system atrophy (MSA)", "Rare; age 50s–60s", "Autonomic failure (fainting on standing, bladder, erectile dysfunction) plus parkinsonism (MSA-P) or ataxia (MSA-C); RBD, stridor. Cognition usually spared.", "Orthostatic hypotension, poor levodopa response, cerebellar signs, antecollis, stridor.", "Hot cross bun sign, putaminal rim, pontine/MCP atrophy", "Orthostatic hypotension and bladder care; levodopa trial; CPAP/airway"],
@@ -854,6 +883,7 @@ function renderRef() {
       <li>Sachdev P et al. VASCOG criteria for vascular cognitive disorders. Alzheimer Dis Assoc Disord 2014.</li>
       <li>Emre M et al. Clinical diagnostic criteria for dementia associated with Parkinson's disease. Mov Disord 2007.</li>
       <li>Höglinger GU et al. MDS clinical diagnostic criteria for PSP. Mov Disord 2017. Armstrong MJ et al. Criteria for corticobasal degeneration. Neurology 2013.</li>
+      <li>Wolk DA et al. Clinical criteria for limbic-predominant age-related TDP-43 encephalopathy (LATE). Alzheimer's Dement 2025;21:e14202.</li>
       <li>Wenning GK et al. MDS criteria for the diagnosis of multiple system atrophy. Mov Disord 2022.</li>
       <li>Shefner JM et al. Gold Coast criteria for ALS. Clin Neurophysiol 2020. Strong MJ et al. ALS-FTSD revised criteria. ALS Frontotemporal Degener 2017.</li>
       <li>Health Canada: lecanemab (Leqembi) NOC/c Oct 2025; donanemab (Kisunla) May 2026. Plasma p-tau217 available in Canada through LifeLabs/Dynacare.</li>

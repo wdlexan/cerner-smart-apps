@@ -30,7 +30,7 @@ If a different client ID is registered for this app, change it on line 15 of `la
 ## What each tab does
 1. **Overview** – delirium flag, cognitive scores, stage, imaging, core bloods, meds affecting cognition, leading subtype fits, CCCDTD5 steps.
 2. **Cognition & features** – MoCA/MMSE/Mini-Cog/RUDAS entry; ~50 checklist items pre-ticked from notes, problem list and imaging reports (with the source snippet, labelled "from chart – confirm"); biomarker results.
-3. **Subtype fit** – each dementia type scored with reasons and next steps (DLB McKeith 2017, bvFTD Rascovsky, PPA Gorno-Tempini, vascular, PD 1-year rule, PSP (MDS 2017), corticobasal syndrome (Armstrong 2013), MSA (MDS 2022), Huntington disease, ALS/ALS-FTD (Gold Coast 2020), NPH, rapidly progressive/CJD, alcohol, depression, mixed).
+3. **Subtype fit** – each dementia type scored with reasons and next steps (DLB McKeith 2017, bvFTD Rascovsky, PPA Gorno-Tempini, vascular, PD 1-year rule, PSP (MDS 2017), corticobasal syndrome (Armstrong 2013), MSA (MDS 2022), Huntington disease, ALS/ALS-FTD (Gold Coast 2020), LATE (Wolk 2025), NPH, rapidly progressive/CJD, alcohol, depression, mixed).
 4. **Workup** – reversible-cause bloods with status, medication review, imaging reports, other screens, type-specific tests.
 5. **Treatment** – bradycardia/renal/antipsychotic safety checks from the chart, non-drug care for everyone, treatment by type, Canadian dosing table, anti-amyloid notes.
 6. **Types reference** – symptoms, signs, imaging, treatment for each type; delirium vs dementia vs depression.
@@ -39,7 +39,7 @@ If a different client ID is registered for this app, change it on line 15 of `la
 Keyword matching is simple (with basic negation such as "no hydrocephalus"), so every chart flag needs bedside confirmation.
 
 ## Test patients (all made up)
-In the app: open `index.html?demo=1` … `?demo=15`, or pick from the dropdown in the blue box on the Overview tab. The box shows what the app should conclude.
+In the app: open `index.html?demo=1` … `?demo=16`, or pick from the dropdown in the blue box on the Overview tab. The box shows what the app should conclude.
 
 | # | Patient | Type | What it tests |
 |---|---------|------|---------------|
@@ -58,7 +58,8 @@ In the app: open `index.html?demo=1` … `?demo=15`, or pick from the dropdown i
 | 13 | Bernard, 64 M | MSA | Autonomic failure + parkinsonism + ataxia, stridor, hot cross bun; normal MoCA (DLB down-graded); tamsulosin flag |
 | 14 | Natalie, 46 F | Huntington disease | Chorea, affected mother, caudate atrophy, psychiatric change; tetrabenazine + depression |
 | 15 | Frank, 62 M | ALS-FTD | Split hand, tongue fasciculations, UMN+LMN, EMG, bvFTD features, orthopnea/NIV |
+| 16 | Dorothy, 88 F | LATE | Hip fracture; 6-year slow amnestic course, severe hippocampal atrophy, amyloid PET negative read from the note; not an anti-amyloid candidate |
 
-As PDFs: `test-pdfs/` has the same 15 patients as chart-extract PDFs for the Hospitalist Toolkit **Import PDF** button
+As PDFs: `test-pdfs/` has the same 16 patients as chart-extract PDFs for the Hospitalist Toolkit **Import PDF** button
 (choose "Open as a separate patient"; leave "Also keep the PDF text as a note" ticked). Rebuild them with
 `node make-test-pdfs.js && python3 make-test-pdfs.py` after editing `demo-patients.js`.

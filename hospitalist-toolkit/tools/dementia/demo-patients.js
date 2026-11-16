@@ -196,6 +196,18 @@
         { d: 0, title: "Hospitalist Progress Note", text: "EMG: active and chronic denervation in cervical, thoracic and lumbosacral regions. FVC 41% predicted. Started on BiPAP overnight." }
       ],
       imaging: [{ d: 2, title: "MRI BRAIN", text: "FINDINGS: Mild frontal atrophy. No infarcts. No mass. IMPRESSION: Mild frontal atrophy." }]
+    },
+    {
+      key: "late", expect: "LATE — probable (age 88, very slow amnestic course, other domains spared, severe hippocampal atrophy, amyloid PET negative read from the note); Alzheimer unlikely; not an anti-amyloid candidate.",
+      name: "DEMO, Dorothy", given: "Dorothy", family: "DEMO", sex: "female", birthDate: "1938-04-27", mrn: "TESTDEM16",
+      conds: ["Hip fracture, right intertrochanteric", "Hypertension", "Osteoarthritis"],
+      labs: [["Vitamin B12", "2132-9", 380, "pmol/L", 148, 600], ["TSH", "3016-3", 2.7, "mIU/L", 0.35, 5.0], ["Calcium", "17861-6", 2.30, "mmol/L", 2.10, 2.55],
+        ["Glucose", "2345-7", 6.0, "mmol/L", 3.6, 7.8], ["Sodium", "2951-2", 138, "mmol/L", 135, 145], ["Hemoglobin", "718-7", 122, "g/L", 120, 160],
+        ["Creatinine", "2160-0", 76, "umol/L", 45, 90], ["eGFR", "33914-3", 61, "mL/min/1.73m2", 60, 200]],
+      hr: 68, bp: "138/72", wt: 54,
+      meds: ["Amlodipine 5 mg PO daily", "Acetaminophen 1 g PO QID", "Hydromorphone 0.5 mg PO q4h PRN pain", "Enoxaparin 40 mg SC daily"],
+      docs: [{ d: 1, title: "Hospitalist Consult Note - Orthopedics", text: "88 F admitted with a right hip fracture after a fall. Daughter reports very slowly progressive memory loss over 6 years: repeats stories and forgets recent conversations, but language, attention and finding her way around are fine. Daughter manages her medications (blister pack) and bills. No hallucinations, no tremor, does not act out dreams. Memory clinic 2025: other domains relatively spared on testing; amyloid PET was negative. Alert and attentive, 4AT 0. MoCA 21/30 (recall 0/5; clock, cube, fluency and trails normal)." }],
+      imaging: [{ d: 400, title: "MRI BRAIN", text: "FINDINGS: Severe bilateral hippocampal atrophy, MTA score 4, with a hippocampal sclerosis pattern, out of proportion to the mild generalized atrophy. Parietal lobes relatively preserved. No significant white matter disease. No infarcts. IMPRESSION: Disproportionate hippocampal atrophy." }]
     }
   ];
   root.DEMENTIA_DEMOS = DEMOS;
