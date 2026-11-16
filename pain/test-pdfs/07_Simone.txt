@@ -1,0 +1,37 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, Simone                     DOB: 1982-08-07     Sex: F
+MRN: TESTPAIN07                           Age: 44
+Admitted: 2026-11-15 (Hospitalist)
+
+HOSPITALIST ADMISSION NOTE
+Date of service: 2026-11-15 14:10
+44 F admitted after a breakthrough seizure. Fibromyalgia with widespread pain for 6 years,
+poor sleep, fatigue. Started tramadol 3 months ago from a walk-in clinic. Pain 7/10. Not
+exercising.
+2026-11-15 08:00 BP: 132/76 HR: 84 RR: 16 Temp: 36.8 C SpO2: 98% Weight: 62 kg
+
+LABORATORY RESULTS
+Collected: 2026-11-15 05:30
+Test                      Result           Units
+
+eGFR                          110              mL/min/1.73m2
+Creatinine                    62               umol/L
+Sodium                        139              mmol/L
+
+ACTIVE MEDICATION ORDERS (2026-11-16)
+Tramadol 50 mg PO q6h
+Sertraline 150 mg PO daily
+Levetiracetam 500 mg PO BID
+Sumatriptan 50 mg PO PRN migraine
+Cyclobenzaprine 10 mg PO qHS
+
+ACTIVE PROBLEM LIST
+Fibromyalgia
+Epilepsy
+Major depressive disorder
+Migraine
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Simone MRN TESTPAIN07         Page 2

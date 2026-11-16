@@ -1,0 +1,38 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, Ruth                       DOB: 1945-03-19     Sex: F
+MRN: TESTPAIN06                           Age: 81
+Admitted: 2026-11-15 (Hospitalist)
+
+HOSPITALIST ADMISSION NOTE
+Date of service: 2026-11-15 14:10
+81 F admitted after a fall at home, no fracture. Chronic bilateral knee osteoarthritis pain
+for years, 6/10, limits walking. Takes ibuprofen 600 mg three times a day from her family
+doctor. Mood fine.
+2026-11-15 08:00 BP: 132/76 HR: 72 RR: 16 Temp: 36.8 C SpO2: 96% Weight: 70 kg
+
+LABORATORY RESULTS
+Collected: 2026-11-15 05:30
+Test                      Result           Units
+
+eGFR                          48               mL/min/1.73m2
+Creatinine                    98               umol/L
+Sodium                        136              mmol/L
+Platelets                     230              10*9/L
+
+ACTIVE MEDICATION ORDERS (2026-11-16)
+Ibuprofen 600 mg PO TID
+Apixaban 5 mg PO BID
+Ramipril 10 mg PO daily
+Hydrochlorothiazide 25 mg PO daily
+Acetaminophen 500 mg PO q6h PRN
+
+ACTIVE PROBLEM LIST
+Osteoarthritis of both knees
+Atrial fibrillation
+Hypertension
+Recurrent falls
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Ruth MRN TESTPAIN06         Page 2

@@ -1,0 +1,39 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, Victor                     DOB: 1956-05-14     Sex: M
+MRN: TESTPAIN02                           Age: 70
+Admitted: 2026-11-15 (Hospitalist)
+
+HOSPITALIST ADMISSION NOTE
+Date of service: 2026-11-15 14:10
+70 M admitted with left foot cellulitis. Chronic burning, electric pain in both feet for 5
+years from diabetic neuropathy, worse at night, with allodynia. Pain 7/10. Using oxycodone
+more often. Dizzy on standing. No falls.
+2026-11-15 08:00 BP: 132/76 HR: 82 RR: 18 Temp: 36.8 C SpO2: 96% Weight: 94 kg
+
+LABORATORY RESULTS
+Collected: 2026-11-15 05:30
+Test                      Result           Units
+
+eGFR                          24               mL/min/1.73m2
+Creatinine                    245              umol/L
+Sodium                        138              mmol/L
+Platelets                     260              10*9/L
+
+ACTIVE MEDICATION ORDERS (2026-11-16)
+Pregabalin 150 mg PO BID
+Amitriptyline 25 mg PO qHS
+Oxycodone 5 mg PO q4h PRN pain
+Insulin glargine 30 units SC qHS
+Cefazolin 2 g IV q8h
+Polyethylene glycol 3350 17 g PO daily
+
+ACTIVE PROBLEM LIST
+Type 2 diabetes mellitus
+Diabetic peripheral neuropathy
+Chronic kidney disease stage 4
+Cellulitis, left foot
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Victor MRN TESTPAIN02         Page 2

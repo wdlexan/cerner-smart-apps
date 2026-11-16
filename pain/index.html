@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pain Management</title>
+<script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+<style>
+  :root{--bg:#f6f7f9;--card:#fff;--ink:#1d2430;--muted:#5b6575;--line:#dde2ea;--accent:#2457a6;
+        --ok:#1f7a4d;--okbg:#e6f4ec;--warn:#9a5b00;--warnbg:#fff4dc;--bad:#a12626;--badbg:#fdeaea;--info:#e8f0fb}
+  *{box-sizing:border-box}
+  body{margin:0;font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+  header{background:#1d2a44;color:#fff;padding:10px 16px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+  header h1{font-size:17px;margin:0;font-weight:600}
+  header .pt{font-size:13px;opacity:.9}
+  header .mode{margin-left:auto;font-size:12px;background:#ffffff22;padding:2px 8px;border-radius:10px}
+  nav{display:flex;gap:2px;background:#fff;border-bottom:1px solid var(--line);padding:0 10px;overflow-x:auto}
+  nav button{border:0;background:none;padding:10px 14px;font:inherit;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
+  nav button.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+  main{padding:14px;max-width:1200px;margin:0 auto}
+  .tab{display:none}.tab.active{display:block}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:12px}
+  .card h2{font-size:15px;margin:0 0 8px}
+  .card h3{font-size:14px;margin:10px 0 6px}
+  .grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+  .banner{border-radius:8px;padding:10px 14px;margin-bottom:12px;border:1px solid}
+  .banner.bad{background:var(--badbg);border-color:#f0b4b4;color:var(--bad)}
+  .banner.warn{background:var(--warnbg);border-color:#f1d08a;color:var(--warn)}
+  .banner.ok{background:var(--okbg);border-color:#a9d9bf;color:var(--ok)}
+  .banner.info{background:var(--info);border-color:#b8cdee;color:#1d3f75}
+  .pill{display:inline-block;font-size:11px;padding:1px 7px;border-radius:9px;margin-left:4px;vertical-align:1px}
+  .pill.chart{background:#e8f0fb;color:#1d3f75}
+  .pill.ok{background:var(--okbg);color:var(--ok)}
+  .pill.warn{background:var(--warnbg);color:var(--warn)}
+  .pill.bad{background:var(--badbg);color:var(--bad)}
+  .pill.grey{background:#eceff3;color:var(--muted)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:5px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--muted);font-weight:600;background:#fafbfc}
+  .muted{color:var(--muted)}.small{font-size:12px}
+  label.chk{display:flex;gap:6px;align-items:flex-start;padding:3px 0;cursor:pointer}
+  label.chk input{margin-top:3px}
+  .snip{font-size:11px;color:var(--muted);margin-left:22px;font-style:italic}
+  .fit{border-left:5px solid #ccd;padding:8px 12px;margin:8px 0;background:#fafbfc;border-radius:4px}
+  .fit.strong{border-left-color:var(--ok);background:var(--okbg)}
+  .fit.mod{border-left-color:#d79b2a;background:var(--warnbg)}
+  .fit.weak{border-left-color:#c6ccd6}
+  .fit b.t{font-size:14px}
+  input[type=number],input[type=text],select{font:inherit;padding:4px 6px;border:1px solid var(--line);border-radius:5px}
+  input[type=number]{width:70px}
+  textarea{width:100%;min-height:340px;font:13px/1.45 ui-monospace,Consolas,monospace;padding:10px;border:1px solid var(--line);border-radius:6px}
+  button.btn{font:inherit;background:var(--accent);color:#fff;border:0;border-radius:6px;padding:7px 12px;cursor:pointer}
+  button.btn.sec{background:#e9edf3;color:var(--ink)}
+  details{border:1px solid var(--line);border-radius:6px;padding:6px 10px;margin:6px 0;background:#fff}
+  details summary{cursor:pointer;font-weight:600}
+  ul{margin:4px 0 4px 18px;padding:0}
+  li{margin:2px 0}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:4px 0}
+  .disclaimer{font-size:12px;color:var(--muted);margin-top:16px;text-align:center}
+  .grpgrid{align-items:start}
+  details.grp{padding:0;margin-bottom:0}
+  details.grp>summary{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;font-size:15px;font-weight:600;list-style:none;cursor:pointer}
+  details.grp>summary::-webkit-details-marker{display:none}
+  details.grp>summary::before{content:"▸";color:var(--muted);margin-right:-4px}
+  details.grp[open]>summary::before{content:"▾"}
+  details.grp>summary>span:first-of-type{flex:1}
+  details.grp[open]>summary{border-bottom:1px solid var(--line)}
+  details.grp>label,details.grp>.snip,details.grp>.row{margin-left:14px;margin-right:14px}
+  details.grp[open]{padding-bottom:8px}
+  .cnt{font-size:13px;font-weight:700;min-width:46px;text-align:center;padding:2px 9px;border-radius:12px;background:#eceff3;color:var(--muted)}
+  .cnt.hit{background:var(--accent);color:#fff}
+  .cnt.ok{background:var(--okbg);color:var(--ok)}
+  .cnt.warn{background:var(--warnbg);color:var(--warn)}
+  .cnt.bad{background:var(--badbg);color:var(--bad)}
+  .grpbody{padding:8px 14px 2px}
+  #tab-treat details.grp{margin-bottom:12px}
+  .sw{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:2px}
+  #tab-subtype details.grp{margin-bottom:12px}
+  #loading{padding:40px;text-align:center;color:var(--muted)}
+  .ctx td:first-child{width:180px;color:var(--muted);font-weight:600}
+  .calc{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;align-items:end}
+  .calc label{display:flex;flex-direction:column;font-size:12px;color:var(--muted);gap:3px}
+  .big{font-size:20px;font-weight:700}
+</style>
+</head>
+<body>
+<header>
+  <h1>Pain Management</h1>
+  <div class="pt" id="ptHeader">Loading patient…</div>
+  <div class="mode" id="modeTag"></div>
+</header>
+<nav id="tabs">
+  <button data-tab="overview" class="active">1. Overview</button>
+  <button data-tab="assess">2. Pain assessment</button>
+  <button data-tab="options">3. Medication options</button>
+  <button data-tab="plan">4. Plan (acute / chronic)</button>
+  <button data-tab="tools">5. Opioid tools</button>
+  <button data-tab="note">6. Note draft</button>
+</nav>
+<main>
+  <div id="loading">Reading chart…</div>
+  <section class="tab active" id="tab-overview"></section>
+  <section class="tab" id="tab-assess"></section>
+  <section class="tab" id="tab-options"></section>
+  <section class="tab" id="tab-plan"></section>
+  <section class="tab" id="tab-tools"></section>
+  <section class="tab" id="tab-note"></section>
+  <p class="disclaimer">Decision support only. Doses are typical starting points for adults and frail older adults — check renal/hepatic function, interactions, the product monograph and Island Health guidance. Chart flags come from keyword matching and must be confirmed.</p>
+</main>
+<script src="demo-patients.js"></script>
+<script src="drugs.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

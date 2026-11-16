@@ -4,7 +4,7 @@
    A tab is only loaded the first time you open it, and stays loaded when you switch away. */
 
 // To add a tool: put its files in tools/<folder>/ and add a line here.
-const TOOL_V = "20261116c"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
+const TOOL_V = "20261116d"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
 const TOOLS = [
   { key: "today", label: "Today (what changed)", path: "tools/today/index.html" },
   { key: "labs",  label: "Labs",                 path: "tools/labs/index.html" },
@@ -14,6 +14,7 @@ const TOOLS = [
   { key: "g6pd",  label: "G6PD check",           path: "tools/g6pd/index.html" },
   { key: "risk",  label: "Risk screen",          path: "tools/risk/index.html" },
   { key: "opioid", label: "Opioid safety",       path: "tools/opioid/index.html" },
+  { key: "pain",  label: "Pain management",      path: "tools/pain/index.html" },
   { key: "abx",   label: "Antibiotics",          path: "tools/abx/index.html" },
   { key: "cw",    label: "Choosing Wisely",      path: "tools/cw/index.html", keepHeader: true }, // its header holds the Look back control
   { key: "dx",    label: "Diagnosis check",      path: "tools/dx/index.html", keepHeader: true }, // its header holds the Look back control

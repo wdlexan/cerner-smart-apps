@@ -1,0 +1,36 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, Jordan                     DOB: 1988-02-11     Sex: M
+MRN: TESTPAIN03                           Age: 38
+Admitted: 2026-11-16 (Hospitalist)
+
+HOSPITALIST PROGRESS NOTE
+Date of service: 2026-11-16 14:10
+36 M post-op day 1 after ORIF of a right tibial fracture from a motorcycle crash. On
+Suboxone 16 mg daily for opioid use disorder for 3 years, last dose yesterday. Pain 9/10,
+not controlled with hydromorphone 1 mg. Worried about relapse. Wants to stay on Suboxone.
+2026-11-16 08:00 BP: 132/76 HR: 96 RR: 16 Temp: 36.8 C SpO2: 98% Weight: 78 kg
+
+LABORATORY RESULTS
+Collected: 2026-11-15 05:30
+Test                      Result           Units
+
+eGFR                          105              mL/min/1.73m2
+Creatinine                    74               umol/L
+ALT                           32               U/L
+Platelets                     240              10*9/L
+
+ACTIVE MEDICATION ORDERS (2026-11-16)
+Buprenorphine-naloxone 16 mg/4 mg SL daily
+Acetaminophen 1 g PO q6h
+Hydromorphone 1 mg PO q4h PRN pain
+Senna 17.2 mg PO qHS
+
+ACTIVE PROBLEM LIST
+Opioid use disorder
+Open reduction internal fixation, right tibial fracture
+Hepatitis C, treated
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Jordan MRN TESTPAIN03         Page 2

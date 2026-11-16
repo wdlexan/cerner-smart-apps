@@ -1,0 +1,40 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, Marcel                     DOB: 1955-12-03     Sex: M
+MRN: TESTPAIN05                           Age: 70
+Admitted: 2026-11-16 (Hospitalist)
+
+HOSPITALIST ADMISSION NOTE
+Date of service: 2026-11-16 14:10
+70 M with hepatocellular carcinoma and bone metastases to the thoracic spine and pelvis,
+cirrhosis with ascites. Severe back pain 9/10, worse lying flat. Since yesterday new leg
+weakness and difficulty voiding. Not yet seen by radiation oncology.
+2026-11-16 08:00 BP: 132/76 HR: 92 RR: 18 Temp: 36.8 C SpO2: 95% Weight: 66 kg
+
+LABORATORY RESULTS
+Collected: 2026-11-15 05:30
+Test                      Result           Units
+
+eGFR                          70               mL/min/1.73m2
+Creatinine                    88               umol/L
+ALT                           64               U/L
+Bilirubin total               42               umol/L
+INR                           1.6              
+Albumin                       27               g/L
+Platelets                     72               10*9/L
+Sodium                        131              mmol/L
+
+ACTIVE MEDICATION ORDERS (2026-11-16)
+Acetaminophen 1 g PO q6h
+Morphine 10 mg PO q4h PRN pain
+Spironolactone 100 mg PO daily
+Lactulose 20 g PO BID
+
+ACTIVE PROBLEM LIST
+Hepatocellular carcinoma with bone metastases
+Cirrhosis, alcohol-related
+Ascites
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Marcel MRN TESTPAIN05         Page 2

@@ -1,0 +1,39 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, Agnes                      DOB: 1941-09-02     Sex: F
+MRN: TESTPAIN01                           Age: 85
+Admitted: 2026-11-16 (Hospitalist)
+
+HOSPITALIST CONSULT NOTE - ORTHOPEDICS
+Date of service: 2026-11-16 14:10
+84 F with dementia admitted after a fall with a left hip fracture, awaiting surgery
+tomorrow. Grimacing with movement, PAINAD 6. Pain 8/10 when moved. Morphine SC PRN given
+four times overnight. No regional block documented. CAM negative today. Lives with daughter.
+2026-11-16 08:00 BP: 132/76 HR: 88 RR: 16 Temp: 36.8 C SpO2: 95% Weight: 52 kg
+
+LABORATORY RESULTS
+Collected: 2026-11-15 05:30
+Test                      Result           Units
+
+eGFR                          34               mL/min/1.73m2
+Creatinine                    128              umol/L
+Sodium                        134              mmol/L
+Platelets                     210              10*9/L
+ALT                           14               U/L
+
+ACTIVE MEDICATION ORDERS (2026-11-16)
+Morphine 2.5 mg SC q2h PRN pain
+Ramipril 5 mg PO daily
+Furosemide 20 mg PO daily
+Donepezil 10 mg PO daily
+Enoxaparin 30 mg SC daily
+
+ACTIVE PROBLEM LIST
+Hip fracture, left femoral neck
+Dementia
+Chronic kidney disease stage 3b
+Hypertension
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Agnes MRN TESTPAIN01         Page 2

@@ -1,0 +1,39 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, Glen                       DOB: 1967-07-30     Sex: M
+MRN: TESTPAIN04                           Age: 59
+Admitted: 2026-11-15 (Hospitalist)
+
+HOSPITALIST ADMISSION NOTE
+Date of service: 2026-11-15 14:10
+58 M admitted with pneumonia. Chronic low back pain for 12 years after lumbar stenosis; on
+oxycodone for 8 years, doses increased over time. Function poor, rarely leaves the house.
+Uses CPAP inconsistently. Drowsy this morning with SpO2 89% on room air. No naloxone at
+home.
+2026-11-15 08:00 BP: 132/76 HR: 78 RR: 14 Temp: 36.8 C SpO2: 92% Weight: 104 kg
+
+LABORATORY RESULTS
+Collected: 2026-11-15 05:30
+Test                      Result           Units
+
+eGFR                          88               mL/min/1.73m2
+Creatinine                    90               umol/L
+
+ACTIVE MEDICATION ORDERS (2026-11-16)
+Oxycodone CR 60 mg PO q12h
+Oxycodone 10 mg PO q4h PRN breakthrough pain
+Lorazepam 1 mg PO TID
+Gabapentin 600 mg PO TID
+Ceftriaxone 1 g IV q24h
+Azithromycin 500 mg PO daily
+
+ACTIVE PROBLEM LIST
+Chronic low back pain
+Lumbar spinal stenosis
+Obstructive sleep apnea
+Anxiety
+Community-acquired pneumonia
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Glen MRN TESTPAIN04         Page 2
