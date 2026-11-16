@@ -633,12 +633,14 @@ function renderScreen() {
       <div id="coginterp" class="small"></div>
       <p class="small muted">Pre-filled from notes where a score was found. Scores done during delirium or acute illness under-estimate baseline.</p>
     </div>
-    <div class="grid">
-      ${groups.map(g => `<div class="card"><h2>${esc(g)}</h2>${FEATURES.filter(f => f.g === g).map(f => {
+    <div class="row" style="margin-bottom:8px"><button class="btn sec" id="grpOpen">Expand all</button><button class="btn sec" id="grpClose">Collapse all</button>
+      <span class="small muted">The number on each group is how many of its items are ticked for this patient.</span></div>
+    <div class="grid grpgrid">
+      ${groups.map(g => `<details class="card grp" data-g="${esc(g)}"><summary><span>${esc(g)}</span><span class="cnt" data-cnt="${esc(g)}"></span></summary>${FEATURES.filter(f => f.g === g).map(f => {
         const st = S.feat[f.id];
         return `<label class="chk"><input type="checkbox" data-feat="${f.id}" ${st.on ? "checked" : ""}><span>${esc(f.label)}${st.src === "chart" ? '<span class="pill chart">from chart – confirm</span>' : ""}${f.where === "manual" ? '<span class="pill grey">bedside</span>' : ""}</span></label>${st.snip ? `<div class="snip">${esc(st.snip)}</div>` : ""}`;
-      }).join("")}</div>`).join("")}
-      <div class="card"><h2>Biomarkers &amp; special tests</h2>
+      }).join("")}</details>`).join("")}
+      <details class="card grp" data-g="bio"><summary><span>Biomarkers &amp; special tests</span><span class="cnt" data-cnt="bio"></span></summary>
         ${bioSel("amyloid", "Amyloid / p-tau217 (blood, CSF or PET)")}
         ${bioSel("dat", "DaT-SPECT (reduced striatal uptake = abnormal)")}
         ${bioSel("psg", "Polysomnography: REM sleep without atonia")}
@@ -647,17 +649,30 @@ function renderScreen() {
         ${bioSel("emg", "EMG: active + chronic denervation in ≥2 regions (ALS)")}
         ${bioSel("hdgene", "HTT gene test (CAG ≥40 = positive)")}
         ${bioSel("apoe", "APOE genotype", [["nd", "Not done"], ["e4neg", "No ε4"], ["e4het", "One ε4 (heterozygote)"], ["e4hom", "Two ε4 (homozygote)"]])}
-      </div>
+      </details>
     </div>`;
-  updateCogInterp();
+  updateCogInterp(); updateCounts();
+  $("#grpOpen").onclick = () => document.querySelectorAll("details.grp").forEach(d => d.open = true);
+  $("#grpClose").onclick = () => document.querySelectorAll("details.grp").forEach(d => d.open = false);
   $("#tab-screen").addEventListener("change", e => {
     const t = e.target;
     if (t.dataset.feat) S.feat[t.dataset.feat] = { ...S.feat[t.dataset.feat], on: t.checked, src: S.feat[t.dataset.feat].src || "user" };
     if (t.dataset.inp) S.inp[t.dataset.inp] = t.type === "checkbox" ? t.checked : t.value;
     if (t.dataset.bio) S.bio[t.dataset.bio] = t.value;
-    updateCogInterp(); renderDerived();
+    updateCogInterp(); updateCounts(); renderDerived();
   });
   $("#tab-screen").addEventListener("input", e => { if (e.target.dataset.inp) { S.inp[e.target.dataset.inp] = e.target.value; updateCogInterp(); } });
+}
+function updateCounts() {
+  document.querySelectorAll("[data-cnt]").forEach(el => {
+    const g = el.dataset.cnt;
+    let n, tot;
+    if (g === "bio") { const v = Object.values(S.bio); n = v.filter(x => x !== "nd").length; tot = v.length; }
+    else { const fs = FEATURES.filter(f => f.g === g); n = fs.filter(f => on(f.id)).length; tot = fs.length; }
+    el.textContent = `${n} / ${tot}`;
+    el.className = "cnt" + (n ? " hit" : "");
+    el.title = g === "bio" ? `${n} test result(s) entered` : `${n} of ${tot} items ticked`;
+  });
 }
 function updateCogInterp() { const el = $("#coginterp"); if (el) el.innerHTML = cogInterp().map(esc).join("<br>") || ""; }
 

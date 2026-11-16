@@ -57,6 +57,18 @@
   li{margin:2px 0}
   .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:4px 0}
   .disclaimer{font-size:12px;color:var(--muted);margin-top:16px;text-align:center}
+  .grpgrid{align-items:start}
+  details.grp{padding:0;margin-bottom:0}
+  details.grp>summary{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;font-size:15px;font-weight:600;list-style:none;cursor:pointer}
+  details.grp>summary::-webkit-details-marker{display:none}
+  details.grp>summary::before{content:"▸";color:var(--muted);margin-right:-4px}
+  details.grp[open]>summary::before{content:"▾"}
+  details.grp>summary>span:first-of-type{flex:1}
+  details.grp[open]>summary{border-bottom:1px solid var(--line)}
+  details.grp>label,details.grp>.snip,details.grp>.row{margin-left:14px;margin-right:14px}
+  details.grp[open]{padding-bottom:8px}
+  .cnt{font-size:13px;font-weight:700;min-width:46px;text-align:center;padding:2px 9px;border-radius:12px;background:#eceff3;color:var(--muted)}
+  .cnt.hit{background:var(--accent);color:#fff}
   #loading{padding:40px;text-align:center;color:var(--muted)}
 </style>
 </head>
