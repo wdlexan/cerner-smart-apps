@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Dementia Workup – Launch</title>
+  <script src="https://cdn.jsdelivr.net/npm/fhirclient/build/fhir-client.js"></script>
+</head>
+<body>
+  <p style="font-family:system-ui;padding:20px">Connecting to Cerner…</p>
+  <script>
+    // EHR launch (from PowerChart / Cerner sandbox) or standalone launch with ?iss=...
+    FHIR.oauth2.authorize({
+      clientId: "09c38f54-fb4d-4664-87b6-67b57983ac01",
+      scope: [
+        "launch", "openid", "fhirUser", "online_access",
+        "patient/Patient.read",
+        "patient/Condition.read",
+        "patient/Observation.read",
+        "patient/MedicationRequest.read",
+        "patient/DocumentReference.read",
+        "patient/DiagnosticReport.read",
+        "patient/Binary.read"
+      ].join(" "),
+      redirectUri: "index.html"
+    });
+  </script>
+</body>
+</html>
