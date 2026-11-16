@@ -67,3 +67,9 @@ As PDFs: `test-pdfs/` has the same 16 patients as chart-extract PDFs for the Hos
 ## Pathophysiology PDF
 `pathophysiology.pdf` (button on the Types reference tab, link on the Subtype fit tab): Venn diagram of amyloid-β, tau, α-synuclein and TDP-43 overlap,
 mechanism of each dementia, and neurotransmitter → drug effects. Rebuild with `python3 make-pathophysiology-pdf.py`.
+
+## Brain map, don't-miss alerts, delirium & agitation
+- **Subtype fit tab → Brain map**: schematic side + midline views. "This patient" colours regions implied by ticked symptoms (orange), abnormal on imaging (blue), or both (green, concordant), with a table. The dropdown shows the typical regions of any type (purple). Code: `brainmap.js`.
+- **Treatment tab → ⚠ Don't miss**: patient-specific STOP / CHECK / NOTE alerts from the chart (dopamine blockers in Lewy/parkinsonian disorders, ECG before cholinesterase inhibitors, ChEI + anticholinergic, benzodiazepines, oral-only thiamine, levodopa timing, ChEI in FTD, HD suicide risk, alpha-blockers with autonomic failure, ALS CO2, dysphagia, prion infection control, ARIA on anti-amyloid drugs, citalopram >20 mg ≥65) plus a general list. Count shown on Overview; STOP items go into the note draft. Code: `safety.js`.
+- **Treatment tab → Delirium & agitation by type**: first steps for all, then prefer/avoid by type; Lewy/PSP rows override others when parkinsonian features are present.
+- PDF page 4: labelled brain map with region → function → dementias (`python3 make-brainmap-png.py && python3 make-pathophysiology-pdf.py`).

@@ -1,4 +1,4 @@
-"""python3 make-pathophysiology-pdf.py  ->  pathophysiology.pdf (and venn.png)
+"""python3 make-brainmap-png.py && python3 make-pathophysiology-pdf.py  ->  pathophysiology.pdf (and venn.png)
 Brief pathophysiology of the dementias + a 4-set Venn of the main misfolded proteins."""
 import os
 import matplotlib
@@ -151,6 +151,22 @@ story.append(Paragraph("<b>Key sources:</b> Braak H &amp; Braak E 1991 (AD stagi
                        "Mackenzie IR et al. Acta Neuropathol 2010 (FTLD nomenclature); Höglinger GU et al. Mov Disord 2017 (PSP); Armstrong MJ et al. Neurology 2013 (CBD); "
                        "Wenning GK et al. Mov Disord 2022 (MSA); Nelson PT et al. Brain 2019 and Wolk DA et al. Alzheimer's Dement 2025 (LATE); "
                        "Jack CR et al. Alzheimer's Dement 2024 (revised AD biological criteria). Percentages are approximate.", S))
+# ---- page 4: brain map
+import json
+BM = json.load(open(os.path.join(HERE, "brainmap.json")))
+TNAME = {"ad": "Alzheimer", "late": "LATE", "dlb": "DLB", "pdd": "PDD", "ftd": "bvFTD", "ppa": "PPA", "vad": "Vascular", "nph": "NPH", "rpd": "CJD / rapid",
+         "alc": "Korsakoff", "psp": "PSP", "cbs": "CBS", "msa": "MSA", "hd": "Huntington", "als": "ALS"}
+story.append(PageBreak())
+story.append(Paragraph("Where each dementia starts — brain regions, function and symptoms", H2))
+story.append(Paragraph("Schematic only (shapes approximate). The first area hit explains the first symptoms; spread along connected networks explains what comes next. "
+                       "In the app, the Subtype fit tab colours this map for the patient: symptoms (orange), imaging (blue), both (green).", B))
+story.append(Spacer(1, 4))
+story.append(Image(os.path.join(HERE, "brainmap.png"), width=7.2 * inch, height=7.2 * 300 / 800 * inch))
+rows = [["Region", "Function → symptom when affected", "Typically affected in"]]
+for rid, r in BM["R"].items():
+    ts = [TNAME[t] for t, rs in BM["T"].items() if rid in rs and t in TNAME]
+    rows.append([f"<b>{r['name']}</b>", r["fn"], ", ".join(ts) or "—"])
+story.append(table2(rows, [1.9 * inch, 3.3 * inch, 1.6 * inch]))
 
 def foot(c, d):
     c.saveState(); c.setFont("DV", 7); c.setFillColor(colors.HexColor("#5b6575"))

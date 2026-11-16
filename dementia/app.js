@@ -585,6 +585,7 @@ function renderOverview() {
   $("#tab-overview").innerHTML = `
     ${deliriumBanner()}
     ${S.mode === "demo" ? demoPicker() : ""}
+    ${(() => { const dm = dontMiss(evaluate()).filter(x => x.lvl !== "info"); return dm.length ? `<div class="banner ${dm.some(x => x.lvl === "bad") ? "bad" : "warn"}" style="cursor:pointer" onclick="document.querySelector('nav button[data-tab=treat]').click()"><b>⚠ Don't miss: ${dm.length} item${dm.length > 1 ? "s" : ""} for this patient</b> — ${esc(dm[0].t.split(/[:.—]/)[0])}${dm.length > 1 ? " …" : ""} <u>Open Treatment tab</u></div>` : ""; })()}
     <div class="grid">
       <div class="card"><h2>Where things stand</h2>
         <table>
@@ -676,15 +677,18 @@ function updateCounts() {
 }
 function updateCogInterp() { const el = $("#coginterp"); if (el) el.innerHTML = cogInterp().map(esc).join("<br>") || ""; }
 
-function renderSubtype() {
+function renderSubtype() { keepOpen("#tab-subtype", renderSubtypeInner); }
+function renderSubtypeInner() {
   const R = evaluate();
   $("#tab-subtype").innerHTML = `${deliriumBanner()}
+    <details class="card grp" data-k="brain" open><summary><span>🧠 Brain map — where the symptoms and imaging point</span><span class="cnt hit">${(() => { const b = brainState(); return new Set([...Object.keys(b.sym), ...Object.keys(b.img)]).size; })()} regions</span></summary><div class="grpbody" id="brainCard"></div></details>
     <div class="card"><h2>Fit against each dementia type <a class="small" href="pathophysiology.pdf" target="_blank" rel="noopener" style="font-weight:400;margin-left:8px">📄 pathophysiology &amp; protein overlap (PDF)</a></h2>
       <p class="small muted">Driven by the checklist on tab 2. Uses DLB consensus (McKeith 2017), bvFTD (Rascovsky 2011), PPA (Gorno-Tempini 2011), VASCOG-style vascular criteria, the PD 1-year rule, LATE (Wolk 2025), and simplified MDS PSP (2017), CBS (Armstrong 2013), MDS MSA (2022) and ALS (Gold Coast 2020) criteria. Many older patients have mixed pathology.</p>
       ${R.map(r => { const [c, t] = lvlInfo(r.lvl); return `<div class="fit ${c}"><b class="t">${esc(r.name)}</b> <span class="pill ${c === "strong" ? "ok" : c === "mod" ? "warn" : "grey"}">${t}</span>
         <div class="small"><b>Why:</b> ${esc(r.why.join("; ") || "no supporting features checked")}</div>
         ${r.lvl >= 1 ? `<div class="small"><b>Next:</b><ul>${r.next.map(n => `<li>${esc(n)}</li>`).join("")}</ul></div>` : ""}</div>`; }).join("")}
     </div>`;
+  renderBrain(R);
 }
 
 function renderWorkup() {
@@ -772,11 +776,16 @@ function renderTreatInner() {
   const badge = (txt, cls) => `<span class="cnt ${cls}">${txt}</span>`;
   const grp = (k, title, b, body, open) => `<details class="card grp" data-k="${k}" ${open ? "open" : ""}><summary><span>${title}</span>${b}</summary><div class="grpbody">${body}</div></details>`;
   const sec = (id, title, body) => `<details data-k="sec-${id}" ${fits.has(id) ? "open" : ""}><summary>${esc(title)} ${fits.has(id) ? '<span class="pill ok">fits this patient</span>' : ""}</summary>${body}</details>`;
+  const DM = dontMiss(R), dmBad = DM.filter(x => x.lvl === "bad").length;
+  const dmHTML = `${DM.length ? `<h3>For this patient</h3>${DM.map(x => `<div style="margin:4px 0"><span class="pill ${x.lvl === "info" ? "chart" : x.lvl}">${x.lvl === "bad" ? "STOP / ACT" : x.lvl === "warn" ? "CHECK" : "NOTE"}</span> ${esc(x.t)}</div>`).join("")}` : ""}
+    <h3>Every patient with cognitive impairment</h3><ul class="small">${GENERAL_DONT_MISS.map(t => `<li>${esc(t)}</li>`).join("")}</ul>`;
   $("#tab-treat").innerHTML = `${deliriumBanner()}
+    ${grp("dontmiss", "⚠ Don't miss — do / avoid", DM.length ? badge(`${DM.length} for this patient`, dmBad ? "bad" : "warn") : badge("general list", ""), dmHTML, true)}
     ${grp("safety", "Safety checks before starting a drug", nAlert ? badge(`${nAlert} alert${nAlert > 1 ? "s" : ""}`, nBad ? "bad" : "warn") : badge("All OK", "ok"),
       chk.map(([c, t]) => `<div><span class="pill ${c}">${c === "ok" ? "OK" : c === "grey" ? "?" : "!"}</span> ${esc(t)}</div>`).join("") +
       (on("acute") ? '<p class="small"><b>Delirium active:</b> usually defer starting dementia drugs until recovered and the diagnosis is confirmed.</p>' : ""), nBad > 0)}
 
+    ${grp("agit", "Delirium & agitation by type", badge(on("acute") ? "delirium now" : "by type", on("acute") ? "bad" : ""), agitationHTML(R), on("acute"))}
     ${grp("every", "For every type (non-drug, first)", badge("8 items", ""), `<ul class="small">
       <li><b>Deprescribe</b> anticholinergics, benzodiazepines and sedatives (see Workup tab).</li>
       <li><b>Hearing aids / glasses</b>, treat depression and sleep apnea, correct B12/thyroid.</li>
@@ -942,6 +951,7 @@ function buildNote() {
   if (!S.imaging.length) lines.push("- CT head (or MRI brain).");
   if (mh.length) lines.push("- Deprescribe/review: " + mh.flatMap(m => m.meds).join(", ") + ".");
   R.slice(0, 2).forEach(r => r.next.slice(0, 2).forEach(n => lines.push("- " + n)));
+  dontMiss(evaluate()).filter(x => x.lvl === "bad").forEach(x => lines.push("- SAFETY: " + x.t.split(/(?<=\.) /)[0]));
   lines.push("- Formal cognitive testing after recovery (MoCA) with collateral; family physician / geriatrics follow-up.");
   lines.push("- Driving: advised not to drive pending assessment; RoadSafetyBC as required.");
   lines.push("- Discuss goals of care, substitute decision-maker; Alzheimer Society of BC First Link referral.");
