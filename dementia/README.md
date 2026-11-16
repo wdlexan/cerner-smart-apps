@@ -63,3 +63,7 @@ In the app: open `index.html?demo=1` … `?demo=16`, or pick from the dropdown i
 As PDFs: `test-pdfs/` has the same 16 patients as chart-extract PDFs for the Hospitalist Toolkit **Import PDF** button
 (choose "Open as a separate patient"; leave "Also keep the PDF text as a note" ticked). Rebuild them with
 `node make-test-pdfs.js && python3 make-test-pdfs.py` after editing `demo-patients.js`.
+
+## Pathophysiology PDF
+`pathophysiology.pdf` (button on the Types reference tab, link on the Subtype fit tab): Venn diagram of amyloid-β, tau, α-synuclein and TDP-43 overlap,
+mechanism of each dementia, and neurotransmitter → drug effects. Rebuild with `python3 make-pathophysiology-pdf.py`.

@@ -679,7 +679,7 @@ function updateCogInterp() { const el = $("#coginterp"); if (el) el.innerHTML = 
 function renderSubtype() {
   const R = evaluate();
   $("#tab-subtype").innerHTML = `${deliriumBanner()}
-    <div class="card"><h2>Fit against each dementia type</h2>
+    <div class="card"><h2>Fit against each dementia type <a class="small" href="pathophysiology.pdf" target="_blank" rel="noopener" style="font-weight:400;margin-left:8px">📄 pathophysiology &amp; protein overlap (PDF)</a></h2>
       <p class="small muted">Driven by the checklist on tab 2. Uses DLB consensus (McKeith 2017), bvFTD (Rascovsky 2011), PPA (Gorno-Tempini 2011), VASCOG-style vascular criteria, the PD 1-year rule, LATE (Wolk 2025), and simplified MDS PSP (2017), CBS (Armstrong 2013), MDS MSA (2022) and ALS (Gold Coast 2020) criteria. Many older patients have mixed pathology.</p>
       ${R.map(r => { const [c, t] = lvlInfo(r.lvl); return `<div class="fit ${c}"><b class="t">${esc(r.name)}</b> <span class="pill ${c === "strong" ? "ok" : c === "mod" ? "warn" : "grey"}">${t}</span>
         <div class="small"><b>Why:</b> ${esc(r.why.join("; ") || "no supporting features checked")}</div>
@@ -880,8 +880,13 @@ const REF = [
   ["Alcohol-related / Korsakoff", "Variable", "Amnesia with confabulation; executive problems; history of heavy alcohol use or malnutrition.", "Ataxia, nystagmus, neuropathy.", "Atrophy; mamillary bodies", "Thiamine, abstinence"],
   ["Reversible contributors", "—", "B12 deficiency, hypothyroidism, hypercalcemia, hyponatremia, hypoglycemia, medications, depression, sleep apnea, subdural hematoma, neurosyphilis, HIV.", "Depends on cause.", "CT/MRI for structural causes", "Treat cause; re-test"]
 ];
+function pdfCard() {
+  return `<div class="card" style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+    <a class="btn" href="pathophysiology.pdf" target="_blank" rel="noopener" style="text-decoration:none">📄 Pathophysiology of the dementias (PDF)</a>
+    <span class="small muted">3 pages: Venn diagram of amyloid-β, tau, α-synuclein and TDP-43 overlap; mechanism of each dementia; neurotransmitters → why drugs help or harm.</span></div>`;
+}
 function renderRef() {
-  $("#tab-ref").innerHTML = `<div class="card"><h2>Types of dementia — symptoms, signs, tests, treatment</h2>
+  $("#tab-ref").innerHTML = `${pdfCard()}<div class="card"><h2>Types of dementia — symptoms, signs, tests, treatment</h2>
     <table><tr><th>Type</th><th>Share</th><th>Symptoms</th><th>Signs</th><th>Imaging / biomarkers</th><th>Treatment</th></tr>
     ${REF.map(r => `<tr>${r.map((c, i) => `<td class="${i ? "small" : ""}">${i ? esc(c) : `<b>${esc(c)}</b>`}</td>`).join("")}</tr>`).join("")}</table></div>
     <div class="card"><h2>Delirium vs dementia vs depression</h2>
