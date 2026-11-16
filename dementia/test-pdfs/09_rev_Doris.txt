@@ -1,0 +1,59 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, Doris                      DOB: 1943-12-03     Sex: F
+MRN: TESTDEM09                            Age: 82
+Admitted: 2026-11-14 (Hospitalist)
+
+HOSPITALIST ADMISSION NOTE
+Date of service: 2026-11-14 14:10
+83 F admitted with falls and 4 months of memory concerns. Daughter notes low mood since her
+husband died last year, poor sleep, weight loss, and she often answers 'I don't know'.
+Stopped taking her levothyroxine 6 months ago. Hard of hearing, no hearing aids. On
+amitriptyline and diphenhydramine for sleep, oxybutynin for bladder, lorazepam nightly.
+Still manages her own bills. Attentive, 4AT 0. Mini-Cog 2/5. MoCA 22/30 (testing limited by
+hearing).
+2026-11-14 08:00 BP: 148/82 HR: 62 RR: 16 Temp: 36.8 C SpO2: 96% Weight: 52 kg
+
+LABORATORY RESULTS
+Collected: 2026-11-14 05:30
+Test                      Result           Units           Reference       Flag
+
+Vitamin B12                   260              pmol/L          148 - 600       
+TSH                           18.5             mIU/L           0.35 - 5        H
+Calcium                       2.74             mmol/L          2.1 - 2.55      H
+Glucose                       5                mmol/L          3.6 - 7.8       
+Sodium                        131              mmol/L          135 - 145       L
+Hemoglobin                    121              g/L             120 - 160       
+Creatinine                    88               umol/L          45 - 90         
+eGFR                          52               mL/min/1.73m2   60 - 200        L
+
+ACTIVE MEDICATION ORDERS (2026-11-15)
+Amitriptyline 25 mg PO qHS
+Oxybutynin 5 mg PO BID
+Lorazepam 1 mg PO qHS
+Diphenhydramine 25 mg PO qHS PRN sleep
+Hydrochlorothiazide 25 mg PO daily
+Calcium carbonate 1250 mg PO BID
+
+ACTIVE PROBLEM LIST
+Major depressive disorder
+Hypothyroidism
+Overactive bladder
+Osteoarthritis
+Insomnia
+Hearing loss
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Doris MRN TESTDEM09         Page 1
+RADIOLOGY REPORTS
+CT HEAD WITHOUT CONTRAST
+Date of exam: 2026-11-14 11:00
+FINDINGS:
+Mild age-related atrophy. No acute infarct. No subdural collection. No hydrocephalus.
+IMPRESSION:
+No acute findings.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Doris MRN TESTDEM09         Page 2

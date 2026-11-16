@@ -26,7 +26,7 @@ const FEATURES = [
   { id: "gradual", g: "Course & function", label: "Insidious onset, gradual progression over months–years", where: "notes", re: /(?:gradual|slowly|insidious(?:ly)?|progressive(?:ly)?)\s+(?:worsening\s+|onset\s+|decline in\s+)?(?:of\s+)?(?:memory|cognitive|cognition|forgetful)|(?:memory|cognitive)\s+decline\s+over\s+(?:the\s+)?(?:past\s+|last\s+)?(?:\d+|several|few|many)\s+(?:years|yrs)/i },
   { id: "stepwise", g: "Course & function", label: "Stepwise decline linked to strokes", where: "notes", re: /step-?wise (?:decline|deteriorat|progress)/i },
   { id: "rapid", g: "Course & function", label: "Rapid progression (weeks–months; <1–2 yr to dementia)", where: "notes", re: /rapid(?:ly)?[- ]progressive|rapid (?:cognitive )?decline|declin\w+ over (?:the )?(?:past |last )?(?:few |several |\d+ )?weeks/i },
-  { id: "iadl", g: "Course & function", label: "Decline interferes with independence (IADLs: finances, meds, cooking, driving) — dementia rather than MCI", where: "notes", re: /(?:needs?|requires?|requiring) (?:help|assistance|support) with (?:his |her |their )?(?:finances|bills|medications|meds|banking|cooking|shopping)|(?:family|wife|husband|daughter|son) (?:now )?(?:manages|does|handles) (?:his |her |their )?(?:finances|bills|medications|meds)|blister pack|no longer (?:able to )?(?:drive|driving|cook|manage)|stopped driving|dependent for (?:i?adls|iadl)/i },
+  { id: "iadl", g: "Course & function", label: "Decline interferes with independence (IADLs: finances, meds, cooking, driving) — dementia rather than MCI", where: "notes", re: /(?:needs?|requires?|requiring) (?:help|assistance|support) with (?:his |her |their )?(?:finances|bills|medications|meds|banking|cooking|shopping)|(?:family|wife|husband|daughter|son) (?:now )?(?:manages|does|handles) (?:his |her |their |the )?(?:finances|bills|medications|meds)|blister pack|no longer (?:able to )?(?:drive|driving|cook|manage)|stopped driving|dependent for (?:i?adls|iadl)/i },
   { id: "early", g: "Course & function", label: "Symptom onset before age 65 (young-onset)", where: "manual" },
   // Cognitive domains
   { id: "amnestic", g: "Cognitive profile", label: "Memory-led (repeats questions, misplaces items, forgets recent events)", where: "notes", re: /memory (?:loss|impair|decline|problems|difficult|concerns)|short[- ]term memory|forgetful|repeat(?:s|ing) (?:the same )?(?:questions|stories|himself|herself|themselves)|misplac/i },
@@ -42,7 +42,7 @@ const FEATURES = [
   { id: "parkinsonism", g: "Lewy body features", label: "Parkinsonism (bradykinesia + rest tremor or rigidity)", where: "notes", re: /parkinsonism|bradykinesia|cogwheel|lead[- ]pipe|rigidity|shuffling gait|resting tremor|rest tremor|hypomimia|masked fac/i },
   { id: "neurolep", g: "Lewy body features", label: "Severe sensitivity to antipsychotics", where: "notes", re: /neuroleptic sensitivity|(?:worse|rigid|severe reaction) after (?:haloperidol|antipsychotic)/i },
   { id: "autonomic", g: "Lewy body features", label: "Supportive: orthostatic hypotension, falls, syncope, hypersomnia, anosmia", where: "notes", re: /orthostatic hypotension|orthostatic drop|anosmia|hyposmia|unexplained (?:falls|syncope)/i },
-  { id: "pdfirst", g: "Lewy body features", label: "Parkinson disease motor symptoms began ≥1 year before cognitive decline", where: "cond", re: /parkinson(?:'s)? disease|\bparkinsons\b|\bPD\b/i },
+  { id: "pdfirst", g: "Lewy body features", label: "Parkinson disease motor symptoms began ≥1 year before cognitive decline", where: "both", re: /parkinson(?:'s)? disease|\bparkinsons\b|\bPD\b/i },
   // FTD
   { id: "disinhib", g: "Frontotemporal features (bvFTD)", label: "Early disinhibition (socially inappropriate, impulsive, loss of manners)", where: "notes", re: /disinhibit|socially inappropriate|inappropriate (?:sexual )?(?:behaviou?r|comments)|impulsiv/i },
   { id: "apathy", g: "Frontotemporal features (bvFTD)", label: "Early apathy or inertia", where: "notes", re: /apath|abulia|inertia|loss of (?:interest|motivation|initiative)/i },
@@ -55,9 +55,9 @@ const FEATURES = [
   { id: "lvppa", g: "Primary progressive aphasia", label: "Logopenic: word-retrieval pauses AND impaired sentence repetition", where: "notes", re: /logopenic|lvPPA|impaired (?:sentence )?repetition/i },
   { id: "mnd", g: "Primary progressive aphasia", label: "Motor neuron disease signs (fasciculations, weakness) — FTD-ALS", where: "notes", re: /motor neuron disease|amyotrophic|\bALS\b|fasciculation/i },
   // Vascular
-  { id: "strokehx", g: "Vascular features", label: "Clinical stroke/TIA, with cognitive change after it", where: "cond", re: /stroke|cerebrovascular accident|\bCVA\b|cerebral infarct|\bTIA\b|transient ischemic|lacunar/i },
+  { id: "strokehx", g: "Vascular features", label: "Clinical stroke/TIA, with cognitive change after it", where: "both", re: /stroke|cerebrovascular accident|\bCVA\b|cerebral infarct|\bTIA\b|transient ischemic|lacunar/i },
   { id: "focal", g: "Vascular features", label: "Focal neurological signs (hemiparesis, Babinski, pronator drift, dysarthria)", where: "notes", re: /hemiparesis|focal (?:neurolog\w* )?deficit|pronator drift|babinski|upgoing (?:toe|plantar)|dysarthri/i },
-  { id: "vrf", g: "Vascular features", label: "Vascular risk factors (HTN, diabetes, AF, dyslipidemia, smoking)", where: "cond", re: /hypertension|\bHTN\b|diabetes|atrial fibrillation|\bA-?fib\b|hyperlipid|dyslipid|hypercholesterol|tobacco|smok/i },
+  { id: "vrf", g: "Vascular features", label: "Vascular risk factors (HTN, diabetes, AF, dyslipidemia, smoking)", where: "both", re: /hypertension|\bHTN\b|diabetes|atrial fibrillation|\bA-?fib\b|hyperlipid|dyslipid|hypercholesterol|tobacco|smok/i },
   // NPH
   { id: "gaitnph", g: "Normal pressure hydrocephalus", label: "Gait disorder early: magnetic, short-stepped, wide-based, en-bloc turns", where: "notes", re: /magnetic gait|gait apraxia|apraxic gait|wide[- ]based gait|broad[- ]based gait|en bloc turn|feet (?:stuck|glued)/i },
   { id: "urinary", g: "Normal pressure hydrocephalus", label: "Urinary urgency / incontinence", where: "notes", re: /urinary (?:urgency|incontinence)|incontinent of urine|urge incontinence/i },
@@ -113,6 +113,7 @@ const MEDFLAGS = [
   { cls: "Benzodiazepine / Z-drug", why: "Impairs memory and attention, falls; taper if possible", re: /lorazepam|clonazepam|diazepam|alprazolam|oxazepam|temazepam|chlordiazepoxide|midazolam|zopiclone|zolpidem|eszopiclone/i },
   { cls: "Opioid", why: "Sedation and confusion; review dose", re: /morphine|hydromorphone|oxycodone|codeine|tramadol|fentanyl|methadone|tapentadol/i },
   { cls: "Antipsychotic", why: "Mortality/stroke warning in dementia; AVOID typical agents in Lewy body / PDD", re: /haloperidol|loxapine|risperidone|quetiapine|olanzapine|aripiprazole|brexpiprazole|methotrimeprazine|chlorpromazine|perphenazine|zuclopenthixol/i },
+  { cls: "Dopamine agonist / amantadine", why: "Common cause of hallucinations and confusion; reduce or stop before adding an antipsychotic (keep levodopa)", re: /pramipexole|ropinirole|rotigotine|amantadine|bromocriptine|selegiline|rasagiline|safinamide/i },
   { cls: "Other CNS-active", why: "Can add to confusion", re: /gabapentin|pregabalin|baclofen|levetiracetam|phenytoin|carbamazepine|lithium|tizanidine|prednisone|dexamethasone|digoxin|metoclopramide/i },
   { cls: "Already on dementia drug", why: "Check dose, adherence and side effects", re: /donepezil|rivastigmine|galantamine|memantine|lecanemab|donanemab/i },
   { cls: "Rate-slowing (ChEI caution)", why: "Additive bradycardia with cholinesterase inhibitors", re: /metoprolol|bisoprolol|atenolol|carvedilol|propranolol|nadolol|sotalol|labetalol|verapamil|diltiazem|digoxin|amiodarone|ivabradine/i },
@@ -132,6 +133,7 @@ function daysAgo(d) { return d ? Math.round((Date.now() - new Date(d)) / 864e5) 
 const NEG = /\b(?:no|not|denies|denied|without|negative for|absence of|absent|ruled out|r\/o|nor|free of|unremarkable for)\b[^.;:\n]{0,40}$/i;
 function findMatch(text, re) {
   if (!text || !re) return null;
+  text = String(text).replace(/\s+/g, " "); // wrapped lines in notes/PDFs split phrases
   const g = new RegExp(re.source, re.flags.includes("g") ? re.flags : re.flags + "g");
   let m;
   while ((m = g.exec(text))) {
@@ -227,47 +229,47 @@ async function readAttachment(client, atts) {
 }
 
 /* ---------------------------------------------------------- demo patient */
-function loadDemo() {
+function loadDemo(n) {
   S.mode = "demo";
-  const today = new Date(), d = n => new Date(today - n * 864e5).toISOString();
-  S.patient = { name: [{ text: "DEMO, Harold (made-up patient)" }], gender: "male", birthDate: "1944-03-12" };
-  S.conds = [
-    { text: "Essential hypertension", status: "active" }, { text: "Type 2 diabetes mellitus", status: "active" },
-    { text: "Atrial fibrillation", status: "active" }, { text: "Urinary tract infection", status: "active" },
-    { text: "Hearing loss, bilateral", status: "active" }, { text: "Constipation", status: "active" }
-  ];
-  S.labs = [
-    { name: "Vitamin B12", loinc: ["2132-9"], value: 182, unit: "pmol/L", date: d(1) },
-    { name: "TSH", loinc: ["3016-3"], value: 2.1, unit: "mIU/L", date: d(1), low: 0.35, high: 5 },
-    { name: "Calcium", loinc: ["17861-6"], value: 2.31, unit: "mmol/L", date: d(1) },
-    { name: "Glucose Random", loinc: ["2345-7"], value: 7.8, unit: "mmol/L", date: d(1) },
-    { name: "Sodium", loinc: ["2951-2"], value: 131, unit: "mmol/L", date: d(1) },
-    { name: "Hemoglobin", loinc: ["718-7"], value: 118, unit: "g/L", date: d(1) },
-    { name: "MCV", loinc: ["787-2"], value: 97, unit: "fL", date: d(1) },
-    { name: "Creatinine", loinc: ["2160-0"], value: 128, unit: "umol/L", date: d(1) },
-    { name: "eGFR", loinc: ["33914-3"], value: 46, unit: "mL/min/1.73m2", date: d(1) },
-    { name: "ALT", loinc: ["1742-6"], value: 18, unit: "U/L", date: d(1) }
-  ];
-  S.vitals = [
-    { name: "Heart Rate", loinc: ["8867-4"], value: 56, unit: "bpm", date: d(0) },
-    { name: "Weight", loinc: ["29463-7"], value: 71, unit: "kg", date: d(1) }
-  ];
-  S.meds = [
-    { name: "metoprolol tartrate 25 mg PO BID" }, { name: "apixaban 2.5 mg PO BID" }, { name: "amlodipine 5 mg PO daily" },
-    { name: "oxybutynin 5 mg PO BID" }, { name: "lorazepam 0.5 mg PO qHS PRN" }, { name: "haloperidol 0.5 mg SC q4h PRN agitation" },
-    { name: "metformin 500 mg PO BID" }, { name: "ceftriaxone 1 g IV q24h" }
-  ];
-  S.docs = [
-    { date: d(0), title: "Hospitalist Progress Note", text: "Day 2. More settled today. Wife at bedside reports he has had good days and bad days for about a year, with daytime drowsiness and staring spells. CAM positive on admission, improving. No hallucinations overnight. Exam: masked facies, mild bradykinesia, cogwheel rigidity at the right wrist, no rest tremor. No focal deficit." },
-    { date: d(1), title: "Admission History and Physical", text: "82 M admitted with urosepsis and delirium. Collateral from wife: memory decline over the past 2 years, repeats questions, and she now manages his finances and medications (blister pack). Stopped driving 6 months ago after getting lost. For several years he has acted out his dreams, punching in his sleep. Over the past year he describes seeing children in the garden that are not there. Fell twice this year. Orthostatic drop noted in clinic. No alcohol use. No depression history. MoCA 17/30 done by GP in spring (12 yr education)." }
-  ];
-  S.imaging = [
-    { date: d(1), title: "CT Head without contrast", text: "Findings: Generalized cerebral volume loss. Mild periventricular white matter hypodensities in keeping with chronic small vessel ischemic change. No acute infarct. No hemorrhage. No hydrocephalus. No mass. Impression: No acute intracranial process. Chronic small vessel ischemic change and age-related atrophy." }
-  ];
+  const all = window.DEMENTIA_DEMOS || [];
+  const i = Math.min(Math.max(1, n || 1), all.length) - 1, P = all[i];
+  S.demoIndex = i + 1; S.demo = P;
+  const d = n => new Date(Date.now() - n * 864e5).toISOString();
+  S.patient = { name: [{ text: P.name + " (made-up patient)" }], gender: P.sex, birthDate: P.birthDate };
+  S.conds = P.conds.map(t => ({ text: t, status: "active" }));
+  S.labs = P.labs.map(([name, l, value, unit, low, high]) => ({ name, loinc: [l], value, unit, low, high, date: d(1) }));
+  S.vitals = [{ name: "Heart Rate", loinc: ["8867-4"], value: P.hr, unit: "bpm", date: d(0) }, { name: "Weight", loinc: ["29463-7"], value: P.wt, unit: "kg", date: d(1) }];
+  S.meds = P.meds.map(m => ({ name: m }));
+  S.docs = P.docs.map(x => ({ date: d(x.d), title: x.title, text: x.text }));
+  S.imaging = P.imaging.map(x => ({ date: d(x.d), title: x.title, text: x.text }));
+}
+function demoPicker() {
+  const all = window.DEMENTIA_DEMOS || [];
+  return `<div class="banner info"><b>Made-up test patient ${S.demoIndex} of ${all.length}.</b>
+    <select id="demoPick">${all.map((p, i) => `<option value="${i + 1}" ${i + 1 === S.demoIndex ? "selected" : ""}>${i + 1}. ${esc(p.name)} – ${esc(p.key.toUpperCase())}</option>`).join("")}</select>
+    <div class="small" style="margin-top:4px"><b>Expected:</b> ${esc(S.demo.expect)}</div>
+    <div class="small muted">Launch from Cerner (launch.html) for live data.</div></div>`;
 }
 
 /* --------------------------------------------------------- chart parsing */
+function imagingInNotes() {
+  // Imaging reports pasted inside notes or imported PDFs: take the text from each CT/MRI heading to the next blank-line heading.
+  const HEAD = /^\s*(?:CT|MRI?|MR|COMPUTED TOMOGRAPHY|MAGNETIC RESONANCE)\b[^\n]*(?:HEAD|BRAIN|CRANI)[^\n]*$/gim;
+  const out = [];
+  for (const n of S.docs) {
+    if (S.imaging.includes(n)) continue;
+    let m; HEAD.lastIndex = 0;
+    while ((m = HEAD.exec(n.text))) {
+      const rest = n.text.slice(m.index + m[0].length);
+      const stop = rest.search(/\n\s*\n\s*[A-Z][A-Z /()-]{6,}\n|MADE-UP TEST PATIENT/);
+      const body = rest.slice(0, stop > 0 ? stop : 3000);
+      if (!S.imaging.some(i => i.text.includes(body.trim().slice(0, 60)))) out.push({ date: n.date, title: m[0].trim(), text: body, fromNote: true });
+    }
+  }
+  S.imaging.push(...out);
+}
 function preFill() {
+  imagingInNotes();
   const notes = S.docs.filter(d => !S.imaging.includes(d));
   const condText = S.conds.filter(c => !/resolved|inactive|refuted|entered/i.test(c.status)).map(c => c.text).join("\n");
   for (const f of FEATURES) {
@@ -279,6 +281,7 @@ function preFill() {
     if (f.id === "pdfirst" && snip) snip += " — confirm motor symptoms preceded cognitive change by ≥1 year";
     S.feat[f.id] = { on: !!snip, src: snip ? "chart" : null, snip: snip ? `${src}: ${snip}` : "" };
   }
+  (S.demo?.preset || []).forEach(id => { S.feat[id] = { on: true, src: "user", snip: "Preset for this test patient (bedside item)" }; });
   // Cognitive scores in notes
   const all = notes.map(n => n.text).join("\n");
   const moca = all.match(/MoCA[^0-9\n]{0,20}(\d{1,2})\s*(?:\/|out of)\s*30/i);
@@ -488,7 +491,7 @@ function renderOverview() {
   const abn = LABS.filter(l => L(l.id) && ["warn", "bad"].includes(labFlag(l.id, L(l.id)).cls));
   $("#tab-overview").innerHTML = `
     ${deliriumBanner()}
-    ${S.mode === "demo" ? `<div class="banner info">Running on a made-up demo patient. Launch from Cerner (launch.html) for live data.</div>` : ""}
+    ${S.mode === "demo" ? demoPicker() : ""}
     <div class="grid">
       <div class="card"><h2>Where things stand</h2>
         <table>
@@ -502,6 +505,8 @@ function renderOverview() {
       </div>
       <div class="card"><h2>Leading subtype fits</h2>
         ${R.length ? R.map(r => { const [c, t] = lvlInfo(r.lvl); return `<div class="fit ${c}"><b class="t">${esc(r.name)}</b> <span class="pill ${c === "strong" ? "ok" : "warn"}">${t}</span><div class="small">${esc(r.why.join("; "))}</div></div>`; }).join("")
+          : (abn.length || mh.some(m => /anticholinergic|Benzo|Dopamine/.test(m.cls)) || on("depression"))
+          ? '<div class="fit mod"><b class="t">No clear subtype yet — reversible contributors first</b><div class="small">Correct the abnormal bloods, deprescribe the flagged medications, treat mood, hearing and sleep, then re-test cognition in 3 months.</div></div>'
           : '<p class="muted">Not enough features yet. Complete tab 2.</p>'}
         <p class="small muted">Rules-based fit from checklist items — not a diagnosis. See tab 3 for all types and reasons.</p>
       </div>
@@ -743,7 +748,7 @@ function renderRef() {
 
 function buildNote() {
   const R = evaluate().filter(r => r.lvl >= 2);
-  const mh = medHits().filter(m => /anticholinergic|Benzo|Opioid|Antipsychotic|Other CNS/.test(m.cls));
+  const mh = medHits().filter(m => /anticholinergic|Benzo|Opioid|Antipsychotic|Dopamine|Other CNS/.test(m.cls));
   const missing = LABS.filter(l => l.core && !L(l.id)).map(l => l.label);
   const abn = LABS.filter(l => L(l.id) && ["warn", "bad"].includes(labFlag(l.id, L(l.id)).cls)).map(l => `${l.label} ${L(l.id).value} ${L(l.id).unit}`);
   const lines = [];
@@ -797,7 +802,7 @@ function wireTabs() {
   wireTabs();
   const params = new URLSearchParams(location.search);
   try {
-    if (params.has("demo") || typeof FHIR === "undefined" || (!params.has("code") && !params.has("state") && !sessionStorage.getItem("SMART_KEY"))) loadDemo();
+    if (params.has("demo") || typeof FHIR === "undefined" || (!params.has("code") && !params.has("state") && !sessionStorage.getItem("SMART_KEY"))) loadDemo(parseInt(params.get("demo"), 10) || 1);
     else await loadFHIR();
   } catch (e) {
     console.error(e);
@@ -807,4 +812,7 @@ function wireTabs() {
   preFill();
   renderHeader(); renderScreen(); renderRef(); renderDerived();
   if (!$("#loading .banner")) $("#loading").remove();
+  document.addEventListener("change", e => {
+    if (e.target.id === "demoPick") { const u = new URL(location.href); u.searchParams.set("demo", e.target.value); location.href = u.toString(); }
+  });
 })();

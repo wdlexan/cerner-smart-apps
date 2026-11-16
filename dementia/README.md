@@ -37,3 +37,23 @@ If a different client ID is registered for this app, change it on line 15 of `la
 7. **Note draft** – editable assessment & plan with a decision line; Copy button.
 
 Keyword matching is simple (with basic negation such as "no hydrocephalus"), so every chart flag needs bedside confirmation.
+
+## Test patients (all made up)
+In the app: open `index.html?demo=1` … `?demo=10`, or pick from the dropdown in the blue box on the Overview tab. The box shows what the app should conclude.
+
+| # | Patient | Type | What it tests |
+|---|---------|------|---------------|
+| 1 | Harold, 82 M | Lewy body + delirium | Delirium banner, probable DLB (4 core features), haloperidol warning, HR 56 on metoprolol, apixaban |
+| 2 | Margaret, 79 F | Alzheimer | Hip fracture admission, hippocampal + parietal atrophy, mild dementia, normal bloods |
+| 3 | Gordon, 59 M | Behavioural FTD | 5–6/6 features, frontal/temporal atrophy, young onset, no ChEI |
+| 4 | Raymond, 76 M | Vascular | Prior stroke, stepwise, infarcts + Fazekas 3, focal signs, A1c/LDL high |
+| 5 | Evelyn, 77 F | NPH | Gait first, urge incontinence, Evans 0.36/DESH, oxybutynin to stop |
+| 6 | Douglas, 67 M | Rapid / CJD | 8-week decline, myoclonus, DWI ribboning, RT-QuIC, infection prevention |
+| 7 | Kevin, 58 M | Korsakoff | Alcohol, confabulation, low B12/folate, macrocytosis, oral thiamine only |
+| 8 | Walter, 80 M | Parkinson disease dementia | 1-year rule, hallucinations, pramipexole + trihexyphenidyl, low BP |
+| 9 | Doris, 83 F | Reversible causes | Depression, TSH 18.5, Ca 2.74, Na 131, amitriptyline/oxybutynin/diphenhydramine/lorazepam |
+| 10 | Linda, 63 F | Logopenic PPA | Usually Alzheimer, MCI-level, young onset, prompts p-tau217 |
+
+As PDFs: `test-pdfs/` has the same 10 patients as chart-extract PDFs for the Hospitalist Toolkit **Import PDF** button
+(choose "Open as a separate patient"; leave "Also keep the PDF text as a note" ticked). Rebuild them with
+`node make-test-pdfs.js && python3 make-test-pdfs.py` after editing `demo-patients.js`.

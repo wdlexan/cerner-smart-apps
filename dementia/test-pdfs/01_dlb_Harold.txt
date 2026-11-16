@@ -1,0 +1,73 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, Harold                     DOB: 1944-03-12     Sex: M
+MRN: TESTDEM01                            Age: 82
+Admitted: 2026-11-14 (Hospitalist)
+
+HOSPITALIST ADMISSION NOTE
+Date of service: 2026-11-14 14:10
+82 M admitted with urosepsis and delirium. Collateral from wife: memory decline over the
+past 2 years, repeats questions, and she now manages his finances and medications (blister
+pack). Stopped driving 6 months ago after getting lost. For several years he has acted out
+his dreams, punching in his sleep. Over the past year he describes seeing children in the
+garden that are not there. Fell twice this year. Orthostatic drop noted in clinic. No
+alcohol use. No depression history. MoCA 17/30 done by GP in spring (12 yr education).
+2026-11-14 08:00 BP: 128/70 HR: 56 RR: 16 Temp: 36.8 C SpO2: 96% Weight: 71 kg
+
+HOSPITALIST PROGRESS NOTE
+Date of service: 2026-11-15 08:30
+Day 2. More settled today. Wife at bedside reports he has had good days and bad days for
+about a year, with daytime drowsiness and staring spells. CAM positive on admission,
+improving. No hallucinations overnight. Exam: masked facies, mild bradykinesia, cogwheel
+rigidity at the right wrist, no rest tremor. No focal deficit.
+2026-11-15 08:00 BP: 128/70 HR: 56 RR: 16 Temp: 36.8 C SpO2: 96% Weight: 71 kg
+
+LABORATORY RESULTS
+Collected: 2026-11-14 05:30
+Test                      Result           Units           Reference       Flag
+
+Vitamin B12                   182              pmol/L          148 - 600       
+TSH                           2.1              mIU/L           0.35 - 5        
+Calcium                       2.31             mmol/L          2.1 - 2.55      
+Glucose                       7.8              mmol/L          3.6 - 7.8       
+Sodium                        131              mmol/L          135 - 145       L
+Hemoglobin                    118              g/L             135 - 175       L
+MCV                           97               fL              80 - 100        
+Creatinine                    128              umol/L          60 - 110        H
+eGFR                          46               mL/min/1.73m2   60 - 200        L
+ALT                           18               U/L             0 - 40          
+
+ACTIVE MEDICATION ORDERS (2026-11-15)
+Metoprolol tartrate 25 mg PO BID
+Apixaban 2.5 mg PO BID
+Amlodipine 5 mg PO daily
+Oxybutynin 5 mg PO BID
+Lorazepam 0.5 mg PO qHS PRN
+Haloperidol 0.5 mg SC q4h PRN agitation
+Metformin 500 mg PO BID
+Ceftriaxone 1 g IV q24h
+
+ACTIVE PROBLEM LIST
+Essential hypertension
+Type 2 diabetes mellitus
+Atrial fibrillation
+Urinary tract infection
+Hearing loss, bilateral
+Constipation
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Harold MRN TESTDEM01         Page 1
+RADIOLOGY REPORTS
+CT HEAD WITHOUT CONTRAST
+Date of exam: 2026-11-14 11:00
+FINDINGS:
+Generalized cerebral volume loss. Mild periventricular white matter hypodensities in keeping
+with chronic small vessel ischemic change. No acute infarct. No hemorrhage. No
+hydrocephalus. No mass.
+IMPRESSION:
+No acute intracranial process. Chronic small vessel ischemic change and age-related atrophy.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Harold MRN TESTDEM01         Page 2

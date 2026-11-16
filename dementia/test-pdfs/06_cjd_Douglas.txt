@@ -1,0 +1,56 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, Douglas                    DOB: 1959-11-30     Sex: M
+MRN: TESTDEM06                            Age: 66
+Admitted: 2026-11-13 (Hospitalist)
+
+HOSPITALIST ADMISSION NOTE
+Date of service: 2026-11-13 14:10
+67 M, previously independent retired engineer. Rapidly progressive decline over the past 8
+weeks: confusion, visual distortions, unsteady gait, now unable to dress or feed himself.
+Family now manages his finances. Family noticed jerking movements. Exam: multifocal
+myoclonus with startle, cerebellar ataxia. Afebrile. No recent travel.
+2026-11-13 08:00 BP: 132/80 HR: 76 RR: 16 Temp: 36.8 C SpO2: 96% Weight: 79 kg
+
+HOSPITALIST PROGRESS NOTE
+Date of service: 2026-11-15 08:30
+EEG: periodic sharp-wave complexes. Neurology aware. LP planned for cell count, protein,
+14-3-3 and RT-QuIC. Infection prevention notified about instrument handling.
+2026-11-15 08:00 BP: 132/80 HR: 76 RR: 16 Temp: 36.8 C SpO2: 96% Weight: 79 kg
+
+LABORATORY RESULTS
+Collected: 2026-11-14 05:30
+Test                      Result           Units           Reference       Flag
+
+Vitamin B12                   330              pmol/L          148 - 600       
+TSH                           1.9              mIU/L           0.35 - 5        
+Calcium                       2.3              mmol/L          2.1 - 2.55      
+Glucose                       5.9              mmol/L          3.6 - 7.8       
+Sodium                        140              mmol/L          135 - 145       
+Hemoglobin                    145              g/L             135 - 175       
+Creatinine                    81               umol/L          60 - 110        
+eGFR                          90               mL/min/1.73m2   60 - 200        
+Ammonia                       22               umol/L          11 - 35         
+
+ACTIVE MEDICATION ORDERS (2026-11-15)
+Amlodipine 5 mg PO daily
+Acetaminophen 650 mg PO q6h PRN
+
+ACTIVE PROBLEM LIST
+Hypertension
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Douglas MRN TESTDEM06         Page 1
+RADIOLOGY REPORTS
+MRI BRAIN WITH DWI
+Date of exam: 2026-11-14 11:00
+FINDINGS:
+Cortical ribboning on DWI in the bilateral parietal and frontal cortex, with restricted
+diffusion in the caudate and putamen bilaterally. No enhancement. No mass.
+IMPRESSION:
+Pattern concerning for prion disease (Creutzfeldt-Jakob disease).
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Douglas MRN TESTDEM06         Page 2

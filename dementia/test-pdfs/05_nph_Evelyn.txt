@@ -1,0 +1,54 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, Evelyn                     DOB: 1949-04-08     Sex: F
+MRN: TESTDEM05                            Age: 77
+Admitted: 2026-11-14 (Hospitalist)
+
+HOSPITALIST ADMISSION NOTE
+Date of service: 2026-11-14 14:10
+77 F admitted after recurrent falls. Gait difficulty came first, about 9 months ago: her
+feet feel glued to the floor, magnetic gait with short steps and en bloc turns. Urge
+incontinence for the past 6 months; oxybutynin was started by her GP. In the last 3 months,
+slowed thinking and she is more forgetful. Daughter now manages her medications. No resting
+tremor. No hallucinations. Attentive, 4AT 0. MoCA 21/30.
+2026-11-14 08:00 BP: 136/74 HR: 70 RR: 16 Temp: 36.8 C SpO2: 96% Weight: 64 kg
+
+LABORATORY RESULTS
+Collected: 2026-11-14 05:30
+Test                      Result           Units           Reference       Flag
+
+Vitamin B12                   380              pmol/L          148 - 600       
+TSH                           3.1              mIU/L           0.35 - 5        
+Calcium                       2.35             mmol/L          2.1 - 2.55      
+Glucose                       5.2              mmol/L          3.6 - 7.8       
+Sodium                        133              mmol/L          135 - 145       L
+Hemoglobin                    126              g/L             120 - 160       
+Creatinine                    70               umol/L          45 - 90         
+eGFR                          72               mL/min/1.73m2   60 - 200        
+
+ACTIVE MEDICATION ORDERS (2026-11-15)
+Oxybutynin 5 mg PO BID
+Hydrochlorothiazide 25 mg PO daily
+Vitamin D 1000 units PO daily
+
+ACTIVE PROBLEM LIST
+Recurrent falls
+Hypertension
+Urge incontinence
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Evelyn MRN TESTDEM05         Page 1
+RADIOLOGY REPORTS
+CT HEAD WITHOUT CONTRAST
+Date of exam: 2026-11-14 11:00
+FINDINGS:
+Ventriculomegaly disproportionate to the degree of sulcal atrophy, Evans index 0.36.
+Crowding of the high convexity sulci with enlarged Sylvian fissures (DESH pattern). No mass.
+No hemorrhage.
+IMPRESSION:
+Findings raise the possibility of normal pressure hydrocephalus.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Evelyn MRN TESTDEM05         Page 2

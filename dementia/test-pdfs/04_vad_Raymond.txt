@@ -1,0 +1,62 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, Raymond                    DOB: 1950-09-14     Sex: M
+MRN: TESTDEM04                            Age: 76
+Admitted: 2026-11-14 (Hospitalist)
+
+HOSPITALIST ADMISSION NOTE
+Date of service: 2026-11-14 14:10
+76 M admitted with aspiration pneumonia. Wife describes a stepwise decline: clear worsening
+after his left MCA stroke in 2023 and again after a small stroke this spring. Slowed
+thinking, difficulty planning and organizing, apathy. Memory relatively preserved. Needs
+help with his medications (blister pack) and his wife now manages the finances.
+Small-stepped gait. Exam: right pronator drift, right Babinski, mild dysarthria. Attentive,
+4AT 0. MoCA 18/30 with poor trails, cube copy and fluency; recall 3/5 with cues.
+2026-11-14 08:00 BP: 158/88 HR: 78 RR: 16 Temp: 36.8 C SpO2: 96% Weight: 84 kg
+
+LABORATORY RESULTS
+Collected: 2026-11-14 05:30
+Test                      Result           Units           Reference       Flag
+
+Vitamin B12                   290              pmol/L          148 - 600       
+TSH                           1.2              mIU/L           0.35 - 5        
+Calcium                       2.28             mmol/L          2.1 - 2.55      
+Glucose                       9.4              mmol/L          3.6 - 7.8       H
+Sodium                        137              mmol/L          135 - 145       
+Hemoglobin                    139              g/L             135 - 175       
+Creatinine                    104              umol/L          60 - 110        
+eGFR                          63               mL/min/1.73m2   60 - 200        
+Hemoglobin A1c                8.1              %               4 - 6           H
+LDL cholesterol               2.9              mmol/L          0 - 2           H
+
+ACTIVE MEDICATION ORDERS (2026-11-15)
+Clopidogrel 75 mg PO daily
+Atorvastatin 20 mg PO daily
+Ramipril 5 mg PO daily
+Metformin 1000 mg PO BID
+Ceftriaxone 1 g IV q24h
+
+ACTIVE PROBLEM LIST
+Ischemic stroke, left MCA (2023)
+Hypertension
+Type 2 diabetes mellitus
+Dyslipidemia
+Tobacco use
+Aspiration pneumonia
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Raymond MRN TESTDEM04         Page 1
+RADIOLOGY REPORTS
+MRI BRAIN
+Date of exam: 2026-07-18 11:00
+FINDINGS:
+Chronic left MCA territory infarct with encephalomalacia. Multiple lacunar infarcts in the
+basal ganglia and thalami. Extensive confluent periventricular white matter
+hyperintensities, Fazekas grade 3. Mild generalized atrophy; hippocampi preserved.
+IMPRESSION:
+Extensive small vessel disease and prior infarcts.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Raymond MRN TESTDEM04         Page 2

@@ -1,0 +1,57 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, Kevin                      DOB: 1968-02-17     Sex: M
+MRN: TESTDEM07                            Age: 58
+Admitted: 2026-11-12 (Hospitalist)
+
+HOSPITALIST ADMISSION NOTE
+Date of service: 2026-11-12 14:10
+58 M with heavy alcohol use, about 12 beers a day for 20 years, last drink 3 days ago. Poor
+oral intake for months. Marked short-term memory loss: cannot recall breakfast, and
+confabulates detailed stories about going to work this morning. Ataxic gait, horizontal
+nystagmus. Attention intact; no delirium. No myoclonus. MoCA 16/30 (recall 0/5).
+2026-11-12 08:00 BP: 138/86 HR: 92 RR: 16 Temp: 36.8 C SpO2: 96% Weight: 61 kg
+
+LABORATORY RESULTS
+Collected: 2026-11-14 05:30
+Test                      Result           Units           Reference       Flag
+
+Vitamin B12                   118              pmol/L          148 - 600       L
+Folate                        6.1              nmol/L          10 - 45         L
+TSH                           2.6              mIU/L           0.35 - 5        
+Calcium                       2.18             mmol/L          2.1 - 2.55      
+Glucose                       4.9              mmol/L          3.6 - 7.8       
+Sodium                        132              mmol/L          135 - 145       L
+Hemoglobin                    112              g/L             135 - 175       L
+MCV                           108              fL              80 - 100        H
+ALT                           88               U/L             0 - 40          H
+Albumin                       29               g/L             35 - 50         L
+Creatinine                    66               umol/L          60 - 110        
+eGFR                          104              mL/min/1.73m2   60 - 200        
+
+ACTIVE MEDICATION ORDERS (2026-11-15)
+Thiamine 100 mg PO daily
+Lorazepam 1 mg PO q1h PRN per CIWA
+Multivitamin PO daily
+Folic acid 1 mg PO daily
+
+ACTIVE PROBLEM LIST
+Alcohol use disorder
+Alcohol-related liver disease
+Peripheral neuropathy
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Kevin MRN TESTDEM07         Page 1
+RADIOLOGY REPORTS
+CT HEAD WITHOUT CONTRAST
+Date of exam: 2026-11-12 11:00
+FINDINGS:
+Generalized atrophy more than expected for age, with cerebellar vermian atrophy. No subdural
+hematoma. No acute infarct.
+IMPRESSION:
+Atrophy, cerebellar predominant.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Kevin MRN TESTDEM07         Page 2

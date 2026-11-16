@@ -1,0 +1,55 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, Walter                     DOB: 1946-07-25     Sex: M
+MRN: TESTDEM08                            Age: 80
+Admitted: 2026-11-14 (Hospitalist)
+
+HOSPITALIST ADMISSION NOTE
+Date of service: 2026-11-14 14:10
+80 M with Parkinson disease diagnosed in 2017; motor symptoms began years before any
+cognitive change. Over the past 18 months: slowed thinking, difficulty planning,
+visuospatial problems (misjudges distances, dressing apraxia); now sees small animals in the
+room at night. Wife now manages his medications. Acts out his dreams. Exam: rest tremor
+right hand, bradykinesia, rigidity, hypomimia. Attentive, 4AT 1. MoCA 17/30.
+2026-11-14 08:00 BP: 104/60 HR: 66 RR: 16 Temp: 36.8 C SpO2: 96% Weight: 68 kg
+
+LABORATORY RESULTS
+Collected: 2026-11-14 05:30
+Test                      Result           Units           Reference       Flag
+
+Vitamin B12                   300              pmol/L          148 - 600       
+TSH                           2                mIU/L           0.35 - 5        
+Calcium                       2.29             mmol/L          2.1 - 2.55      
+Glucose                       5.4              mmol/L          3.6 - 7.8       
+Sodium                        138              mmol/L          135 - 145       
+Hemoglobin                    131              g/L             135 - 175       L
+Creatinine                    98               umol/L          60 - 110        
+eGFR                          63               mL/min/1.73m2   60 - 200        
+
+ACTIVE MEDICATION ORDERS (2026-11-15)
+Carbidopa-levodopa 25/100 mg 1.5 tab PO QID
+Pramipexole 0.5 mg PO TID
+Trihexyphenidyl 2 mg PO BID
+Tamsulosin 0.4 mg PO daily
+Polyethylene glycol 17 g PO daily
+
+ACTIVE PROBLEM LIST
+Parkinson disease
+Orthostatic hypotension
+Constipation
+Benign prostatic hyperplasia
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Walter MRN TESTDEM08         Page 1
+RADIOLOGY REPORTS
+CT HEAD WITHOUT CONTRAST
+Date of exam: 2025-10-11 11:00
+FINDINGS:
+Mild generalized atrophy. No acute infarct. No hemorrhage. No hydrocephalus.
+IMPRESSION:
+No acute findings.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Walter MRN TESTDEM08         Page 2

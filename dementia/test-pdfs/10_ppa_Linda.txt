@@ -1,0 +1,51 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, Linda                      DOB: 1963-05-19     Sex: F
+MRN: TESTDEM10                            Age: 63
+Admitted: 2026-11-14 (Hospitalist)
+
+HOSPITALIST ADMISSION NOTE
+Date of service: 2026-11-14 14:10
+63 F admitted with cellulitis. Incidental history: 2 years of progressive word-finding
+difficulty with long pauses mid-sentence; speech-language pathology described a logopenic
+pattern with impaired sentence repetition. Single-word comprehension and grammar preserved.
+More recently a little forgetful. Still independent in all activities and works part-time.
+MoCA 22/30.
+2026-11-14 08:00 BP: 122/74 HR: 72 RR: 16 Temp: 36.8 C SpO2: 96% Weight: 66 kg
+
+LABORATORY RESULTS
+Collected: 2026-11-14 05:30
+Test                      Result           Units           Reference       Flag
+
+Vitamin B12                   450              pmol/L          148 - 600       
+TSH                           1.4              mIU/L           0.35 - 5        
+Calcium                       2.38             mmol/L          2.1 - 2.55      
+Glucose                       5.3              mmol/L          3.6 - 7.8       
+Sodium                        141              mmol/L          135 - 145       
+Hemoglobin                    133              g/L             120 - 160       
+Creatinine                    64               umol/L          45 - 90         
+eGFR                          94               mL/min/1.73m2   60 - 200        
+
+ACTIVE MEDICATION ORDERS (2026-11-15)
+Cefazolin 2 g IV q8h
+Rizatriptan 10 mg PO PRN migraine
+
+ACTIVE PROBLEM LIST
+Cellulitis, right leg
+Migraine
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Linda MRN TESTDEM10         Page 1
+RADIOLOGY REPORTS
+MRI BRAIN
+Date of exam: 2026-04-29 11:00
+FINDINGS:
+Left temporoparietal atrophy involving the posterior superior temporal gyrus and inferior
+parietal lobule, with mild left hippocampal volume loss. No white matter disease.
+IMPRESSION:
+Asymmetric left temporoparietal atrophy.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Linda MRN TESTDEM10         Page 2
