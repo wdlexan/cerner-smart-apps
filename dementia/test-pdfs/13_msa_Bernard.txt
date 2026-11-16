@@ -1,0 +1,54 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, Bernard                    DOB: 1962-03-15     Sex: M
+MRN: TESTDEM13                            Age: 64
+Admitted: 2026-11-14 (Hospitalist)
+
+HOSPITALIST ADMISSION NOTE
+Date of service: 2026-11-14 14:10
+64 M admitted with syncope. Three years ago erectile dysfunction, then urinary urgency and
+urinary retention now requiring intermittent catheterization. Lightheaded on standing with
+recurrent faints; orthostatic hypotension (lying 148/84, standing 82/50). Bradykinesia and
+rigidity on both sides, with poor response to levodopa up to 800 mg/day. Ataxic gait with
+dysmetria and scanning speech. Wife reports stridor at night and dream enactment. Cognition
+intact, MoCA 27/30, still manages his own finances. Attentive, 4AT 0.
+2026-11-14 08:00 BP: 148/84 lying, 82/50 standing HR: 70 RR: 16 Temp: 36.8 C SpO2: 96% Weight: 77 kg
+
+LABORATORY RESULTS
+Collected: 2026-11-14 05:30
+Test                      Result           Units           Reference       Flag
+
+Vitamin B12                   300              pmol/L          148 - 600       
+TSH                           1.9              mIU/L           0.35 - 5        
+Calcium                       2.3              mmol/L          2.1 - 2.55      
+Glucose                       5.6              mmol/L          3.6 - 7.8       
+Sodium                        137              mmol/L          135 - 145       
+Hemoglobin                    138              g/L             135 - 175       
+Creatinine                    95               umol/L          60 - 110        
+eGFR                          76               mL/min/1.73m2   60 - 200        
+
+ACTIVE MEDICATION ORDERS (2026-11-15)
+Carbidopa-levodopa 25/100 mg 2 tab PO QID
+Midodrine 5 mg PO TID
+Tamsulosin 0.4 mg PO daily
+Melatonin 6 mg PO qHS
+
+ACTIVE PROBLEM LIST
+Syncope
+Neurogenic bladder
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Bernard MRN TESTDEM13         Page 1
+RADIOLOGY REPORTS
+MRI BRAIN
+Date of exam: 2026-10-01 11:00
+FINDINGS:
+Hot cross bun sign in the pons with middle cerebellar peduncle atrophy. Putaminal rim
+hyperintensity bilaterally.
+IMPRESSION:
+Findings consistent with multiple system atrophy.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Bernard MRN TESTDEM13         Page 2

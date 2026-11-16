@@ -12,7 +12,7 @@ const S = {
   conds: [], labs: [], vitals: [], meds: [], docs: [], imaging: [],
   feat: {},          // id -> {on:bool, src:"chart"|"user"|null, snip:string}
   inp: { moca: "", mocaLowEdu: false, mmse: "", minicog: "", rudas: "" },
-  bio: { amyloid: "nd", dat: "nd", psg: "nd", rtquic: "nd", apoe: "nd", tap: "nd" },
+  bio: { amyloid: "nd", dat: "nd", psg: "nd", rtquic: "nd", apoe: "nd", tap: "nd", emg: "nd", hdgene: "nd" },
   noteEdited: false
 };
 const $ = (s, r = document) => r.querySelector(s);
@@ -67,6 +67,23 @@ const FEATURES = [
   { id: "depression", g: "Rapid / other causes", label: "Depression (can mimic or coexist)", where: "both", re: /major depress|depressive disorder|\bMDD\b|depression/i },
   { id: "osa", g: "Rapid / other causes", label: "Sleep apnea / poor sleep", where: "both", re: /sleep apn|\bOSA\b/i },
   { id: "sensory", g: "Rapid / other causes", label: "Hearing or vision loss", where: "both", re: /hearing loss|hard of hearing|\bHOH\b|hearing aid|deaf|macular degeneration|cataract|legally blind|visual impairment/i },
+  // Atypical parkinsonism (PSP, CBS, MSA)
+  { id: "falls1y", g: "Atypical parkinsonism (PSP / CBS / MSA)", label: "PSP: falls in the first years, typically backwards; postural instability", where: "notes", re: /falls? backwards|falling backwards|backward falls|retropulsion|postural instability/i },
+  { id: "vgaze", g: "Atypical parkinsonism (PSP / CBS / MSA)", label: "PSP: vertical supranuclear gaze palsy or slow vertical saccades (downgaze first)", where: "notes", re: /vertical (?:supranuclear )?gaze palsy|supranuclear gaze|(?:down|up)-?gaze (?:palsy|limitation|restriction)|limited (?:down|up)-?gaze|slow vertical saccades/i },
+  { id: "axial", g: "Atypical parkinsonism (PSP / CBS / MSA)", label: "PSP: axial > limb rigidity, surprised stare, reduced blink, applause sign", where: "notes", re: /axial rigidity|nuchal rigidity|applause sign|surprised (?:stare|look|expression)|astonished|reduced blink/i },
+  { id: "asym", g: "Atypical parkinsonism (PSP / CBS / MSA)", label: "CBS: asymmetric limb rigidity, dystonia or focal myoclonus", where: "notes", re: /asymmetric (?:rigidity|parkinsonism|limb)|limb dystonia|(?:arm|hand) dystonia|dystonia of the (?:left|right)|\bfocal (?:limb )?myoclonus/i },
+  { id: "apraxia", g: "Atypical parkinsonism (PSP / CBS / MSA)", label: "CBS: limb apraxia, alien limb, cortical sensory loss (astereognosis, agraphesthesia)", where: "notes", re: /limb apraxia|ideomotor apraxia|alien (?:limb|hand)|cortical sensory (?:loss|deficit)|astereognosis|agraphesthesia/i },
+  { id: "autfail", g: "Atypical parkinsonism (PSP / CBS / MSA)", label: "MSA: early autonomic failure (orthostatic hypotension, urinary retention/incontinence, erectile dysfunction)", where: "both", re: /orthostatic hypotension|neurogenic orthostatic|urinary retention|neurogenic bladder|erectile dysfunction|intermittent catheteri/i },
+  { id: "cereb", g: "Atypical parkinsonism (PSP / CBS / MSA)", label: "MSA-C: cerebellar signs (ataxic gait, dysmetria, scanning speech, nystagmus)", where: "notes", re: /cerebellar ataxia|ataxic gait|limb ataxia|dysmetria|intention tremor|scanning speech|nystagmus/i },
+  { id: "poorldopa", g: "Atypical parkinsonism (PSP / CBS / MSA)", label: "Poor or no response to levodopa (≥600–1000 mg/day)", where: "notes", re: /levodopa[- ]unresponsive|(?:poor|no|minimal|little) (?:response|benefit) (?:from|to) (?:levodopa|sinemet|carbidopa)|not (?:responsive|responding) to (?:levodopa|sinemet)/i },
+  { id: "stridor", g: "Atypical parkinsonism (PSP / CBS / MSA)", label: "MSA: stridor, inspiratory sighs, antecollis or Pisa syndrome", where: "notes", re: /stridor|inspiratory sighs|antecollis|pisa syndrome/i },
+  // Huntington disease
+  { id: "chorea", g: "Huntington disease", label: "Chorea (involuntary flowing movements), motor impersistence (milkmaid grip)", where: "notes", re: /chorea|choreiform|choreoathet|motor impersistence|milkmaid/i },
+  { id: "hdfam", g: "Huntington disease", label: "Huntington disease in a parent/family, or known CAG expansion", where: "both", re: /huntington|CAG repeat|CAG expansion/i },
+  { id: "psych", g: "Huntington disease", label: "Early psychiatric change (irritability, obsessive behaviour, psychosis, personality change)", where: "notes", re: /irritab|obsessive|\bOCD\b|psychosis|psychotic|personality change/i },
+  // ALS
+  { id: "bulbar", g: "Motor neuron disease (ALS)", label: "Bulbar: dysarthria/dysphagia with tongue wasting or fasciculation", where: "notes", re: /tongue (?:fasciculation|atrophy|wasting)|bulbar (?:weakness|palsy|symptoms|onset)|fasciculations in (?:both arms and )?the tongue/i },
+  { id: "umnlmn", g: "Motor neuron disease (ALS)", label: "Upper and lower motor neuron signs together (wasting + brisk reflexes, split hand)", where: "notes", re: /upper and lower motor neuron|UMN and LMN|split hand|wasting with (?:brisk|hyperactive)|hyperreflexia with (?:wasting|fasciculations)/i },
   // Imaging (from CT/MRI reports)
   { id: "imgdone", g: "Imaging findings", label: "CT or MRI head on file", where: "imgany" },
   { id: "mta", g: "Imaging findings", label: "Medial temporal / hippocampal atrophy (AD pattern)", where: "imaging", re: /(?:mesial|medial) temporal (?:lobe )?atrophy|hippocamp\w* (?:volume loss|atrophy)|MTA score [2-4]/i },
@@ -77,6 +94,10 @@ const FEATURES = [
   { id: "vent", g: "Imaging findings", label: "Ventriculomegaly out of proportion to atrophy (Evans index >0.3)", where: "imaging", re: /ventriculomegaly|hydrocephalus|disproportionate(?:ly)? (?:enlarged )?ventric|evans index|DESH/i },
   { id: "cjdmri", g: "Imaging findings", label: "DWI cortical ribboning or caudate/putamen restricted diffusion (CJD)", where: "imaging", re: /cortical ribbon|ribboning|restricted diffusion (?:in|of|involving) the (?:caudate|putamen|basal ganglia|cortex)|pulvinar sign/i },
   { id: "bleeds", g: "Imaging findings", label: "Microbleeds or superficial siderosis (amyloid angiopathy — anti-amyloid caution)", where: "imaging", re: /microbleed|micro-?hemorrhag|micro-?haemorrhag|superficial siderosis|cerebral amyloid angiopathy/i },
+  { id: "pspmri", g: "Imaging findings", label: "Midbrain atrophy — hummingbird / morning glory sign (PSP)", where: "imaging", re: /hummingbird|morning glory|mickey mouse|midbrain atrophy|midbrain[- ]to[- ]pons/i },
+  { id: "cbsmri", g: "Imaging findings", label: "Asymmetric frontoparietal / perirolandic atrophy (CBS)", where: "imaging", re: /asymmetric (?:\w+ ){0,2}(?:frontoparietal|perirolandic|parietal)|(?:frontoparietal|perirolandic) (?:\(\w+\) )?atrophy/i },
+  { id: "msamri", g: "Imaging findings", label: "Hot cross bun sign, putaminal rim, pontine / middle cerebellar peduncle atrophy (MSA)", where: "imaging", re: /hot cross bun|putaminal rim|(?:pontine|middle cerebellar peduncle) (?:atrophy|hyperintens)|olivopontocerebellar/i },
+  { id: "caudate", g: "Imaging findings", label: "Caudate atrophy, boxcar frontal horns (Huntington)", where: "imaging", re: /caudate (?:head )?(?:atrophy|volume loss)|boxcar|loss of (?:the )?caudate/i },
   { id: "structural", g: "Imaging findings", label: "Treatable structural lesion (subdural, tumour, abscess)", where: "imaging", re: /subdural (?:hematoma|haematoma|collection|hygroma)|\bmass\b|neoplasm|metasta|meningioma|glioma|abscess/i }
 ];
 
@@ -114,9 +135,10 @@ const MEDFLAGS = [
   { cls: "Opioid", why: "Sedation and confusion; review dose", re: /morphine|hydromorphone|oxycodone|codeine|tramadol|fentanyl|methadone|tapentadol/i },
   { cls: "Antipsychotic", why: "Mortality/stroke warning in dementia; AVOID typical agents in Lewy body / PDD", re: /haloperidol|loxapine|risperidone|quetiapine|olanzapine|aripiprazole|brexpiprazole|methotrimeprazine|chlorpromazine|perphenazine|zuclopenthixol/i },
   { cls: "Dopamine agonist / amantadine", why: "Common cause of hallucinations and confusion; reduce or stop before adding an antipsychotic (keep levodopa)", re: /pramipexole|ropinirole|rotigotine|amantadine|bromocriptine|selegiline|rasagiline|safinamide/i },
-  { cls: "Other CNS-active", why: "Can add to confusion", re: /gabapentin|pregabalin|baclofen|levetiracetam|phenytoin|carbamazepine|lithium|tizanidine|prednisone|dexamethasone|digoxin|metoclopramide/i },
+  { cls: "Other CNS-active", why: "Can add to confusion", re: /tetrabenazine|deutetrabenazine|gabapentin|pregabalin|baclofen|levetiracetam|phenytoin|carbamazepine|lithium|tizanidine|prednisone|dexamethasone|digoxin|metoclopramide/i },
   { cls: "Already on dementia drug", why: "Check dose, adherence and side effects", re: /donepezil|rivastigmine|galantamine|memantine|lecanemab|donanemab/i },
   { cls: "Rate-slowing (ChEI caution)", why: "Additive bradycardia with cholinesterase inhibitors", re: /metoprolol|bisoprolol|atenolol|carvedilol|propranolol|nadolol|sotalol|labetalol|verapamil|diltiazem|digoxin|amiodarone|ivabradine/i },
+  { cls: "Alpha-blocker", why: "Worsens orthostatic hypotension and falls (MSA, Lewy body, Parkinson disease)", re: /tamsulosin|alfuzosin|doxazosin|terazosin|prazosin|silodosin/i },
   { cls: "Anticoagulant / antiplatelet", why: "Relative contraindication for anti-amyloid antibodies (bleeding with ARIA)", re: /apixaban|rivaroxaban|edoxaban|dabigatran|warfarin|heparin|enoxaparin|dalteparin|tinzaparin|clopidogrel|ticagrelor|prasugrel/i }
 ];
 
@@ -242,6 +264,7 @@ function loadDemo(n) {
   S.meds = P.meds.map(m => ({ name: m }));
   S.docs = P.docs.map(x => ({ date: d(x.d), title: x.title, text: x.text }));
   S.imaging = P.imaging.map(x => ({ date: d(x.d), title: x.title, text: x.text }));
+  Object.assign(S.bio, P.bio || {});
 }
 function demoPicker() {
   const all = window.DEMENTIA_DEMOS || [];
@@ -336,6 +359,10 @@ function medHits() {
   return MEDFLAGS.map(f => ({ ...f, meds: S.meds.filter(m => f.re.test(m.name)).map(m => m.name) })).filter(f => f.meds.length);
 }
 const on = id => !!S.feat[id]?.on;
+function cogImpaired() {
+  const m = parseInt(S.inp.moca, 10), mm = parseInt(S.inp.mmse, 10);
+  return on("iadl") || on("amnestic") || on("executive") || on("visuo") || on("speed") || on("language") || (!isNaN(m) && m < 26) || (!isNaN(mm) && mm < 25) || (isNaN(m) && isNaN(mm));
+}
 
 /* ---------------------------------------------------------- subtype rules */
 function evaluate() {
@@ -373,7 +400,8 @@ function evaluate() {
         why: ["Parkinson disease diagnosis — motor onset ≥1 year before dementia (1-year rule)"].concat(why),
         next: ["Confirm timeline: PD motor symptoms ≥1 year before cognitive decline", "MoCA (better than MMSE for executive/visuospatial deficits)", "Screen orthostatic BP, hallucinations, RBD"] });
     } else {
-      const lvl = (core.length >= 2 || (core.length >= 1 && ind.length >= 1)) ? 3 : (core.length === 1 || ind.length >= 1) ? 2 : 0;
+      let lvl = (core.length >= 2 || (core.length >= 1 && ind.length >= 1)) ? 3 : (core.length === 1 || ind.length >= 1) ? 2 : 0;
+      if (lvl && !cogImpaired()) { lvl = 1; why.push("cognition not impaired — Lewy features without dementia: consider Parkinson disease, MSA or prodromal DLB"); }
       add({ id: "dlb", name: lvl === 3 ? "Dementia with Lewy bodies — meets PROBABLE criteria" : "Dementia with Lewy bodies", lvl, why,
         next: ["Ask specifically about RBD, fluctuations (Mayo Fluctuations Scale) and hallucinations", "DaT-SPECT (ioflupane) if diagnosis uncertain — reduced striatal uptake", "Polysomnography for RBD if available", "AVOID haloperidol / typical antipsychotics"] });
     }
@@ -427,11 +455,52 @@ function evaluate() {
       next: ["Measure Evans index (>0.3) and look for DESH on MRI", "Timed Up and Go / 10 m walk before and after high-volume LP (30–50 mL tap test)", "Neurosurgery referral if tap test positive → VP shunt"] });
   }
   // Rapidly progressive / CJD
-  if (on("rapid") || on("myoclonus") || on("cjdmri") || S.bio.rtquic === "pos") {
+  if (on("rapid") || on("cjdmri") || S.bio.rtquic === "pos") {
     const cjd = on("cjdmri") || S.bio.rtquic === "pos" || (on("rapid") && on("myoclonus"));
     add({ id: "rpd", name: cjd ? "Rapidly progressive dementia — prion disease (CJD) concern" : "Rapidly progressive dementia", lvl: cjd ? 3 : 2,
       why: [on("rapid") && "rapid course", on("myoclonus") && "myoclonus/ataxia", on("cjdmri") && "CJD-pattern DWI", S.bio.rtquic === "pos" && "RT-QuIC positive"].filter(Boolean),
       next: ["Urgent neurology", "MRI brain with DWI/FLAIR", "EEG (periodic sharp-wave complexes; non-convulsive status)", "LP: cell count, protein, glucose, oligoclonal bands, 14-3-3, total tau, RT-QuIC", "Serum + CSF autoimmune encephalitis panel (NMDA, LGI1, CASPR2…), paraneoplastic panel, consider CT chest/abdo/pelvis", "TSH, anti-TPO (steroid-responsive encephalopathy), HIV, syphilis, B12, ammonia, drugs/toxins", "If CJD suspected: notify infection prevention (instrument handling) and public health"] });
+  }
+  // PSP (MDS 2017)
+  {
+    const why = [on("vgaze") && "vertical supranuclear gaze palsy / slow vertical saccades", on("falls1y") && "early backward falls / postural instability", on("axial") && "axial rigidity / stare", on("pspmri") && "midbrain atrophy (hummingbird)", on("poorldopa") && "poor levodopa response", (on("executive") || on("apathy")) && "frontal-executive change"].filter(Boolean);
+    const lvl = on("vgaze") && (on("falls1y") || on("axial") || on("pspmri")) ? 3 : (on("vgaze") || on("pspmri") || (on("falls1y") && on("axial"))) ? 2 : (on("falls1y") || on("axial")) ? 1 : 0;
+    add({ id: "psp", name: lvl === 3 ? "Progressive supranuclear palsy — PROBABLE (Richardson syndrome)" : "Progressive supranuclear palsy (PSP)", lvl, why,
+      next: ["Examine vertical saccades and downgaze (doll's eyes overcome the palsy = supranuclear); pull test", "MRI brain: midbrain atrophy, midbrain-to-pons ratio", "Levodopa trial to ~1000 mg/day for 1–2 months (usually little benefit)", "Swallow assessment (SLP) — aspiration is the leading cause of death", "Neurology / movement disorders referral"] });
+  }
+  // Corticobasal syndrome (Armstrong 2013)
+  {
+    const why = [on("asym") && "asymmetric rigidity / dystonia / myoclonus", on("apraxia") && "limb apraxia / alien limb / cortical sensory loss", on("cbsmri") && "asymmetric frontoparietal atrophy", on("nfvppa") && "non-fluent aphasia", (on("executive") || on("visuo")) && "executive / visuospatial deficits"].filter(Boolean);
+    const lvl = on("asym") && on("apraxia") ? 3 : (on("apraxia") || (on("asym") && (on("cbsmri") || on("nfvppa")))) ? 2 : (on("asym") || on("cbsmri")) ? 1 : 0;
+    add({ id: "cbs", name: lvl === 3 ? "Corticobasal syndrome — PROBABLE" : "Corticobasal syndrome (CBS)", lvl, why: why.concat(lvl ? ["underlying pathology may be CBD, PSP or Alzheimer disease"] : []),
+      next: ["Amyloid biomarker (p-tau217, PET or CSF): about a quarter of CBS is Alzheimer pathology — changes treatment", "MRI: asymmetric frontoparietal/perirolandic atrophy", "Levodopa trial (usually little benefit)", "OT/PT/SLP; neurology"] });
+  }
+  // MSA (MDS 2022)
+  {
+    const motor = on("parkinsonism") || on("cereb");
+    const sup = [on("poorldopa") && "poor levodopa response", on("stridor") && "stridor / antecollis", on("msamri") && "MSA MRI signs", on("rbd") && "RBD"].filter(Boolean);
+    const why = [on("autfail") && "autonomic failure", on("parkinsonism") && "parkinsonism (MSA-P)", on("cereb") && "cerebellar syndrome (MSA-C)"].filter(Boolean).concat(sup);
+    let lvl = on("autfail") && motor && (on("poorldopa") || on("msamri") || on("stridor")) ? 3 : (on("autfail") && motor) || on("msamri") ? 2 : (on("autfail") && (on("stridor") || on("rbd"))) ? 1 : 0;
+    if (lvl && on("pdfirst") && !on("msamri") && !on("poorldopa")) { lvl = Math.min(lvl, 1); why.push("autonomic failure also occurs late in Parkinson disease"); }
+    if (lvl && (on("iadl") || on("amnestic")) && !on("cereb")) why.push("note: early prominent dementia argues against MSA");
+    add({ id: "msa", name: lvl === 3 ? "Multiple system atrophy — clinically probable" : "Multiple system atrophy (MSA)", lvl, why,
+      next: ["Orthostatic vitals (lying 5 min, standing 1 and 3 min): drop ≥20/10 (≥30/15 supports MSA)", "Post-void residual (bladder scan) for retention", "MRI brain: hot cross bun, putaminal rim, pontine/MCP atrophy", "Stridor or snoring change → laryngoscopy / sleep study (sudden death risk)", "Neurology / movement disorders referral"] });
+  }
+  // Huntington disease
+  {
+    const why = [on("chorea") && "chorea", on("hdfam") && "family history / known expansion", on("caudate") && "caudate atrophy", on("psych") && "psychiatric change", (on("executive") || on("speed")) && "subcortical-executive dementia", S.bio.hdgene === "pos" && "HTT CAG expansion POSITIVE"].filter(Boolean);
+    const lvl = S.bio.hdgene === "pos" || (on("chorea") && (on("hdfam") || on("caudate"))) ? 3 : on("chorea") || on("hdfam") ? 2 : on("caudate") ? 1 : 0;
+    add({ id: "hd", name: "Huntington disease", lvl, why,
+      next: ["HTT genetic test (CAG repeat) with genetic counselling and consent — results affect the whole family", "Screen for suicide risk at every contact (high in HD)", "Exclude other chorea: drugs (levodopa, antipsychotic/tardive, stimulants, estrogen), non-ketotic hyperglycemia, hyperthyroidism, SLE/antiphospholipid, polycythemia, Wilson (young)", "Swallow assessment, weight, nutrition", "HD clinic / neurology"] });
+  }
+  // ALS / ALS-FTD
+  {
+    const mot = [on("mnd") && "fasciculations / weakness", on("bulbar") && "bulbar involvement", on("umnlmn") && "mixed upper + lower motor neuron signs", S.bio.emg === "pos" && "EMG denervation"].filter(Boolean);
+    const ftdN = ["disinhib", "apathy", "empathy", "compulsive", "hyperoral"].filter(on).length;
+    const lvl = S.bio.emg === "pos" || mot.length >= 2 ? 3 : mot.length === 1 ? 2 : 0;
+    add({ id: "als", name: lvl && (ftdN >= 2 || on("ftatrophy")) ? "ALS with frontotemporal dementia (ALS-FTD)" : "Motor neuron disease (ALS)", lvl,
+      why: mot.concat(ftdN ? [`${ftdN} bvFTD behaviour feature(s)`] : []),
+      next: ["EMG/nerve conduction (urgent outpatient or inpatient)", "Respiratory: FVC sitting and supine, overnight oximetry or capnography, venous/arterial CO2 — orthopnea suggests diaphragm weakness", "Swallow assessment; early feeding-tube discussion (before FVC <50%)", "Cognitive/behavioural screen (ECAS) — affects capacity and decisions", "Genetic counselling (C9orf72 most common in ALS-FTD); ALS clinic and early goals-of-care conversation"] });
   }
   // Alcohol
   if (on("alcohol")) add({ id: "alc", name: on("confab") ? "Korsakoff syndrome / alcohol-related brain damage" : "Alcohol-related cognitive impairment", lvl: on("confab") || on("amnestic") ? 2 : 1,
@@ -478,6 +547,8 @@ function cogInterp() {
 }
 function stageText() {
   if (on("acute")) return "Not stageable during delirium";
+  const mo = parseInt(S.inp.moca, 10);
+  if (!on("iadl") && !isNaN(mo) && mo >= 26) return "No objective cognitive impairment (MoCA ≥26)";
   if (!on("iadl")) return "Function not documented → cannot separate MCI from dementia yet";
   const m = parseInt(S.inp.moca, 10);
   if (!isNaN(m)) return m >= 18 ? "Mild dementia (likely)" : m >= 10 ? "Moderate dementia (likely)" : "Severe dementia (likely)";
@@ -500,7 +571,7 @@ function renderOverview() {
           <tr><th>Imaging</th><td>${S.imaging.length ? S.imaging.slice(0, 2).map(i => esc(i.title + " " + fmtDate(i.date))).join("<br>") : '<span class="pill warn">No CT/MRI head report found</span>'}</td></tr>
           <tr><th>Core bloods</th><td>${missingCore.length ? `<span class="pill warn">Missing: ${missingCore.map(l => l.label).join(", ")}</span>` : '<span class="pill ok">All found</span>'}
             ${abn.length ? `<br><span class="pill bad">Abnormal: ${abn.map(l => l.label).join(", ")}</span>` : ""}</td></tr>
-          <tr><th>Meds affecting cognition</th><td>${mh.filter(m => !/dementia drug|Rate-slowing|Anticoag/.test(m.cls)).map(m => `<span class="pill bad">${esc(m.cls)}</span> ${esc(m.meds.join(", "))}`).join("<br>") || '<span class="pill ok">None flagged</span>'}</td></tr>
+          <tr><th>Meds affecting cognition</th><td>${mh.filter(m => !/dementia drug|Rate-slowing|Anticoag|Alpha-blocker/.test(m.cls)).map(m => `<span class="pill bad">${esc(m.cls)}</span> ${esc(m.meds.join(", "))}`).join("<br>") || '<span class="pill ok">None flagged</span>'}</td></tr>
         </table>
       </div>
       <div class="card"><h2>Leading subtype fits</h2>
@@ -551,6 +622,8 @@ function renderScreen() {
         ${bioSel("psg", "Polysomnography: REM sleep without atonia")}
         ${bioSel("tap", "NPH high-volume LP tap test (gait improves = positive)")}
         ${bioSel("rtquic", "CSF RT-QuIC (prion)")}
+        ${bioSel("emg", "EMG: active + chronic denervation in ≥2 regions (ALS)")}
+        ${bioSel("hdgene", "HTT gene test (CAG ≥40 = positive)")}
         ${bioSel("apoe", "APOE genotype", [["nd", "Not done"], ["e4neg", "No ε4"], ["e4het", "One ε4 (heterozygote)"], ["e4hom", "Two ε4 (homozygote)"]])}
       </div>
     </div>`;
@@ -570,7 +643,7 @@ function renderSubtype() {
   const R = evaluate();
   $("#tab-subtype").innerHTML = `${deliriumBanner()}
     <div class="card"><h2>Fit against each dementia type</h2>
-      <p class="small muted">Driven by the checklist on tab 2. Uses DLB consensus (McKeith 2017), bvFTD (Rascovsky 2011), PPA (Gorno-Tempini 2011), VASCOG-style vascular criteria and the PD 1-year rule. Many older patients have mixed pathology.</p>
+      <p class="small muted">Driven by the checklist on tab 2. Uses DLB consensus (McKeith 2017), bvFTD (Rascovsky 2011), PPA (Gorno-Tempini 2011), VASCOG-style vascular criteria, the PD 1-year rule, and simplified MDS PSP (2017), CBS (Armstrong 2013), MDS MSA (2022) and ALS (Gold Coast 2020) criteria. Many older patients have mixed pathology.</p>
       ${R.map(r => { const [c, t] = lvlInfo(r.lvl); return `<div class="fit ${c}"><b class="t">${esc(r.name)}</b> <span class="pill ${c === "strong" ? "ok" : c === "mod" ? "warn" : "grey"}">${t}</span>
         <div class="small"><b>Why:</b> ${esc(r.why.join("; ") || "no supporting features checked")}</div>
         ${r.lvl >= 1 ? `<div class="small"><b>Next:</b><ul>${r.next.map(n => `<li>${esc(n)}</li>`).join("")}</ul></div>` : ""}</div>`; }).join("")}
@@ -595,7 +668,12 @@ function renderWorkup() {
     nph: "Evans index, DESH on MRI; timed gait before/after high-volume LP; neurosurgery.",
     rpd: "Urgent MRI DWI, EEG, LP (RT-QuIC, 14-3-3, autoimmune panel), paraneoplastic work-up.",
     alc: "Thiamine first; LFTs, Mg, PO4; re-test after abstinence.",
-    dep: "PHQ-9 / GDS; treat and re-test."
+    dep: "PHQ-9 / GDS; treat and re-test.",
+    psp: "Eye movements (vertical saccades, downgaze), pull test; MRI midbrain (hummingbird, midbrain/pons ratio); levodopa trial; swallow assessment.",
+    cbs: "MRI (asymmetric frontoparietal atrophy); amyloid biomarker (AD-CBS); DaT-SPECT may be abnormal; neuropsychology for apraxia/cortical sensory loss.",
+    msa: "Orthostatic vitals, post-void residual, MRI (hot cross bun, putaminal rim), autonomic testing, sleep study / laryngoscopy for stridor; DaT-SPECT abnormal (does not separate from PD).",
+    hd: "HTT CAG repeat (≥40 full penetrance) after genetic counselling; MRI caudate; exclude other causes of chorea (glucose, TSH, CBC/smear, ANA/APL, drugs, ceruloplasmin if young).",
+    als: "EMG/NCS; MRI spine/brain to exclude mimics (cervical myelopathy); CK; FVC, overnight oximetry, CO2; B12, TSH, calcium/PTH, SPEP/free light chains; C9orf72 testing with counselling."
   };
   $("#tab-workup").innerHTML = `${deliriumBanner()}
     <div class="grid">
@@ -694,6 +772,34 @@ function renderTreat() {
     ${sec("rpd", "Rapidly progressive dementia / CJD", `<ul class="small">
       <li>Treat the treatable: autoimmune encephalitis → steroids/IVIG/plasma exchange (neurology); infection; metabolic; malignancy.</li>
       <li>CJD: no disease-modifying therapy — supportive and palliative care; infection prevention notification; report to public health and the Canadian CJD Surveillance System.</li></ul>`)}
+    ${sec("psp", "Progressive supranuclear palsy", `<ul class="small">
+      <li><b>No disease-modifying treatment.</b> Levodopa trial (titrate to ~1000 mg/day over 1–2 months; stop if no benefit) — a minority get modest help early. Amantadine sometimes tried.</li>
+      <li><b>Falls</b>: PT, weighted wheeled walker, hip protectors, home safety; avoid sedatives.</li>
+      <li><b>Swallowing</b>: SLP, texture-modified diet, aspiration precautions; feeding-tube discussion in advance.</li>
+      <li>Eyes: lubricants for reduced blinking; botulinum toxin for blepharospasm/eyelid-opening apraxia. Pseudobulbar affect: SSRI.</li>
+      <li>Cholinesterase inhibitors not shown to help and may worsen gait. Early goals of care (median survival about 6–8 years from onset).</li></ul>`)}
+    ${sec("cbs", "Corticobasal syndrome", `<ul class="small">
+      <li><b>No disease-modifying treatment.</b> Levodopa trial for rigidity (usually little effect).</li>
+      <li>Myoclonus: levetiracetam or clonazepam (caution: sedation, falls). Painful dystonia: botulinum toxin.</li>
+      <li>OT for apraxia and alien limb safety; PT; SLP for aphasia/dysphagia.</li>
+      <li><b>If amyloid-positive</b>, treat as Alzheimer disease (cholinesterase inhibitor). Early goals of care.</li></ul>`)}
+    ${sec("msa", "Multiple system atrophy", `<ul class="small">
+      <li><b>Orthostatic hypotension</b>: stop or reduce alpha-blockers (tamsulosin), diuretics, nitrates and other BP-lowering drugs; head-up bed tilt, 2–2.5 L fluid and extra salt, abdominal binder/compression, small low-carbohydrate meals. Drugs: midodrine (daytime only, last dose ≥4 h before bed), fludrocortisone, pyridostigmine. Watch for supine hypertension.</li>
+      <li><b>Bladder</b>: check post-void residual; intermittent catheterization if retention; antimuscarinics only with caution (prefer trospium/mirabegron — less CNS effect).</li>
+      <li><b>Parkinsonism</b>: levodopa trial up to ~1000 mg/day (about a third respond early; may worsen orthostasis).</li>
+      <li><b>Stridor / sleep breathing</b>: sleep study, CPAP; discuss tracheostomy. RBD: melatonin.</li>
+      <li>Cognition usually spared — involve the patient fully in decisions. Early goals of care (median survival about 6–10 years).</li></ul>`)}
+    ${sec("hd", "Huntington disease", `<ul class="small">
+      <li><b>Chorea</b> (treat only if disabling): tetrabenazine (start 12.5 mg daily, titrate slowly; can cause depression, suicidality, parkinsonism — avoid if depressed or suicidal; CYP2D6) <i>or</i> an antipsychotic (olanzapine, risperidone, aripiprazole), preferred when psychosis or irritability coexist.</li>
+      <li><b>Mood and behaviour</b>: SSRI for depression, irritability and obsessions; suicide risk assessment every contact; mood stabilizer for severe irritability (specialist).</li>
+      <li>High-calorie diet (weight loss is common), SLP for dysphagia, PT/OT, falls prevention.</li>
+      <li>Genetic counselling for at-risk relatives; advance care planning while capacity allows; HD clinic and Huntington Society of Canada.</li></ul>`)}
+    ${sec("als", "ALS / ALS-FTD", `<ul class="small">
+      <li><b>Riluzole</b> 50 mg BID (modest survival benefit; check LFTs and CBC). Edaravone and gene-targeted therapy (SOD1-ALS) are specialist decisions.</li>
+      <li><b>Breathing</b>: non-invasive ventilation (BiPAP) for orthopnea, FVC &lt;50–80%, or nocturnal hypoventilation/raised CO2 — improves survival and quality of life. Avoid high-flow oxygen alone in hypercapnia.</li>
+      <li><b>Nutrition</b>: early feeding-tube (PEG/RIG) discussion, ideally before FVC &lt;50%; SLP texture advice. Sialorrhea: glycopyrrolate, botulinum toxin; pseudobulbar affect: SSRI.</li>
+      <li><b>FTD component</b>: behaviour strategies, SSRI/trazodone; impaired insight affects capacity and adherence to NIV/PEG — involve substitute decision-maker early.</li>
+      <li>ALS clinic (multidisciplinary care improves survival), ALS Society of BC, early and repeated goals-of-care conversations.</li></ul>`)}
     ${sec("alc", "Alcohol-related / Korsakoff", `<ul class="small">
       <li><b>Thiamine</b>: IV high dose if Wernicke suspected (e.g. 500 mg IV TID × 3 days, then 250 mg daily), otherwise oral thiamine; give before glucose.</li>
       <li>Abstinence support (naltrexone/acamprosate if appropriate), nutrition, re-test cognition after months of abstinence.</li></ul>`)}
@@ -722,6 +828,11 @@ const REF = [
   ["Primary progressive aphasia", "Rare", "Language first: semantic (loses word meaning), non-fluent (agrammatic, effortful), logopenic (word-finding pauses, poor repetition → AD).", "Language exam.", "Left anterior temporal / fronto-insular / temporoparietal atrophy", "Speech therapy; treat logopenic as AD"],
   ["Normal pressure hydrocephalus", "Uncommon, treatable", "Gait disturbance first (magnetic, wide-based), then urinary urgency/incontinence and slowed cognition.", "Gait apraxia.", "Ventriculomegaly (Evans >0.3), DESH", "Tap test → VP shunt"],
   ["Creutzfeldt–Jakob / rapidly progressive", "Rare", "Decline over weeks–months; myoclonus, ataxia, visual and behavioural change.", "Myoclonus, startle, ataxia, pyramidal/extrapyramidal signs.", "DWI cortical ribboning, caudate/putamen; EEG PSWCs; CSF RT-QuIC", "Supportive; exclude autoimmune/treatable causes"],
+  ["Progressive supranuclear palsy (PSP)", "Uncommon; age 60s+", "Early falls (backwards), slowed thinking, apathy, executive problems, dysarthria/dysphagia.", "Vertical supranuclear gaze palsy (downgaze), slow vertical saccades, axial rigidity, surprised stare, applause sign; little tremor.", "Midbrain atrophy (hummingbird), low midbrain/pons ratio", "Supportive; levodopa trial; falls and swallow care"],
+  ["Corticobasal syndrome (CBS)", "Rare", "Asymmetric clumsy, stiff limb; apraxia; alien limb; non-fluent speech; executive and visuospatial deficits; memory relatively spared early.", "Asymmetric rigidity, dystonia, myoclonus, cortical sensory loss.", "Asymmetric frontoparietal atrophy; amyloid testing (≈¼ are AD)", "Supportive; levodopa trial; myoclonus/dystonia treatment; treat as AD if amyloid+"],
+  ["Multiple system atrophy (MSA)", "Rare; age 50s–60s", "Autonomic failure (fainting on standing, bladder, erectile dysfunction) plus parkinsonism (MSA-P) or ataxia (MSA-C); RBD, stridor. Cognition usually spared.", "Orthostatic hypotension, poor levodopa response, cerebellar signs, antecollis, stridor.", "Hot cross bun sign, putaminal rim, pontine/MCP atrophy", "Orthostatic hypotension and bladder care; levodopa trial; CPAP/airway"],
+  ["Huntington disease", "Rare; onset 30–50", "Chorea, psychiatric change (depression, irritability, OCD, psychosis; high suicide risk), slowed executive dementia; autosomal dominant.", "Chorea, motor impersistence, slowed saccades, dysarthria.", "Caudate atrophy (boxcar ventricles); HTT CAG ≥40", "Tetrabenazine or antipsychotic for chorea; SSRI; suicide screening; genetic counselling"],
+  ["ALS (Lou Gehrig disease) / ALS-FTD", "Rare; ~15% of ALS meet FTD criteria, ~50% have some cognitive/behavioural change", "Progressive weakness, cramps, dysarthria, dysphagia, breathlessness/orthopnea; behaviour change as in bvFTD.", "Upper + lower motor neuron signs: wasting, fasciculations (incl. tongue), brisk reflexes, Babinski.", "EMG denervation; MRI to exclude mimics; C9orf72", "Riluzole, NIV, feeding tube, ALS clinic, early goals of care"],
   ["Alcohol-related / Korsakoff", "Variable", "Amnesia with confabulation; executive problems; history of heavy alcohol use or malnutrition.", "Ataxia, nystagmus, neuropathy.", "Atrophy; mamillary bodies", "Thiamine, abstinence"],
   ["Reversible contributors", "—", "B12 deficiency, hypothyroidism, hypercalcemia, hyponatremia, hypoglycemia, medications, depression, sleep apnea, subdural hematoma, neurosyphilis, HIV.", "Depends on cause.", "CT/MRI for structural causes", "Treat cause; re-test"]
 ];
@@ -742,6 +853,9 @@ function renderRef() {
       <li>Rascovsky K et al. Sensitivity of revised diagnostic criteria for bvFTD. Brain 2011. Gorno-Tempini ML et al. Classification of PPA. Neurology 2011.</li>
       <li>Sachdev P et al. VASCOG criteria for vascular cognitive disorders. Alzheimer Dis Assoc Disord 2014.</li>
       <li>Emre M et al. Clinical diagnostic criteria for dementia associated with Parkinson's disease. Mov Disord 2007.</li>
+      <li>Höglinger GU et al. MDS clinical diagnostic criteria for PSP. Mov Disord 2017. Armstrong MJ et al. Criteria for corticobasal degeneration. Neurology 2013.</li>
+      <li>Wenning GK et al. MDS criteria for the diagnosis of multiple system atrophy. Mov Disord 2022.</li>
+      <li>Shefner JM et al. Gold Coast criteria for ALS. Clin Neurophysiol 2020. Strong MJ et al. ALS-FTSD revised criteria. ALS Frontotemporal Degener 2017.</li>
       <li>Health Canada: lecanemab (Leqembi) NOC/c Oct 2025; donanemab (Kisunla) May 2026. Plasma p-tau217 available in Canada through LifeLabs/Dynacare.</li>
       <li>American Geriatrics Society 2023 Beers Criteria.</li></ul></div>`;
 }

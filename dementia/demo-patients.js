@@ -131,6 +131,71 @@
       preset: ["early"],
       docs: [{ d: 1, title: "Hospitalist Admission Note", text: "63 F admitted with cellulitis. Incidental history: 2 years of progressive word-finding difficulty with long pauses mid-sentence; speech-language pathology described a logopenic pattern with impaired sentence repetition. Single-word comprehension and grammar preserved. More recently a little forgetful. Still independent in all activities and works part-time. MoCA 22/30." }],
       imaging: [{ d: 200, title: "MRI BRAIN", text: "FINDINGS: Left temporoparietal atrophy involving the posterior superior temporal gyrus and inferior parietal lobule, with mild left hippocampal volume loss. No white matter disease. IMPRESSION: Asymmetric left temporoparietal atrophy." }]
+    },
+    {
+      key: "psp", expect: "Progressive supranuclear palsy — probable (gaze palsy + backward falls + midbrain atrophy); poor levodopa response; swallow assessment.",
+      name: "DEMO, Arthur", given: "Arthur", family: "DEMO", sex: "male", birthDate: "1954-02-09", mrn: "TESTDEM11",
+      conds: ["Fracture of distal radius, right", "Hypertension", "Dysphagia"],
+      labs: [["Vitamin B12", "2132-9", 340, "pmol/L", 148, 600], ["TSH", "3016-3", 1.6, "mIU/L", 0.35, 5.0], ["Calcium", "17861-6", 2.33, "mmol/L", 2.10, 2.55],
+        ["Glucose", "2345-7", 5.8, "mmol/L", 3.6, 7.8], ["Sodium", "2951-2", 139, "mmol/L", 135, 145], ["Hemoglobin", "718-7", 141, "g/L", 135, 175],
+        ["Creatinine", "2160-0", 90, "umol/L", 60, 110], ["eGFR", "33914-3", 74, "mL/min/1.73m2", 60, 200]],
+      hr: 72, bp: "134/80", wt: 74,
+      meds: ["Carbidopa-levodopa 25/100 mg 2 tab PO TID", "Acetaminophen 1 g PO QID", "Ramipril 5 mg PO daily"],
+      docs: [{ d: 1, title: "Hospitalist Admission Note", text: "72 M admitted after a fall with a right wrist fracture. For 2 years he has been falling backwards, with frequent falls in the first year, and he is now slowed in his thinking, apathetic and has difficulty planning. Wife now manages the finances. Choking on thin fluids. Exam: vertical supranuclear gaze palsy with limited downgaze and slow vertical saccades, overcome by doll's eyes. Axial rigidity greater than limb rigidity, surprised stare with reduced blink, applause sign present, marked postural instability on pull test, mild dysarthria. No rest tremor. No benefit from levodopa (up to 600 mg/day for 3 months). Attentive, 4AT 0. MoCA 20/30 (poor fluency and trails)." }],
+      imaging: [{ d: 60, title: "MRI BRAIN", text: "FINDINGS: Midbrain atrophy with a hummingbird sign on midline sagittal images and a reduced midbrain-to-pons ratio. Mild frontal atrophy. No significant white matter disease. IMPRESSION: Midbrain atrophy suggestive of progressive supranuclear palsy." }]
+    },
+    {
+      key: "cbs", expect: "Corticobasal syndrome — probable (asymmetric rigidity/dystonia/myoclonus + apraxia, alien limb, astereognosis); prompts amyloid testing (AD-CBS).",
+      name: "DEMO, Patricia", given: "Patricia", family: "DEMO", sex: "female", birthDate: "1957-08-21", mrn: "TESTDEM12",
+      conds: ["Urinary tract infection", "Hypothyroidism"],
+      labs: [["Vitamin B12", "2132-9", 390, "pmol/L", 148, 600], ["TSH", "3016-3", 2.2, "mIU/L", 0.35, 5.0], ["Calcium", "17861-6", 2.36, "mmol/L", 2.10, 2.55],
+        ["Glucose", "2345-7", 5.4, "mmol/L", 3.6, 7.8], ["Sodium", "2951-2", 140, "mmol/L", 135, 145], ["Hemoglobin", "718-7", 128, "g/L", 120, 160],
+        ["Creatinine", "2160-0", 70, "umol/L", 60, 110], ["eGFR", "33914-3", 80, "mL/min/1.73m2", 60, 200]],
+      hr: 76, bp: "126/74", wt: 60,
+      meds: ["Carbidopa-levodopa 25/100 mg 1 tab PO TID", "Levothyroxine 100 mcg PO daily", "Nitrofurantoin 100 mg PO BID"],
+      docs: [{ d: 1, title: "Hospitalist Admission Note", text: "69 F admitted with a urinary tract infection. Two years of a clumsy, stiff left hand that now has a mind of its own (alien limb); she cannot use cutlery or button clothing on the left (limb apraxia). Astereognosis and agraphesthesia in the left hand. Asymmetric rigidity and dystonia of the left arm with focal myoclonus. Speech is becoming slow and halting. Memory relatively preserved. Husband now manages the finances. Attentive, 4AT 0. MoCA 21/30 (poor cube and clock)." }],
+      imaging: [{ d: 90, title: "MRI BRAIN", text: "FINDINGS: Asymmetric right frontoparietal (perirolandic) atrophy. No infarcts. No significant white matter disease. IMPRESSION: Asymmetric right frontoparietal atrophy." }]
+    },
+    {
+      key: "msa", expect: "Multiple system atrophy — clinically probable (autonomic failure + parkinsonism + ataxia, poor levodopa response, stridor, hot cross bun); cognition spared so DLB is down-graded; tamsulosin worsens orthostasis.",
+      name: "DEMO, Bernard", given: "Bernard", family: "DEMO", sex: "male", birthDate: "1962-03-15", mrn: "TESTDEM13",
+      conds: ["Syncope", "Neurogenic bladder"],
+      labs: [["Vitamin B12", "2132-9", 300, "pmol/L", 148, 600], ["TSH", "3016-3", 1.9, "mIU/L", 0.35, 5.0], ["Calcium", "17861-6", 2.3, "mmol/L", 2.10, 2.55],
+        ["Glucose", "2345-7", 5.6, "mmol/L", 3.6, 7.8], ["Sodium", "2951-2", 137, "mmol/L", 135, 145], ["Hemoglobin", "718-7", 138, "g/L", 135, 175],
+        ["Creatinine", "2160-0", 95, "umol/L", 60, 110], ["eGFR", "33914-3", 76, "mL/min/1.73m2", 60, 200]],
+      hr: 70, bp: "148/84 lying, 82/50 standing", wt: 77,
+      meds: ["Carbidopa-levodopa 25/100 mg 2 tab PO QID", "Midodrine 5 mg PO TID", "Tamsulosin 0.4 mg PO daily", "Melatonin 6 mg PO qHS"],
+      docs: [{ d: 1, title: "Hospitalist Admission Note", text: "64 M admitted with syncope. Three years ago erectile dysfunction, then urinary urgency and urinary retention now requiring intermittent catheterization. Lightheaded on standing with recurrent faints; orthostatic hypotension (lying 148/84, standing 82/50). Bradykinesia and rigidity on both sides, with poor response to levodopa up to 800 mg/day. Ataxic gait with dysmetria and scanning speech. Wife reports stridor at night and dream enactment. Cognition intact, MoCA 27/30, still manages his own finances. Attentive, 4AT 0." }],
+      imaging: [{ d: 45, title: "MRI BRAIN", text: "FINDINGS: Hot cross bun sign in the pons with middle cerebellar peduncle atrophy. Putaminal rim hyperintensity bilaterally. IMPRESSION: Findings consistent with multiple system atrophy." }]
+    },
+    {
+      key: "hd", expect: "Huntington disease (strong): chorea + affected mother + caudate atrophy, psychiatric change; young onset; suicide screening; tetrabenazine caution with depression.",
+      name: "DEMO, Natalie", given: "Natalie", family: "DEMO", sex: "female", birthDate: "1980-10-04", mrn: "TESTDEM14",
+      conds: ["Aspiration pneumonia", "Depression"],
+      labs: [["Vitamin B12", "2132-9", 280, "pmol/L", 148, 600], ["TSH", "3016-3", 2.8, "mIU/L", 0.35, 5.0], ["Calcium", "17861-6", 2.25, "mmol/L", 2.10, 2.55],
+        ["Glucose", "2345-7", 5.1, "mmol/L", 3.6, 7.8], ["Sodium", "2951-2", 136, "mmol/L", 135, 145], ["Hemoglobin", "718-7", 119, "g/L", 120, 160],
+        ["Creatinine", "2160-0", 58, "umol/L", 60, 110], ["eGFR", "33914-3", 108, "mL/min/1.73m2", 60, 200]],
+      hr: 96, bp: "112/68", wt: 49,
+      meds: ["Tetrabenazine 12.5 mg PO BID", "Sertraline 100 mg PO daily", "Ceftriaxone 1 g IV q24h"],
+      preset: ["early"],
+      docs: [{ d: 1, title: "Hospitalist Admission Note", text: "46 F admitted with aspiration pneumonia. Four years of involuntary flowing movements of the face, trunk and limbs (chorea), irritability, obsessive checking and depression; slowed thinking and difficulty planning; lost her job. Her mother died of Huntington disease at 58 and a maternal uncle is affected; she has never had genetic testing. Motor impersistence with milkmaid grip. 8 kg weight loss. Husband now manages the finances. Dysphagia to thin fluids. Attentive, 4AT 0. MoCA 19/30." }],
+      imaging: [{ d: 2, title: "CT HEAD WITHOUT CONTRAST", text: "FINDINGS: Bilateral caudate atrophy with boxcar configuration of the frontal horns. Mild generalized atrophy. No acute findings. IMPRESSION: Caudate atrophy." }]
+    },
+    {
+      key: "als", expect: "ALS with frontotemporal dementia (EMG + mixed UMN/LMN + bulbar; ≥4 bvFTD features); orthopnea → NIV; feeding tube and goals of care.",
+      name: "DEMO, Frank", given: "Frank", family: "DEMO", sex: "male", birthDate: "1964-12-01", mrn: "TESTDEM15",
+      conds: ["Aspiration pneumonia", "Hypercapnic respiratory failure"],
+      labs: [["Vitamin B12", "2132-9", 360, "pmol/L", 148, 600], ["TSH", "3016-3", 1.7, "mIU/L", 0.35, 5.0], ["Calcium", "17861-6", 2.31, "mmol/L", 2.10, 2.55],
+        ["Glucose", "2345-7", 6.0, "mmol/L", 3.6, 7.8], ["Sodium", "2951-2", 141, "mmol/L", 135, 145], ["Hemoglobin", "718-7", 146, "g/L", 135, 175],
+        ["Creatinine", "2160-0", 54, "umol/L", 60, 110], ["eGFR", "33914-3", 104, "mL/min/1.73m2", 60, 200]],
+      hr: 104, bp: "122/72", wt: 63,
+      meds: ["Piperacillin-tazobactam 4.5 g IV q6h", "Acetaminophen 650 mg PO q6h PRN"],
+      bio: { emg: "pos" },
+      docs: [
+        { d: 2, title: "Hospitalist Admission Note", text: "62 M admitted with aspiration pneumonia and hypercapnic respiratory failure. One year of right hand weakness with wasting (split hand), then slurred speech and choking on fluids. Fasciculations in both arms and the tongue, with tongue atrophy; brisk reflexes with upgoing toes: upper and lower motor neuron signs. Over the same year his wife describes apathy, disinhibition, loss of empathy and new sweet cravings. Wife now manages the finances. Orthopnea; sleeps in a recliner. Attentive, 4AT 0. MoCA 21/30." },
+        { d: 0, title: "Hospitalist Progress Note", text: "EMG: active and chronic denervation in cervical, thoracic and lumbosacral regions. FVC 41% predicted. Started on BiPAP overnight." }
+      ],
+      imaging: [{ d: 2, title: "MRI BRAIN", text: "FINDINGS: Mild frontal atrophy. No infarcts. No mass. IMPRESSION: Mild frontal atrophy." }]
     }
   ];
   root.DEMENTIA_DEMOS = DEMOS;

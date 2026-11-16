@@ -1,0 +1,53 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, Natalie                    DOB: 1980-10-04     Sex: F
+MRN: TESTDEM14                            Age: 46
+Admitted: 2026-11-14 (Hospitalist)
+
+HOSPITALIST ADMISSION NOTE
+Date of service: 2026-11-14 14:10
+46 F admitted with aspiration pneumonia. Four years of involuntary flowing movements of the
+face, trunk and limbs (chorea), irritability, obsessive checking and depression; slowed
+thinking and difficulty planning; lost her job. Her mother died of Huntington disease at 58
+and a maternal uncle is affected; she has never had genetic testing. Motor impersistence
+with milkmaid grip. 8 kg weight loss. Husband now manages the finances. Dysphagia to thin
+fluids. Attentive, 4AT 0. MoCA 19/30.
+2026-11-14 08:00 BP: 112/68 HR: 96 RR: 16 Temp: 36.8 C SpO2: 96% Weight: 49 kg
+
+LABORATORY RESULTS
+Collected: 2026-11-14 05:30
+Test                      Result           Units           Reference       Flag
+
+Vitamin B12                   280              pmol/L          148 - 600       
+TSH                           2.8              mIU/L           0.35 - 5        
+Calcium                       2.25             mmol/L          2.1 - 2.55      
+Glucose                       5.1              mmol/L          3.6 - 7.8       
+Sodium                        136              mmol/L          135 - 145       
+Hemoglobin                    119              g/L             120 - 160       L
+Creatinine                    58               umol/L          60 - 110        L
+eGFR                          108              mL/min/1.73m2   60 - 200        
+
+ACTIVE MEDICATION ORDERS (2026-11-15)
+Tetrabenazine 12.5 mg PO BID
+Sertraline 100 mg PO daily
+Ceftriaxone 1 g IV q24h
+
+ACTIVE PROBLEM LIST
+Aspiration pneumonia
+Depression
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Natalie MRN TESTDEM14         Page 1
+RADIOLOGY REPORTS
+CT HEAD WITHOUT CONTRAST
+Date of exam: 2026-11-13 11:00
+FINDINGS:
+Bilateral caudate atrophy with boxcar configuration of the frontal horns. Mild generalized
+atrophy. No acute findings.
+IMPRESSION:
+Caudate atrophy.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Natalie MRN TESTDEM14         Page 2

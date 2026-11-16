@@ -1,0 +1,57 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, Frank                      DOB: 1964-12-01     Sex: M
+MRN: TESTDEM15                            Age: 61
+Admitted: 2026-11-13 (Hospitalist)
+
+HOSPITALIST ADMISSION NOTE
+Date of service: 2026-11-13 14:10
+62 M admitted with aspiration pneumonia and hypercapnic respiratory failure. One year of
+right hand weakness with wasting (split hand), then slurred speech and choking on fluids.
+Fasciculations in both arms and the tongue, with tongue atrophy; brisk reflexes with upgoing
+toes: upper and lower motor neuron signs. Over the same year his wife describes apathy,
+disinhibition, loss of empathy and new sweet cravings. Wife now manages the finances.
+Orthopnea; sleeps in a recliner. Attentive, 4AT 0. MoCA 21/30.
+2026-11-13 08:00 BP: 122/72 HR: 104 RR: 16 Temp: 36.8 C SpO2: 96% Weight: 63 kg
+
+HOSPITALIST PROGRESS NOTE
+Date of service: 2026-11-15 08:30
+EMG: active and chronic denervation in cervical, thoracic and lumbosacral regions. FVC 41%
+predicted. Started on BiPAP overnight.
+2026-11-15 08:00 BP: 122/72 HR: 104 RR: 16 Temp: 36.8 C SpO2: 96% Weight: 63 kg
+
+LABORATORY RESULTS
+Collected: 2026-11-14 05:30
+Test                      Result           Units           Reference       Flag
+
+Vitamin B12                   360              pmol/L          148 - 600       
+TSH                           1.7              mIU/L           0.35 - 5        
+Calcium                       2.31             mmol/L          2.1 - 2.55      
+Glucose                       6                mmol/L          3.6 - 7.8       
+Sodium                        141              mmol/L          135 - 145       
+Hemoglobin                    146              g/L             135 - 175       
+Creatinine                    54               umol/L          60 - 110        L
+eGFR                          104              mL/min/1.73m2   60 - 200        
+
+ACTIVE MEDICATION ORDERS (2026-11-15)
+Piperacillin-tazobactam 4.5 g IV q6h
+Acetaminophen 650 mg PO q6h PRN
+
+ACTIVE PROBLEM LIST
+Aspiration pneumonia
+Hypercapnic respiratory failure
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Frank MRN TESTDEM15         Page 1
+RADIOLOGY REPORTS
+MRI BRAIN
+Date of exam: 2026-11-13 11:00
+FINDINGS:
+Mild frontal atrophy. No infarcts. No mass.
+IMPRESSION:
+Mild frontal atrophy.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Frank MRN TESTDEM15         Page 2

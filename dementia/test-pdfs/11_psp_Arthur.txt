@@ -1,0 +1,56 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, Arthur                     DOB: 1954-02-09     Sex: M
+MRN: TESTDEM11                            Age: 72
+Admitted: 2026-11-14 (Hospitalist)
+
+HOSPITALIST ADMISSION NOTE
+Date of service: 2026-11-14 14:10
+72 M admitted after a fall with a right wrist fracture. For 2 years he has been falling
+backwards, with frequent falls in the first year, and he is now slowed in his thinking,
+apathetic and has difficulty planning. Wife now manages the finances. Choking on thin
+fluids. Exam: vertical supranuclear gaze palsy with limited downgaze and slow vertical
+saccades, overcome by doll's eyes. Axial rigidity greater than limb rigidity, surprised
+stare with reduced blink, applause sign present, marked postural instability on pull test,
+mild dysarthria. No rest tremor. No benefit from levodopa (up to 600 mg/day for 3 months).
+Attentive, 4AT 0. MoCA 20/30 (poor fluency and trails).
+2026-11-14 08:00 BP: 134/80 HR: 72 RR: 16 Temp: 36.8 C SpO2: 96% Weight: 74 kg
+
+LABORATORY RESULTS
+Collected: 2026-11-14 05:30
+Test                      Result           Units           Reference       Flag
+
+Vitamin B12                   340              pmol/L          148 - 600       
+TSH                           1.6              mIU/L           0.35 - 5        
+Calcium                       2.33             mmol/L          2.1 - 2.55      
+Glucose                       5.8              mmol/L          3.6 - 7.8       
+Sodium                        139              mmol/L          135 - 145       
+Hemoglobin                    141              g/L             135 - 175       
+Creatinine                    90               umol/L          60 - 110        
+eGFR                          74               mL/min/1.73m2   60 - 200        
+
+ACTIVE MEDICATION ORDERS (2026-11-15)
+Carbidopa-levodopa 25/100 mg 2 tab PO TID
+Acetaminophen 1 g PO QID
+Ramipril 5 mg PO daily
+
+ACTIVE PROBLEM LIST
+Fracture of distal radius, right
+Hypertension
+Dysphagia
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Arthur MRN TESTDEM11         Page 1
+RADIOLOGY REPORTS
+MRI BRAIN
+Date of exam: 2026-09-16 11:00
+FINDINGS:
+Midbrain atrophy with a hummingbird sign on midline sagittal images and a reduced
+midbrain-to-pons ratio. Mild frontal atrophy. No significant white matter disease.
+IMPRESSION:
+Midbrain atrophy suggestive of progressive supranuclear palsy.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Arthur MRN TESTDEM11         Page 2
