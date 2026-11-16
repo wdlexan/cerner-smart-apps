@@ -79,7 +79,7 @@ const PAIN_CLASSES = [
     judge(C) {
       const j = J();
       if (C.egfr != null && C.egfr < 60) j.c(`eGFR ${C.egfr}: renal dose (see table)`);
-      if (C.gabapOver) j.a(C.gabapOver);
+      if (C.gabapOver) j.c(C.gabapOver + " — reduce the dose");
       if (C.opioids.length) j.c("with opioid: respiratory depression (Health Canada warning)");
       if (C.age >= 65 || C.falls) j.c("dizziness, falls, confusion — start low");
       if (C.osa || C.copd) j.c("sleep apnea / COPD");
