@@ -12,7 +12,7 @@ const daysAgo = n => new Date(Date.now() - n * 864e5);
 const round = x => (Math.abs(x) >= 100 ? Math.round(x) : Math.round(x * 10) / 10);
 
 const S = { patient: null, labs: [], vitals: [], meds: [], conds: [], reports: [], allergies: [], demo: false,
-            site: null, tier: null, confused: false, pen: { recent: false, severe: false, treated: false }, noteDirty: false };
+            site: null, tier: null, confused: false, open: {}, pen: { recent: false, severe: false, treated: false }, noteDirty: false };
 
 // ---------- Labs ----------
 const LABS = {
@@ -268,7 +268,8 @@ function render() {
   const site = INF_SITES.find(s => s.id === S.site);
   $("#main").innerHTML = `
   ${S.demo ? `<div class="warn"><b>DEMO - made-up patient.</b> Not real chart data. Demos: ${(window.INF_DEMOS || []).map((d, i) => `<a href="?demo=${i + 1}">${i + 1} ${esc(d.short)}</a>`).join(" &middot; ")}</div>` : ""}
-  <div class="grid">${chartCards(sp)}</div>
+  <div class="toolbar"><button class="btn sec" id="collapseAll">Collapse all</button><button class="btn sec" id="expandAll">Expand all</button></div>
+  ${chartCards(sp)}
   <div class="card">
     <h2>Site of infection</h2>
     <div class="sites">${INF_SITES.map(s => `<button data-site="${s.id}" class="${s.id === S.site ? "on" : ""}" title="${esc(s.sub)}">${esc(s.label)}${sug.includes(s.id) ? '<span class="dot" title="Matches the problem list / reports"></span>' : ""}</button>`).join("")}</div>
@@ -280,52 +281,69 @@ function render() {
     </div>
   </div>
   ${siteBlock(site, sp)}
-  <div class="card"><h2>Assessment &amp; plan draft</h2>
-    <p class="muted">Edit, then copy into the PowerChart note. "Rebuild" overwrites your edits.</p>
+  ${sec("note", "Assessment &amp; plan draft", `<p class="muted">Edit, then copy into the PowerChart note. "Rebuild" overwrites your edits.</p>
     <div style="display:flex;gap:8px;margin-bottom:8px"><button class="btn" id="copyNote">Copy</button><button class="btn sec" id="rebuildNote">Rebuild</button><span id="copied" class="muted"></span></div>
-    <textarea id="note"></textarea>
-  </div>
+    <textarea id="note"></textarea>`)}
   <p class="muted" style="text-align:center">Decision support only - UNVERIFIED draft. Adult doses for normal renal function; adjust for renal/hepatic function and check local antibiogram, Island Health guidance and pharmacy. Not a substitute for clinical judgment.</p>`;
   $("#note").value = S.noteText != null && S.noteDirty ? S.noteText : buildNote(site, sp);
   wire();
 }
 
+// Collapsible coloured section. Open/closed state survives re-renders (S.open); badge shows when collapsed too.
+const SEC_COLORS = { sepsis: "#b42318", abx: "#175cd3", allergy: "#b54708", tb: "#6941c6", micro: "#0e7c86",
+  org: "#2b4a6f", watch: "#b42318", ix: "#0e7c86", rx: "#067647", src: "#c4320a", dur: "#6941c6", ivpo: "#3538cd", idc: "#475467", stew: "#667085", note: "#2b4a6f" };
+function sec(key, title, body, { open = true, badge = "" } = {}) {
+  const isOpen = S.open[key] != null ? S.open[key] : open;
+  return `<details class="sec" data-sec="${key}" style="--c:${SEC_COLORS[key] || "#2b4a6f"}" ${isOpen ? "open" : ""}>
+    <summary><span class="sec-t">${title}</span><span class="sec-b">${badge}</span></summary><div class="body">${body}</div></details>`;
+}
 function chartCards(sp) {
-  const abx = abxMeds(), ba = betaAllergies(), imm = immunocompromised(), egfr = latest("egfr"), pf = penFast();
+  const abx = abxMeds(), ba = betaAllergies(), imm = immunocompromised(), egfr = latest("egfr"), pf = penFast(), tbr = tbRisk(), mm = mismatch();
   const cultures = S.reports.filter(r => /culture|gram stain|blood c|urine c|sputum|wound|csf|aspirate|pcr/i.test(repText(r)));
-  return `
-  <div class="card"><h2>Sepsis screen <span class="muted">(last 24 h)</span></h2>
-    ${sp.data ? `<div>Tmax ${sp.t ? round(sp.t.v) + " C" : "-"} &middot; HR max ${sp.hr ? sp.hr.v : "-"} &middot; RR max ${sp.rr ? sp.rr.v : "-"} &middot; SBP min ${sp.sbp ? sp.sbp.v : "-"} &middot; SpO2 ${lastV("spo2") ? lastV("spo2").v + "%" : "-"}</div>` : `<p class="muted">No vitals in the last 24 h.</p>`}
-    <label class="chk"><input type="checkbox" id="confused" ${S.confused ? "checked" : ""}> Altered mentation / new confusion (GCS &lt;15)</label>
-    <div><span class="pill ${sp.qsofa >= 2 ? "p-red" : sp.qsofa === 1 ? "p-amb" : "p-grn"}">qSOFA ${sp.qsofa}/3</span> <span class="muted">${sp.q.join(", ")}</span>
-      <span class="pill ${sp.sirs.length >= 2 ? "p-amb" : "p-gry"}">SIRS ${sp.sirs.length}/4</span>
-      ${sp.lac ? `<span class="pill ${sp.lac.si >= 4 ? "p-red" : sp.lac.si >= 2 ? "p-amb" : "p-grn"}">Lactate ${round(sp.lac.si)}</span>` : '<span class="pill p-gry">No lactate</span>'}</div>
-    ${sp.shock ? `<div class="alert"><b>Possible septic shock</b> (SBP &lt;90 or lactate &ge;4): cultures, broad antibiotics within 1 hour, 30 mL/kg crystalloid, vasopressors if MAP &lt;65, source control, ICU review.</div>` : sp.qsofa >= 2 ? `<div class="alert">qSOFA &ge;2: higher risk of poor outcome - treat as sepsis, lactate, cultures, antibiotics within 1 hour.</div>` : ""}
-    <div class="muted" style="margin-top:4px">WBC ${labTxt("wbc")} &middot; CRP ${labTxt("crp")} &middot; PCT ${labTxt("pct")} &middot; Creatinine ${labTxt("creatinine")} &middot; eGFR ${labTxt("egfr")}</div>
-    ${egfr && egfr.si < 30 ? `<div class="warn">eGFR ${round(egfr.si)}: renally adjust (piperacillin-tazobactam, cefepime, meropenem, vancomycin, acyclovir, TMP-SMX, levofloxacin); avoid nitrofurantoin.</div>` : ""}
-  </div>
-  <div class="card"><h2>Current antibiotics</h2>
-    ${abx.length ? `<table><tr><th>Medication</th><th>Route</th><th>Day</th></tr>${abx.map(m => { const d = dayOf(m); return `<tr><td>${esc(medText(m))}</td><td>${isIV(m) ? '<span class="pill p-blu">IV</span>' : '<span class="pill p-gry">PO/other</span>'}</td><td>${d ? `<b>Day ${d}</b>${d >= 3 ? ' <span class="pill p-amb">48-72 h review</span>' : ""}` : "-"}</td></tr>`; }).join("")}</table>` : `<p class="muted">No antibiotics on the active list.</p>`}
-    ${mismatch().map(x => `<div class="alert"><b>Bug-drug mismatch:</b> ${esc(x)}</div>`).join("")}
-    ${egfr && egfr.si < 30 && abx.some(m => /nitrofurantoin/i.test(medName(m))) ? `<div class="alert">Nitrofurantoin with eGFR ${round(egfr.si)}: ineffective and toxic below CrCl 30 - stop.</div>` : ""}
-    ${abx.some(isIV) ? `<div class="info">On IV therapy: check switch-to-PO criteria (Treatment &gt; IV vs oral).</div>` : ""}
-    ${imm.length ? `<div class="warn"><b>Immunocompromised:</b> ${imm.map(esc).join(", ")} - broader differential, lower threshold for ID.</div>` : ""}
-  </div>
-  <div class="card"><h2>Allergies</h2>
-    ${S.allergies.length ? `<ul>${S.allergies.map(a => `<li>${BETA.test(allergyName(a)) ? '<span class="pill p-amb">beta-lactam</span> ' : ""}${esc(allergyName(a))}${allergyReactions(a) ? ` - <i>${esc(allergyReactions(a))}</i>` : ""}${a.criticality === "high" ? ' <span class="pill p-red">high</span>' : ""}</li>`).join("")}</ul>` : `<p class="muted">No allergies recorded (confirm with patient).</p>`}
-    ${ba.length ? `<h3>PEN-FAST (penicillin allergy risk)</h3>
-      <label class="chk"><input type="checkbox" class="pen" data-k="recent" ${S.pen.recent ? "checked" : ""}> Reaction 5 years ago or less (2)</label>
-      <label class="chk"><input type="checkbox" class="pen" data-k="severe" ${S.pen.severe ? "checked" : ""}> Anaphylaxis/angioedema OR severe cutaneous reaction (SJS, TEN, DRESS) (2)</label>
-      <label class="chk"><input type="checkbox" class="pen" data-k="treated" ${S.pen.treated ? "checked" : ""}> Treatment required for the reaction (1)</label>
-      <div><span class="score">${pf.s}</span>/5 - <b>${pf.risk}</b> risk of positive test.
-      ${pf.s < 3 && !S.pen.severe ? '<div class="ok">Low risk: cephalosporins are fine; consider a direct oral amoxicillin challenge (delabel) per local allergy pathway.</div>' : '<div class="warn">Use non-beta-lactam alternatives (see Allergy row) or ID/allergy advice; avoid all beta-lactams after SJS/TEN/DRESS.</div>'}</div>` : ""}
-  </div>
-  ${tbCard()}
-  <div class="card"><h2>Cultures &amp; micro (30 days)</h2>
-    ${cultures.length ? `<ul>${cultures.sort((a, b) => new Date(repDate(b)) - new Date(repDate(a))).map(r => `<li><b>${esc(repText(r))}</b> <span class="muted">${fmtDT(repDate(r))}</span><br>${esc(repConcl(r) || "pending")}</li>`).join("")}</ul>` : `<p class="muted">No culture reports found.</p>`}
+  const qp = `<span class="pill ${sp.qsofa >= 2 ? "p-red" : sp.qsofa === 1 ? "p-amb" : "p-grn"}">qSOFA ${sp.qsofa}/3</span>`;
+  const sirs = `<span class="pill ${sp.sirs.length >= 2 ? "p-amb" : "p-gry"}">SIRS ${sp.sirs.length}/4</span>`;
+  const lac = sp.lac ? `<span class="pill ${sp.lac.si >= 4 ? "p-red" : sp.lac.si >= 2 ? "p-amb" : "p-grn"}">Lactate ${round(sp.lac.si)}</span>` : '<span class="pill p-gry">No lactate</span>';
+  const sepsisBody = `<div class="hrow">
+      <div class="hcell">${sp.data ? `<b>Last 24 h:</b> Tmax ${sp.t ? round(sp.t.v) + " C" : "-"} &middot; HR max ${sp.hr ? sp.hr.v : "-"} &middot; RR max ${sp.rr ? sp.rr.v : "-"} &middot; SBP min ${sp.sbp ? sp.sbp.v : "-"} &middot; SpO2 ${lastV("spo2") ? lastV("spo2").v + "%" : "-"}` : `<span class="muted">No vitals in the last 24 h.</span>`}
+        <label class="chk"><input type="checkbox" id="confused" ${S.confused ? "checked" : ""}> Altered mentation / new confusion (GCS &lt;15)</label></div>
+      <div class="hcell">${qp} <span class="muted">${sp.q.join(", ")}</span> ${sirs} ${lac}
+        <div class="muted" style="margin-top:4px">WBC ${labTxt("wbc")} &middot; CRP ${labTxt("crp")} &middot; PCT ${labTxt("pct")} &middot; Creatinine ${labTxt("creatinine")} &middot; eGFR ${labTxt("egfr")}</div></div>
+      <div class="hcell wide">${sp.shock ? `<div class="alert"><b>Possible septic shock</b> (SBP &lt;90 or lactate &ge;4): cultures, broad antibiotics within 1 hour, 30 mL/kg crystalloid, vasopressors if MAP &lt;65, source control, ICU review.</div>` : sp.qsofa >= 2 ? `<div class="alert">qSOFA &ge;2: higher risk of poor outcome - treat as sepsis, lactate, cultures, antibiotics within 1 hour.</div>` : ""}
+        ${egfr && egfr.si < 30 ? `<div class="warn">eGFR ${round(egfr.si)}: renally adjust (piperacillin-tazobactam, cefepime, meropenem, vancomycin, acyclovir, TMP-SMX, levofloxacin); avoid nitrofurantoin.</div>` : ""}</div>
+    </div>`;
+  const abxBody = `<div class="hrow">
+      <div class="hcell wide">${abx.length ? `<table><tr><th>Medication</th><th>Route</th><th>Day</th></tr>${abx.map(m => { const d = dayOf(m); return `<tr><td>${esc(medText(m))}</td><td>${isIV(m) ? '<span class="pill p-blu">IV</span>' : '<span class="pill p-gry">PO/other</span>'}</td><td>${d ? `<b>Day ${d}</b>${d >= 3 ? ' <span class="pill p-amb">48-72 h review</span>' : ""}` : "-"}</td></tr>`; }).join("")}</table>` : `<p class="muted">No antibiotics on the active list.</p>`}</div>
+      <div class="hcell">${mm.map(x => `<div class="alert"><b>Bug-drug mismatch:</b> ${esc(x)}</div>`).join("")}
+        ${egfr && egfr.si < 30 && abx.some(m => /nitrofurantoin/i.test(medName(m))) ? `<div class="alert">Nitrofurantoin with eGFR ${round(egfr.si)}: ineffective and toxic below CrCl 30 - stop.</div>` : ""}
+        ${abx.some(isIV) ? `<div class="info">On IV therapy: check switch-to-PO criteria (IV vs oral section).</div>` : ""}
+        ${imm.length ? `<div class="warn"><b>Immunocompromised:</b> ${imm.map(esc).join(", ")} - broader differential, lower threshold for ID.</div>` : ""}</div>
+    </div>`;
+  const allergyBody = `<div class="hrow">
+      <div class="hcell">${S.allergies.length ? `<ul>${S.allergies.map(a => `<li>${BETA.test(allergyName(a)) ? '<span class="pill p-amb">beta-lactam</span> ' : ""}${esc(allergyName(a))}${allergyReactions(a) ? ` - <i>${esc(allergyReactions(a))}</i>` : ""}${a.criticality === "high" ? ' <span class="pill p-red">high</span>' : ""}</li>`).join("")}</ul>` : `<p class="muted">No allergies recorded (confirm with patient).</p>`}</div>
+      ${ba.length ? `<div class="hcell"><b>PEN-FAST</b> (penicillin allergy risk)
+        <label class="chk"><input type="checkbox" class="pen" data-k="recent" ${S.pen.recent ? "checked" : ""}> Reaction 5 years ago or less (2)</label>
+        <label class="chk"><input type="checkbox" class="pen" data-k="severe" ${S.pen.severe ? "checked" : ""}> Anaphylaxis/angioedema OR severe cutaneous reaction (SJS, TEN, DRESS) (2)</label>
+        <label class="chk"><input type="checkbox" class="pen" data-k="treated" ${S.pen.treated ? "checked" : ""}> Treatment required for the reaction (1)</label></div>
+      <div class="hcell"><span class="score">${pf.s}</span>/5 - <b>${pf.risk}</b> risk of positive test.
+        ${pf.s < 3 && !S.pen.severe ? '<div class="ok">Low risk: cephalosporins are fine; consider a direct oral amoxicillin challenge (delabel) per local allergy pathway.</div>' : '<div class="warn">Use non-beta-lactam alternatives or ID/allergy advice; avoid all beta-lactams after SJS/TEN/DRESS.</div>'}</div>` : ""}
+    </div>`;
+  const tb = S.tb;
+  const tbBody = `${tbr.think ? `<div class="alert"><b>Consider tuberculosis.</b> Airborne isolation now; 3 sputum AFB smear + culture + TB NAAT; chest X-ray; HIV test; avoid fluoroquinolones until TB excluded; TB specialist and public health. <button class="btn sec" id="tbGo" style="padding:2px 8px">Open TB site</button></div>` : ""}
+    ${tbr.think && abx.some(m => /levofloxacin|moxifloxacin|ciprofloxacin/i.test(medName(m))) ? `<div class="alert"><b>On a fluoroquinolone while TB is possible</b> - it can partly treat TB, make smears/cultures falsely negative and select resistance. Collect sputum now and discuss with the TB specialist.</div>` : ""}
+    <div class="hrow">
+      <div class="hcell">${tbr.rad.length ? `<div class="warn"><b>Imaging/report clue:</b> ${tbr.rad.map(esc).join("<br>")}</div>` : '<span class="muted">No imaging clues in reports.</span>'}
+        <div class="muted">Chart risk factors: ${tbr.chart.length ? tbr.chart.map(esc).join(", ") : "none found"}</div></div>
+      <div class="hcell"><b class="muted">Symptoms</b>${TB_SYMPTOMS.map(([k, l]) => `<label class="chk"><input type="checkbox" class="tbc" data-k="${k}" ${tb[k] ? "checked" : ""}> ${l}</label>`).join("")}</div>
+      <div class="hcell"><b class="muted">Exposure / risk (ask)</b>${TB_EXPOSURE.map(([k, l]) => `<label class="chk"><input type="checkbox" class="tbc" data-k="${k}" ${tb[k] ? "checked" : ""}> ${l}</label>`).join("")}</div>
+    </div>`;
+  const microBody = `${cultures.length ? `<ul class="cols">${cultures.sort((a, b) => new Date(repDate(b)) - new Date(repDate(a))).map(r => `<li><b>${esc(repText(r))}</b> <span class="muted">${fmtDT(repDate(r))}</span><br>${esc(repConcl(r) || "pending")}</li>`).join("")}</ul>` : `<p class="muted">No culture reports found.</p>`}
     ${cultures.some(r => /staph(ylococcus)? aureus|\bmrsa\b|\bmssa\b/i.test(repConcl(r)) && /blood/i.test(repText(r))) ? `<div class="alert"><b>S. aureus bacteremia:</b> ID consult, repeat blood cultures q24-48h until negative, echo, source control, IV therapy (cefazolin or cloxacillin for MSSA; vancomycin for MRSA).</div>` : ""}
-    ${cultures.some(r => /candida/i.test(repConcl(r)) && /blood/i.test(repText(r))) ? `<div class="alert"><b>Candidemia:</b> ID consult, echinocandin, remove lines, ophthalmology exam, repeat cultures.</div>` : ""}
-  </div>`;
+    ${cultures.some(r => /candida/i.test(repConcl(r)) && /blood/i.test(repText(r))) ? `<div class="alert"><b>Candidemia:</b> ID consult, echinocandin, remove lines, ophthalmology exam, repeat cultures.</div>` : ""}`;
+  return sec("sepsis", "Sepsis screen", sepsisBody, { badge: `${qp}${sirs}${lac}` })
+    + sec("abx", "Current antibiotics", abxBody, { badge: `<span class="pill p-blu">${abx.length} active</span>${mm.length ? '<span class="pill p-red">mismatch</span>' : ""}${abx.some(isIV) ? '<span class="pill p-gry">IV</span>' : ""}` })
+    + sec("allergy", "Allergies", allergyBody, { badge: S.allergies.length ? `<span class="pill ${ba.length ? "p-amb" : "p-gry"}">${S.allergies.length} recorded${ba.length ? " - beta-lactam" : ""}</span>${ba.length ? `<span class="pill p-gry">PEN-FAST ${pf.s}</span>` : ""}` : '<span class="pill p-gry">none recorded</span>' })
+    + sec("tb", "Think TB?", tbBody, { open: tbr.think, badge: tbr.think ? '<span class="pill p-red">consider TB</span>' : '<span class="pill p-grn">no flags</span>' })
+    + sec("micro", "Cultures &amp; micro (30 days)", microBody, { badge: `<span class="pill p-gry">${cultures.length} report${cultures.length === 1 ? "" : "s"}</span>` });
 }
 
 // Culture text "resistant to X, Y and Z" vs current antibiotics
@@ -351,35 +369,36 @@ function siteBlock(site, sp) {
   const bc = S.reports.some(r => /blood c/i.test(repText(r)));
   const lr = ["skin", "groin"].includes(site.id) ? lrinec() : null, cb = site.id === "lung" ? curb65() : null;
   return `
-  <div class="card"><h2>${esc(site.label)} <span class="muted">- ${esc(site.sub)}</span></h2>
-  <details open><summary>Likely organisms</summary><div class="body">${list(site.organisms)}</div></details>
-  <details open class="red"><summary>What to watch out for${site.id === "skin" ? " - necrotizing fasciitis" : site.id === "groin" ? " - Fournier gangrene" : site.id === "biliary" ? " - cholangitis needs drainage" : site.id === "tb" ? " - when to think of TB" : ""}</summary><div class="body">
+  <div class="sitehead"><h2>${esc(site.label)}</h2><span class="muted">${esc(site.sub)}</span></div>
+  <div>
+  ${sec("org", "Likely organisms", list(site.organisms))}
+  ${sec("watch", `What to watch out for${site.id === "skin" ? " - necrotizing fasciitis" : site.id === "groin" ? " - Fournier gangrene" : site.id === "biliary" ? " - cholangitis needs drainage" : site.id === "tb" ? " - when to think of TB" : ""}`, `
     ${lr ? lrCalcHTML() : ""}
     ${site.id === "biliary" ? tgHTML() : ""}
     ${["groin", "skin"].includes(site.id) && S.meds.some(m => /empagliflozin|dapagliflozin|canagliflozin|ertugliflozin|jardiance|forxiga|invokana|synjardy|xigduo/i.test(medName(m))) ? `<div class="alert"><b>On an SGLT2 inhibitor</b> (${esc(S.meds.filter(m => /gliflozin|jardiance|forxiga|invokana|synjardy|xigduo/i.test(medName(m))).map(medName).join(", "))}): associated with Fournier gangrene and euglycemic DKA - stop it, check ketones.</div>` : ""}
     ${site.isolation ? `<div class="alert"><b>Airborne isolation</b>${list(site.isolation)}</div>` : ""}
     ${cb ? `<div class="${cb.s >= 3 ? "alert" : cb.s === 2 ? "warn" : "info"}"><b>CURB-65 ${cb.s}/5</b> ${cb.s >= 3 ? "- severe, consider ICU review" : cb.s === 2 ? "- admit" : "- low risk (outpatient if otherwise OK)"}<br><span class="muted">${cb.items.map(([n, v]) => `${v === null ? "?" : v ? "&#10003;" : "&#10007;"} ${n}`).join(" &middot; ")}</span></div>` : ""}
     ${list(site.watch)}
-  </div></details>
-  <details><summary>Investigations - blood, imaging, cultures</summary><div class="body">
+  `, { badge: [lr ? `<span class="pill ${lr.s >= 8 ? "p-red" : lr.s >= 6 ? "p-amb" : "p-gry"}">LRINEC ${lr.s}</span>` : "", cb ? `<span class="pill ${cb.s >= 3 ? "p-red" : cb.s === 2 ? "p-amb" : "p-gry"}">CURB-65 ${cb.s}</span>` : "", site.id === "biliary" ? (g => g.met ? `<span class="pill ${g.grade === 3 ? "p-red" : g.grade === 2 ? "p-amb" : "p-blu"}">Tokyo grade ${g.grade}</span>` : "")(tg18()) : ""].join("") })}
+  ${sec("ix", "Investigations - blood, imaging, cultures", `
     <h3>Blood</h3>${list(site.ix.blood)}
     <p class="muted">In chart: WBC ${labTxt("wbc")}, CRP ${labTxt("crp")}, lactate ${labTxt("lactate")}, creatinine ${labTxt("creatinine")}, ESR ${labTxt("esr")} &middot; Blood cultures ${bc ? '<span class="pill p-grn">sent</span>' : '<span class="pill p-amb">none found</span>'}</p>
     <h3>Imaging</h3>${list(site.ix.imaging)}
     ${imaging.length ? `<p class="muted">In chart:</p><ul>${imaging.map(r => `<li>${esc(repText(r))} <span class="muted">${fmtDate(repDate(r))}</span> - ${esc(repConcl(r))}</li>`).join("")}</ul>` : `<p class="muted">No imaging reports in the last 30 days.</p>`}
     <h3>Cultures / other</h3>${list(site.ix.other)}
-  </div></details>
-  <details open><summary>Treatment - antibiotics (adult doses, normal renal function)</summary><div class="body">
+  `, { open: false, badge: `<span class="pill ${bc ? "p-grn" : "p-amb"}">blood cultures ${bc ? "sent" : "not found"}</span>` })}
+  ${sec("rx", "Treatment - antibiotics <span class=\"muted\">(adult doses, normal renal function)</span>", `
     <table><tr><th style="width:120px">Severity</th><th style="width:28%">Situation</th><th>Regimen</th></tr>
     ${site.abx.map(r => `<tr class="${r.tier === S.tier || !site.abx.some(x => x.tier === S.tier) ? "hl" : ""}"><td><span class="pill ${r.tier === "severe" ? "p-red" : r.tier === "moderate" ? "p-amb" : "p-grn"}">${r.tier}</span></td><td>${esc(r.setting)}</td><td>${esc(r.regimen)}</td></tr>`).join("")}
     </table>
     <h3>Penicillin / beta-lactam allergy ${ba.length ? `<span class="pill ${severeAllergy ? "p-red" : "p-amb"}">patient has ${severeAllergy ? "SEVERE " : ""}beta-lactam allergy</span>` : ""}</h3>${list(site.allergy)}
-  </div></details>
-  <details open><summary>Treatment - surgery / source control</summary><div class="body">${list(site.source)}<h3>Call the surgeon</h3>${list(site.surgeon)}</div></details>
-  <details open><summary>How long</summary><div class="body">${list(site.duration)}
-    ${abxMeds().length ? `<p class="muted">Current: ${abxMeds().map(m => `${esc(medName(m))} day ${dayOf(m) ?? "?"}`).join("; ")}</p>` : ""}</div></details>
-  <details><summary>IV vs oral - when to use IV and when to switch</summary><div class="body">${list(site.ivpo)}<h3>All sites</h3>${list(INF_GENERAL.ivpo)}</div></details>
-  <details><summary>When to get ID involved</summary><div class="body">${list(site.idc)}<h3>All sites</h3>${list(INF_GENERAL.id)}</div></details>
-  <details><summary>Stewardship reminders</summary><div class="body">${list(INF_GENERAL.stewardship)}</div></details>
+  `, { badge: `<span class="pill p-blu">showing: ${S.tier}</span>${ba.length ? `<span class="pill ${severeAllergy ? "p-red" : "p-amb"}">beta-lactam allergy</span>` : ""}` })}
+  ${sec("src", "Treatment - surgery / source control", `${list(site.source)}<h3>Call the surgeon</h3>${list(site.surgeon)}`)}
+  ${sec("dur", "How long", `${list(site.duration)}
+    ${abxMeds().length ? `<p class="muted">Current: ${abxMeds().map(m => `${esc(medName(m))} day ${dayOf(m) ?? "?"}`).join("; ")}</p>` : ""}`)}
+  ${sec("ivpo", "IV vs oral - when to use IV and when to switch", `${list(site.ivpo)}<h3>All sites</h3>${list(INF_GENERAL.ivpo)}`, { open: false })}
+  ${sec("idc", "When to get ID involved", `${list(site.idc)}<h3>All sites</h3>${list(INF_GENERAL.id)}`, { open: false })}
+  ${sec("stew", "Stewardship reminders", list(INF_GENERAL.stewardship), { open: false })}
   </div>`;
 }
 
@@ -429,6 +448,10 @@ function wire() {
   document.querySelectorAll("[data-lru]").forEach(b => b.onclick = () => { S.lrUnits = b.dataset.lru; render(); });
   const lrr = $("#lrReset"); if (lrr) lrr.onclick = () => { lrInit(true); render(); };
   const lrj = $("#lrJump"); if (lrj) lrj.onclick = () => { S.site = "skin"; render(); setTimeout(() => $("#lrBox")?.scrollIntoView({ behavior: "smooth", block: "center" }), 50); };
+  document.querySelectorAll("details.sec").forEach(d => d.addEventListener("toggle", () => { S.open[d.dataset.sec] = d.open; }));
+  const setAll = v => document.querySelectorAll("details.sec").forEach(d => { d.open = v; S.open[d.dataset.sec] = v; });
+  $("#collapseAll").onclick = () => setAll(false);
+  $("#expandAll").onclick = () => setAll(true);
   document.querySelectorAll(".tgc").forEach(x => x.onchange = () => { S.tgOv[x.dataset.k] = x.checked; render(); });
   const tgr = $("#tgReset"); if (tgr) tgr.onclick = () => { S.tgOv = {}; render(); };
   document.querySelectorAll(".tbc").forEach(x => x.onchange = () => { S.tb[x.dataset.k] = x.checked; render(); });
