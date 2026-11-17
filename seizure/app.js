@@ -189,8 +189,12 @@ const specOf = st => ({ focal_aware: "focal", focal_impaired: "focal", focal_bil
 // ---------- Chart-derived flags ----------
 function acuteSymptomaticFlags() {
   // ILAE (Beghi 2010) thresholds for acute symptomatic (provoked) seizures, labs within 24 h of seizure
+  // Uses the worst value in the window (a corrected sodium afterwards does not hide the one at the time of the seizure).
   const out = [];
-  const chk = (key, test, msg) => { const l = latest(key); if (l && l.si != null && test(l.si)) out.push(`${msg} (${round(l.si)} ${SI_UNIT[key] || l.unit}, ${fmtDate(l.t)})`); };
+  const chk = (key, test, msg) => {
+    const hit = S.labs.filter(l => l.key === key && l.si != null && test(l.si)).sort((a, b) => b.t - a.t)[0];
+    if (hit) out.push(`${msg} (${round(hit.si)} ${SI_UNIT[key] || hit.unit}, ${fmtDate(hit.t)}${hit !== latest(key) ? `; latest ${round(latest(key).si)}` : ""})`);
+  };
   chk("sodium", v => v < 115, "Sodium &lt;115 mmol/L");
   chk("glucose", v => v < 2.0, "Glucose &lt;2.0 mmol/L");
   chk("glucose", v => v > 25, "Glucose &gt;25 mmol/L (provoking if with ketoacidosis/HHS)");
@@ -240,6 +244,7 @@ function medFlags(st) {
   if (ids.includes("vpa") && onMed(CARBAPENEM)) out.push(["alert", "Valproate + carbapenem: valproate levels fall 60-100% within 24 h. Change antibiotic or switch/bridge the AED (e.g. levetiracetam). Raising the valproate dose does not work."]);
   if (ids.includes("vpa") && st.wocbp) out.push(["alert", "Valproate in a woman of childbearing potential: major teratogen. Needs pregnancy prevention plan and specialist review; plan to switch."]);
   if (ids.includes("ltg") && ids.includes("vpa")) out.push(["warn", "Lamotrigine + valproate: lamotrigine levels about double - use the slower titration and lower target."]);
+  if (ids.includes("ltg") && onMed(/ethinyl|estradiol|conjugated estrogen/i)) out.push(["alert", "Lamotrigine + estrogen-containing contraceptive/HRT: lamotrigine levels fall by about half (and rise in the pill-free week). Check a level; increase dose or use a non-estrogen method."]);
   if (ids.some(i => INDUCER_IDS.includes(i)) && onMed(DOAC)) out.push(["alert", "Strong enzyme inducer AED (carbamazepine/phenytoin/phenobarbital) with DOAC/warfarin: anticoagulant levels reduced. Avoid with DOACs; monitor INR closely with warfarin."]);
   if (ids.some(i => ["cbz", "pht", "pb", "oxc", "tpm", "per", "cnb"].includes(i)) && onMed(OCP)) out.push(["warn", "Enzyme-inducing AED with hormonal contraception: contraceptive failure risk. Use IUD/depot or non-inducing AED."]);
   if (ids.includes("lcm") && onMed(PR_DRUG)) out.push(["warn", "Lacosamide with AV-nodal/PR-prolonging drug: check ECG (PR interval)."]);
@@ -284,11 +289,6 @@ function drivingRule(st) {
     if (!st.resolved) r.conditions.push("Enter the date the provoking cause stabilized/resolved for an accurate date (currently counted from the seizure)");
     return r;
   }
-  if (st.cause === "prov_metabolic") {
-    Object.assign(r, { section: "17.6.2", title: "Provoked seizure without structural abnormality", months: null,
-      text: "No fixed interval: may drive once the provoking factor (e.g. hyponatremia, hypoglycemia, drug toxicity) has resolved or been corrected and the treating physician judges further seizures unlikely. Same for commercial and non-commercial." });
-    return r;
-  }
   if (st.epilepsyDx) {
     if (st.asleepOnly) {
       Object.assign(r, com ? { section: "17.6.13", title: "Epilepsy, seizures only asleep/on awakening - commercial", months: 60, text: "Pattern of seizures only while asleep or on awakening consistent for at least 5 years, with no prolonged post-ictal impairment in wakefulness." }
@@ -306,14 +306,41 @@ function drivingRule(st) {
     Object.assign(r, com ? { section: "17.6.12", title: "Epilepsy - commercial", months: 60, text: "5 years without a seizure, with or without medication." }
       : { section: "17.6.6", title: "Epilepsy - non-commercial", months: 6, text: "6 months seizure-free (may be reduced to no less than 3 months on neurologist recommendation with rationale)." });
     r.conditions.push("Follows treatment; stops driving and reports if a seizure occurs");
+    if (st.cause === "prov_metabolic") r.conditions.push("A provoking factor was also present: the epilepsy standard is used because the patient has epilepsy; the neurologist may advise otherwise");
     if (com) r.conditions.push("BC restriction R22 (Code W) on Class 1-4; invalid in the USA");
+    return r;
+  }
+  if (st.cause === "prov_metabolic") {
+    Object.assign(r, { section: "17.6.2", title: "Provoked seizure without structural abnormality", months: null,
+      text: "No fixed interval: may drive once the provoking factor (e.g. hyponatremia, hypoglycemia, drug toxicity) has resolved or been corrected and the treating physician judges further seizures unlikely. Same for commercial and non-commercial." });
     return r;
   }
   // first unprovoked or not yet determined
   Object.assign(r, com ? { section: "17.6.5", title: "Single unprovoked seizure - commercial", months: 12, text: "At least 12 months since the seizure, complete neurological assessment, epilepsy not diagnosed, and satisfactory CNS imaging and EEG." }
-    : { section: "17.6.4", title: "Single unprovoked seizure - non-commercial", months: 3, text: "CCMTA/BC: no fixed interval - may drive once a complete neurological assessment is done, epilepsy is NOT diagnosed, and CNS imaging and EEG are satisfactory. The CMA Driver's Guide advises at least 3 months, so the earliest date below uses 3 months." });
+    : { section: "17.6.4", title: "Single unprovoked seizure - non-commercial", months: 3, text: "CCMTA/BC: no fixed interval - may drive once a complete neurological assessment is done, epilepsy is NOT diagnosed, and CNS imaging and EEG are satisfactory. The CMA Driver's Guide advises at least 3 months, so the app uses 3 months." });
   if (st.cause === "unknown") r.conditions.unshift("Cause not yet determined: advise NO driving until workup is complete, then reclassify");
   return r;
+}
+
+// Plain-language waiting period: "in 6 months", "in 5 years", plus how long is left from today.
+function waitText(months) {
+  if (months == null) return "";
+  if (months >= 12 && months % 12 === 0) return `${months / 12} year${months > 12 ? "s" : ""}`;
+  return `${months} months`;
+}
+function remainingText(date) {
+  if (!date) return "";
+  const days = Math.round((date - new Date()) / 864e5);
+  if (days <= 0) return "waiting period already passed (if seizure-free and conditions met)";
+  if (days < 45) return `about ${days} days from today`;
+  const m = Math.round(days / 30.44);
+  return m >= 24 ? `about ${Math.round(m / 12)} years from today` : `about ${m} months from today`;
+}
+function driveLine(dr) {
+  // e.g. "Can drive in 6 months (on or after 2027-05-17, about 6 months from today)"
+  if (dr.months == null) return "No fixed waiting period";
+  const d = dr.from ? addMonths(dr.from, dr.months) : null;
+  return `Can drive in ${waitText(dr.months)}${d ? ` (on or after ${fmtDate(d)}; ${remainingText(d)})` : " from the last seizure"}`;
 }
 
 // ---------- Rendering ----------
@@ -323,6 +350,16 @@ function render() {
   if (!S.noteDirty) $("#note").value = buildNote(st);
 }
 
+// After one unprovoked seizure, an epileptiform EEG or a structural lesion means epilepsy (ILAE 2014) - changes treatment and driving.
+function epilepsyHint(st) {
+  if (st.epilepsyDx || st.presentation !== "first" || /^prov|alcohol/.test(st.cause)) return "";
+  const why = [];
+  const eeg = reportFor("eeg"), concl = r => (repConcl(r) || "").toLowerCase();
+  if (eeg && /sharp wave|spike|epileptiform|polyspike|periodic discharge|electrographic seizure/.test(concl(eeg)) && !/no epileptiform|without epileptiform|normal eeg/.test(concl(eeg))) why.push("EEG: " + repConcl(eeg));
+  for (const k of ["mri", "ct"]) { const r = reportFor(k); if (r && /cavern|tumou?r|mass|glioma|metasta|old .*infarct|encephalomalacia|gliosis|dysplasia|hippocampal sclerosis|mesial temporal sclerosis|heterotopia|avm|arteriovenous/.test(concl(r))) { why.push(REPORTS[k].label + ": " + repConcl(r)); break; } }
+  if (!why.length) return "";
+  return `<div class="warn"><b>May already meet the definition of epilepsy after one seizure</b> (ILAE 2014: recurrence risk &ge;60%).<br>${why.map(esc).join("<br>")}<br>If neurology agrees, tick <i>Epilepsy diagnosed</i> above - this changes the AED decision and the driving wait (epilepsy: 6 months private, 5 years commercial).</div>`;
+}
 function renderSummary(st) {
   const p = S.patient;
   const ids = [...new Set(aedIdsOn())];
@@ -339,10 +376,11 @@ function renderSummary(st) {
       <div class="card"><h2>Snapshot</h2>
         <p><b>${esc(PRES_LABEL[st.presentation])}</b> - ${esc(STYPE_LABEL[st.stype])}, ${esc(CAUSE_LABEL[st.cause])}${st.lastSz ? `, last seizure ${fmtDate(st.lastSz)}` : ""}.</p>
         ${st.presentation === "status" || st.notBaseline ? `<div class="alert"><b>Not back to baseline / status:</b> treat as status epilepticus (Treatment tab) and get an urgent EEG to exclude non-convulsive status.</div>` : ""}
+        ${epilepsyHint(st)}
         ${acute.length ? `<div class="alert"><b>Meets ILAE acute-symptomatic (provoked) threshold:</b><br>${acute.join("<br>")}<br><span class="muted">If this was within ~24 h of the seizure, classify as provoked - metabolic.</span></div>` : ""}
         ${soft.length ? `<div class="warn">${soft.join("<br>")}</div>` : ""}
         <h3>Driving</h3>
-        <p class="drive">${st.driver === "none" ? "Does not drive." : `<b>No driving now.</b> ${esc(dr.title)} (CCMTA ${esc(dr.section)})${earliest ? ` - earliest ~<b>${earliest}</b>` : " - no fixed interval; see Driving tab"}.`}</p>
+        <p class="drive">${st.driver === "none" ? "Does not drive." : `<b>No driving now.</b> <b>${esc(driveLine(dr))}</b>${dr.months == null ? " - see Driving tab for conditions" : ""}. <span class="muted">${esc(dr.title)}, CCMTA ${esc(dr.section)}</span>`}</p>
       </div>
       <div class="card"><h2>AEDs on the medication list</h2>
         ${ids.length ? `<table><tr><th>Medication</th><th>Dose</th><th>Status</th></tr>${S.meds.filter(m => AED_MATCH.some(([, re]) => re.test(medName(m)))).map(m => `<tr><td>${esc(medName(m))}</td><td>${esc(medDose(m))}</td><td>${esc(m.status)}</td></tr>`).join("")}</table>` : `<p class="muted">No antiseizure medication found on the active list.</p>`}
@@ -366,16 +404,16 @@ function renderSummary(st) {
 function renderDriving(st) {
   const dr = drivingRule(st);
   const earliest = dr.months != null && dr.from ? addMonths(dr.from, dr.months) : null;
-  const yrs = dr.months >= 12 ? `${dr.months / 12} year${dr.months > 12 ? "s" : ""}` : `${dr.months} months`;
   $("#t-driving").innerHTML = `
   <div class="card drive"><h2>When can this patient drive again?</h2>
     ${st.driver === "none" ? `<p>${esc(dr.text)}</p>` : `
-    <p class="big">${dr.months != null ? `${yrs} seizure-free` : "No fixed interval"}${earliest ? ` &rarr; earliest ${fmtDate(earliest)}` : ""}</p>
+    <p class="big">${esc(driveLine(dr))}</p>
+    ${dr.months != null ? `<p>Waiting period: <b>${waitText(dr.months)} seizure-free</b>, counted from ${dr.from === st.resolved && st.resolved ? "the date the provoking cause resolved" : "the last seizure"}${dr.from ? ` (${fmtDate(dr.from)})` : ""}. Any further seizure restarts the clock.</p>` : ""}
     <p><span class="pill p-blu">CCMTA ${esc(dr.section)}</span> <b>${esc(dr.title)}</b></p>
     <p>${esc(dr.text)}</p>
     ${dr.alt ? `<p class="muted">${esc(dr.alt)}</p>` : ""}
     ${dr.conditions.length ? `<ul>${dr.conditions.map(c => `<li>${esc(c)}</li>`).join("")}</ul>` : ""}
-    ${!st.lastSz ? `<div class="warn">Enter the date of the most recent seizure to calculate the earliest date.</div>` : ""}
+    ${!st.lastSz ? `<div class="warn">Enter the date of the most recent seizure to calculate the driving date.</div>` : ""}
     <div class="info"><b>Tell the patient today:</b> do not drive until cleared. RoadSafetyBC generally reassesses in 1 year when a seizure occurred in the past 12 months, and may request a Driver's Medical Examination Report (DMER) or neurology assessment. Document the advice in the chart.</div>
     <div class="warn"><b>Physician reporting (BC):</b> under the Motor Vehicle Act (s. 230), a physician must report to RoadSafetyBC a patient who has a condition that makes driving dangerous <i>and</i> continues to drive after being warned. Use the RoadSafetyBC report form or DMER.</div>`}
   </div>
@@ -696,7 +734,7 @@ flags.length ? `Medication flags:\n${flags.join("\n")}` : ``,
 `- Treatment: [edit] __________________`,
 `- Decision: ____________________________`,
 ``,
-`Driving: ${st.driver === "none" ? "Patient does not drive." : `Advised not to drive. CCMTA/RoadSafetyBC ${dr.section} (${dr.title}): ${dr.text}${earliest ? ` Earliest anticipated date ${earliest}, if seizure-free and conditions met.` : ""}`}`,
+`Driving: ${st.driver === "none" ? "Patient does not drive." : `Advised not to drive. CCMTA/RoadSafetyBC ${dr.section} (${dr.title}): ${dr.text}${dr.months != null ? ` Can drive in ${waitText(dr.months)}${earliest ? ` (on or after ${earliest})` : ""} if seizure-free and conditions met.` : " No fixed waiting period; may drive once the conditions above are met."}`}`,
 ``,
 `Follow-up:`,
 ...fu
@@ -750,13 +788,31 @@ function prefill() {
   if (S.weight) $("#weight").value = S.weight;
   const epi = S.conds.some(c => /epilep|seizure disorder/i.test(condText(c)));
   if (epi) { $("#presentation").value = "breakthrough"; $("#epilepsyDx").checked = true; }
+  if (hasCond(/status epilepticus/i)) { $("#presentation").value = "status"; $("#notBaseline").checked = true; }
+  if (!epi && hasCond(/unprovoked seizure|first seizure|new.onset seizure/i)) { $("#presentation").value = "first"; $("#cause").value = "unprovoked"; }
   if (hasCond(/alcohol (use|dependence|abuse|withdrawal)/i)) $("#aud").checked = true;
-  if (acuteSymptomaticFlags().length) $("#cause").value = "prov_metabolic";
+  if (acuteSymptomaticFlags().length) $("#cause").value = "prov_metabolic"; // provoked; the epilepsy driving standard still applies if epilepsy is ticked
   $("#lastSz").value = today();
 }
 
-// ---------- Demo patient (made up) ----------
-function demoData() {
+// ---------- Demo patients (made up) ----------
+// ?demo=1..3 come from demo-patients.js (same patients as test-pdfs/); ?demo=4 is the valproate + meropenem patient below.
+function demoFrom(D) {
+  const d = h => new Date(Date.now() - h * 36e5).toISOString();
+  return {
+    pt: D.pt,
+    labs: D.labs.map(l => ({ resourceType: "Observation", code: { text: l.text, coding: l.loinc ? [{ system: "http://loinc.org", code: l.loinc }] : [] }, valueQuantity: l.v != null ? { value: l.v, unit: l.unit } : undefined, effectiveDateTime: d(l.h) })),
+    wt: [{ valueQuantity: { value: D.weight, unit: "kg" }, effectiveDateTime: d(1) }],
+    meds: D.meds.map(t => ({ status: "active", medicationCodeableConcept: { text: t } })),
+    conds: D.conds.map(t => ({ code: { text: t }, clinicalStatus: { coding: [{ code: "active" }] } })),
+    reps: D.reps.map(r => ({ code: { text: r.text }, effectiveDateTime: d(r.h), conclusion: r.conclusion }))
+  };
+}
+function demoData(n) {
+  if (n >= 1 && n <= 3 && window.SEIZURE_DEMOS && SEIZURE_DEMOS[n - 1]) return demoFrom(SEIZURE_DEMOS[n - 1]);
+  return demoDana();
+}
+function demoDana() {
   const d = n => daysAgo(n).toISOString();
   const lab = (text, loinc, v, unit, n = 0) => ({ resourceType: "Observation", code: { text, coding: [{ system: "http://loinc.org", code: loinc }] }, valueQuantity: { value: v, unit }, effectiveDateTime: d(n) });
   return {
@@ -797,7 +853,7 @@ function wire() {
 
 async function start() {
   wire();
-  const demo = /[?&]demo=1/.test(location.search);
+  const dm = /[?&]demo=(\d+)/.exec(location.search), demo = !!dm;
   try {
     if (demo) throw new Error("demo");
     const client = await FHIR.oauth2.ready();
@@ -809,10 +865,10 @@ async function start() {
       $("#t-summary").innerHTML = `<div class="card"><div class="alert"><b>Not launched from the EHR</b> (${esc(e.message || e)}).<br>Launch via launch.html from PowerChart / the Cerner sandbox, or open <a href="?demo=1">demo mode</a> with a made-up patient.</div></div>`;
       return;
     }
-    S.demo = true; ingest(demoData());
+    S.demo = true; ingest(demoData(+dm[1]));
   }
   prefill(); render();
-  if (S.demo) $("main").insertAdjacentHTML("afterbegin", `<div class="warn" style="margin-bottom:10px"><b>DEMO - made-up patient.</b> Not real chart data.</div>`);
+  if (S.demo) $("main").insertAdjacentHTML("afterbegin", `<div class="warn" style="margin-bottom:10px"><b>DEMO - made-up patient.</b> Not real chart data. Other demos: <a href="?demo=1">1 new onset</a> &middot; <a href="?demo=2">2 breakthrough</a> &middot; <a href="?demo=3">3 status</a> &middot; <a href="?demo=4">4 valproate + carbapenem</a></div>`);
 }
 window.SeizureApp = { S, drivingRule, state, toSI, render };
 start();

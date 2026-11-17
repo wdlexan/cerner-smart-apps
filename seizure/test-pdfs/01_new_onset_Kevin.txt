@@ -1,0 +1,126 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, KEVIN                     DOB: 1980-06-03     Sex: M
+MRN: TESTSZ01                            Age: 46
+ED arrival: 2026-11-16 13:30    Admitted: 2026-11-16 16:30 (Hospitalist)
+
+ED PHYSICIAN NOTE
+Date of service: 2026-11-16 14:00
+46 year old long-haul truck driver (Class 1 licence). Witnessed generalized tonic-clonic
+seizure at the depot about 2 minutes, tongue bite on the left side, urinary incontinence,
+confused for about 20 minutes afterward. No prior seizures. No alcohol excess, no
+recreational drugs, slept normally. No head injury. Normal neurological exam now. CT head
+negative. Admit to hospitalist for MRI and EEG.
+
+HOSPITALIST ADMISSION NOTE
+Date of service: 2026-11-16 17:30
+First seizure, appears unprovoked: sodium, glucose, calcium and magnesium normal, ethanol
+negative, no new medications. Lactate and CK raised in keeping with a generalized
+convulsion. Plan MRI brain epilepsy protocol, EEG, neurology input. Counselled not to drive;
+commercial licence.
+
+NEUROLOGY CONSULT NOTE
+Date of service: 2026-11-17 06:30
+MRI shows a left temporal cavernoma and EEG shows left temporal sharp waves. Single seizure
+with structural lesion and epileptiform EEG gives high recurrence risk, meets the ILAE
+practical definition of epilepsy. Started levetiracetam 500 mg BID. Neurosurgery outpatient
+referral regarding cavernoma. Driving: no commercial driving; report to RoadSafetyBC.
+
+VITAL SIGNS
+2026-11-16 13:54 BP: 152/88 HR: 104 Temp: 37.1 C SpO2: 97%
+2026-11-16 18:30 BP: 138/82 HR: 86 Temp: 36.9 C SpO2: 98%
+2026-11-17 03:30 BP: 132/80 HR: 78 Temp: 36.8 C SpO2: 98%
+Weight: 92 kg
+
+LABORATORY RESULTS
+Collected: 2026-11-16 14:06
+Test                      Result           Units           Reference       Flag
+
+Sodium                    138              mmol/L          135 - 145           
+
+Potassium                 3.9              mmol/L          3.5 - 5.0           
+
+Glucose                   7.4              mmol/L          3.6 - 7.8           
+
+Calcium                   2.34             mmol/L          2.10 - 2.60         
+
+Magnesium                 0.84             mmol/L          0.70 - 1.00         
+
+Creatinine                88               umol/L          60 - 110            
+
+eGFR                      92               mL/min/1.73m2   > 60                
+
+WBC                       12.1             x10^9/L         4.0 - 11.0      H   
+
+Hemoglobin                151              g/L             135 - 175           
+
+Lactate                   5.2              mmol/L          0.5 - 2.2       H   
+
+Prolactin                 48               ug/L            4 - 15          H   
+
+Ethanol                   0                mmol/L          0                   
+
+Troponin                  4                ng/L            < 16                
+
+LABORATORY RESULTS
+Collected: 2026-11-17 05:30
+Test                      Result           Units           Reference       Flag
+
+CK                        1420             U/L             40 - 300        H   
+
+ALT                       31               U/L             < 50                
+
+Albumin                   41               g/L             35 - 50             
+
+
+MEDICATIONS GIVEN
+Lorazepam 2 mg IV once (EMS) 2026-11-16 13:42
+Levetiracetam 500 mg PO once 2026-11-17 06:30
+
+ACTIVE MEDICATION ORDERS (2026-11-17)
+Levetiracetam 500 mg PO BID
+Atorvastatin 20 mg PO daily
+Ramipril 5 mg PO daily
+
+ACTIVE ORDERS
+MRI brain epilepsy protocol
+EEG routine
+Seizure precautions
+Neurology consult
+
+ACTIVE PROBLEM LIST
+First unprovoked seizure
+Hypertension
+Dyslipidemia
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, KEVIN MRN TESTSZ01         Page 1
+
+RADIOLOGY, EEG AND CARDIAC REPORTS
+
+CT HEAD WITHOUT CONTRAST
+Date of exam: 2026-11-16 14:30
+IMPRESSION:
+No acute intracranial hemorrhage, mass effect or acute infarct. Small focus of hyperdensity
+in the left anterior temporal lobe, recommend MRI.
+
+MRI BRAIN EPILEPSY PROTOCOL
+Date of exam: 2026-11-17 01:30
+IMPRESSION:
+1.4 cm left anterior temporal cavernous malformation with complete hemosiderin rim, no
+recent hemorrhage. Hippocampi normal and symmetric. No other lesion.
+
+ELECTROENCEPHALOGRAM (EEG)
+Date of exam: 2026-11-17 04:30
+IMPRESSION:
+Abnormal awake and drowsy EEG: intermittent left temporal sharp waves, maximal T7/F7. No
+electrographic seizures. Supports a left temporal epileptogenic focus.
+
+ECG 12 LEAD
+Date of exam: 2026-11-16 14:12
+IMPRESSION:
+Sinus tachycardia 104. Normal intervals, QTc 432 ms. No Brugada pattern.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, KEVIN MRN TESTSZ01         Page 2

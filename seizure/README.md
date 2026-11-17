@@ -11,7 +11,15 @@ Standalone app for new-onset and breakthrough seizures.
 - `aed-dosing-reference.pdf` - printable dosing PDF (linked from the AED reference tab)
 
 ## Test without the EHR
-Open `index.html?demo=1` (made-up patient: on valproate + meropenem, low VPA level, on OCP and tramadol).
+Made-up patients (demo dates move with today):
+- `index.html?demo=1` new-onset GTC, left temporal cavernoma + temporal sharp waves (epilepsy hint), Class 1 truck driver
+- `index.html?demo=2` breakthrough: juvenile myoclonic epilepsy on lamotrigine, new combined OCP, ciprofloxacin, low level
+- `index.html?demo=3` status epilepticus: post-stroke epilepsy, phenytoin (low, albumin 24) + apixaban, Na 114, cefepime with eGFR 24
+- `index.html?demo=4` breakthrough on valproate + meropenem, OCP, tramadol
+
+## Test PDFs (toolkit Import PDF)
+`test-pdfs/01_new_onset_Kevin.pdf`, `02_breakthrough_Maria.pdf`, `03_status_Gordon.pdf` are the same patients 1-3 as chart extracts.
+Regenerate with `python3 make-test-pdfs.py` (also rewrites `demo-patients.js`). PDF dates are fixed at 2026-11-17; the app reads labs from the last 7 days.
 
 ## Deploy
 1. Copy the `seizure/` folder into `wdlexan/cerner-smart-apps` and push.

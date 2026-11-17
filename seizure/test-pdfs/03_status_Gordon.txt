@@ -1,0 +1,145 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, GORDON                    DOB: 1955-10-30     Sex: M
+MRN: TESTSZ03                            Age: 71
+ED arrival: 2026-11-14 21:30    Admitted: 2026-11-15 00:30 (Hospitalist)
+
+HOSPITALIST ADMISSION NOTE
+Date of service: 2026-11-14 23:30
+Admitted with right lower lobe pneumonia. Background post-stroke epilepsy after left MCA
+infarct in 2023, on phenytoin 300 mg daily, atrial fibrillation on apixaban, hypertension.
+Started cefepime. Acute kidney injury on admission.
+
+RAPID RESPONSE NOTE
+Date of service: 2026-11-17 03:30
+Called for generalized tonic-clonic seizure. Three seizures over 25 minutes without return
+to baseline between them. Given lorazepam 4 mg IV twice, then levetiracetam 4500 mg IV load.
+Convulsions stopped but remains GCS 9 and not following commands 40 minutes later. Sodium
+114. Concern for non-convulsive status epilepticus and cefepime neurotoxicity with eGFR 24.
+ICU consulted, continuous EEG requested, 3% saline 150 mL given.
+
+ICU CONSULT NOTE
+Date of service: 2026-11-17 05:30
+Status epilepticus, now non-convulsive on initial EEG review. Provoking factors: severe
+hyponatremia, cefepime with acute kidney injury, subtherapeutic phenytoin (albumin 24).
+Change cefepime to ceftriaxone. Continue levetiracetam 1000 mg IV q12h. Transfer to ICU for
+continuous EEG and airway monitoring.
+
+VITAL SIGNS
+2026-11-14 23:30 BP: 138/76 HR: 98 Temp: 38.4 C SpO2: 92%
+2026-11-17 03:30 BP: 182/96 HR: 124 Temp: 38.0 C SpO2: 88%
+2026-11-17 05:30 BP: 150/84 HR: 104 Temp: 37.8 C SpO2: 95%
+2026-11-17 08:30 BP: 142/80 HR: 96 Temp: 37.6 C SpO2: 96%
+Weight: 78 kg
+
+LABORATORY RESULTS
+Collected: 2026-11-14 23:30
+Test                      Result           Units           Reference       Flag
+
+Creatinine                168              umol/L          60 - 110        H   
+
+eGFR                      34               mL/min/1.73m2   > 60            L   
+
+Sodium                    126              mmol/L          135 - 145       L   
+
+LABORATORY RESULTS
+Collected: 2026-11-17 03:30
+Test                      Result           Units           Reference       Flag
+
+Sodium                    114              mmol/L          135 - 145       LL  
+
+Potassium                 4.1              mmol/L          3.5 - 5.0           
+
+Glucose                   8.9              mmol/L          3.6 - 7.8       H   
+
+Calcium                   2.02             mmol/L          2.10 - 2.60     L   
+
+Magnesium                 0.58             mmol/L          0.70 - 1.00     L   
+
+Phosphate                 0.9              mmol/L          0.8 - 1.5           
+
+Creatinine                212              umol/L          60 - 110        H   
+
+eGFR                      24               mL/min/1.73m2   > 60            L   
+
+Urea                      18.4             mmol/L          2.5 - 8.0       H   
+
+Albumin                   24               g/L             35 - 50         L   
+
+ALT                       28               U/L             < 50                
+
+WBC                       16.8             x10^9/L         4.0 - 11.0      H   
+
+Platelets                 212              x10^9/L         150 - 400           
+
+Lactate                   4.6              mmol/L          0.5 - 2.2       H   
+
+Phenytoin level           22               umol/L          40 - 80         L   
+
+Ammonia                   28               umol/L          < 35                
+
+LABORATORY RESULTS
+Collected: 2026-11-17 07:30
+Test                      Result           Units           Reference       Flag
+
+Sodium                    119              mmol/L          135 - 145       L   
+
+CK                        880              U/L             40 - 300        H   
+
+
+MEDICATIONS GIVEN
+Lorazepam 4 mg IV once 2026-11-17 03:36
+Lorazepam 4 mg IV once 2026-11-17 03:42
+Levetiracetam 4500 mg IV once 2026-11-17 03:54
+Hypertonic saline 3% 150 mL IV once 2026-11-17 04:00
+
+ACTIVE MEDICATION ORDERS (2026-11-17)
+Phenytoin 300 mg PO daily
+Levetiracetam 1000 mg IV q12h
+Cefepime 2 g IV q8h
+Apixaban 5 mg PO BID
+Metoprolol 25 mg PO BID
+Pantoprazole 40 mg PO daily
+
+ACTIVE ORDERS
+Continuous EEG
+Transfer to ICU
+Sodium q4h
+Seizure precautions
+
+ACTIVE PROBLEM LIST
+Status epilepticus
+Epilepsy, post-stroke
+Stroke, left MCA (2023)
+Atrial fibrillation
+Hypertension
+Pneumonia
+Acute kidney injury
+Hyponatremia
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, GORDON MRN TESTSZ03         Page 1
+
+RADIOLOGY, EEG AND CARDIAC REPORTS
+
+CT HEAD WITHOUT CONTRAST
+Date of exam: 2026-11-17 04:30
+IMPRESSION:
+No acute hemorrhage or new infarct. Old left MCA territory infarct with encephalomalacia. No
+mass effect.
+
+CONTINUOUS EEG PRELIMINARY
+Date of exam: 2026-11-17 08:00
+IMPRESSION:
+Continuous lateralized periodic discharges over the left hemisphere at 1.5-2 Hz with
+evolution, consistent with ongoing non-convulsive seizures. Recommend escalation of
+antiseizure therapy.
+
+ECG 12 LEAD
+Date of exam: 2026-11-17 03:48
+IMPRESSION:
+Atrial fibrillation 118. QTc 456 ms. PR not measurable.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, GORDON MRN TESTSZ03         Page 2

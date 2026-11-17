@@ -1,0 +1,104 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, MARIA                     DOB: 1997-02-21     Sex: F
+MRN: TESTSZ02                            Age: 29
+ED arrival: 2026-11-16 19:30    Admitted: 2026-11-16 22:30 (Hospitalist)
+
+ED PHYSICIAN NOTE
+Date of service: 2026-11-16 20:00
+29 year old with juvenile myoclonic epilepsy, seizure free 3 years on lamotrigine 150 mg
+BID. Generalized tonic-clonic seizure at home this morning shortly after waking, witnessed
+by partner; also morning myoclonic jerks for the past 2 weeks. Started a combined oral
+contraceptive 6 weeks ago. Took ciprofloxacin for a urinary tract infection since 3 days
+ago. Slept 4 hours the night before (night shift nurse). Reports taking lamotrigine
+regularly. Exam normal.
+
+HOSPITALIST NOTE
+Date of service: 2026-11-17 07:30
+Breakthrough seizure in known generalized epilepsy. Likely trigger: lamotrigine level
+reduced by estrogen-containing contraceptive, plus sleep deprivation and ciprofloxacin.
+Lamotrigine level low. Pregnancy test negative. Plan discuss dose increase and contraception
+with neurology; myoclonus may also be worsened by lamotrigine, consider switch to
+levetiracetam. Drives a car (Class 5).
+
+VITAL SIGNS
+2026-11-16 19:54 BP: 128/78 HR: 96 Temp: 36.8 C SpO2: 99%
+2026-11-17 01:30 BP: 116/72 HR: 74 Temp: 36.7 C SpO2: 99%
+2026-11-17 07:30 BP: 112/70 HR: 70 Temp: 36.6 C SpO2: 99%
+Weight: 58 kg
+
+LABORATORY RESULTS
+Collected: 2026-11-16 20:06
+Test                      Result           Units           Reference       Flag
+
+Sodium                    139              mmol/L          135 - 145           
+
+Glucose                   5.2              mmol/L          3.6 - 7.8           
+
+Calcium                   2.30             mmol/L          2.10 - 2.60         
+
+Magnesium                 0.78             mmol/L          0.70 - 1.00         
+
+Creatinine                62               umol/L          45 - 90             
+
+eGFR                      118              mL/min/1.73m2   > 60                
+
+WBC                       8.4              x10^9/L         4.0 - 11.0          
+
+beta-hCG                  1                IU/L            < 5                 
+
+Lactate                   3.1              mmol/L          0.5 - 2.2       H   
+
+CK                        390              U/L             30 - 200        H   
+
+LABORATORY RESULTS
+Collected: 2026-11-16 23:30
+Test                      Result           Units           Reference       Flag
+
+Lamotrigine level         9                umol/L          12 - 55         L   
+
+ALT                       18               U/L             < 35                
+
+
+MEDICATIONS GIVEN
+Lamotrigine 150 mg PO once 2026-11-16 23:30
+
+ACTIVE MEDICATION ORDERS (2026-11-17)
+Lamotrigine 150 mg PO BID
+Ethinyl Estradiol 30 mcg with levonorgestrel 150 mcg PO daily
+Ciprofloxacin 500 mg PO BID
+Folic acid 1 mg PO daily
+
+ACTIVE ORDERS
+Seizure precautions
+Neurology consult
+EEG routine
+
+ACTIVE PROBLEM LIST
+Juvenile myoclonic epilepsy (generalized epilepsy)
+Urinary tract infection
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, MARIA MRN TESTSZ02         Page 1
+
+RADIOLOGY, EEG AND CARDIAC REPORTS
+
+CT HEAD WITHOUT CONTRAST
+Date of exam: 2026-11-16 21:00
+IMPRESSION:
+Normal non-contrast CT head.
+
+MRI BRAIN
+Date of exam: 2025-12-19 01:30
+IMPRESSION:
+Normal MRI brain (outpatient).
+
+ELECTROENCEPHALOGRAM (EEG)
+Date of exam: 2025-12-14 21:30
+IMPRESSION:
+Generalized 4-6 Hz polyspike-and-wave discharges with photoparoxysmal response, consistent
+with juvenile myoclonic epilepsy (outpatient study).
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, MARIA MRN TESTSZ02         Page 2
