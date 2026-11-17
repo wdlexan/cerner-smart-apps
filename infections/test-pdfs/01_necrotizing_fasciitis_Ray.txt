@@ -1,0 +1,84 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, RAY                       DOB: 1968-03-14     Sex: M
+MRN: TESTINF01                           Age: 58
+
+ALLERGIES
+No known drug allergies
+
+ED PHYSICIAN NOTE
+Date of service: 2026-11-16 22:00
+58 year old with type 2 diabetes. Left shin redness for 2 days after a scrape, now spreading
+quickly up to the knee over 6 hours. Severe pain out of proportion to the skin findings,
+pain beyond the erythema. Tense swelling, two hemorrhagic bullae, dusky area over the shin,
+decreased sensation. Febrile and tachycardic. Started cefazolin. Admit hospitalist.
+
+HOSPITALIST NOTE
+Date of service: 2026-11-17 10:00
+Erythema has advanced 6 cm beyond the marked border in 10 hours. Concern for necrotizing
+soft tissue infection. LRINEC high. Plan: broaden antibiotics, urgent general surgery
+consult.
+
+VITAL SIGNS
+2026-11-16 22:00 BP: 104/62 HR: 116 RR: 22 Temp: 38.9 C SpO2: 96%
+2026-11-17 04:00 BP: 96/58 HR: 121 RR: 24 Temp: 39.2 C SpO2: 95%
+2026-11-17 10:00 BP: 92/54 HR: 124 RR: 24 Temp: 38.7 C SpO2: 95%
+
+LABORATORY RESULTS
+Collected: 2026-11-16 23:00
+Test                      Result           Units           
+
+WBC                       23.4             x10^9/L         
+
+Hemoglobin                118              g/L             
+
+Platelets                 168              x10^9/L         
+
+Sodium                    131              mmol/L          
+
+Glucose                   16.2             mmol/L          
+
+Creatinine                162              umol/L          
+
+eGFR                      41               mL/min/1.73m2   
+
+CRP                       212              mg/L            
+
+LABORATORY RESULTS
+Collected: 2026-11-17 09:00
+Test                      Result           Units           
+
+Lactate                   3.4              mmol/L          
+
+CK                        1650             U/L             
+
+
+ACTIVE MEDICATION ORDERS (2026-11-17)
+Cefazolin 2 g IV q8h
+Metformin 1000 mg PO BID
+Insulin glargine 20 units SC daily
+
+ACTIVE PROBLEM LIST
+Cellulitis, left leg
+Type 2 diabetes mellitus
+Hypertension
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, RAY MRN TESTINF01         Page 1
+
+RADIOLOGY AND MICROBIOLOGY REPORTS
+
+X-RAY LEFT TIBIA AND FIBULA
+Date of exam: 2026-11-17 07:00
+IMPRESSION:
+Soft tissue swelling with small foci of subcutaneous gas along the anterior shin. No
+fracture.
+
+BLOOD CULTURE X2
+Date of exam: 2026-11-16 23:00
+IMPRESSION:
+Gram-positive cocci in chains in 1 of 2 sets at 9 hours; identification pending.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, RAY MRN TESTINF01         Page 2

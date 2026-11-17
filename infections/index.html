@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Infections by Site</title>
+<script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+<style>
+  :root{--ink:#1f2a37;--mute:#5b6878;--line:#d9e0e8;--bg:#f5f7fa;--card:#fff;--blue:#2b4a6f;--blue2:#e8eef6;
+        --red:#a3302b;--red2:#fbecea;--amber:#9a6200;--amber2:#fff4dc;--green:#24703c;--green2:#e6f4ea}
+  *{box-sizing:border-box}
+  body{margin:0;font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg)}
+  header{background:var(--blue);color:#fff;padding:10px 16px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+  header h1{font-size:17px;margin:0;font-weight:600}
+  #banner{font-size:13px;opacity:.95}
+  main{padding:14px;max-width:1200px;margin:0 auto}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:12px}
+  .card h2{font-size:15px;margin:0 0 8px;color:var(--blue)}
+  .card h3{font-size:13.5px;margin:10px 0 4px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+  .sites{display:flex;flex-wrap:wrap;gap:6px}
+  .sites button{border:1px solid var(--line);background:#fff;border-radius:18px;padding:6px 12px;font:inherit;cursor:pointer;color:var(--ink)}
+  .sites button.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .sites button .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#e0a100;margin-left:6px;vertical-align:middle}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+  .seg button{border:0;background:#fff;padding:6px 12px;font:inherit;cursor:pointer;border-right:1px solid var(--line)}
+  .seg button:last-child{border-right:0}.seg button.on{background:var(--blue);color:#fff}
+  .pill{display:inline-block;border-radius:10px;padding:1px 8px;font-size:11.5px;font-weight:600;margin:1px 2px}
+  .p-red{background:var(--red2);color:var(--red)}.p-amb{background:var(--amber2);color:var(--amber)}
+  .p-grn{background:var(--green2);color:var(--green)}.p-blu{background:var(--blue2);color:var(--blue)}.p-gry{background:#eef0f3;color:var(--mute)}
+  .alert{border-left:4px solid var(--red);background:var(--red2);padding:7px 10px;border-radius:4px;margin:6px 0}
+  .warn{border-left:4px solid #d39b1c;background:var(--amber2);padding:7px 10px;border-radius:4px;margin:6px 0}
+  .ok{border-left:4px solid var(--green);background:var(--green2);padding:7px 10px;border-radius:4px;margin:6px 0}
+  .info{border-left:4px solid var(--blue);background:var(--blue2);padding:7px 10px;border-radius:4px;margin:6px 0}
+  table{border-collapse:collapse;width:100%;font-size:13px}
+  th,td{border-bottom:1px solid var(--line);padding:5px 6px;text-align:left;vertical-align:top}
+  th{background:#f0f3f7;font-weight:600;font-size:12px;color:var(--mute)}
+  tr.hl td{background:#fff8e1}
+  details{border:1px solid var(--line);border-radius:8px;background:#fff;margin-bottom:8px}
+  details>summary{cursor:pointer;padding:9px 12px;font-weight:600;color:var(--blue);list-style:none;display:flex;justify-content:space-between;gap:8px}
+  details>summary::-webkit-details-marker{display:none}
+  details>summary::after{content:"\25BE";color:var(--mute)}
+  details[open]>summary::after{content:"\25B4"}
+  details.red>summary{color:var(--red)}
+  details .body{padding:2px 14px 12px}
+  ul{margin:4px 0;padding-left:20px} li{margin:2px 0}
+  .muted{color:var(--mute);font-size:12px}
+  .btn{background:var(--blue);color:#fff;border:0;border-radius:6px;padding:7px 12px;font:inherit;cursor:pointer}
+  .btn.sec{background:#fff;color:var(--blue);border:1px solid var(--blue)}
+  .chk{display:flex;gap:6px;align-items:flex-start;margin:3px 0;font-size:13px}
+  .chk input{margin-top:3px}
+  .score{font-size:20px;font-weight:700}
+  select,textarea{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:#fff}
+  #note{width:100%;min-height:300px;font-family:ui-monospace,Consolas,monospace;font-size:12.5px}
+  .loading{padding:40px;text-align:center;color:var(--mute)}
+</style>
+</head>
+<body>
+<header>
+  <h1>&#129440; Infections by Site</h1>
+  <div id="banner">Loading patient&hellip;</div>
+</header>
+<main id="main"><div class="loading">Reading chart&hellip;</div></main>
+<script src="infections-data.js"></script>
+<script src="demo-patients.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,85 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, HELEN                     DOB: 1960-01-22     Sex: F
+MRN: TESTINF03                           Age: 66
+
+ALLERGIES
+Amoxicillin - anaphylaxis - throat swelling, needed epinephrine
+
+ED PHYSICIAN NOTE
+Date of service: 2026-11-16 16:00
+66 year old with recurrent UTIs, ESBL E. coli in urine 4 months ago. Right flank pain,
+rigors, vomiting since yesterday. Febrile, hypotensive, responded to 2 L fluid. Amoxicillin
+anaphylaxis 2 years ago. CT shows obstructing right ureteric stone. Ertapenem started after
+allergy discussion. Urology paged.
+
+HOSPITALIST NOTE
+Date of service: 2026-11-17 08:00
+Urology placed right ureteric stent overnight. Still febrile 38.6 but BP improving.
+Creatinine up.
+
+VITAL SIGNS
+2026-11-16 16:00 BP: 86/50 HR: 118 RR: 24 Temp: 39.4 C SpO2: 95%
+2026-11-17 00:00 BP: 98/56 HR: 108 RR: 22 Temp: 38.9 C SpO2: 96%
+2026-11-17 08:00 BP: 112/64 HR: 100 RR: 20 Temp: 38.6 C SpO2: 97%
+
+LABORATORY RESULTS
+Collected: 2026-11-16 17:00
+Test                      Result           Units           
+
+WBC                       19.6             x10^9/L         
+
+Creatinine                168              umol/L          
+
+eGFR                      28               mL/min/1.73m2   
+
+Lactate                   4.2              mmol/L          
+
+CRP                       240              mg/L            
+
+Platelets                 112              x10^9/L         
+
+LABORATORY RESULTS
+Collected: 2026-11-17 08:00
+Test                      Result           Units           
+
+Creatinine                188              umol/L          
+
+eGFR                      24               mL/min/1.73m2   
+
+
+ACTIVE MEDICATION ORDERS (2026-11-17)
+Ertapenem 1 g IV daily
+Hydromorphone 0.5 mg IV q3h PRN
+Nitrofurantoin 100 mg PO BID
+
+ACTIVE PROBLEM LIST
+Pyelonephritis, right, obstructed
+Recurrent urinary tract infection
+Nephrolithiasis
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, HELEN MRN TESTINF03         Page 1
+
+RADIOLOGY AND MICROBIOLOGY REPORTS
+
+CT ABDOMEN AND PELVIS (RENAL STONE PROTOCOL)
+Date of exam: 2026-11-16 18:00
+IMPRESSION:
+7 mm obstructing right proximal ureteric stone with moderate hydronephrosis and perinephric
+stranding. No gas, no abscess.
+
+URINE CULTURE
+Date of exam: 2026-11-16 17:00
+IMPRESSION:
+Escherichia coli >10^8 CFU/L, ESBL producer: resistant to ceftriaxone and ciprofloxacin;
+susceptible to ertapenem, meropenem, nitrofurantoin, gentamicin.
+
+BLOOD CULTURE X2
+Date of exam: 2026-11-16 17:00
+IMPRESSION:
+Escherichia coli (ESBL) in 1 of 2 sets.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, HELEN MRN TESTINF03         Page 2

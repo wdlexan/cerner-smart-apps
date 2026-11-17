@@ -1,0 +1,68 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, TOM                       DOB: 1974-05-30     Sex: M
+MRN: TESTINF04                           Age: 52
+
+ALLERGIES
+No known drug allergies
+
+ED PHYSICIAN NOTE
+Date of service: 2026-11-15 20:00
+52 year old on prednisone 20 mg daily for polymyalgia. Four days of left lower quadrant pain
+and fever. Localized tenderness, no peritonism. CT: sigmoid diverticulitis with a 4.5 cm
+pericolic abscess. Started ceftriaxone and metronidazole.
+
+HOSPITALIST NOTE
+Date of service: 2026-11-17 09:00
+Day 2. Still febrile and tender. IR consult for percutaneous drainage. General surgery
+aware.
+
+VITAL SIGNS
+2026-11-15 20:00 BP: 124/76 HR: 104 RR: 20 Temp: 38.6 C SpO2: 97%
+2026-11-16 16:00 BP: 120/72 HR: 98 RR: 18 Temp: 38.3 C SpO2: 98%
+2026-11-17 09:00 BP: 122/74 HR: 96 RR: 18 Temp: 38.2 C SpO2: 98%
+
+LABORATORY RESULTS
+Collected: 2026-11-15 21:00
+Test                      Result           Units           
+
+WBC                       17.2             x10^9/L         
+
+CRP                       148              mg/L            
+
+Lactate                   1.8              mmol/L          
+
+Creatinine                78               umol/L          
+
+LABORATORY RESULTS
+Collected: 2026-11-17 08:00
+Test                      Result           Units           
+
+WBC                       16.1             x10^9/L         
+
+CRP                       171              mg/L            
+
+
+ACTIVE MEDICATION ORDERS (2026-11-17)
+Ceftriaxone 2 g IV daily
+Metronidazole 500 mg IV q12h
+Prednisone 20 mg PO daily
+
+ACTIVE PROBLEM LIST
+Sigmoid diverticulitis with abscess
+Polymyalgia rheumatica
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, TOM MRN TESTINF04         Page 1
+
+RADIOLOGY AND MICROBIOLOGY REPORTS
+
+CT ABDOMEN AND PELVIS WITH CONTRAST
+Date of exam: 2026-11-15 21:00
+IMPRESSION:
+Sigmoid diverticulitis with a 4.5 x 3.8 cm rim-enhancing pericolic abscess. No free air. No
+obstruction.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, TOM MRN TESTINF04         Page 2

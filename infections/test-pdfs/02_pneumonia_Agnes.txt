@@ -1,0 +1,88 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, AGNES                     DOB: 1947-08-09     Sex: F
+MRN: TESTINF02                           Age: 79
+
+ALLERGIES
+Penicillin - hives (childhood)
+
+ED PHYSICIAN NOTE
+Date of service: 2026-11-15 00:00
+79 year old with COPD. Three days of productive cough, fever and dyspnea; confused today per
+daughter. Right lower lobe crackles. Started ceftriaxone and azithromycin. Penicillin
+allergy: hives as a child, has had cephalexin since without problems.
+
+HOSPITALIST PROGRESS NOTE
+Date of service: 2026-11-17 09:00
+Day 3. Afebrile since yesterday, mentation back to baseline, RR 20, SpO2 93% on room air,
+eating. Blood cultures pneumococcus, susceptible to penicillin. Small effusion not tapped.
+
+VITAL SIGNS
+2026-11-15 00:00 BP: 88/54 HR: 112 RR: 31 Temp: 39.0 C SpO2: 88%
+2026-11-16 00:00 BP: 104/62 HR: 102 RR: 26 Temp: 38.4 C SpO2: 91%
+2026-11-17 00:00 BP: 118/70 HR: 92 RR: 22 Temp: 37.6 C SpO2: 92%
+2026-11-17 09:00 BP: 126/74 HR: 86 RR: 20 Temp: 37.1 C SpO2: 93%
+
+LABORATORY RESULTS
+Collected: 2026-11-15 01:00
+Test                      Result           Units           
+
+WBC                       15.8             x10^9/L         
+
+Sodium                    132              mmol/L          
+
+Urea                      9.2              mmol/L          
+
+Creatinine                110              umol/L          
+
+CRP                       182              mg/L            
+
+Procalcitonin             2.1              ug/L            
+
+Lactate                   2.6              mmol/L          
+
+LABORATORY RESULTS
+Collected: 2026-11-17 07:00
+Test                      Result           Units           
+
+WBC                       10.4             x10^9/L         
+
+CRP                       96               mg/L            
+
+Urea                      7.4              mmol/L          
+
+Creatinine                92               umol/L          
+
+
+ACTIVE MEDICATION ORDERS (2026-11-17)
+Ceftriaxone 1 g IV daily
+Azithromycin 500 mg PO daily
+Tiotropium 18 mcg inhaled daily
+
+ACTIVE PROBLEM LIST
+Community-acquired pneumonia, right lower lobe
+COPD
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, AGNES MRN TESTINF02         Page 1
+
+RADIOLOGY AND MICROBIOLOGY REPORTS
+
+CHEST X-RAY PA AND LATERAL
+Date of exam: 2026-11-15 01:00
+IMPRESSION:
+Right lower lobe consolidation with a small right pleural effusion.
+
+BLOOD CULTURE X2
+Date of exam: 2026-11-15 01:00
+IMPRESSION:
+Streptococcus pneumoniae in 2 of 2 sets, penicillin susceptible, ceftriaxone susceptible.
+
+MRSA NASAL PCR
+Date of exam: 2026-11-15 02:00
+IMPRESSION:
+Not detected.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, AGNES MRN TESTINF02         Page 2

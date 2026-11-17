@@ -1,0 +1,77 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, VICTOR                    DOB: 1964-12-02     Sex: M
+MRN: TESTINF05                           Age: 61
+
+ALLERGIES
+No known drug allergies
+
+ED PHYSICIAN NOTE
+Date of service: 2026-11-17 04:00
+61 year old with fever, severe headache, neck stiffness and confusion since this morning.
+GCS 13, no focal deficit, no rash. Blood cultures drawn, dexamethasone and ceftriaxone,
+vancomycin and ampicillin given within 40 minutes, then LP after CT.
+
+HOSPITALIST NOTE
+Date of service: 2026-11-17 11:00
+CSF consistent with bacterial meningitis, Gram-positive diplococci. ID consulted. Droplet
+precautions until organism confirmed.
+
+VITAL SIGNS
+2026-11-17 04:00 BP: 142/84 HR: 112 RR: 24 Temp: 39.6 C SpO2: 96%
+2026-11-17 08:00 BP: 132/78 HR: 104 RR: 22 Temp: 38.8 C SpO2: 97%
+2026-11-17 11:00 BP: 128/76 HR: 98 RR: 20 Temp: 38.2 C SpO2: 97%
+
+LABORATORY RESULTS
+Collected: 2026-11-17 04:30
+Test                      Result           Units           
+
+WBC                       21.2             x10^9/L         
+
+Glucose                   7.8              mmol/L          
+
+Creatinine                96               umol/L          
+
+eGFR                      74               mL/min/1.73m2   
+
+Lactate                   2.4              mmol/L          
+
+CRP                       168              mg/L            
+
+Sodium                    133              mmol/L          
+
+
+ACTIVE MEDICATION ORDERS (2026-11-17)
+Dexamethasone 10 mg IV q6h
+Ceftriaxone 2 g IV q12h
+Vancomycin 1500 mg IV q12h
+Ampicillin 2 g IV q4h
+
+ACTIVE PROBLEM LIST
+Bacterial meningitis
+Hypertension
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, VICTOR MRN TESTINF05         Page 1
+
+RADIOLOGY AND MICROBIOLOGY REPORTS
+
+CT HEAD WITHOUT CONTRAST
+Date of exam: 2026-11-17 05:00
+IMPRESSION:
+No acute intracranial abnormality. No mass effect.
+
+CSF GRAM STAIN AND CULTURE
+Date of exam: 2026-11-17 06:00
+IMPRESSION:
+CSF 2400 cells per microlitre (92% neutrophils), protein 2.8 g/L, CSF sugar 1.1 mmol/L (very
+low). Gram-positive diplococci seen; culture pending.
+
+BLOOD CULTURE X2
+Date of exam: 2026-11-17 04:12
+IMPRESSION:
+No growth to date.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, VICTOR MRN TESTINF05         Page 2

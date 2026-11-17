@@ -233,7 +233,7 @@
     // A chart extract holding several reports, each under its own heading followed by a "Date of exam" line -> one report each
     const EXAM_DATE = /date of (?:exam|study|procedure)/i, blocks = [];
     for (let i = 0; i < lines.length; i++) {
-      if (!isHeading(lines[i]) || !(IMAGING.test(lines[i]) || /\b(?:cta|ct angio\w*|eeg|telemetry|ecg|ekg)\b/i.test(lines[i])) || !EXAM_DATE.test(lines[i + 1] || "")) continue;
+      if (!isHeading(lines[i]) || !(IMAGING.test(lines[i]) || /\b(?:cta|ct angio\w*|eeg|telemetry|ecg|ekg|cultures?|gram stain|pcr)\b/i.test(lines[i])) || !EXAM_DATE.test(lines[i + 1] || "")) continue;
       let j = i + 2;
       for (; j < lines.length; j++) if ((isHeading(lines[j]) && EXAM_DATE.test(lines[j + 1] || "")) || /\bpage \d+\s*$/i.test(lines[j])) break;
       const body = lines.slice(i + 2, j).join("\n"), d = findDate(lines[i + 1]) || docT;
@@ -272,7 +272,10 @@
     ["Acute kidney injury", /acute kidney injury|\baki\b/i, "N17.9"], ["Hyponatremia", /hyponatr(?:a)?emia/i, "E87.1"], ["Sepsis", /\bsepsis\b|\bseptic\b/i, "A41.9"],
     ["Hip fracture", /hip fracture|fractured? (?:neck of )?femur|femoral neck fracture|intertrochanteric|subtrochanteric/i, "S72.0"], ["Cancer (as stated)", /\bcarcinoma\b|\blymphoma\b|\bleukemia\b/i, "C80.1"],
     ["Status epilepticus", /status epilepticus/i, "G40.901"], ["Epilepsy", /epilep(?:sy|tic)/i, "G40.909"], ["Seizure", /\bseizures?\b|convulsions?/i, "R56.9"],
-    ["Alcohol use disorder", /alcohol use disorder|alcohol dependence|alcoholism/i, "F10.20"]
+    ["Alcohol use disorder", /alcohol use disorder|alcohol dependence|alcoholism/i, "F10.20"],
+    ["Cellulitis", /cellulitis|erysipelas/i, "L03.90"], ["Necrotizing fasciitis", /necroti[sz]ing fasciitis|necroti[sz]ing soft tissue/i, "M72.6"], ["Diverticulitis", /diverticulitis/i, "K57.92"],
+    ["Meningitis", /meningitis/i, "G03.9"], ["Encephalitis", /encephalitis/i, "G04.90"], ["Septic arthritis", /septic arthritis|prosthetic joint infection/i, "M00.9"], ["Osteomyelitis", /osteomyelitis/i, "M86.9"],
+    ["Prostatitis", /prostatitis/i, "N41.0"], ["Sinusitis", /sinusitis/i, "J32.9"], ["Dental abscess", /dental abscess|odontogenic|periapical abscess|ludwig/i, "K04.7"]
   ];
   const DX_CTX = /diagnos|problem|\bdx\b|history of|\bpmh\b|\bhx\b|assessment|impression|comorbid/i, NEG = /\bno (?:history|evidence|signs?)\b|denies|negative for|rule out|\br\/o\b|family history|\bfhx\b|without|differential|\bddx\b|\bvs\.?\s|versus|\?|possible|query|to exclude|precautions?/i;
   const DX_SECTION = /past medical|medical history|\bpmh\b|problem list|active problems|diagnos[ie]s|assessment|impression|comorbidit/i;
