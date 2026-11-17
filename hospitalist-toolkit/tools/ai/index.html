@@ -44,6 +44,16 @@
         <span class="note" id="status">Loading chart data…</span>
       </div>
     </section>
+    <section class="card">
+      <h2>Use Microsoft Copilot Chat instead</h2>
+      <div class="row">
+        <button id="copilotCopy" disabled>Copy for Copilot</button>
+        <button class="sec" id="copilotOpen">Open Copilot Chat</button>
+        <span class="note" id="copilotStatus"></span>
+      </div>
+      <p class="note" style="margin:10px 0 0">Copies the summary instructions plus the de-identified data below. Then open Copilot Chat (signed in with your Island Health account), paste with Ctrl+V and press Enter.
+        <b>Sandbox or made-up patients only</b> until Island Health approves Copilot for patient data.</p>
+    </section>
     <div id="out"></div>
     <section class="card">
       <details>
@@ -54,6 +64,6 @@
     </section>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script><script src="../../pdf-overlay.js?v=20261103a"></script>
-  <script src="app.js"></script>
+  <script src="app.js?v=20261117h"></script>
 </body>
 </html>

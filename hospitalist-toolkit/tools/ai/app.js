@@ -15,11 +15,14 @@ async function init(client) {
   const age = ageOf(state.patient.birthDate);
   $("patient").textContent = `${state.patient.gender || "?"}${age !== null ? ", " + age + " y" : ""} (identifiers hidden)`;
   $("go").onclick = generate;
-  $("copy").onclick = () => navigator.clipboard.writeText(state.lastOutput).then(() => setStatus("Copied."));
+  $("copy").onclick = () => copyText(state.lastOutput).then(() => setStatus("Copied."), () => setStatus("Copy failed.", true));
+  $("copilotCopy").onclick = copyForCopilot;
+  $("copilotOpen").onclick = () => window.open(COPILOT_URL, "_blank", "noopener");
   try {
     state.text = await buildSummary();
     $("sent").textContent = state.text;
     $("go").disabled = false;
+    $("copilotCopy").disabled = false;
     setStatus("Ready.");
   } catch (e) { setStatus("Failed to read chart: " + (e.message || e), true); }
 }
@@ -157,6 +160,51 @@ function render(R, isSample) {
     <p class="note" style="margin-top:14px">Draft for physician review. Check against the chart. Not a clinical decision.</p></section>`;
   state.lastOutput = [isSample ? "SAMPLE OUTPUT (not from this patient)" : "AI draft (physician review required)", "", "Snapshot: " + R.snapshot, "", "Possible gaps:",
   ...(R.gaps || []).map((g) => `- ${g.t} [Based on: ${g.s}]`), "", "Questions to consider:", ...(R.questions || []).map((q) => "- " + q)].join("\n");
+}
+
+// ---------- Copy for Copilot (manual paste into Microsoft 365 Copilot Chat) ----------
+const COPILOT_URL = "https://m365.cloud.microsoft/chat";
+const COPILOT_PROMPT = [
+  "You are helping a hospitalist physician review a de-identified inpatient chart summary.",
+  "Use ONLY the data below. Do not invent values, diagnoses or history. If something is not in the data, say \"not in data provided\".",
+  "Do not search my email, files or the web for this task.",
+  "",
+  "Reply in plain text with exactly these three sections:",
+  "1. Snapshot: 2-3 sentences summarizing the patient and the main active issues.",
+  "2. Possible gaps: up to 6 bullets. Start each with \"Possible:\" and end each with [Based on: the specific data used].",
+  "   Look for medication-problem mismatches, renal or hepatic dosing concerns, abnormal or worsening vitals or labs without an obvious plan, missing VTE prophylaxis or code status, and Beers-list medications in older adults.",
+  "3. Questions to consider: up to 4 short questions for the care team.",
+  "",
+  "End with: \"Draft for physician review. Check against the chart. Not a clinical decision.\"",
+  "",
+  "----- DE-IDENTIFIED DATA -----"
+].join("\n");
+
+function copyForCopilot() {
+  // Same cut as the AI service: error lines can hold chart URLs with patient IDs.
+  const data = state.text.split("\n\nNot loaded")[0];
+  const msg = (t, err) => { $("copilotStatus").textContent = t; $("copilotStatus").style.color = err ? "#b00020" : ""; };
+  copyText(COPILOT_PROMPT + "\n" + data + "\n----- END OF DATA -----").then(
+    () => msg("Copied. Open Copilot Chat and paste (Ctrl+V)."),
+    () => msg("Copy failed. Open 'Show data that would be sent to the AI', select the text and copy it by hand.", true)
+  );
+}
+
+// Clipboard API first; falls back to a hidden textarea when the browser blocks it (e.g. inside a frame).
+function copyText(t) {
+  if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(t).catch(() => legacyCopy(t));
+  return legacyCopy(t);
+}
+function legacyCopy(t) {
+  return new Promise((ok, fail) => {
+    const ta = document.createElement("textarea");
+    ta.value = t; ta.setAttribute("readonly", ""); ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    let done = false;
+    try { done = document.execCommand("copy"); } catch (e) {}
+    ta.remove();
+    done ? ok() : fail(new Error("copy blocked"));
+  });
 }
 
 // ---------- Helpers ----------
