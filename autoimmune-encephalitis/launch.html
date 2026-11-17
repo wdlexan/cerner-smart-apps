@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Autoimmune Encephalitis – launching…</title>
+  <script src="config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fhirclient/build/fhir-client.js"></script>
+</head>
+<body style="font-family:system-ui,sans-serif;padding:2rem;color:#334">
+  <p>Connecting to the EHR…</p>
+  <script>
+    FHIR.oauth2.authorize({
+      clientId: AE_CONFIG.clientId,
+      scope: (new URLSearchParams(location.search).has('launch') ? 'launch ' : 'launch/patient ') + AE_CONFIG.scope,
+      redirectUri: 'index.html'
+    }).catch(function (e) {
+      document.body.innerHTML = '<p><b>Launch failed:</b> ' + (e && e.message ? e.message : e) +
+        '</p><p>You can still open <a href="index.html">the app in manual mode</a> (no chart data).</p>';
+    });
+  </script>
+</body>
+</html>
