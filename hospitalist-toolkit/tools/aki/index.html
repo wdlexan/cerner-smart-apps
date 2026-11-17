@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Acute kidney injury</title>
+  <style>
+    :root { --bg:#f5f7fa; --card:#fff; --ink:#1f2933; --muted:#5f6c7b; --accent:#0b6bcb; --line:#dde3ea;
+            --r-bg:#fde8e8; --r-ink:#9b1c1c; --a-bg:#fff1d6; --a-ink:#8a5200; --b-bg:#e3eefc; --b-ink:#0b4a99; --g-bg:#e4f4ea; --g-ink:#1d6b3a; --warn-bg:#fff4e5; --warn-line:#f0c27b; }
+    @media (prefers-color-scheme: dark) { :root { --bg:#111418; --card:#1a1f26; --ink:#e8edf2; --muted:#9aa7b5; --accent:#6aa9ff; --line:#2b333d;
+            --r-bg:#4a1d1d; --r-ink:#ffb3b3; --a-bg:#4a3511; --a-ink:#ffd38a; --b-bg:#14325c; --b-ink:#a9cdff; --g-bg:#16361f; --g-ink:#9be0b1; --warn-bg:#3a2e15; --warn-line:#6b5420; } }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); }
+    header { padding:14px 20px; border-bottom:1px solid var(--line); background:var(--card); }
+    header h1 { margin:0; font-size:19px; } header .sub { font-size:13px; color:var(--muted); margin-top:2px; }
+    main { max-width:980px; margin:16px auto 40px; padding:0 16px; display:grid; gap:14px; }
+    .banner { background:var(--warn-bg); border:1px solid var(--warn-line); border-radius:8px; padding:10px 14px; font-size:13px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:10px; font-size:13.5px; }
+    .card > summary { padding:10px 16px; font-weight:700; font-size:15px; cursor:pointer; display:flex; justify-content:space-between; gap:10px; }
+    .card > .body { padding:0 16px 14px; }
+    select, input, button { font:inherit; font-size:13px; padding:5px 8px; border:1px solid var(--line); border-radius:6px; background:var(--card); color:var(--ink); }
+    button { cursor:pointer; } button.primary { border-color:var(--accent); color:var(--accent); }
+    input[type=number] { width:80px; }
+    .row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:8px 0; }
+    .inl { display:inline-flex; gap:6px; align-items:center; }
+    .muted { color:var(--muted); } .err { color:var(--r-ink); }
+    .tiles { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px; }
+    .tile { border-radius:10px; padding:10px 14px; border:1px solid var(--line); background:var(--card); }
+    .tile .k { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; }
+    .tile .big { font-size:26px; font-weight:700; margin:2px 0; }
+    .tile .s { font-size:12.5px; }
+    .t0 { background:var(--g-bg); color:var(--g-ink); } .t1 { background:var(--b-bg); color:var(--b-ink); } .t2 { background:var(--a-bg); color:var(--a-ink); } .t3 { background:var(--r-bg); color:var(--r-ink); }
+    .t0 .k, .t1 .k, .t2 .k, .t3 .k { color:inherit; opacity:.8; }
+    .alert { border-left:4px solid; border-radius:6px; padding:8px 12px; margin:6px 0; }
+    .alert b { margin-right:6px; }
+    .alert.urgent { background:var(--r-bg); color:var(--r-ink); } .alert.action { background:var(--a-bg); color:var(--a-ink); } .alert.info { background:var(--b-bg); color:var(--b-ink); }
+    table { border-collapse:collapse; width:100%; font-size:13px; }
+    th, td { border-bottom:1px solid var(--line); padding:5px 8px; text-align:left; white-space:nowrap; }
+    th { color:var(--muted); font-weight:600; }
+    td.num { text-align:right; font-variant-numeric:tabular-nums; } td.wrap { white-space:normal; }
+    td.hi { color:var(--r-ink); font-weight:600; } td.old { color:var(--a-ink); }
+    .scroll { overflow-x:auto; }
+    .plan h3 { font-size:14px; margin:12px 0 4px; } .plan ul { margin:4px 0 8px 18px; padding:0; } .plan li { margin:3px 0; }
+    .plan .urgent h3 { color:var(--r-ink); } .plan .action h3 { color:var(--a-ink); }
+    .chip { display:inline-block; padding:1px 8px; border-radius:10px; font-size:12px; font-weight:600; }
+    .c-yes { background:var(--g-bg); color:var(--g-ink); } .c-no { background:var(--r-bg); color:var(--r-ink); } .c-unknown { background:var(--a-bg); color:var(--a-ink); }
+    .src { font-size:12px; color:var(--muted); margin-top:8px; }
+    svg text { fill:var(--muted); font-size:11px; }
+    .mgrid { display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:10px; margin:8px 0; }
+    .mgrid fieldset { border:1px solid var(--line); border-radius:8px; padding:6px 12px 8px; margin:0; display:grid; gap:6px; }
+    .mgrid legend { font-weight:600; font-size:13px; padding:0 4px; }
+    .mgrid label:not(.inl) { display:grid; grid-template-columns:90px 80px auto; align-items:center; gap:6px; }
+    .mgrid .u { font-size:12px; color:var(--muted); }
+    .mgrid label select { grid-column:span 2; justify-self:start; }
+    input.typed { border-color:var(--accent); font-weight:600; }
+    .verdict { border-radius:10px; padding:10px 14px; margin:10px 0 6px; }
+    .verdict .big { font-size:18px; font-weight:700; }
+    tr.match td { background:var(--b-bg); color:var(--b-ink); font-weight:600; }
+    td.lv-flag { color:var(--a-ink); font-weight:600; } td.lv-ok { color:var(--g-ink); font-weight:600; }
+    @media print { .noprint { display:none; } }
+<body>
+  <header>
+    .ref h4 { font-size:13.5px; margin:10px 0 3px; } .ref ul { margin:3px 0 6px 18px; padding:0; } .ref li { margin:2px 0; }
+    .ref details { border:1px solid var(--line); border-radius:8px; padding:6px 12px; margin:6px 0; }
+    .ref details > summary { cursor:pointer; font-weight:600; }
+    .ref .rec { background:var(--b-bg); color:var(--b-ink); border-radius:6px; padding:6px 10px; margin:6px 0; }
+    .ref .neph { background:var(--a-bg); color:var(--a-ink); border-radius:6px; padding:6px 10px; margin:6px 0; }
+    .ref .hit { outline:2px solid var(--accent); }
+    .ticks { display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:4px 14px; margin:6px 0; }
+    .ticks label { display:flex; gap:6px; align-items:flex-start; } .ticks .auto { font-size:11.5px; color:var(--accent); margin-left:4px; }
+    .bar { display:flex; gap:6px; align-items:center; margin:3px 0; } .bar .lbl { width:150px; } .bar .b { height:10px; background:var(--accent); border-radius:5px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Acute kidney injury: stage, type, cause and plan</h1>
+    <div class="sub">KDIGO stage from creatinine and urine output, pre-renal / renal / post-renal, renal causes (ATN, AIN, GN and others), tests, treatment, expected recovery and when to call nephrology. Read-only.</div>
+  </header>
+  <main>
+    <div class="banner"><b>Decision-support draft. It orders nothing.</b> Cut-offs, doses and recovery times were written by Claude from KDIGO 2012 and general sources and have <b>not been verified</b>: check them with nephrology, pharmacy and local protocols before real use. Tests are found by code and <b>name</b>, so a result not shown may still be in the chart. Ticks and values you enter stay in this page only. Use made-up or Cerner sandbox patients until Island Health approves real data.</div>
+
+    <details class="card" open>
+      <summary><span>Patient and bedside findings</span><span class="muted" id="ptsum"></span></summary>
+      <div class="body">
+        <div id="pstatus" class="muted">Open from Cerner to read the chart, or pick a made-up patient:</div>
+        <div class="row"><select id="testsel"><option value="">Made-up patient…</option></select><button id="clear" hidden>Clear</button></div>
+        <div class="row">
+          <label class="inl">Baseline creatinine <input type="number" id="base" min="20" max="1500" step="1" placeholder="auto"> <span class="muted">umol/L</span></label>
+          <label class="inl">Weight <input type="number" id="wt" min="25" max="350" step="0.1"> <span class="muted">kg</span></label>
+          <label class="inl">Volume on exam <select id="exam"><option value="">Not assessed</option><option value="dry">Dry (low JVP, orthostatic, dry mucosa)</option><option value="euvolemic">Normal</option><option value="overloaded">Overloaded (edema, crackles, high JVP)</option><option value="loweff">Low effective volume (HF or cirrhosis)</option></select></label>
+        </div>
+        <div class="muted">Ticks with a blue "chart" label were set from the chart; change them if they are wrong.</div>
+        <div class="ticks" id="ticks"></div>
+        <div id="errs" class="err"></div>
+      </div>
+    </details>
+
+    <div class="tiles" id="tiles"></div>
+
+    <details class="card" open><summary><span>Act now / call nephrology</span><span class="muted" id="alertsum"></span></summary><div class="body" id="alerts"></div></details>
+
+    <details class="card" open>
+      <summary><span>Creatinine trend</span><span class="muted" id="trendsum"></span></summary>
+      <div class="body"><div id="spark"></div><div class="scroll" id="trend"></div><div id="uo"></div>
+        <div class="src">KDIGO 2012: stage 1 = 1.5-1.9 × baseline (within 7 days) or a rise of 26.5 umol/L or more within 48 h, or urine under 0.5 mL/kg/h for 6-12 h; stage 2 = 2.0-2.9 ×, or under 0.5 mL/kg/h for 12 h or more; stage 3 = 3 × or more, creatinine 354 or more, dialysis started, or under 0.3 mL/kg/h for 24 h or no urine for 12 h.</div></div>
+    </details>
+
+    <details class="card" open>
+      <summary><span>Pre-renal, renal or post-renal?</span><span class="muted" id="typesum"></span></summary>
+      <div class="body">
+        <div class="muted">Urine values: type from the lab, or leave empty to use the chart value (grey). Send urine studies before diuretics if you can.</div>
+        <div class="mgrid">
+          <fieldset><legend>Serum</legend>
+            <label>Creatinine <input type="number" id="m-scr" min="10" max="3000"> <span class="u">umol/L</span></label>
+            <label>Sodium <input type="number" id="m-sna" min="90" max="190"> <span class="u">mmol/L</span></label>
+            <label>Urea <input type="number" id="m-surea" min="0" max="100" step="0.1"> <span class="u">mmol/L</span></label></fieldset>
+          <fieldset><legend>Urine (spot, same time)</legend>
+            <label>Sodium <input type="number" id="m-una" min="0" max="300"> <span class="u">mmol/L</span></label>
+            <label>Creatinine <input type="number" id="m-ucr" min="0" max="60" step="0.1"> <span class="u">mmol/L</span></label>
+            <label>Urea <input type="number" id="m-uurea" min="0" max="1500"> <span class="u">mmol/L</span></label>
+            <label>Osmolality <input type="number" id="m-uosm" min="40" max="1400"> <span class="u">mOsm/kg</span></label></fieldset>
+        </div>
+        <div class="row"><button id="m-clear" hidden>Clear typed values</button><span class="muted" id="m-src"></span></div>
+        <div id="type"></div>
+        <div class="src">FENa = (urine Na × serum creatinine) ÷ (serum Na × urine creatinine) × 100; FEUrea the same with urea. FENa is unreliable on diuretics, with CKD, contrast, rhabdomyolysis, early obstruction, GN and hepatorenal syndrome (can be under 1% without being pre-renal). Unverified: interpret with the whole picture.</div>
+      </div>
+    </details>
+
+    <details class="card" open>
+      <summary><span>Medicines to stop, hold or adjust</span><span class="muted" id="medsum"></span></summary>
+      <div class="body" id="meds"></div>
+    </details>
+
+    <details class="card" open>
+      <summary><span>Investigations</span><span class="muted" id="testsum"></span></summary>
+      <div class="body"><div class="scroll" id="tests"></div>
+        <h3 style="font-size:14px;margin:12px 0 4px">Every AKI (KDIGO care bundle)</h3><div class="plan" id="bundle"></div></div>
+    </details>
+
+    <details class="card" open>
+      <summary><span>Types of AKI: signs and symptoms, tests, treatment, recovery</span><span class="muted">reference</span></summary>
+      <div class="body ref" id="types"></div>
+    </details>
+
+    <details class="card" open>
+      <summary><span>Renal (intrinsic) causes: ATN, AIN, glomerulonephritis and others</span><span class="muted" id="renalsum">reference</span></summary>
+      <div class="body ref" id="renal"></div>
+    </details>
+
+    <details class="card">
+      <summary><span>When to involve nephrology</span><span class="muted">reference</span></summary>
+      <div class="body ref" id="whennephro"></div>
+    </details>
+
+    <details class="card noprint" open id="sec-note">
+      <summary><span>Note draft</span><span class="muted">check, edit, then paste into your PowerChart note</span></summary>
+      <div class="body" id="note"></div>
+    </details>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+  <script src="../../pdf-overlay.js?v=20261103a"></script>
+  <script src="rules.js?v=20261117a"></script>
+  <script src="reference.js?v=20261117a"></script>
+  <script src="chart.js?v=20261117a"></script>
+  <script src="samples.js?v=20261117a"></script>
+  <script src="../../notedraft.js?v=20261113a"></script>
+  <script src="app.js?v=20261117a"></script>
+</body>
+</html>
