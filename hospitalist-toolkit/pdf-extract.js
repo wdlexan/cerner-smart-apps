@@ -275,7 +275,9 @@
     ["Alcohol use disorder", /alcohol use disorder|alcohol dependence|alcoholism/i, "F10.20"],
     ["Cellulitis", /cellulitis|erysipelas/i, "L03.90"], ["Necrotizing fasciitis", /necroti[sz]ing fasciitis|necroti[sz]ing soft tissue/i, "M72.6"], ["Diverticulitis", /diverticulitis/i, "K57.92"],
     ["Meningitis", /meningitis/i, "G03.9"], ["Encephalitis", /encephalitis/i, "G04.90"], ["Septic arthritis", /septic arthritis|prosthetic joint infection/i, "M00.9"], ["Osteomyelitis", /osteomyelitis/i, "M86.9"],
-    ["Prostatitis", /prostatitis/i, "N41.0"], ["Sinusitis", /sinusitis/i, "J32.9"], ["Dental abscess", /dental abscess|odontogenic|periapical abscess|ludwig/i, "K04.7"]
+    ["Prostatitis", /prostatitis/i, "N41.0"], ["Sinusitis", /sinusitis/i, "J32.9"], ["Dental abscess", /dental abscess|odontogenic|periapical abscess|ludwig/i, "K04.7"],
+    ["Ascending cholangitis", /cholangitis/i, "K83.09"], ["Cholecystitis", /cholecystitis/i, "K81.9"], ["Choledocholithiasis", /choledocholithiasis/i, "K80.50"],
+    ["Tuberculosis", /tuberculosis/i, "A15.9"], ["Fournier gangrene", /fournier/i, "N49.3"], ["Epididymo-orchitis", /epididym|orchitis/i, "N45.3"], ["Perianal abscess", /perianal abscess|perirectal abscess|ischiorectal abscess/i, "K61.0"]
   ];
   const DX_CTX = /diagnos|problem|\bdx\b|history of|\bpmh\b|\bhx\b|assessment|impression|comorbid/i, NEG = /\bno (?:history|evidence|signs?)\b|denies|negative for|rule out|\br\/o\b|family history|\bfhx\b|without|differential|\bddx\b|\bvs\.?\s|versus|\?|possible|query|to exclude|precautions?/i;
   const DX_SECTION = /past medical|medical history|\bpmh\b|problem list|active problems|diagnos[ie]s|assessment|impression|comorbidit/i;

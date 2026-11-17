@@ -30,7 +30,13 @@ const LABS = {
   albumin: { re: /^albumin/i, loinc: ["1751-7"], label: "Albumin", unit: "g/L" },
   esr: { re: /sed(imentation)? rate|\besr\b/i, loinc: ["4537-7"], label: "ESR", unit: "mm/h" },
   alt: { re: /\balt\b|alanine/i, loinc: ["1742-6"], label: "ALT", unit: "U/L" },
-  ck: { re: /creatine kinase|\bck\b/i, loinc: ["2157-6"], label: "CK", unit: "U/L" }
+  ck: { re: /creatine kinase|\bck\b/i, loinc: ["2157-6"], label: "CK", unit: "U/L" },
+  bili: { re: /bilirubin(?!.*(direct|conjugated|urine))/i, loinc: ["1975-2", "14631-6"], label: "Bilirubin", unit: "umol/L" },
+  alp: { re: /alkaline phosphatase|\balp\b/i, loinc: ["6768-6"], label: "ALP", unit: "U/L" },
+  ast: { re: /\bast\b|aspartate/i, loinc: ["1920-8"], label: "AST", unit: "U/L" },
+  ggt: { re: /\bggt\b|gamma.?glutamyl/i, loinc: ["2324-2"], label: "GGT", unit: "U/L" },
+  inr: { re: /\binr\b/i, loinc: ["6301-6", "34714-6"], label: "INR", unit: "" },
+  lipase: { re: /lipase/i, loinc: ["3040-3"], label: "Lipase", unit: "U/L" }
 };
 function toSI(key, v, unit) {
   const u = (unit || "").toLowerCase().replace(/\s/g, "");
@@ -41,13 +47,14 @@ function toSI(key, v, unit) {
   if (key === "crp" && mgdl) return v * 10;
   if ((key === "hgb" || key === "albumin") && u.includes("g/dl")) return v * 10;
   if (key === "lactate" && mgdl) return v / 9.01;
+  if (key === "bili" && mgdl) return v * 17.1;
   return v;
 }
 const obsName = o => o.code?.text || o.code?.coding?.[0]?.display || "";
 const obsCodes = o => (o.code?.coding || []).map(c => c.code);
 function classifyLab(o) {
   const n = obsName(o), c = obsCodes(o);
-  for (const k of ["egfr", ...Object.keys(LABS).filter(x => x !== "egfr")]) { const L = LABS[k]; if (L.loinc.some(x => c.includes(x)) || L.re.test(n)) return k; }
+  for (const k of ["egfr", "ast", ...Object.keys(LABS).filter(x => x !== "egfr" && x !== "ast")]) { const L = LABS[k]; if (L.loinc.some(x => c.includes(x)) || L.re.test(n)) return k; }
   return null;
 }
 const latest = k => S.labs.filter(l => l.key === k && l.si != null).sort((a, b) => b.t - a.t)[0] || null;
@@ -109,6 +116,75 @@ function sepsis() {
   const shock = (sbp && sbp.v < 90) || (lac && lac.si >= 4);
   return { q, qsofa: q.length, sirs, shock, lac, rr, sbp, hr, t, data: !!(rr || sbp || hr || t) };
 }
+// Tokyo Guidelines 2018 - acute cholangitis diagnosis and severity. Auto from chart; each item can be ticked/unticked.
+function tg18() {
+  const t = maxV("temp", 48), wbc = latest("wbc"), crp = latest("crp"), bili = latest("bili"), alp = latest("alp"), ggt = latest("ggt"), ast = latest("ast"), alt = latest("alt");
+  const alb = latest("albumin"), cr = latest("creatinine"), inr = latest("inr"), plt = latest("plt"), sbp = minV("sbp", 48), spo2 = minV("spo2", 48), age = S.patient?.age;
+  const img = S.reports.filter(r => /(us|ultrasound|ct|mri|mrcp|ercp|abdom)/i.test(repText(r))).map(repConcl).join(" ");
+  const ov = S.tgOv || (S.tgOv = {});
+  const it = (k, label, auto, src) => ({ k, label, on: ov[k] != null ? ov[k] : !!auto, auto: !!auto, src });
+  const A = [it("a1", "Fever >38 C and/or shaking chills", t && t.v > 38, t ? `Tmax ${round(t.v)}` : "no temp"),
+             it("a2", "Inflammation: WBC <4 or >10, or CRP >=10 mg/L", (wbc && (wbc.si < 4 || wbc.si > 10)) || (crp && crp.si >= 10), [wbc ? `WBC ${round(wbc.si)}` : "", crp ? `CRP ${round(crp.si)}` : ""].filter(Boolean).join(", ") || "none")];
+  const B = [it("b1", "Jaundice: bilirubin >=34 umol/L (2 mg/dL)", bili && bili.si >= 34, bili ? `bili ${round(bili.si)}` : "no bilirubin"),
+             it("b2", "Abnormal liver tests >1.5x ULN (ALP >180, GGT >90, AST/ALT >60)", (alp && alp.si > 180) || (ggt && ggt.si > 90) || (ast && ast.si > 60) || (alt && alt.si > 60), [alp ? `ALP ${round(alp.si)}` : "", ggt ? `GGT ${round(ggt.si)}` : "", ast ? `AST ${round(ast.si)}` : "", alt ? `ALT ${round(alt.si)}` : ""].filter(Boolean).join(", ") || "none")];
+  const C = [it("c1", "Biliary dilatation on imaging", /dilat/i.test(img) && /(bile|biliary|cbd|duct)/i.test(img), "imaging report"),
+             it("c2", "Cause on imaging (stone, stricture, stent, mass)", /choledocholith|cbd stone|duct stone|stricture|stent|ampullary|pancreatic head mass|obstructing/i.test(img), "imaging report")];
+  const III = [it("g3cv", "Hypotension needing vasopressors", sbp && sbp.v < 90, sbp ? `SBP min ${sbp.v}` : ""),
+               it("g3neuro", "Disturbed consciousness", S.confused, "confusion box above"),
+               it("g3resp", "PaO2/FiO2 <300", spo2 && spo2.v < 90, spo2 ? `SpO2 min ${spo2.v}% (proxy)` : ""),
+               it("g3renal", "Oliguria or creatinine >176 umol/L (2 mg/dL)", cr && cr.si > 176, cr ? `creat ${round(cr.si)}` : ""),
+               it("g3liver", "INR >1.5", inr && inr.si > 1.5, inr ? `INR ${round(inr.si)}` : ""),
+               it("g3heme", "Platelets <100", plt && plt.si < 100, plt ? `plt ${round(plt.si)}` : "")];
+  const II = [it("g2wbc", "WBC >12 or <4", wbc && (wbc.si > 12 || wbc.si < 4), wbc ? `WBC ${round(wbc.si)}` : ""),
+              it("g2fever", "Fever >=39 C", t && t.v >= 39, t ? `Tmax ${round(t.v)}` : ""),
+              it("g2age", "Age >=75", age != null && age >= 75, age != null ? `age ${age}` : ""),
+              it("g2bili", "Bilirubin >=85 umol/L (5 mg/dL)", bili && bili.si >= 85, bili ? `bili ${round(bili.si)}` : ""),
+              it("g2alb", "Albumin <25 g/L (<0.7 x lower limit)", alb && alb.si < 25, alb ? `alb ${round(alb.si)}` : "")];
+  const a = A.some(x => x.on), b = B.some(x => x.on), c = C.some(x => x.on);
+  const dx = a && b && c ? "DEFINITE cholangitis" : a && (b || c) ? "SUSPECTED cholangitis" : "Criteria not met";
+  const grade = III.some(x => x.on) ? 3 : II.filter(x => x.on).length >= 2 ? 2 : 1;
+  return { A, B, C, III, II, dx, grade, met: a && (b || c) };
+}
+function tgHTML() {
+  const g = tg18();
+  const row = x => `<label class="chk"><input type="checkbox" class="tgc" data-k="${x.k}" ${x.on ? "checked" : ""}> ${esc(x.label)} <span class="muted">${x.src ? "(" + esc(x.src) + ")" : ""}${x.on !== x.auto ? " - changed by you" : ""}</span></label>`;
+  const act = { 3: "Grade III (severe): organ support + URGENT biliary drainage as soon as resuscitated (ERCP/PTBD); broad antibiotics; ICU", 2: "Grade II (moderate): EARLY drainage within 24-48 h; IV antibiotics", 1: "Grade I (mild): antibiotics; drain if no response within 24 h; treat the cause (e.g. cholecystectomy)" }[g.grade];
+  return `<div class="${g.met ? (g.grade === 3 ? "alert" : g.grade === 2 ? "warn" : "info") : "info"}" style="padding:10px 12px">
+    <b>Tokyo Guidelines 2018 - acute cholangitis</b> <span class="muted">(pre-ticked from the chart; tick/untick to correct)</span>
+    <div class="grid" style="margin-top:6px;gap:6px 14px">
+      <div><b class="muted">A. Systemic inflammation</b>${g.A.map(row).join("")}<b class="muted">B. Cholestasis</b>${g.B.map(row).join("")}<b class="muted">C. Imaging</b>${g.C.map(row).join("")}</div>
+      <div><b class="muted">Grade III - any organ dysfunction</b>${g.III.map(row).join("")}<b class="muted">Grade II - any 2</b>${g.II.map(row).join("")}</div>
+    </div>
+    <div style="margin-top:6px"><span class="score">${esc(g.dx)}</span>${g.met ? ` - <b>Grade ${g.grade}</b><br>${esc(act)}` : '<br><span class="muted">Definite = A + B + C; suspected = A + (B or C). Cholecystitis uses separate TG18 criteria (Murphy sign, RUQ mass/pain, inflammation, imaging).</span>'}</div>
+    <button class="btn sec" id="tgReset" style="padding:4px 10px;margin-top:6px">Reset to chart</button>
+  </div>`;
+}
+
+// Think TB - risk factors from the chart plus ticked symptoms
+const TB_SYMPTOMS = [["cough", "Cough >2-3 weeks"], ["hemoptysis", "Hemoptysis"], ["sweats", "Night sweats / prolonged fever"], ["weight", "Weight loss"], ["nonresp", "Pneumonia not responding to usual antibiotics"]];
+const TB_EXPOSURE = [["country", "Born or lived in a high-incidence country"], ["community", "Lived in a community with high TB incidence (incl. some First Nations and Inuit communities)"], ["contact", "Known TB contact or prior TB / untreated TB infection"], ["social", "Homelessness, incarceration or substance use"]];
+function tbRisk() {
+  const chart = [];
+  S.conds.forEach(c => { const t = condText(c); if (/\bhiv\b|transplant|end.stage renal|esrd|dialysis|silicosis|tuberculosis|\btb\b|diabetes/i.test(t)) chart.push(t); });
+  S.meds.forEach(m => { if (/infliximab|adalimumab|etanercept|golimumab|certolizumab|tocilizumab|tacrolimus|mycophenolate|prednisone|methylprednisolone/i.test(medName(m))) chart.push(medName(m)); });
+  const rad = S.reports.filter(r => /cavit|apical|upper lobe|miliary|tree.in.bud|hilar (adeno|lymph)|lymphocytic|tuberc|\bafb\b|granulom/i.test(repConcl(r))).map(r => `${repText(r)}: ${repConcl(r)}`);
+  const tb = S.tb || (S.tb = {});
+  const sym = TB_SYMPTOMS.filter(([k]) => tb[k]).map(x => x[1]), exp = TB_EXPOSURE.filter(([k]) => tb[k]).map(x => x[1]);
+  const think = rad.length > 0 || (sym.length > 0 && (chart.length + exp.length) > 0) || sym.length >= 2;
+  return { chart: [...new Set(chart)], rad, sym, exp, think };
+}
+function tbCard() {
+  const r = tbRisk(), tb = S.tb;
+  return `<div class="card"><h2>Think TB?</h2>
+    ${r.think ? `<div class="alert"><b>Consider tuberculosis.</b> Airborne isolation now; 3 sputum AFB smear + culture + TB NAAT; chest X-ray; HIV test; avoid fluoroquinolones until TB excluded; TB specialist and public health. <button class="btn sec" id="tbGo" style="padding:2px 8px">Open TB site</button></div>` : ""}
+    ${r.think && abxMeds().some(m => /levofloxacin|moxifloxacin|ciprofloxacin/i.test(medName(m))) ? `<div class="alert"><b>On a fluoroquinolone while TB is possible</b> - it can partly treat TB, make smears/cultures falsely negative and select resistance. Collect sputum now and discuss with the TB specialist.</div>` : ""}
+    ${r.rad.length ? `<div class="warn"><b>Imaging/report clue:</b> ${r.rad.map(esc).join("<br>")}</div>` : ""}
+    <div class="muted">Chart risk factors: ${r.chart.length ? r.chart.map(esc).join(", ") : "none found"}</div>
+    <div style="margin-top:4px"><b class="muted">Symptoms</b>${TB_SYMPTOMS.map(([k, l]) => `<label class="chk"><input type="checkbox" class="tbc" data-k="${k}" ${tb[k] ? "checked" : ""}> ${l}</label>`).join("")}</div>
+    <div><b class="muted">Exposure / risk (ask)</b>${TB_EXPOSURE.map(([k, l]) => `<label class="chk"><input type="checkbox" class="tbc" data-k="${k}" ${tb[k] ? "checked" : ""}> ${l}</label>`).join("")}</div>
+  </div>`;
+}
+
 // LRINEC (Wong 2004). Values kept in SI units in S.lrVals; pre-filled from the chart, editable in the calculator.
 const LR_ITEMS = [
   { k: "crp", lab: "crp", label: "CRP", si: "mg/L", us: "mg/dL", toSI: v => v * 10, pts: v => v >= 150 ? 4 : 0, rule: "&ge;150 mg/L (15 mg/dL) = 4" },
@@ -244,6 +320,7 @@ function chartCards(sp) {
       <div><span class="score">${pf.s}</span>/5 - <b>${pf.risk}</b> risk of positive test.
       ${pf.s < 3 && !S.pen.severe ? '<div class="ok">Low risk: cephalosporins are fine; consider a direct oral amoxicillin challenge (delabel) per local allergy pathway.</div>' : '<div class="warn">Use non-beta-lactam alternatives (see Allergy row) or ID/allergy advice; avoid all beta-lactams after SJS/TEN/DRESS.</div>'}</div>` : ""}
   </div>
+  ${tbCard()}
   <div class="card"><h2>Cultures &amp; micro (30 days)</h2>
     ${cultures.length ? `<ul>${cultures.sort((a, b) => new Date(repDate(b)) - new Date(repDate(a))).map(r => `<li><b>${esc(repText(r))}</b> <span class="muted">${fmtDT(repDate(r))}</span><br>${esc(repConcl(r) || "pending")}</li>`).join("")}</ul>` : `<p class="muted">No culture reports found.</p>`}
     ${cultures.some(r => /staph(ylococcus)? aureus|\bmrsa\b|\bmssa\b/i.test(repConcl(r)) && /blood/i.test(repText(r))) ? `<div class="alert"><b>S. aureus bacteremia:</b> ID consult, repeat blood cultures q24-48h until negative, echo, source control, IV therapy (cefazolin or cloxacillin for MSSA; vancomycin for MRSA).</div>` : ""}
@@ -272,12 +349,15 @@ function siteBlock(site, sp) {
   const ba = betaAllergies(), severeAllergy = ba.some(a => SEVERE_RX.test(allergyReactions(a)) || a.criticality === "high") || S.pen.severe;
   const imaging = S.reports.filter(r => /ct|mri|x-?ray|ultrasound|\bus\b|radiograph|scan|echo/i.test(repText(r)) && !/culture/i.test(repText(r)));
   const bc = S.reports.some(r => /blood c/i.test(repText(r)));
-  const lr = site.id === "skin" ? lrinec() : null, cb = site.id === "lung" ? curb65() : null;
+  const lr = ["skin", "groin"].includes(site.id) ? lrinec() : null, cb = site.id === "lung" ? curb65() : null;
   return `
   <div class="card"><h2>${esc(site.label)} <span class="muted">- ${esc(site.sub)}</span></h2>
   <details open><summary>Likely organisms</summary><div class="body">${list(site.organisms)}</div></details>
-  <details open class="red"><summary>What to watch out for${site.id === "skin" ? " - necrotizing fasciitis" : ""}</summary><div class="body">
+  <details open class="red"><summary>What to watch out for${site.id === "skin" ? " - necrotizing fasciitis" : site.id === "groin" ? " - Fournier gangrene" : site.id === "biliary" ? " - cholangitis needs drainage" : site.id === "tb" ? " - when to think of TB" : ""}</summary><div class="body">
     ${lr ? lrCalcHTML() : ""}
+    ${site.id === "biliary" ? tgHTML() : ""}
+    ${["groin", "skin"].includes(site.id) && S.meds.some(m => /empagliflozin|dapagliflozin|canagliflozin|ertugliflozin|jardiance|forxiga|invokana|synjardy|xigduo/i.test(medName(m))) ? `<div class="alert"><b>On an SGLT2 inhibitor</b> (${esc(S.meds.filter(m => /gliflozin|jardiance|forxiga|invokana|synjardy|xigduo/i.test(medName(m))).map(medName).join(", "))}): associated with Fournier gangrene and euglycemic DKA - stop it, check ketones.</div>` : ""}
+    ${site.isolation ? `<div class="alert"><b>Airborne isolation</b>${list(site.isolation)}</div>` : ""}
     ${cb ? `<div class="${cb.s >= 3 ? "alert" : cb.s === 2 ? "warn" : "info"}"><b>CURB-65 ${cb.s}/5</b> ${cb.s >= 3 ? "- severe, consider ICU review" : cb.s === 2 ? "- admit" : "- low risk (outpatient if otherwise OK)"}<br><span class="muted">${cb.items.map(([n, v]) => `${v === null ? "?" : v ? "&#10003;" : "&#10007;"} ${n}`).join(" &middot; ")}</span></div>` : ""}
     ${list(site.watch)}
   </div></details>
@@ -304,7 +384,8 @@ function siteBlock(site, sp) {
 }
 
 function buildNote(site, sp) {
-  const abx = abxMeds(), ba = betaAllergies(), lr = site.id === "skin" ? lrinec() : null, cb = site.id === "lung" ? curb65() : null;
+  const abx = abxMeds(), ba = betaAllergies(), lr = ["skin", "groin"].includes(site.id) ? lrinec() : null, cb = site.id === "lung" ? curb65() : null;
+  const tg = site.id === "biliary" ? tg18() : null, tbr = tbRisk();
   const reg = site.abx.find(r => r.tier === S.tier) || site.abx.find(r => r.tier === "severe") || site.abx[0];
   const severeAllergy = ba.some(a => SEVERE_RX.test(allergyReactions(a)) || a.criticality === "high") || S.pen.severe;
   const dur = site.duration[S.tier === "mild" ? 0 : Math.min(1, site.duration.length - 1)];
@@ -318,6 +399,8 @@ function buildNote(site, sp) {
     `Sepsis screen: qSOFA ${sp.qsofa}/3${sp.q.length ? ` (${sp.q.join(", ")})` : ""}, SIRS ${sp.sirs.length}/4, lactate ${sp.lac ? round(sp.lac.si) : "not done"}${sp.shock ? " - possible septic shock" : ""}.`,
     lr ? `LRINEC ${lr.s}/13 - ${lr.risk} (${lr.parts.join(", ")}${lr.missing.length ? `; missing ${lr.missing.join(", ")}` : ""}).` : "",
     cb ? `CURB-65 ${cb.s}/5.` : "",
+    tg ? `Tokyo 2018: ${tg.dx}${tg.met ? `, Grade ${tg.grade}` : ""}.` : "",
+    tbr.think ? `TB considered: ${[...tbr.sym, ...tbr.exp, ...tbr.chart, ...tbr.rad].join("; ")} - airborne isolation, sputum AFB x3 + NAAT.` : "",
     `Labs: WBC ${labTxt("wbc")}, CRP ${labTxt("crp")}, creatinine ${labTxt("creatinine")}, eGFR ${labTxt("egfr")}.`,
     `Allergies: ${S.allergies.length ? S.allergies.map(a => allergyName(a) + (allergyReactions(a) ? ` (${allergyReactions(a)})` : "")).join("; ") : "none recorded"}.${ba.length ? ` PEN-FAST ${penFast().s}/5.` : ""}`,
     `Current antibiotics: ${abx.length ? abx.map(m => `${medText(m)} (day ${dayOf(m) ?? "?"})`).join("; ") : "none"}.`,
@@ -346,6 +429,10 @@ function wire() {
   document.querySelectorAll("[data-lru]").forEach(b => b.onclick = () => { S.lrUnits = b.dataset.lru; render(); });
   const lrr = $("#lrReset"); if (lrr) lrr.onclick = () => { lrInit(true); render(); };
   const lrj = $("#lrJump"); if (lrj) lrj.onclick = () => { S.site = "skin"; render(); setTimeout(() => $("#lrBox")?.scrollIntoView({ behavior: "smooth", block: "center" }), 50); };
+  document.querySelectorAll(".tgc").forEach(x => x.onchange = () => { S.tgOv[x.dataset.k] = x.checked; render(); });
+  const tgr = $("#tgReset"); if (tgr) tgr.onclick = () => { S.tgOv = {}; render(); };
+  document.querySelectorAll(".tbc").forEach(x => x.onchange = () => { S.tb[x.dataset.k] = x.checked; render(); });
+  const tbg = $("#tbGo"); if (tbg) tbg.onclick = () => { S.site = "tb"; render(); };
   $("#note").oninput = () => { S.noteDirty = true; S.noteText = $("#note").value; };
   $("#rebuildNote").onclick = () => { S.noteDirty = false; S.noteText = null; render(); };
   $("#copyNote").onclick = async () => { try { await navigator.clipboard.writeText($("#note").value); } catch { $("#note").select(); document.execCommand("copy"); } $("#copied").textContent = "Copied"; setTimeout(() => { const e = $("#copied"); if (e) e.textContent = ""; }, 1500); };
@@ -425,6 +512,6 @@ async function start() {
   $("#banner").innerHTML = p ? `<b>${esc(p.name)}</b> &nbsp; ${p.age ?? "?"} y ${esc(p.gender || "")} &nbsp; DOB ${esc(p.birthDate || "")}${p.mrn ? ` &nbsp; MRN ${esc(p.mrn)}` : ""}` : "Patient";
   render();
 }
-window.InfApp = { S, sepsis, lrinec, curb65, penFast, suggestedSites, mismatch };
+window.InfApp = { S, sepsis, lrinec, curb65, penFast, suggestedSites, mismatch, tg18, tbRisk };
 start();
 })();

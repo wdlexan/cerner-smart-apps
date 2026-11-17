@@ -1,0 +1,87 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, MARGARET                  DOB: 1945-06-18     Sex: F
+MRN: TESTINF06                           Age: 81
+
+ALLERGIES
+Sulfa (sulfonamide antibiotics) - rash
+
+ED PHYSICIAN NOTE
+Date of service: 2026-11-17 02:00
+81 year old with fever, rigors and right upper quadrant pain since last night, now
+jaundiced. Murphy sign positive. Gallstones known. Started ceftriaxone and metronidazole
+after blood cultures. Holding apixaban.
+
+HOSPITALIST NOTE
+Date of service: 2026-11-17 10:00
+Ultrasound: dilated CBD with distal stone. Blood cultures E. coli. Discussed with GI for
+ERCP.
+
+VITAL SIGNS
+2026-11-17 02:00 BP: 98/56 HR: 116 RR: 22 Temp: 39.4 C SpO2: 95%
+2026-11-17 06:00 BP: 104/60 HR: 108 RR: 20 Temp: 38.9 C SpO2: 96%
+2026-11-17 10:00 BP: 112/64 HR: 100 RR: 20 Temp: 38.4 C SpO2: 96%
+
+LABORATORY RESULTS
+Collected: 2026-11-17 02:30
+Test                      Result           Units           
+
+WBC                       16.2             x10^9/L         
+
+Platelets                 141              x10^9/L         
+
+Total bilirubin           96               umol/L          
+
+Alkaline phosphatase      412              U/L             
+
+GGT                       520              U/L             
+
+AST                       214              U/L             
+
+ALT                       182              U/L             
+
+Lipase                    62               U/L             
+
+Albumin                   28               g/L             
+
+Creatinine                150              umol/L          
+
+eGFR                      28               mL/min/1.73m2   
+
+INR                       1.3                              
+
+Lactate                   3.1              mmol/L          
+
+CRP                       158              mg/L            
+
+
+ACTIVE MEDICATION ORDERS (2026-11-17)
+Ceftriaxone 2 g IV daily
+Metronidazole 500 mg IV q12h
+Apixaban 2.5 mg PO BID (held)
+
+ACTIVE PROBLEM LIST
+Ascending cholangitis
+Choledocholithiasis
+Atrial fibrillation
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, MARGARET MRN TESTINF06         Page 1
+
+RADIOLOGY AND MICROBIOLOGY REPORTS
+
+ULTRASOUND ABDOMEN
+Date of exam: 2026-11-17 05:00
+IMPRESSION:
+Cholelithiasis without gallbladder wall thickening. Common bile duct dilated to 11 mm with
+an obstructing distal choledocholithiasis 9 mm. Intrahepatic biliary dilatation.
+
+BLOOD CULTURE X2
+Date of exam: 2026-11-17 02:24
+IMPRESSION:
+Escherichia coli in 2 of 2 sets; susceptible to ceftriaxone, ciprofloxacin; resistant to
+ampicillin.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, MARGARET MRN TESTINF06         Page 2

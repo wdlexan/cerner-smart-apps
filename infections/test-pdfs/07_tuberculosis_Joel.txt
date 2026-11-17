@@ -1,0 +1,69 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, JOEL                      DOB: 1992-09-07     Sex: M
+MRN: TESTINF07                           Age: 34
+
+ALLERGIES
+No known drug allergies
+
+ED PHYSICIAN NOTE
+Date of service: 2026-11-14 10:00
+34 year old, moved to Canada from the Philippines 3 years ago. Six weeks of productive
+cough, two episodes of blood-streaked sputum, night sweats and 8 kg weight loss. Admitted as
+right upper lobe pneumonia, started ceftriaxone and levofloxacin.
+
+HOSPITALIST NOTE
+Date of service: 2026-11-17 09:00
+Day 3, still febrile in the evenings, sweats persist. CT shows a cavity. Not in a
+negative-pressure room.
+
+VITAL SIGNS
+2026-11-14 10:00 BP: 118/72 HR: 104 RR: 22 Temp: 38.4 C SpO2: 95%
+2026-11-16 06:00 BP: 116/70 HR: 98 RR: 20 Temp: 38.2 C SpO2: 95%
+2026-11-17 09:00 BP: 120/74 HR: 96 RR: 20 Temp: 38.1 C SpO2: 96%
+
+LABORATORY RESULTS
+Collected: 2026-11-14 11:00
+Test                      Result           Units           
+
+WBC                       9.8              x10^9/L         
+
+Hemoglobin                112              g/L             
+
+CRP                       64               mg/L            
+
+Albumin                   30               g/L             
+
+Sodium                    133              mmol/L          
+
+ALT                       28               U/L             
+
+Creatinine                74               umol/L          
+
+
+ACTIVE MEDICATION ORDERS (2026-11-17)
+Ceftriaxone 1 g IV daily
+Levofloxacin 750 mg PO daily
+
+ACTIVE PROBLEM LIST
+Pneumonia, right upper lobe, not improving
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, JOEL MRN TESTINF07         Page 1
+
+RADIOLOGY AND MICROBIOLOGY REPORTS
+
+CHEST X-RAY
+Date of exam: 2026-11-14 11:00
+IMPRESSION:
+Right upper lobe consolidation with a possible cavity.
+
+CT CHEST WITH CONTRAST
+Date of exam: 2026-11-16 16:00
+IMPRESSION:
+3.2 cm thick-walled cavity in the apical segment of the right upper lobe with surrounding
+tree-in-bud nodularity; right hilar adenopathy. Findings concerning for active tuberculosis.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, JOEL MRN TESTINF07         Page 2

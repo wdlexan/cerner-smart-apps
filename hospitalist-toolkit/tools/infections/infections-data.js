@@ -43,7 +43,7 @@ window.INF_SITES = [
   duration: ["Cellulitis: 5-6 days if improving (extend only if not improved)", "Abscess after I&D: 5-7 days if antibiotics given", "Diabetic foot soft tissue: 1-2 weeks; osteomyelitis 6 weeks (about 3 weeks after minor amputation with clear margin; 2-5 days if all infected bone resected)", "Necrotizing infection: until no further debridement needed, clinically improved and afebrile 48-72 h"],
   ivpo: ["IV if systemic toxicity, rapid progression, failed oral therapy, or unable to take PO", "Switch to cephalexin (or matching oral) once afebrile 24-48 h, erythema receding, eating"],
   idc: ["Necrotizing infection or TSS", "S. aureus bacteremia (always)", "Diabetic foot osteomyelitis needing long therapy / OPAT", "Unusual exposure (water, animal), immunocompromised, or not improving after 48-72 h"],
-  surgeon: ["Suspected necrotizing infection - general/plastic surgery NOW (Fournier: urology)", "Abscess not amenable to bedside drainage, hand infections (plastics)", "Diabetic foot with abscess, gangrene, or osteomyelitis (vascular/ortho/podiatry)"]
+  surgeon: ["Suspected necrotizing infection - general/plastic surgery NOW (perineum/genitals: see Groin & perineum - Fournier)", "Abscess not amenable to bedside drainage, hand infections (plastics)", "Diabetic foot with abscess, gangrene, or osteomyelitis (vascular/ortho/podiatry)"]
 },
 {
   id: "lung", label: "Lung (pneumonia)", match: /pneumonia|\bcap\b|\bhap\b|aspiration|empyema|lung abscess|lower respiratory/i,
@@ -60,7 +60,7 @@ window.INF_SITES = [
     "Parapneumonic effusion/empyema - tap any significant effusion (pH <7.2, glucose low, pus or positive Gram stain = chest tube)",
     "Lung abscess / cavitation - consider MRSA, anaerobes, TB (airborne isolation if TB possible)",
     "Not improving at 72 h: wrong bug, empyema, abscess, obstruction (tumour), PE, heart failure, drug fever",
-    "Legionella: hyponatremia, diarrhea, high fever, confusion"
+    "Legionella: hyponatremia, diarrhea, high fever, confusion", "TB possible (see TB site / Think TB card): airborne isolation, sputum AFB x3 + NAAT, and avoid fluoroquinolones until TB is excluded"
   ],
   ix: {
     blood: ["CBC, lytes, urea, creatinine, CRP, lactate if unwell", "Blood cultures: severe CAP, or if MRSA/Pseudomonas cover started or prior isolation", "Procalcitonin may help decide stopping (not starting) antibiotics", "ABG/VBG if hypoxic or hypercapnic"],
@@ -77,7 +77,7 @@ window.INF_SITES = [
     { tier: "severe", setting: "MRSA risk (prior MRSA, post-influenza necrotizing, cavitation)", regimen: "Add vancomycin IV (or linezolid 600 mg q12h); stop if MRSA nasal PCR and cultures negative at 48 h" },
     { tier: "severe", setting: "Pseudomonas risk / hospital-acquired", regimen: "Piperacillin-tazobactam 4.5 g IV q6h (or cefepime 2 g IV q8h, or meropenem 1 g IV q8h) +/- vancomycin" }
   ],
-  allergy: ["Non-severe penicillin allergy: ceftriaxone is fine", "Severe: levofloxacin 750 mg daily (or moxifloxacin 400 mg daily) monotherapy covers typical + atypical", "Fluoroquinolone cautions: QTc, aortic aneurysm, tendinopathy, delirium, C. difficile"],
+  allergy: ["Non-severe penicillin allergy: ceftriaxone is fine", "Severe: levofloxacin 750 mg daily (or moxifloxacin 400 mg daily) monotherapy covers typical + atypical - but NOT if TB is possible (masks TB)", "Fluoroquinolone cautions: QTc, aortic aneurysm, tendinopathy, delirium, C. difficile"],
   duration: ["Clinically stable by day 3 (afebrile, HR <100, RR <24, SpO2 >=90% on room air, normal mentation, eating): 3-5 days total (ATS 2025; PTC trial)", "Otherwise minimum 5 days and until stable 48 h", "Longer: S. aureus or Pseudomonas (7 days+), empyema (2-6 weeks, drained), abscess (3-6 weeks), Legionella severe (7-14 days)", "HAP/VAP: 7 days"],
   ivpo: ["Most ward patients can take PO from the start if absorbing (levofloxacin, doxycycline have ~100% bioavailability)", "Switch IV to PO when stable: amoxicillin-clavulanate or amoxicillin +/- azithromycin/doxycycline"],
   idc: ["S. aureus bacteremia (always)", "Severe immunocompromise (transplant, neutropenia, HIV with low CD4)", "Lung abscess/empyema needing prolonged therapy", "Suspected TB, fungal, or Pneumocystis", "MDR organism or not improving after 72 h"],
@@ -111,7 +111,7 @@ window.INF_SITES = [
   duration: ["Cystitis: nitrofurantoin 5 days, TMP-SMX 3 days, fosfomycin single dose (men: 7 days)", "Complicated UTI incl. pyelonephritis and CAUTI, improving: 5-7 days of a fluoroquinolone or 7 days of another agent (IDSA 2025)", "With gram-negative bacteremia and improving: 7 days total", "Prostatitis, abscess, or slow response: longer (see Prostate)"],
   ivpo: ["Switch to oral as soon as improving and tolerating PO (IDSA 2025 favours oral step-down) - choose by susceptibility", "Oral options: ciprofloxacin, TMP-SMX, amoxicillin-clavulanate or cephalexin (beta-lactams: complete 7-10 days)"],
   idc: ["Carbapenem-resistant or difficult-to-treat resistant organisms", "Candidemia or fungal ball", "Recurrent cUTI with structural abnormality or transplant kidney"],
-  surgeon: ["Obstruction/stone with infection - urology urgently", "Emphysematous pyelonephritis, abscess", "Fournier gangrene - see Skin"]
+  surgeon: ["Obstruction/stone with infection - urology urgently", "Emphysematous pyelonephritis, abscess", "Fournier gangrene - see Groin & perineum"]
 },
 {
   id: "prostate", label: "Prostate", match: /prostatitis|prostate abscess/i,
@@ -133,6 +133,37 @@ window.INF_SITES = [
   surgeon: ["Prostatic abscess, retention not resolving - urology"]
 },
 {
+  id: "groin", label: "Groin & perineum (Fournier)", match: /fournier|perineal|perianal|perirectal|ischiorectal|scrotal|epididym|orchitis|groin abscess|inguinal abscess|bartholin/i,
+  sub: "Fournier gangrene, perianal abscess, scrotal and groin infections",
+  organisms: ["Fournier gangrene: polymicrobial - E. coli, Klebsiella, Proteus, Enterococcus, streptococci (incl. group A), S. aureus, anaerobes (Bacteroides, Clostridium)", "Perianal/perirectal abscess: enteric gram-negatives and anaerobes", "Epididymo-orchitis: <35 or STI risk - N. gonorrhoeae, C. trachomatis; >35, catheter or instrumentation - E. coli and other Enterobacterales (also mumps)", "Groin abscess in people who inject drugs: S. aureus (MRSA), streptococci"],
+  watch: [
+    "FOURNIER GANGRENE (necrotizing fasciitis of perineum/genitals): genital or perineal pain out of proportion, swelling, crepitus, dusky or black skin, foul discharge, rapid spread to the abdominal wall or thighs, systemic toxicity. Skin findings UNDERESTIMATE the deep extent. LRINEC (below) - a low score does not exclude",
+    "Risk factors: diabetes (incl. SGLT2 inhibitors - Health Canada warning), alcohol use, obesity, immunosuppression, recent perineal, urologic or colorectal procedure, urethral catheter or stricture, perianal abscess",
+    "Testes are usually spared (separate blood supply); testicular involvement suggests a retroperitoneal or intra-abdominal source",
+    "Groin abscess in someone who injects into the femoral area: exclude FEMORAL PSEUDOANEURYSM with Doppler ultrasound BEFORE incision",
+    "Scrotal pain: testicular torsion must be excluded first (urgent Doppler/urology) - do not label as epididymitis without it",
+    "Perianal abscess in neutropenia: may have no pus - early broad antibiotics and surgical review; incarcerated or strangulated hernia can mimic a groin infection"
+  ],
+  ix: {
+    blood: ["CBC, lytes, creatinine, glucose/HbA1c, CRP (for LRINEC), lactate, CK, coagulation", "Blood cultures x2 if systemic signs"],
+    imaging: ["CT abdomen/pelvis with contrast: extent of gas and fascial spread, source (perianal, urethral, retroperitoneal) - but do NOT delay surgery in clear Fournier", "Scrotal ultrasound with Doppler (torsion, abscess, orchitis)", "Groin Doppler ultrasound before draining an injection-site abscess", "MRI pelvis for complex perianal fistula/abscess"],
+    other: ["Deep tissue cultures at debridement (not surface swabs)", "Urine culture; NAAT for gonorrhea/chlamydia (urine) in epididymitis", "HIV, syphilis, hepatitis testing if STI or injection drug use"]
+  },
+  source: ["Fournier: EMERGENCY radical debridement (urology and/or general surgery), planned re-look every 24-48 h; suprapubic catheter; diverting colostomy if extensive perianal involvement; later plastics reconstruction", "Stop SGLT2 inhibitor; tight glucose control", "Perianal/perirectal abscess: incision and drainage (general surgery)", "Groin abscess: drainage after pseudoaneurysm excluded (vascular surgery if present)", "Scrotal abscess: urology drainage"],
+  abx: [
+    { tier: "mild", setting: "Perianal abscess after drainage (antibiotics only if cellulitis, diabetes, immunocompromised or systemic signs)", regimen: "Amoxicillin-clavulanate 875/125 mg PO BID, or ciprofloxacin 500 mg BID + metronidazole 500 mg TID" },
+    { tier: "mild", setting: "Epididymo-orchitis, STI risk", regimen: "Ceftriaxone 500 mg IM once (1 g if >=150 kg) + doxycycline 100 mg PO BID x 10 days" },
+    { tier: "mild", setting: "Epididymo-orchitis, enteric (older, catheter, instrumentation)", regimen: "Levofloxacin 500 mg PO daily x 10 days (or by urine culture)" },
+    { tier: "moderate", setting: "Groin abscess / cellulitis in people who inject drugs", regimen: "Vancomycin IV (MRSA) +/- cefazolin 2 g IV q8h; step down by culture" },
+    { tier: "severe", setting: "Fournier gangrene / necrotizing perineal infection", regimen: "Piperacillin-tazobactam 4.5 g IV q6h (or meropenem 1 g IV q8h) + vancomycin IV + clindamycin 900 mg IV q8h (toxin suppression); adjust to cultures; antifungal if immunocompromised and Candida" }
+  ],
+  allergy: ["Severe beta-lactam allergy: vancomycin + (ciprofloxacin or aztreonam) + metronidazole + clindamycin; carbapenems are usually acceptable (<1% cross-reactivity)"],
+  duration: ["Fournier: continue until no further debridement needed, clinical improvement and afebrile 48-72 h (often 2-3 weeks total)", "Perianal abscess, when antibiotics given: 5-7 days", "Epididymo-orchitis: 10 days", "Groin abscess after drainage: 5-7 days; longer with bacteremia (S. aureus - ID)"],
+  ivpo: ["IV for Fournier and any necrotizing infection until debridement complete and improving; then oral by cultures (e.g. amoxicillin-clavulanate)"],
+  idc: ["Fournier gangrene (complex polymicrobial, prolonged course)", "S. aureus bacteremia or endocarditis in people who inject drugs", "Neutropenic perianal infection"],
+  surgeon: ["Fournier: urology and general surgery NOW (do not wait for CT if clinically obvious)", "Perianal abscess: general surgery", "Testicular torsion or scrotal abscess: urology urgently", "Femoral pseudoaneurysm: vascular surgery"]
+},
+{
   id: "joint", label: "Joints (septic arthritis)", match: /septic arthritis|joint infection|prosthetic joint|periprosthetic|septic (knee|hip|shoulder)|bursitis/i,
   sub: "Native joint, prosthetic joint, septic bursitis",
   organisms: ["S. aureus (most, incl. MRSA), streptococci", "Gram-negatives: elderly, immunocompromised, IVDU (Pseudomonas)", "N. gonorrhoeae: young sexually active (migratory polyarthralgia, tenosynovitis, pustules)", "Prosthetic joint: coagulase-negative staph, S. aureus, Cutibacterium (shoulder), streptococci, gram-negatives"],
@@ -152,7 +183,7 @@ window.INF_SITES = [
   surgeon: ["Orthopedics for every suspected septic joint (washout) and every prosthetic joint infection"]
 },
 {
-  id: "divert", label: "Diverticulitis / intra-abdominal", match: /diverticulitis|intra-?abdominal|peritonitis|appendicitis|cholecystitis|cholangitis|abdominal abscess/i,
+  id: "divert", label: "Diverticulitis / intra-abdominal", match: /diverticulitis|intra-?abdominal|peritonitis|appendicitis|abdominal abscess/i,
   sub: "Uncomplicated and complicated diverticulitis",
   organisms: ["Enterobacterales (E. coli), anaerobes (Bacteroides fragilis), streptococci", "Healthcare-associated: Pseudomonas, Enterococcus, ESBL, Candida"],
   watch: ["Complicated: abscess, perforation (free air), peritonitis, fistula (pneumaturia - colovesical), obstruction", "Immunocompromised (steroids, transplant, chemo): fewer signs, higher perforation risk - lower threshold for CT and antibiotics", "Not improving in 48-72 h - repeat CT for abscess", "Colonoscopy 6-8 weeks after complicated episode (or first episode without prior colonoscopy) to exclude cancer"],
@@ -170,9 +201,39 @@ window.INF_SITES = [
   surgeon: ["General surgery: perforation, peritonitis, abscess not drainable, obstruction, fistula, failure of non-operative care, immunocompromised"]
 },
 {
+  id: "biliary", label: "Biliary (cholangitis, cholecystitis)", match: /cholangitis|cholecystitis|biliary sepsis|choledocholithiasis|biliary obstruction|gallstone|liver abscess/i,
+  sub: "Ascending cholangitis, acute cholecystitis (Tokyo Guidelines 2018)",
+  organisms: ["E. coli, Klebsiella, Enterobacter, Enterococcus, streptococci", "Anaerobes (Bacteroides): biliary-enteric anastomosis, elderly, severe disease", "Healthcare-associated, biliary stents, prior ERCP: Pseudomonas, ESBL producers, Enterococcus (incl. VRE), Candida", "Liver abscess: Klebsiella (hypervirulent - eye/CNS spread), Streptococcus anginosus, anaerobes, Entamoeba (travel)"],
+  watch: [
+    "CHOLANGITIS needs DRAINAGE - antibiotics alone fail with ongoing obstruction. Charcot triad (fever, RUQ pain, jaundice) in only ~50-70%; Reynolds pentad adds shock and confusion",
+    "Tokyo 2018 grading (see calculator above): Grade III (organ dysfunction) = urgent drainage as soon as resuscitated; Grade II = early ERCP within 24-48 h; Grade I = drain if no response in 24 h",
+    "Elderly and immunocompromised may have no fever or pain - unexplained sepsis with raised ALP/bilirubin = cholangitis until proven otherwise",
+    "Cholecystitis complications: gangrenous, emphysematous (diabetes, gas in wall - urgent surgery), perforation, empyema of gallbladder, cholecystoenteric fistula/gallstone ileus",
+    "Acalculous cholecystitis in critically ill/TPN patients - high mortality, percutaneous cholecystostomy",
+    "Gallstone pancreatitis with cholangitis; malignant obstruction (painless jaundice, weight loss); blocked stent; pyogenic liver abscess (Klebsiella: check eyes and CNS)"
+  ],
+  ix: {
+    blood: ["CBC, creatinine, lytes, lactate", "Liver panel: ALP, GGT, ALT/AST, bilirubin (cholestatic pattern), albumin, INR", "Lipase (gallstone pancreatitis)", "Blood cultures x2 BEFORE antibiotics (positive in up to half of cholangitis)"],
+    imaging: ["Abdominal ultrasound first: gallstones, wall thickening, pericholecystic fluid, sonographic Murphy, CBD dilatation", "CT abdomen with contrast: complications, liver abscess, malignancy, unclear diagnosis", "MRCP: CBD stones/strictures when diagnosis uncertain and patient stable (do not delay ERCP in cholangitis)", "EUS if intermediate probability of CBD stone", "HIDA scan if ultrasound equivocal for cholecystitis"],
+    other: ["Bile culture at ERCP/PTBD", "Aspirate culture for liver abscess; Entamoeba serology if travel"]
+  },
+  source: ["Cholangitis: ERCP with sphincterotomy, stone extraction or stent (GI); PTBD by IR if ERCP fails or altered anatomy; EUS-guided drainage", "Cholecystitis: early laparoscopic cholecystectomy (within 72 h, same admission); percutaneous cholecystostomy if too unwell/frail", "After gallstone cholangitis: cholecystectomy in the same admission or soon after", "Liver abscess >5 cm or not improving: percutaneous drainage"],
+  abx: [
+    { tier: "mild", setting: "Grade I cholecystitis / cholangitis, community", regimen: "Ceftriaxone 1-2 g IV daily (add metronidazole 500 mg q12h if biliary-enteric anastomosis); oral step-down amoxicillin-clavulanate 875/125 mg BID" },
+    { tier: "moderate", setting: "Grade II, community", regimen: "Ceftriaxone 2 g IV daily + metronidazole 500 mg PO/IV q12h (or piperacillin-tazobactam 4.5 g IV q6h)" },
+    { tier: "severe", setting: "Grade III, or healthcare-associated / stent / prior ERCP", regimen: "Piperacillin-tazobactam 4.5 g IV q6h (meropenem 1 g IV q8h if ESBL); add vancomycin if Enterococcus/MRSA risk (TG18 recommends enterococcal cover in severe and healthcare-associated cases)" },
+    { tier: "moderate", setting: "Pyogenic liver abscess", regimen: "Ceftriaxone 2 g IV daily + metronidazole 500 mg q12h (metronidazole also covers Entamoeba) + drainage" }
+  ],
+  allergy: ["Non-severe penicillin allergy: ceftriaxone + metronidazole", "Severe beta-lactam allergy: ciprofloxacin (or levofloxacin) + metronidazole; septic - aztreonam + metronidazole + vancomycin (carbapenem usually acceptable - <1% cross-reactivity)"],
+  duration: ["Uncomplicated cholecystitis with cholecystectomy: stop within 24 h after surgery", "Complicated cholecystitis (gangrene, perforation, empyema): 4-7 days after source control", "Cholangitis after drainage: 4-7 days (TG18); bacteremia with Enterococcus or Streptococcus: at least 2 weeks", "Residual stones/obstruction: continue until anatomical problem fixed", "Liver abscess: 4-6 weeks (IV 2-3 weeks then oral)"],
+  ivpo: ["Switch to oral (amoxicillin-clavulanate, or ciprofloxacin + metronidazole) once drained, afebrile and eating"],
+  idc: ["Resistant organisms (ESBL, CRE, VRE) or Candida in bile/blood", "Klebsiella liver abscess with metastatic infection (eye/CNS)", "Recurrent cholangitis with indwelling stents, liver transplant"],
+  surgeon: ["GI for urgent ERCP (Grade II within 24-48 h, Grade III as soon as resuscitated)", "General surgery for cholecystitis (cholecystectomy) and emphysematous/gangrenous gallbladder", "IR for PTBD, cholecystostomy, liver abscess drainage"]
+},
+{
   id: "mening", label: "Meningitis / encephalitis", match: /meningitis|encephalitis|ventriculitis|brain abscess/i,
   sub: "Bacterial meningitis, HSV encephalitis",
-  organisms: ["S. pneumoniae, N. meningitidis", "Age >50, pregnancy, alcohol, immunocompromised: add Listeria monocytogenes", "Post-neurosurgery / shunt: S. aureus, coagulase-negative staph, gram-negatives incl. Pseudomonas", "Encephalitis: HSV-1 (most important treatable), VZV, enteroviruses, West Nile; autoimmune (see AE app)", "Cryptococcus in HIV/transplant"],
+  organisms: ["S. pneumoniae, N. meningitidis", "Age >50, pregnancy, alcohol, immunocompromised: add Listeria monocytogenes", "Post-neurosurgery / shunt: S. aureus, coagulase-negative staph, gram-negatives incl. Pseudomonas", "Encephalitis: HSV-1 (most important treatable), VZV, enteroviruses, West Nile; autoimmune (see AE app)", "Subacute (days-weeks), lymphocytic CSF, low glucose, cranial nerve palsies: TB meningitis (see TB site)", "Cryptococcus in HIV/transplant"],
   watch: ["EMERGENCY: do not delay antibiotics for CT or LP - blood cultures, dexamethasone, antibiotics within 1 hour", "CT before LP only if: immunocompromised, known CNS lesion, new seizure, papilledema, reduced level of consciousness (GCS <10-12), focal deficit", "Petechial/purpuric rash = meningococcemia (droplet isolation 24 h after effective therapy; notify public health)", "Encephalitis signs (confusion, behaviour change, seizures, focal signs) - add acyclovir", "Raised ICP, seizures, hearing loss (pneumococcal), DIC"],
   ix: { blood: ["Blood cultures x2 BEFORE antibiotics", "CBC, lytes, creatinine, glucose (for CSF ratio), lactate, coagulation"], imaging: ["CT head (only if criteria above, after antibiotics started)", "MRI brain for encephalitis (temporal lobe HSV)"], other: ["LP: opening pressure, cell count, protein, glucose, Gram stain, culture; HSV/VZV/enterovirus PCR; cryptococcal antigen if immunocompromised; keep extra CSF", "Meningitis/encephalitis multiplex PCR if available", "EEG if altered or seizures"] },
   source: ["Neurosurgery for brain abscess, shunt infection, CSF leak, or hydrocephalus"],
@@ -223,6 +284,37 @@ window.INF_SITES = [
   ivpo: ["IV for facial cellulitis, trismus, airway risk; switch to amoxicillin-clavulanate when swelling regressing and swallowing"],
   idc: ["Lemierre syndrome, mediastinitis, septic thrombophlebitis"],
   surgeon: ["ENT/OMFS: Ludwig angina, any deep neck abscess, airway concern; dentist for all odontogenic sources"]
+},
+{
+  id: "tb", label: "TB (tuberculosis)", match: /tuberculosis|\btb\b|mycobacter|\bafb\b|miliary|pott/i,
+  sub: "Pulmonary and extrapulmonary TB, TB infection before immunosuppression",
+  organisms: ["Mycobacterium tuberculosis complex (M. tuberculosis, M. bovis)", "Non-tuberculous mycobacteria (MAC, M. abscessus) can look similar on smear - NAAT/culture separates them", "Drug resistance (INH or MDR-TB): prior TB treatment, contact with drug-resistant TB, birth/residence in high-burden countries"],
+  watch: [
+    "THINK TB when: cough >2-3 weeks, hemoptysis, night sweats, fever, weight loss; upper-lobe or cavitary infiltrate, miliary pattern, hilar nodes; pneumonia not responding to usual antibiotics",
+    "Risk factors: born or lived in a high-incidence country; lived in a community with high TB incidence (including some First Nations and Inuit communities in Canada); known contact; prior TB or untreated TB infection; HIV; transplant, anti-TNF/biologics, prednisone >=15 mg/day >=1 month; dialysis/ESRD; diabetes; silicosis; homelessness, incarceration, substance use",
+    "Extrapulmonary clues: lymphocytic exudative pleural effusion (high ADA); lymphocytic meningitis with low glucose and high protein, cranial nerve palsies; vertebral osteomyelitis (Pott disease - thoracic, sparing disc space early); sterile pyuria; chronic monoarthritis; cervical lymphadenitis; pericardial effusion; ascites with lymphocytes",
+    "Avoid fluoroquinolones (levofloxacin/moxifloxacin) for presumed CAP when TB is possible - they partially treat TB, delay diagnosis and select resistance",
+    "Hospital transmission happens with UNRECOGNIZED TB - start airborne isolation on suspicion, before results",
+    "TB-IRIS in HIV starting ART; drug-induced hepatitis on treatment (stop drugs if ALT >3x ULN with symptoms or >5x without)"
+  ],
+  ix: {
+    blood: ["HIV test (all patients with TB)", "CBC, creatinine, ALT/AST, bilirubin (baseline before treatment), hepatitis B and C serology, HbA1c", "IGRA (QuantiFERON) or TST: supports TB infection but does NOT rule active TB in or out", "Blood mycobacterial culture if HIV with low CD4 / disseminated"],
+    imaging: ["Chest X-ray (upper lobe, cavity, miliary, nodes, effusion)", "CT chest if X-ray unclear or immunocompromised", "Site-specific: MRI spine (Pott), MRI brain (tuberculomas, basal enhancement), CT abdomen, echo (pericardial)"],
+    other: ["3 sputum specimens for AFB smear, mycobacterial culture and TB NAAT (GeneXpert MTB/RIF) - at least 1 hour apart, one early morning if possible", "Induced sputum or bronchoscopy (BAL) if not producing sputum", "Tissue/fluid: pleural biopsy (fluid culture low yield), lymph node biopsy, CSF for AFB culture + NAAT (large volume), urine AFB cultures x3 early morning for renal TB - send tissue for culture, not only pathology", "Rifampin resistance from NAAT; full drug susceptibility on culture"]
+  },
+  source: ["Usually medical treatment alone", "Spinal TB with cord compression or instability - spine surgery", "Large TB empyema - drainage; constrictive pericarditis - pericardiectomy", "Abscess (cold abscess, psoas) - drainage"],
+  abx: [
+    { tier: "moderate", setting: "Drug-susceptible pulmonary TB (start only with TB specialist / BCCDC TB Services; collect specimens first)", regimen: "Intensive phase 2 months: isoniazid 5 mg/kg (max 300 mg) + rifampin 10 mg/kg (max 600 mg) + pyrazinamide 25 mg/kg + ethambutol 15-20 mg/kg PO daily; then continuation 4 months isoniazid + rifampin. Pyridoxine 25 mg daily with isoniazid. Directly observed therapy" },
+    { tier: "severe", setting: "TB meningitis", regimen: "Same 4 drugs (higher-dose rifampin often used) + dexamethasone (0.3-0.4 mg/kg/day tapered over 6-8 weeks); continuation phase to 12 months total - ID/TB specialist" },
+    { tier: "severe", setting: "Critically ill / cannot take PO / severe liver disease", regimen: "TB specialist to choose IV or liver-sparing regimen (e.g. rifampin IV, ethambutol, fluoroquinolone, aminoglycoside)" },
+    { tier: "mild", setting: "TB infection (latent), active TB excluded - e.g. before anti-TNF or transplant", regimen: "Rifampin 10 mg/kg (max 600 mg) daily x 4 months (preferred), or isoniazid + rifapentine weekly x 12 weeks (3HP), or isoniazid daily x 9 months" }
+  ],
+  allergy: ["Drug reactions (hepatitis, rash) are managed by stopping all drugs and reintroducing one at a time under the TB specialist", "Rifampin interactions are major: DOACs, warfarin, hormonal contraception, tacrolimus/cyclosporine, HIV ART, methadone, azoles, many others - pharmacy review"],
+  duration: ["Drug-susceptible pulmonary TB: 6 months (2 + 4); extend to 9 months if cavitary disease AND culture still positive at 2 months", "TB meningitis/CNS: 12 months", "Bone and joint: 6-9 months (often 9-12 for spine)", "Pericardial, lymph node, pleural: 6 months", "TB infection: 4 months rifampin (4R), 12 weeks 3HP, or 9 months isoniazid"],
+  ivpo: ["Oral daily therapy is standard; IV only if unable to absorb or critically ill (TB specialist)"],
+  idc: ["ALL suspected or confirmed active TB - TB specialist (BCCDC TB Services / ID / respirology)", "Report suspected or confirmed TB to public health (Medical Health Officer) - contact tracing; TB drugs supplied free through BCCDC in BC", "Drug resistance, HIV co-infection, pregnancy, liver disease, drug reactions"],
+  surgeon: ["Spine surgery for Pott disease with neurological deficit or instability", "Thoracic surgery for empyema/destroyed lung; cardiac surgery for constrictive pericarditis"],
+  isolation: ["Airborne precautions (negative-pressure room, N95 for staff, patient wears surgical mask outside the room) as soon as pulmonary/laryngeal TB is suspected", "Stop isolation when TB is excluded: negative TB NAAT or 3 negative AFB smears (local policy and TB physician/IPAC order)", "Confirmed TB: per TB physician - usually after effective treatment for about 2 weeks, clinical improvement and drug susceptibility known (Canadian TB Standards 2022 discourage waiting for smear conversion in every case)"]
 }
 ];
 

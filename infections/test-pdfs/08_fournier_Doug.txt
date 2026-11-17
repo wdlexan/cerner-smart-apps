@@ -1,0 +1,72 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, DOUG                      DOB: 1963-02-25     Sex: M
+MRN: TESTINF08                           Age: 63
+
+ALLERGIES
+No known drug allergies
+
+ED PHYSICIAN NOTE
+Date of service: 2026-11-17 06:00
+63 year old with type 2 diabetes on empagliflozin. Two days of perianal pain, now severe
+scrotal and perineal pain with swelling, crepitus and a black patch on the scrotum, foul
+smell, spreading to the left groin. Toxic, tachycardic. Started ceftriaxone. Urology and
+general surgery paged.
+
+HOSPITALIST NOTE
+Date of service: 2026-11-17 11:00
+Pain out of proportion, erythema spreading on the lower abdominal wall. Awaiting OR.
+
+VITAL SIGNS
+2026-11-17 06:00 BP: 102/60 HR: 118 RR: 24 Temp: 38.8 C SpO2: 96%
+2026-11-17 09:00 BP: 94/54 HR: 122 RR: 26 Temp: 39.1 C SpO2: 95%
+2026-11-17 11:00 BP: 92/52 HR: 126 RR: 26 Temp: 39.0 C SpO2: 95%
+
+LABORATORY RESULTS
+Collected: 2026-11-17 06:30
+Test                      Result           Units           
+
+WBC                       26.1             x10^9/L         
+
+Hemoglobin                128              g/L             
+
+Sodium                    129              mmol/L          
+
+Creatinine                190              umol/L          
+
+eGFR                      32               mL/min/1.73m2   
+
+Glucose                   22.4             mmol/L          
+
+CRP                       284              mg/L            
+
+Lactate                   3.8              mmol/L          
+
+CK                        920              U/L             
+
+
+ACTIVE MEDICATION ORDERS (2026-11-17)
+Ceftriaxone 1 g IV daily
+Empagliflozin 10 mg PO daily
+Metformin 1000 mg PO BID
+
+ACTIVE PROBLEM LIST
+Fournier gangrene
+Type 2 diabetes mellitus
+Obesity
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, DOUG MRN TESTINF08         Page 1
+
+RADIOLOGY AND MICROBIOLOGY REPORTS
+
+CT ABDOMEN AND PELVIS WITH CONTRAST
+Date of exam: 2026-11-17 08:00
+IMPRESSION:
+Extensive subcutaneous gas in the perineum and scrotum tracking along fascial planes to the
+left inguinal region and lower anterior abdominal wall, consistent with Fournier gangrene. 3
+cm left perianal abscess as likely source. Testes enhance normally.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, DOUG MRN TESTINF08         Page 2

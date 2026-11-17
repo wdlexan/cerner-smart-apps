@@ -1,5 +1,5 @@
 """python3 make-test-pdfs.py : writes test-pdfs/*.txt and *.pdf (made-up chart extracts for the toolkit's Import PDF button)
-and demo-patients.js (the same patients for index.html?demo=1..5). No real patient data.
+and demo-patients.js (the same patients for index.html?demo=1..8). No real patient data.
 PDF dates are fixed (chart "now" = 2026-11-17 12:00); the app reads labs from the last 7 days and vitals from the last 48 h,
 so import within a day or two, or use the demo links (dates move with today).
 Note: the PDF importer does not read allergies or culture reports yet - those show in demo mode only."""
@@ -12,7 +12,8 @@ DIR = os.path.dirname(os.path.abspath(__file__)); HERE = os.path.join(DIR, "test
 NOW = datetime(2026, 11, 17, 12, 0)
 f = lambda dt: dt.strftime("%Y-%m-%d %H:%M"); H = lambda h: NOW - timedelta(hours=h)
 LOINC = {"WBC": "6690-2", "Hemoglobin": "718-7", "Platelets": "777-3", "Sodium": "2951-2", "Glucose": "2345-7", "Creatinine": "2160-0",
-         "eGFR": "62238-1", "Urea": "3094-0", "CRP": "1988-5", "Procalcitonin": "33959-8", "Lactate": "2524-7", "Albumin": "1751-7", "ESR": "4537-7", "CK": "2157-6"}
+         "eGFR": "62238-1", "Urea": "3094-0", "CRP": "1988-5", "Procalcitonin": "33959-8", "Lactate": "2524-7", "Albumin": "1751-7", "ESR": "4537-7", "CK": "2157-6",
+         "Total bilirubin": "1975-2", "Alkaline phosphatase": "6768-6", "AST": "1920-8", "ALT": "1742-6", "GGT": "2324-2", "INR": "6301-6", "Lipase": "3040-3"}
 
 def wrap(s, w=92):
     out, line = [], ""
@@ -100,7 +101,38 @@ P = [
   conds=["Bacterial meningitis", "Hypertension"],
   reps=[{"text": "CT head without contrast", "h": 7, "conclusion": "No acute intracranial abnormality. No mass effect."},
         {"text": "CSF Gram stain and culture", "h": 6, "conclusion": "CSF 2400 cells per microlitre (92% neutrophils), protein 2.8 g/L, CSF sugar 1.1 mmol/L (very low). Gram-positive diplococci seen; culture pending."},
-        {"text": "Blood culture x2", "h": 7.8, "conclusion": "No growth to date."}])
+        {"text": "Blood culture x2", "h": 7.8, "conclusion": "No growth to date."}]), dict(file="06_cholangitis_Margaret", short="ascending cholangitis", name="DEMO, MARGARET", dob="1945-06-18", sex="F", mrn="TESTINF06", age=81,
+  allergies=[["Sulfa (sulfonamide antibiotics)", "rash", "low", 20]],
+  notes=[("ED PHYSICIAN NOTE", 10, "81 year old with fever, rigors and right upper quadrant pain since last night, now jaundiced. Murphy sign positive. Gallstones known. Started ceftriaxone and metronidazole after blood cultures. Holding apixaban."),
+         ("HOSPITALIST NOTE", 2, "Ultrasound: dilated CBD with distal stone. Blood cultures E. coli. Discussed with GI for ERCP.")],
+  vitals=[(10, 98, 56, 116, 22, 39.4, 95), (6, 104, 60, 108, 20, 38.9, 96), (2, 112, 64, 100, 20, 38.4, 96)],
+  labs=[("WBC", 16.2, "x10^9/L", 9.5), ("Platelets", 141, "x10^9/L", 9.5), ("Total bilirubin", 96, "umol/L", 9.5), ("Alkaline phosphatase", 412, "U/L", 9.5), ("GGT", 520, "U/L", 9.5),
+        ("AST", 214, "U/L", 9.5), ("ALT", 182, "U/L", 9.5), ("Lipase", 62, "U/L", 9.5), ("Albumin", 28, "g/L", 9.5), ("Creatinine", 150, "umol/L", 9.5), ("eGFR", 28, "mL/min/1.73m2", 9.5),
+        ("INR", 1.3, "", 9.5), ("Lactate", 3.1, "mmol/L", 9.5), ("CRP", 158, "mg/L", 9.5)],
+  meds=[("Ceftriaxone 2 g IV daily", 9), ("Metronidazole 500 mg IV q12h", 9), ("Apixaban 2.5 mg PO BID (held)", None)],
+  conds=["Ascending cholangitis", "Choledocholithiasis", "Atrial fibrillation"],
+  reps=[{"text": "Ultrasound abdomen", "h": 7, "conclusion": "Cholelithiasis without gallbladder wall thickening. Common bile duct dilated to 11 mm with an obstructing distal choledocholithiasis 9 mm. Intrahepatic biliary dilatation."},
+        {"text": "Blood culture x2", "h": 9.6, "conclusion": "Escherichia coli in 2 of 2 sets; susceptible to ceftriaxone, ciprofloxacin; resistant to ampicillin."}]),
+ dict(file="07_tuberculosis_Joel", short="cavitary lung - TB?", name="DEMO, JOEL", dob="1992-09-07", sex="M", mrn="TESTINF07", age=34,
+  allergies=[],
+  notes=[("ED PHYSICIAN NOTE", 74, "34 year old, moved to Canada from the Philippines 3 years ago. Six weeks of productive cough, two episodes of blood-streaked sputum, night sweats and 8 kg weight loss. Admitted as right upper lobe pneumonia, started ceftriaxone and levofloxacin."),
+         ("HOSPITALIST NOTE", 3, "Day 3, still febrile in the evenings, sweats persist. CT shows a cavity. Not in a negative-pressure room.")],
+  vitals=[(74, 118, 72, 104, 22, 38.4, 95), (30, 116, 70, 98, 20, 38.2, 95), (3, 120, 74, 96, 20, 38.1, 96)],
+  labs=[("WBC", 9.8, "x10^9/L", 73), ("Hemoglobin", 112, "g/L", 73), ("CRP", 64, "mg/L", 73), ("Albumin", 30, "g/L", 73), ("Sodium", 133, "mmol/L", 73), ("ALT", 28, "U/L", 73), ("Creatinine", 74, "umol/L", 73)],
+  meds=[("Ceftriaxone 1 g IV daily", 73), ("Levofloxacin 750 mg PO daily", 73)],
+  conds=["Pneumonia, right upper lobe, not improving"],
+  reps=[{"text": "Chest X-ray", "h": 73, "conclusion": "Right upper lobe consolidation with a possible cavity."},
+        {"text": "CT chest with contrast", "h": 20, "conclusion": "3.2 cm thick-walled cavity in the apical segment of the right upper lobe with surrounding tree-in-bud nodularity; right hilar adenopathy. Findings concerning for active tuberculosis."}]),
+ dict(file="08_fournier_Doug", short="Fournier gangrene, SGLT2i", name="DEMO, DOUG", dob="1963-02-25", sex="M", mrn="TESTINF08", age=63,
+  allergies=[],
+  notes=[("ED PHYSICIAN NOTE", 6, "63 year old with type 2 diabetes on empagliflozin. Two days of perianal pain, now severe scrotal and perineal pain with swelling, crepitus and a black patch on the scrotum, foul smell, spreading to the left groin. Toxic, tachycardic. Started ceftriaxone. Urology and general surgery paged."),
+         ("HOSPITALIST NOTE", 1, "Pain out of proportion, erythema spreading on the lower abdominal wall. Awaiting OR.")],
+  vitals=[(6, 102, 60, 118, 24, 38.8, 96), (3, 94, 54, 122, 26, 39.1, 95), (1, 92, 52, 126, 26, 39.0, 95)],
+  labs=[("WBC", 26.1, "x10^9/L", 5.5), ("Hemoglobin", 128, "g/L", 5.5), ("Sodium", 129, "mmol/L", 5.5), ("Creatinine", 190, "umol/L", 5.5), ("eGFR", 32, "mL/min/1.73m2", 5.5),
+        ("Glucose", 22.4, "mmol/L", 5.5), ("CRP", 284, "mg/L", 5.5), ("Lactate", 3.8, "mmol/L", 5.5), ("CK", 920, "U/L", 5.5)],
+  meds=[("Ceftriaxone 1 g IV daily", 5), ("Empagliflozin 10 mg PO daily", None), ("Metformin 1000 mg PO BID", None)],
+  conds=["Fournier gangrene", "Type 2 diabetes mellitus", "Obesity"],
+  reps=[{"text": "CT abdomen and pelvis with contrast", "h": 4, "conclusion": "Extensive subcutaneous gas in the perineum and scrotum tracking along fascial planes to the left inguinal region and lower anterior abdominal wall, consistent with Fournier gangrene. 3 cm left perianal abscess as likely source. Testes enhance normally."}])
 ]
 
 if __name__ == "__main__":
@@ -115,6 +147,6 @@ if __name__ == "__main__":
             if "MADE-UP TEST PATIENT - NOT A REAL PERSON |" in line: c.showPage(); y = 750
         c.save(); print("pdf", p["file"])
     with open(os.path.join(DIR, "demo-patients.js"), "w") as fh:
-        fh.write("// Generated by make-test-pdfs.py - made-up patients for index.html?demo=1..5 (match test-pdfs/). Not real people.\n")
+        fh.write("// Generated by make-test-pdfs.py - made-up patients for index.html?demo=1..8 (match test-pdfs/). Not real people.\n")
         fh.write("window.INF_DEMOS = " + json.dumps([demo(p) for p in P], indent=1) + ";\n")
     print("wrote demo-patients.js")
