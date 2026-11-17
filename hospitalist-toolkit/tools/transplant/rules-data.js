@@ -844,7 +844,7 @@
           "everolimus",
           "mycophenolate"
         ],
-        "message": "Do not simply hold immunosuppression. Contact transplant for a route plan: tacrolimus sublingual is an option; IV tacrolimus uses a much lower dose and is usually avoided; IV mycophenolate is available."
+        "message": "Do not simply hold immunosuppression. Contact transplant for a route plan: NG at the same immediate-release dose, sublingual at half of each IR dose, IV (about a quarter of the oral daily dose as a 24 h infusion) only as a last resort; extended-release forms must be converted first; IV mycophenolate is 1:1. See 'Tacrolimus when NPO' below for this patient's doses."
       },
       {
         "id": "C03",

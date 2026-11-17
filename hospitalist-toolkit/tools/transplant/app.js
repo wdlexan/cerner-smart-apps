@@ -22,12 +22,14 @@ function draw() {
   drawCtx(ev); drawTargets(ev); drawTiles(ev); drawAlerts(ev); drawLevels(ev); drawLabs(ev); drawContext(ev); drawWatch(ev); drawImm(ev);
 }
 
+window.TxRefresh = () => drawInfx();
 function drawInfx() {
   if (!window.TxInfx) return;
   const st = Object.assign({}, state, { infx: state.infx });
   state.infx.sym = state.infx.sym || {};
   if (state.ctx.diarrhea && !("gi" in state.infx.sym)) state.infx.sym.gi = true;
   window.TxInfx.render($("infx"), $("infxsum"), st);
+  if (window.TxNpo) { window.TxNpo.render($("npo"), $("nposum"), state); if (state.ctx.npo && !state.npoOpened) { $("npocard").open = true; state.npoOpened = true; } }
 }
 
 function drawCtx(ev) {
@@ -137,7 +139,7 @@ function drawImm(ev) {
 }
 
 function load(raw, note, errors, preset) {
-  state.f = raw ? E.parse(raw) : null; state.raw = raw || null; preset = preset || {};
+  state.f = raw ? E.parse(raw) : null; state.raw = raw || null; state.npoOpened = false; preset = preset || {};
   state.infx = JSON.parse(JSON.stringify(preset.infx || {}));
   state.ctx = {}; state.auto = {}; state.targets = Object.assign({}, preset.targets || {});
   if (state.f) {

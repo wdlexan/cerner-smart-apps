@@ -259,7 +259,7 @@
     const again = () => render(el, sumEl, state);
     el.querySelector("#ix-tx").onchange = (e) => { inp.txDate = e.target.value; inp.txFromChart = false; again(); };
     el.querySelector("#ix-sero").onchange = (e) => { inp.sero = e.target.value; again(); };
-    el.querySelector("#ix-wt").onchange = (e) => { inp.wt = e.target.value; again(); };
+    el.querySelector("#ix-wt").onchange = (e) => { inp.wt = e.target.value; window.TxRefresh ? window.TxRefresh() : again(); };
     el.querySelectorAll("[data-ixs]").forEach((cb) => (cb.onchange = () => { inp.sym[cb.dataset.ixs] = cb.checked; again(); }));
     const dp = el.querySelector("#ix-depl"); if (!dp.disabled) dp.onchange = () => { inp.depl = dp.checked; again(); };
   }
