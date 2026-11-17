@@ -274,23 +274,23 @@ function criteria() {
 
   return [
     { name: 'Possible autoimmune encephalitis (Graus 2016)', items: [
-      ['Subacute onset < 3 months', o('onset3mo')],
+      ['Subacute onset < 3 months', o('onset3mo'), 'onset3mo'],
       ['Working memory deficit, altered mental status, or psychiatric symptoms', o('memory') || o('psych') || o('consciousness')],
       ['≥ 1 of: new focal CNS findings, new seizures, CSF pleocytosis, MRI suggestive of encephalitis',
         o('focalNeuro') || o('seizure') || o('fbds') || o('csfPleo') || o('mriLimbic') || o('mriOther')],
-      ['Alternative causes reasonably excluded', o('altExcluded')]
+      ['Alternative causes reasonably excluded', o('altExcluded'), 'altExcluded']
     ] },
     { name: 'Definite autoimmune limbic encephalitis (Graus 2016)', note: 'If one of the first three items is missing, a positive neural antibody is needed.', items: [
       ['Subacute (< 3 mo) memory deficits, seizures or psychiatric symptoms (limbic)', o('onset3mo') && (o('memory') || o('seizure') || o('fbds') || o('psych'))],
       ['Bilateral mesial temporal T2/FLAIR abnormality on MRI', o('mriBilat')],
       ['CSF pleocytosis OR EEG temporal epileptic/slow activity', o('csfPleo') || o('eegTemporal')],
-      ['Alternative causes reasonably excluded', o('altExcluded')]
+      ['Alternative causes reasonably excluded', o('altExcluded'), 'altExcluded']
     ] },
     { name: 'Probable anti-NMDAR encephalitis (Graus 2016)', groups, nGroups, items: [
-      ['Rapid onset < 3 months', o('onset3mo')],
+      ['Rapid onset < 3 months', o('onset3mo'), 'onset3mo'],
       [`≥ 4 of 6 symptom groups (currently ${nGroups}) — or 3 groups + teratoma`, nGroups >= 4 || (nGroups >= 3 && o('teratoma'))],
       ['Abnormal EEG or CSF pleocytosis/OCB (not needed if 3 groups + teratoma)', nmdarLab || (nGroups >= 3 && o('teratoma'))],
-      ['Alternative causes reasonably excluded', o('altExcluded')]
+      ['Alternative causes reasonably excluded', o('altExcluded'), 'altExcluded']
     ] }
   ].map(c => Object.assign(c, { met: c.items.every(i => i[1]) }));
 }
@@ -406,16 +406,40 @@ function renderOverview() {
     </div>
     <div class="grid2">${groups.map(([t, h]) => `<div class="card"><h2>${h}</h2>${FINDINGS.filter(f => f.type === t).map(findingRow).join('')}</div>`).join('')}</div>`;
 }
+const CRIT_SHORT = ['Possible AE', 'Definite limbic', 'Probable NMDAR'];
+function critItem(i) {
+  const mark = `<span class="${i[1] ? 'y' : 'n'}">${i[1] ? '✔' : '✘'}</span>`;
+  if (i[2]) return `<li><label class="tick">${mark} <input type="checkbox" data-k="${i[2]}" ${i[1] ? 'checked' : ''}> ${esc(i[0])} <span class="chip manual">tick here</span></label></li>`;
+  return `<li>${mark} ${esc(i[0])}</li>`;
+}
+function renderCritBar(cs) {
+  $('#critbar').innerHTML = '<span class="cb-lbl">Graus 2016:</span>' + cs.map((c, k) => {
+    const n = c.items.filter(i => i[1]).length;
+    return `<button type="button" class="cb ${c.met ? 'met' : 'notmet'}" data-crit="${k}" title="${esc(c.name)}">${c.met ? '✔' : '✘'} ${CRIT_SHORT[k]} <b>${c.met ? 'MET' : 'not met'}</b> <span>${n}/${c.items.length}</span></button>`;
+  }).join('');
+}
 function renderCriteria() {
   const cs = criteria();
-  $('#tab-criteria').innerHTML = cs.map(c => `
-    <div class="card crit ${c.met ? 'met' : 'notmet'}"><h2>${esc(c.name)} — <span class="status">${c.met ? 'MET' : 'not met'}</span></h2>
-      <ul class="tight">${c.items.map(i => `<li class="${i[1] ? 'y' : 'n'}">${i[1] ? '✔' : '✘'} <span style="color:var(--ink)">${esc(i[0])}</span></li>`).join('')}</ul>
+  S.critOpen = S.critOpen || {};
+  renderCritBar(cs);
+  $('#tab-criteria').innerHTML = `<div class="card critsum"><h2>Summary</h2>
+      <table><tr><th>Criteria set</th><th>Result</th><th>Items met</th><th>Still missing</th></tr>
+      ${cs.map((c, k) => `<tr><td>${esc(c.name.replace(' (Graus 2016)', ''))}</td><td class="${c.met ? 'y' : 'n'}"><b>${c.met ? 'MET' : 'not met'}</b></td>
+        <td>${c.items.filter(i => i[1]).length}/${c.items.length}</td><td class="small">${c.met ? '—' : esc(c.items.filter(i => !i[1]).map(i => i[0]).join('; '))}</td></tr>`).join('')}
+      </table></div>` +
+    cs.map((c, k) => `
+    <details class="card crit ${c.met ? 'met' : 'notmet'}" data-ci="${k}" ${S.critOpen[k] ? 'open' : ''}>
+      <summary><h2>${esc(c.name)} — <span class="status">${c.met ? 'MET' : 'not met'}</span> <span class="muted small">(${c.items.filter(i => i[1]).length}/${c.items.length} items)</span></h2></summary>
+      <ul class="tight crit-items">${c.items.map(critItem).join('')}</ul>
       ${c.groups ? `<h3>NMDAR symptom groups (${c.nGroups}/6)</h3><ul class="tight">${c.groups.map(g => `<li class="${g[1] ? 'y' : 'q'}">${g[1] ? '✔' : '○'} <span style="color:var(--ink)">${esc(g[0])}</span></li>`).join('')}</ul>
         <div class="muted small">Definite anti-NMDAR = ≥ 1 group + IgG anti-GluN1 antibodies in CSF.</div>` : ''}
       ${c.note ? `<div class="muted small">${esc(c.note)}</div>` : ''}
-    </div>`).join('') + `<div class="tip">Don't wait for antibody results (MitogenDx ~5–7 working days after receipt). If "possible" or "probable" criteria are met and infection is reasonably excluded, start first-line immunotherapy.</div>
-    <div class="muted small">Edit findings on the Findings tab; criteria update automatically.</div>`;
+    </details>`).join('') + `<div class="tip">Don't wait for antibody results (MitogenDx ~5–7 working days after receipt). If "possible" or "probable" criteria are met and infection is reasonably excluded, start first-line immunotherapy.</div>
+    <div class="muted small">Onset and "alternatives excluded" can be ticked here or on the Findings tab. Other items come from the Findings tab.</div>`;
+  document.querySelectorAll('#tab-criteria details[data-ci]').forEach(d => d.addEventListener('toggle', () => { S.critOpen[d.dataset.ci] = d.open; }));
+}
+function openTab(name) {
+  const b = document.querySelector(`#tabs button[data-tab="${name}"]`); if (b) b.click();
 }
 function renderPhenotype() {
   $('#tab-phenotype').innerHTML = phenotypes().map(p => `
@@ -492,7 +516,7 @@ function renderRequisition() {
           <button class="btn sec" id="phSave">Save as a physician on this computer</button>
           <button class="btn sec" id="phDel">Remove saved physician</button>
         </div>
-        <div class="muted small">Saved physicians stay in this browser only. The default physician comes from config.js.</div>
+        <div class="muted small">Saved physicians stay in this browser only (none are stored in the app itself).</div>
       </div>
       <div class="card"><h2>Patient</h2>
         <div class="form">
@@ -512,8 +536,8 @@ function renderRequisition() {
         </div><div class="muted small">Remembered in this browser after you generate a form.</div></div>
       <div class="card"><h2>Samples</h2>
         <div class="form">
-          <span>Serum collected</span><input type="text" id="smSerum" placeholder="dd/mm/yy hh:mm">
-          <span>CSF collected</span><input type="text" id="smCsf" placeholder="dd/mm/yy hh:mm">
+          <span>Serum collected</span><div class="row nowrap"><input type="datetime-local" id="smSerum" class="dt"><button type="button" class="btn sec sm" data-now="smSerum">Now</button></div>
+          <span>CSF collected</span><div class="row nowrap"><input type="datetime-local" id="smCsf" class="dt"><button type="button" class="btn sec sm" data-now="smCsf">Now</button></div>
           <span>Lab reference #</span><input type="text" id="smRef">
           <span>Clinical comment</span><input type="text" id="smNote" value="Query autoimmune / paraneoplastic encephalitis. Paired serum and CSF sent on separate requisitions.">
         </div>
@@ -534,7 +558,13 @@ function renderRequisition() {
   $('#phSave').onclick = savePhysician;
   $('#phDel').onclick = deletePhysician;
   document.querySelectorAll('[data-gen]').forEach(b => b.onclick = () => generate(b.dataset.gen));
+  // Clicking anywhere in a date box opens the calendar (Chrome/Edge); "Now" fills the current date and time
+  document.querySelectorAll('#tab-requisition input.dt').forEach(i => i.addEventListener('click', () => { try { i.showPicker(); } catch (e) { /* older browser: its own picker icon still works */ } }));
+  document.querySelectorAll('[data-now]').forEach(b => b.onclick = () => { $('#' + b.dataset.now).value = localNow(); });
 }
+// datetime-local value "2026-11-17T09:30" -> form format "17/11/26 09:30"
+function dtFmt(v) { const m = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}:\d{2}))?/.exec(v || ''); return m ? `${m[3]}/${m[2]}/${m[1].slice(2)}${m[4] ? ' ' + m[4] : ''}` : (v || ''); }
+function localNow() { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 16); }
 function dobFmt(iso) { if (!iso) return ''; const [y, m, d] = iso.split('-'); return d && m ? `${d}/${m}/${y.slice(2)}` : iso; }
 function fillPhysician(id) {
   const p = physicianList().find(x => x.id === id) || { name: '', phone: '', fax: '', email: '', comments: '' };
@@ -585,7 +615,7 @@ async function generate(which) {
     for (const type of types) {
       const bytes = await window.MitogenFill.fillMitogen(window.PDFLib, TEMPLATE.slice(0), {
         patient, physician: ph, lab, tests, page2Comments: note,
-        sample: { type, collected: type === 'csf' ? $('#smCsf').value : $('#smSerum').value, ref: $('#smRef').value,
+        sample: { type, collected: dtFmt(type === 'csf' ? $('#smCsf').value : $('#smSerum').value), ref: $('#smRef').value,
           comments: type === 'csf' ? 'CSF, frozen, shipped on dry ice. Paired serum sent separately.' : 'Serum (SST). Paired CSF sent separately.' }
       });
       const url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
@@ -674,6 +704,12 @@ document.addEventListener('change', e => {
   renderOverview(); renderCriteria(); renderPhenotype(); renderTreatment();
   if (!S.noteText) renderNote();
   void keep;
+});
+document.getElementById('critbar').addEventListener('click', e => {
+  const b = e.target.closest('[data-crit]'); if (!b) return;
+  S.critOpen = S.critOpen || {}; S.critOpen[b.dataset.crit] = true;
+  renderCriteria(); openTab('criteria');
+  const d = document.querySelector(`#tab-criteria details[data-ci="${b.dataset.crit}"]`); if (d) d.scrollIntoView({ behavior: 'smooth', block: 'start' });
 });
 document.getElementById('tabs').addEventListener('click', e => {
   const b = e.target.closest('button[data-tab]'); if (!b) return;

@@ -50,6 +50,24 @@
     .btn.sec { background:#fff; color:var(--accent); border:1px solid var(--accent); }
     .btn:disabled { opacity:.5; cursor:default; }
     .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    #critbar { display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-top:6px; font-size:12.5px; }
+    #critbar:empty { display:none; }
+    .cb-lbl { color:var(--muted); font-weight:600; }
+    .cb { border:1px solid var(--line); border-radius:14px; padding:3px 10px; cursor:pointer; font:inherit; background:#fff; }
+    .cb.met { background:#eaf6ef; border-color:#9fd3b4; color:var(--ok); }
+    .cb.notmet { background:#fff6e5; border-color:#f0cf96; color:var(--warn); }
+    .cb span { color:var(--muted); margin-left:2px; }
+    details.crit > summary { cursor:pointer; list-style:none; }
+    details.crit > summary::-webkit-details-marker { display:none; }
+    details.crit > summary h2 { display:inline; }
+    details.crit > summary::before { content:'▸'; color:var(--muted); margin-right:6px; display:inline-block; transition:transform .15s; }
+    details.crit[open] > summary::before { transform:rotate(90deg); }
+    details.crit[open] > summary { margin-bottom:8px; }
+    .crit-items li { list-style:none; margin-left:-16px; }
+    label.tick { cursor:pointer; }
+    .critsum td.y { color:var(--ok); } .critsum td.n { color:var(--warn); }
+    .row.nowrap { flex-wrap:nowrap; } .btn.sm { padding:4px 9px; font-size:12px; }
+    input.dt { cursor:pointer; }
     textarea#note { min-height:360px; font-family:ui-monospace,Consolas,monospace; font-size:12.5px; }
     .alert { border-left:4px solid var(--bad); background:#fdecea; padding:8px 10px; border-radius:4px; margin:6px 0; }
     .tip { border-left:4px solid var(--warn); background:#fff6e5; padding:8px 10px; border-radius:4px; margin:6px 0; }
@@ -60,6 +78,7 @@
   <header>
     <h1>Autoimmune / Limbic Encephalitis</h1>
     <div id="pt">Loading…</div>
+    <div id="critbar"></div>
     <nav id="tabs">
       <button data-tab="overview" class="on">Findings</button>
       <button data-tab="criteria">Criteria</button>
