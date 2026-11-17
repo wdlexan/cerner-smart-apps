@@ -126,6 +126,11 @@
 
   function client(n) {
     const now = Date.now(), k = kit(now), build = PATIENTS[n] || PATIENTS[1], d = build(now, k);
+    // weight, height and hematocrit for the dose calculators
+    const BODY = { 1: [58, 165, 0.36], 2: [82, 176, 0.41], 3: [66, 160, 0.37], 4: [74, 181, 0.44], 5: [61, 168, 0.38], 6: [79, 180, 0.45] }[n] || [70, 170, 0.4];
+    d.vitals.push({ resourceType: 'Observation', id: 'wt', status: 'final', category: [{ coding: [{ code: 'vital-signs' }] }], code: { text: 'Body weight', coding: [{ code: '29463-7' }] }, effectiveDateTime: new Date(now - 2 * DAY).toISOString(), valueQuantity: { value: BODY[0], unit: 'kg' } },
+      { resourceType: 'Observation', id: 'ht', status: 'final', category: [{ coding: [{ code: 'vital-signs' }] }], code: { text: 'Height', coding: [{ code: '8302-2' }] }, effectiveDateTime: new Date(now - 2 * DAY).toISOString(), valueQuantity: { value: BODY[1], unit: 'cm' } });
+    d.labs.push(k.lab('Hematocrit', BODY[2], 'L/L', 2));
     const route = url => {
       const u = typeof url === 'string' ? url : url.url;
       if (u.startsWith('Observation')) return /laboratory/.test(u) ? d.labs : d.vitals;

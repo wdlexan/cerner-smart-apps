@@ -82,7 +82,7 @@
       while ((m = g.exec(t))) {
         if (opts.allowNegated || !NEGATION.test(t.slice(Math.max(0, m.index - 40), m.index))) {
           const s = Math.max(0, m.index - 50), e = Math.min(t.length, m.index + m[0].length + 60);
-          hits.push({ time: n.time, title: n.title, match: m[0], m,
+          hits.push({ time: n.time, title: n.title, match: m[0], m, text: t,
             excerpt: (s > 0 ? '…' : '') + t.slice(s, e).replace(/\s+/g, ' ').trim() + (e < t.length ? '…' : '') });
           break;
         }
@@ -92,6 +92,12 @@
     return hits.sort((a, b) => b.time - a.time);
   }
   const quote = h => '“' + h.excerpt + '” (' + (h.title || 'note') + ', ' + fmtTime(h.time) + ')';
+  // Clickable sources (interact.js): each quoted hit remembers its note so a click opens it with the words highlighted
+  let SRCS = [];
+  const IX = () => (typeof window !== 'undefined' && window.Interact) || null;
+  const srcLink = (label, title, time, text, match) => { SRCS.push({ title: title || 'Note', date: time ? fmtTime(time) : '', text: text || '', match }); return '<span class="ix-src" data-ssrc="' + (SRCS.length - 1) + '" title="Open the note">' + esc(label) + '</span>'; };
+  const quoteLink = h => h && h.text ? srcLink(quote(h), h.title, h.time, h.text, h.match) : esc(quote(h));
+  const dueSpan = (t, label) => IX() && t ? ' <span class="sf-due" data-due="' + t + '" data-label="' + esc(label) + '"></span>' : '';
 
   // ------------------------------------------------------------------ parsing
   function kindOf(cc) {
@@ -533,7 +539,7 @@
     const head = bp.hrs == null
       ? '<div class="sf-alert sf-a-amber">No treatment, onset or arrival time found. Enter the onset time above to place the BP windows.</div>'
       : '<div class="sf-bp-now"><div class="sf-bp-t">' + esc(bp.cur.target) + '</div><div><strong>Target now</strong> · ' + esc(bp.cur.label) + ' · ' + round(bp.hrs, 0) + ' h after ' + esc(bp.baseLabel) +
-        '<br>' + esc(lastTxt) + (bp.median != null && bp.hrs >= 48 ? ' · median SBP last 24 h ' + bp.median : '') + '</div></div>';
+        '<br>' + esc(lastTxt) + (bp.median != null && bp.hrs >= 48 ? ' · median SBP last 24 h ' + bp.median : '') + (bp.cur.toH != null ? '<br>This window ends' + dueSpan(bp.base + bp.cur.toH * HOUR, 'BP window: ' + bp.cur.label) : '') + '</div></div>';
     const hem = bp.hem ? '<div class="sf-alert sf-a-red">' + esc(B.hemorrhage) + '</div>' : '';
     const start = bp.needStart ? '<div class="sf-alert sf-a-amber">BP has been ≥140 systolic (median, last 24 h) after the first 48 h — ' +
       (bp.onAntiHtn.length ? 'on ' + esc(bp.onAntiHtn.map(m => m.name).join(', ')) + '; consider adjusting.' : 'no antihypertensive found; consider starting one before discharge.') + '</div>' : '';
@@ -604,7 +610,7 @@
       const seen = new Set();
       const topics = d.topics.map(k => {
         const T = R.topics[k], hits = [];
-        latest.forEach(n => sentences(n.text).forEach(sn => { if (hits.length < 3 && T.re.test(sn) && !seen.has(sn.toLowerCase())) { seen.add(sn.toLowerCase()); hits.push({ text: sn, time: n.time }); } }));
+        latest.forEach(n => sentences(n.text).forEach(sn => { if (hits.length < 3 && T.re.test(sn) && !seen.has(sn.toLowerCase())) { seen.add(sn.toLowerCase()); hits.push({ text: sn, time: n.time, note: n }); } }));
         return { key: k, label: T.label, hits };
       }).filter(t => t.hits.length);
       return { key: d.key, label: d.label, notes, topics };
@@ -613,7 +619,7 @@
   function rehabHtml(rs) {
     return rs.map(d => '<div class="sf-card sf-rehab"><h4>' + esc(d.label) + ' <span class="sf-muted">' + (d.notes.length ? plural(d.notes.length, 'note') + ', latest ' + esc(fmtTime(d.notes[0].time)) : '') + '</span></h4>' +
       (!d.notes.length ? '<p class="sf-alert sf-a-amber">' + esc(C.REHAB.noneText) + '</p>'
-        : (d.topics.length ? '<dl class="sf-rehab-dl">' + d.topics.map(t => '<dt>' + esc(t.label) + '</dt><dd><ul class="sf-list">' + t.hits.map(h => '<li>' + esc(h.text) + '</li>').join('') + '</ul></dd>').join('') + '</dl>'
+        : (d.topics.length ? '<dl class="sf-rehab-dl">' + d.topics.map(t => '<dt>' + esc(t.label) + '</dt><dd><ul class="sf-list">' + t.hits.map(h => '<li>' + srcLink(h.text, h.note.title, h.note.time, h.note.text, h.text.slice(0, 60)) + '</li>').join('') + '</ul></dd>').join('') + '</dl>'
           : '<p class="sf-muted">Note found, but no mobility, function, swallow or discharge wording was recognised. Read the note.</p>') +
           '<details class="sf-rehab-full"><summary>Latest note: ' + esc(d.notes[0].title) + '</summary><p>' + esc(String(d.notes[0].text).slice(0, 2500)) + '</p></details>')
       + '</div>').join('') + '<p class="sf-small">Sentences are copied from the notes by keyword, not interpreted. Read the full note before acting.</p>';
@@ -767,7 +773,9 @@
   }
 
   function timelineHtml(tl) {
-    return '<div class="sf-table-wrap"><table class="sf-table"><tbody>' + tl.map(r => '<tr><th scope="row">' + esc(r.label) + '</th><td>' + badge(r.status) + '</td><td>' + esc(r.detail) + '</td></tr>').join('') + '</tbody></table></div>';
+    return '<div class="sf-table-wrap"><table class="sf-table"><tbody>' + tl.map(r => '<tr><th scope="row">' + esc(r.label) + '</th><td>' + badge(r.status) + '</td><td>' + esc(r.detail) +
+      (r.time && ['due', 'now', 'overdue'].includes(r.status) ? dueSpan(r.time, r.label) : '') + '</td></tr>').join('') + '</tbody></table></div>' +
+      (IX() ? '<p class="sf-small"><button type="button" class="sf-btn sf-alerts">Turn on pop-up alerts</button> <span class="sf-alerts-msg">Countdowns update every 30 s while this page is open.</span></p>' : '');
   }
 
   function bpChart(ctx, A) {
@@ -798,7 +806,7 @@
       : post.suspect ? '<div class="sf-alert sf-a-info">Posterior features present; MRI done.</div>'
       : '<p class="sf-muted">No posterior circulation features found in notes or entered.</p>';
     const feats = '<div class="sf-feats">' + post.feats.map(f => '<div class="sf-feat' + (f.present ? ' sf-feat-on' : '') + '"><label>' + esc(f.label) + ' ' + sel('pf_' + f.key, [['', f.hits.length ? 'Auto: in notes' : 'Auto: not found'], ['yes', 'Present'], ['no', 'Absent']], f.ticked) + '</label>' +
-      (f.hits.length && f.ticked !== 'no' ? '<div class="sf-hint">' + esc(quote(f.hits[0])) + '</div>' : '') + '</div>').join('') + '</div>';
+      (f.hits.length && f.ticked !== 'no' ? '<div class="sf-hint">' + quoteLink(f.hits[0]) + (IX() ? IX().voteButtons('stroke', 'pf_' + f.key, f.hits[0].excerpt) : '') + '</div>' : '') + '</div>').join('') + '</div>';
     const H = C.HINTS.labels;
     const hints = '<div class="sf-group"><h4>HINTS exam</h4><p class="sf-small">' + esc(C.HINTS.applies) + '</p><div class="sf-nums">' +
       '<label>Continuous vertigo with nystagmus now?' + sel('hints_applies', [['', 'Not answered'], ['yes', 'Yes'], ['no', 'No']], ans.hints_applies) + '</label>' +
@@ -861,6 +869,7 @@
 
   function render(ctx, A, ans, parts) {
     const { al, tl, post, prog, wk } = parts;
+    SRCS = [];
     const H = [];
     H.push('<div class="sf">');
     if (ctx.failed.length) H.push('<div class="sf-alert sf-a-red"><strong>Incomplete:</strong> some data didn’t load. <button type="button" class="sf-btn sf-retry">Try again</button><ul>' + ctx.failed.map(f => '<li>' + esc(f) + (ctx.reasons[f] ? ' — ' + esc(ctx.reasons[f]) : '') + '</li>').join('') + '</ul></div>');
@@ -876,7 +885,7 @@
     const wkMissing = wk.items.filter(i => i.status === 'missing').length;
     H.push('<div class="sf-toolbar"><button type="button" class="sf-btn sf-all" data-all="open">Expand all</button> <button type="button" class="sf-btn sf-all" data-all="close">Collapse all</button></div>');
     H.push(sec('alerts', 'Alerts', al.length ? [reds ? reds + ' red' : '', ambers ? ambers + ' amber' : ''].filter(Boolean).join(', ') || plural(al.length, 'alert') : 'None', reds ? 'sf-hs-red' : ambers ? 'sf-hs-amber' : 'sf-hs-ok', alertsHtml(al)));
-    H.push(sec('timeline', 'Timeline and BP', tlNow ? tlNow + ' overdue' : (A.anchor ? 'Post-treatment' : 'No lytic/EVT'), tlNow ? 'sf-hs-red' : '', timelineHtml(tl) + '<div class="sf-card">' + bpChart(ctx, A) + '</div>'));
+    H.push(sec('timeline', 'Timeline and BP', tlNow ? tlNow + ' overdue' : (A.anchor ? 'Post-treatment' : 'No lytic/EVT'), tlNow ? 'sf-hs-red' : '', timelineHtml(tl) + '<div class="sf-card">' + (IX() ? '<div class="sf-ixchart"></div>' : bpChart(ctx, A)) + '</div>'));
     const bp = parts.bp, lp = parts.lp, rehab = parts.rehab;
     if (bp) H.push(sec('bptarget', 'BP target (first 48 h and long term)', bp.cur ? 'Now: ' + bp.cur.target + (bp.rows.some(r => r.status === 'now' && r.above) ? ' · readings above' : '') : 'Needs onset time',
       bp.rows.some(r => r.status === 'now' && r.above) || bp.hem ? 'sf-hs-red' : (bp.needStart ? 'sf-hs-amber' : ''), bpPlanHtml(bp)));
@@ -889,11 +898,45 @@
     H.push(sec('prognosis', 'Prognosis', prog.thrive != null ? 'THRIVE ' + prog.thrive + ' · ASTRAL ' + prog.astral : 'Needs NIHSS', '', prognosisHtml(prog, ans, A)));
     H.push(sec('workup', 'Workup and secondary prevention', (wkMissing ? wkMissing + ' missing' : 'Nothing missing') + (wk.esus ? ' · ESUS' : ''), wkMissing ? 'sf-hs-amber' : 'sf-hs-ok', workupHtml(wk, A, ans, ctx)));
     H.push(sec('summary', 'Summary for the note / discharge handoff', '', '', '<textarea class="sf-summary" rows="12" readonly>' + esc(summaryText(ctx, A, al, tl, post, prog, wk, parts)) +
-      '</textarea><button type="button" class="sf-btn sf-copy">Copy summary</button> <span class="sf-copied" aria-live="polite"></span>'));
+      '</textarea><button type="button" class="sf-btn sf-copy">Copy summary</button> <span class="sf-copied" aria-live="polite"></span>' +
+      (IX() ? ' <button type="button" class="sf-btn sf-handout">Patient handout (printable)</button>' : '')));
+    if (IX()) { const st = IX().stats('stroke'), bad = st.reduce((n, r) => n + r.bad, 0);
+      H.push(sec('feedback', 'Auto-detection feedback', st.length ? bad + ' marked wrong' : 'No votes yet', bad ? 'sf-hs-amber' : '', feedbackHtml(st))); }
     H.push('<p class="sf-disclaimer">Decision support only, from FHIR data and what you enter. Follow neurology and local stroke order sets. Rules are in stroke-criteria.js (sources listed there). Tested on made-up patients only.</p></div>');
     return H.join('');
   }
 
+  function feedbackHtml(st) {
+    const label = k => { const f = C.POSTERIOR.features.find(x => 'pf_' + x[0] === k); return f ? 'Posterior: ' + f[1] : k; };
+    return '<p class="sf-small">Use ✓/✗ beside auto-detected findings (posterior circulation features). Votes stay in this browser and show which keyword rules need fixing.</p>' +
+      (st.length ? '<div class="sf-table-wrap"><table class="sf-table"><thead><tr><th>Rule</th><th>✓</th><th>✗</th><th>Accuracy</th><th>Marked wrong</th></tr></thead><tbody>' + st.map(r => '<tr><td>' + esc(label(r.rule)) + '</td><td>' + r.ok + '</td><td>' + r.bad + '</td><td>' + Math.round(100 * r.ok / (r.ok + r.bad)) + '%</td><td class="sf-small">' + esc(r.wrong.slice(0, 2).join(' / ')) + '</td></tr>').join('') + '</tbody></table></div>' +
+        '<p><button type="button" class="sf-btn sf-fb-csv">Download CSV</button> <button type="button" class="sf-btn sf-fb-clear">Clear</button></p>' : '');
+  }
+  function openHandout(ctx, parts) {
+    if (!IX()) return;
+    const bp = parts.bp, lp = parts.lp, A = parts.A;
+    const meds = ctx.meds.filter(m => m.cls.antiplatelet || m.cls.anticoag || m.cls.statin || m.cls.lipidOther || m.cls.antihypertensive).map(m => m.name);
+    IX().handout('After your stroke: your goals and warning signs',
+      '<h2>Warning signs — call 911 right away</h2><p><b>BE FAST:</b> <b>B</b>alance loss, <b>E</b>yesight change, <b>F</b>ace drooping, <b>A</b>rm weakness, <b>S</b>peech trouble — <b>T</b>ime to call 911. Note the time it started.</p>' +
+      '<h2>Your blood pressure goal</h2><p>Long term: <b>' + esc(bp ? bp.lt.target.replace('SBP', 'top number') : 'below 140/90') + '</b>. Check it at home or at a pharmacy and bring the numbers to your family doctor. Blood pressure medicine is often started or adjusted before or soon after you go home.</p>' +
+      '<h2>Your cholesterol (LDL) goal</h2><p>LDL below <b>1.8 mmol/L</b>.' + (lp && lp.ldl ? ' Your last LDL was <b>' + lp.ldl.value + '</b>.' : '') + ' A statin is the main medicine; a blood test is repeated in about 1–3 months.</p>' +
+      (meds.length ? '<h2>Stroke prevention medicines on your list</h2><ul>' + meds.map(m => '<li>' + esc(m) + '</li>').join('') + '</ul><p>Do not stop these without talking to your doctor.</p>' : '') +
+      (A && A.af ? '<h2>Irregular heartbeat (atrial fibrillation)</h2><p>A blood thinner lowers the chance of another stroke. Take it every day and tell any doctor or dentist you are on it.</p>' : '') +
+      '<h2>Other things that help</h2><ul><li>Stop smoking and vaping — ask about free help (QuitNow in BC).</li><li>Move every day as your therapists advise; aim for 150 minutes a week when you can.</li><li>Mediterranean-style eating, less salt; limit alcohol.</li><li>Keep diabetes in your target range if you have it.</li><li>Do not drive until your doctor says it is safe.</li></ul>' +
+      '<h2>Follow-up</h2><p>Stroke prevention clinic and your family doctor. Bring this sheet and your medicine list.</p>');
+  }
+  function drawIxChart(container, ctx, parts) {
+    const el = container.querySelector('.sf-ixchart'); if (!el || !IX()) return;
+    const A = parts.A, lim = A.anchor ? C.POST_TREATMENT.bpTreated : C.POST_TREATMENT.bpUntreated;
+    const pts = k => ctx.obs.filter(o => o.kind === k).map(o => ({ t: o.time, v: o.value, unit: 'mmHg', flag: k === 'sbp' && o.value > lim.sbp, o }));
+    const markers = [];
+    if (A.lytic) markers.push({ t: A.lytic.time, label: 'Lytic', color: '#7c3aed' });
+    if (A.evt) markers.push({ t: A.evt.time, label: 'EVT', color: '#7c3aed' });
+    ctx.admins.filter(a => a.cls.antihypertensive).forEach(a => markers.push({ t: a.time, label: a.name.split(' ')[0], color: '#0f766e' }));
+    IX().chart(el, { title: 'Blood pressure', now: ctx.now, series: [{ label: 'Systolic', color: '#1d5fa8', points: pts('sbp') }, { label: 'Diastolic', color: '#94a3b8', points: pts('dbp'), dash: true }],
+      limits: [{ v: lim.sbp, label: 'SBP ' + lim.sbp }, { v: lim.dbp, label: 'DBP ' + lim.dbp, color: '#a15c00' }], markers,
+      onPick: (se, q) => IX().showSource({ title: se.label + ' ' + q.v + ' mmHg', date: fmtTime(q.t), text: 'Blood pressure from the chart (FHIR Observation).\nTarget in this window: ' + lim.sbp + '/' + lim.dbp + (q.flag ? '\nABOVE target.' : '') }) });
+  }
   function evaluate(ctx, ans) {
     const A = analyse(ctx, ans);
     A.autoPathway = analyse(ctx, Object.assign({}, ans, { pathway: '' })).pathway;
@@ -944,6 +987,19 @@
       if (typeof window !== 'undefined') window.scrollTo(0, y);
     };
     const wire = () => {
+      drawIxChart(container, ctx, last);
+      if (IX()) {
+        IX().startTicker();
+        const al = container.querySelector('.sf-alerts'); if (al) al.addEventListener('click', async () => { container.querySelector('.sf-alerts-msg').textContent = await IX().enableAlerts(); });
+        const ho = container.querySelector('.sf-handout'); if (ho) ho.addEventListener('click', () => openHandout(ctx, last));
+        const fc = container.querySelector('.sf-fb-csv'); if (fc) fc.addEventListener('click', () => IX().exportCsv('stroke'));
+        const fx = container.querySelector('.sf-fb-clear'); if (fx) fx.addEventListener('click', () => { IX().clearVotes('stroke'); draw(); });
+      }
+      if (!container.__sfIx) {
+        container.__sfIx = true;
+        container.addEventListener('click', e => { const s = e.target.closest && e.target.closest('[data-ssrc]'); if (s && IX()) { e.preventDefault(); IX().showSource(SRCS[+s.getAttribute('data-ssrc')]); } });
+        container.addEventListener('ix-voted', () => draw());
+      }
       container.querySelectorAll('details[data-sec]').forEach(d => {
         d.addEventListener('toggle', () => { openState[d.getAttribute('data-sec')] = d.open; saveOpen(); });
       });

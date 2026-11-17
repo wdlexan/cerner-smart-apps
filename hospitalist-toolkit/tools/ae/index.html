@@ -8,6 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
   <script src="../../pdf-overlay.js?v=20261115a"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <script src="interact.js"></script>
   <script src="mitogen-fill.js"></script>
   <script src="ae-mock.js"></script>
   <style>
@@ -68,6 +69,10 @@
     .critsum td.y { color:var(--ok); } .critsum td.n { color:var(--warn); }
     .row.nowrap { flex-wrap:nowrap; } .btn.sm { padding:4px 9px; font-size:12px; }
     input.dt { cursor:pointer; }
+    .big { font-size:16px; margin:6px 0; }
+    .pq { padding:6px 0; border-bottom:1px dashed var(--line); } .pq .row label { font-size:13px; }
+    input[type=range] { width:200px; }
+    input[type=number] { font:inherit; padding:5px 7px; border:1px solid #c8d0da; border-radius:5px; }
     textarea#note { min-height:360px; font-family:ui-monospace,Consolas,monospace; font-size:12.5px; }
     .alert { border-left:4px solid var(--bad); background:#fdecea; padding:8px 10px; border-radius:4px; margin:6px 0; }
     .tip { border-left:4px solid var(--warn); background:#fff6e5; padding:8px 10px; border-radius:4px; margin:6px 0; }
@@ -85,8 +90,11 @@
       <button data-tab="phenotype">Antibody &amp; tumour</button>
       <button data-tab="workup">Workup</button>
       <button data-tab="treatment">Treatment</button>
+      <button data-tab="doses">Doses</button>
+      <button data-tab="trends">Trends</button>
       <button data-tab="requisition">MitogenDx requisition</button>
       <button data-tab="note">Note draft</button>
+      <button data-tab="teach">Teach</button>
       <button data-tab="reference">Reference</button>
     </nav>
   </header>
@@ -97,8 +105,11 @@
     <section class="tab" id="tab-phenotype"></section>
     <section class="tab" id="tab-workup"></section>
     <section class="tab" id="tab-treatment"></section>
+    <section class="tab" id="tab-doses"></section>
+    <section class="tab" id="tab-trends"></section>
     <section class="tab" id="tab-requisition"></section>
     <section class="tab" id="tab-note"></section>
+    <section class="tab" id="tab-teach"></section>
     <section class="tab" id="tab-reference"></section>
     <p class="muted small">Decision support only. Findings marked <span class="chip">chart</span> come from keyword and value matching and can be wrong. Check each one against the chart before relying on it.</p>
   </main>

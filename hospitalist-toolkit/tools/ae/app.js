@@ -123,13 +123,19 @@ function scanText(re) {
       const before = t.text.slice(Math.max(0, m.index - 40), m.index);
       if (NEG.test(before)) continue;
       const snip = t.text.slice(Math.max(0, m.index - 70), Math.min(t.text.length, m.index + m[0].length + 70)).replace(/\s+/g, ' ');
-      ev.push(`${t.source}${t.date ? ' (' + fmtDate(t.date) + ')' : ''}: …${snip}…`);
+      ev.push({ s: `${t.source}${t.date ? ' (' + fmtDate(t.date) + ')' : ''}: …${snip}…`, si: addSrc(t, m[0]) });
       break; // one hit per document
     }
     if (ev.length >= 4) break;
   }
   return ev;
 }
+
+// Clickable sources: each chart match keeps the note it came from, so a click opens the note with the words highlighted
+S.srcs = [];
+function addSrc(t, match) { S.srcs.push({ title: t.source, date: t.date ? fmtDate(t.date) : '', text: t.text, match }); return S.srcs.length - 1; }
+const evText = e => (typeof e === 'string' ? e : e.s);
+const evHtml = e => (typeof e === 'string' ? esc(e) : `<span class="ix-src" data-src="${e.si}" title="Open the note">${esc(e.s)}</span>`);
 
 /* ---------------- FHIR loading ---------------- */
 async function req(url, pages) {
@@ -153,15 +159,17 @@ async function attText(att) {
 async function loadChart() {
   const pid = S.pid;
   const since7 = new Date(Date.now() - 7 * DAY).toISOString().slice(0, 10);
-  const [pt, labs, vit, conds, meds, docs, reps] = await Promise.all([
+  const [pt, labs, vit, conds, meds, docs, reps, body] = await Promise.all([
     S.client.patient.read().catch(e => { S.loadErrors.push('Patient: ' + e.message); return null; }),
     req(`Observation?patient=${pid}&category=laboratory&_count=100`, 4),
     req(`Observation?patient=${pid}&category=vital-signs&date=ge${since7}&_count=100`, 3),
     req(`Condition?patient=${pid}&_count=100`, 2),
     req(`MedicationRequest?patient=${pid}&_count=100`, 3),
     req(`DocumentReference?patient=${pid}&_count=${CFG.maxNotes || 20}`, 1),
-    req(`DiagnosticReport?patient=${pid}&_count=60`, 1)
+    req(`DiagnosticReport?patient=${pid}&_count=60`, 1),
+    req(`Observation?patient=${pid}&code=http://loinc.org|29463-7,http://loinc.org|3141-9,http://loinc.org|8302-2&_count=50`, 1)
   ]);
+  S.body = (body || []).filter(r => r.resourceType === 'Observation');
   S.patient = pt; S.labs = labs.filter(r => r.resourceType === 'Observation');
   S.vitals = vit.filter(r => r.resourceType === 'Observation');
   S.conds = conds.filter(r => r.resourceType === 'Condition');
@@ -383,8 +391,9 @@ function chip(k) {
 }
 function findingRow(f) {
   const a = S.auto[f.key] || { ev: [] };
-  const ev = (a.ev || []).length ? `<details class="ev"><summary>${a.ev.length} chart match${a.ev.length > 1 ? 'es' : ''}</summary><ul class="tight">${a.ev.map(e => `<li>${esc(e)}</li>`).join('')}</ul></details>` : (a.note ? `<div class="ev">${esc(a.note)}</div>` : '');
-  return `<div class="find"><label><input type="checkbox" data-k="${f.key}" ${on(f.key) ? 'checked' : ''}> ${esc(f.label)}</label>${chip(f.key)}${ev}</div>`;
+  const ev = (a.ev || []).length ? `<details class="ev"><summary>${a.ev.length} chart match${a.ev.length > 1 ? 'es' : ''} — click a line to open the note</summary><ul class="tight">${a.ev.map(e => `<li>${evHtml(e)}</li>`).join('')}</ul></details>` : (a.note ? `<div class="ev">${esc(a.note)}</div>` : '');
+  const vote = a.on && window.Interact ? Interact.voteButtons('ae', f.key, (S.pid || 'manual') + ' | ' + evText(a.ev[0] || '')) : '';
+  return `<div class="find"><label><input type="checkbox" data-k="${f.key}" ${on(f.key) ? 'checked' : ''}> ${esc(f.label)}</label>${chip(f.key)}${vote}${ev}</div>`;
 }
 function renderOverview() {
   const d = demo();
@@ -470,6 +479,8 @@ function renderTreatment() {
   if (t.days != null && t.days >= 10 && !t.second.length) alerts.push(`<div class="tip">First-line therapy started ${t.days} days ago with no second-line agent found. If not clearly improving, consider rituximab ± cyclophosphamide (usual threshold ~10–14 days; earlier if ICU).</div>`);
   if ((t.second.some(m => /cyclophosph/i.test(medName(m))) || (t.days != null && t.days > 21)) && !t.pjp.length) alerts.push(`<div class="tip">On cyclophosphamide or prolonged steroids without PJP prophylaxis found — consider TMP-SMX.</div>`);
   $('#tab-treatment').innerHTML = `${alerts.join('')}
+    <div class="row" style="margin-bottom:8px"><button class="btn sec" id="hoBtn">Family handout (printable)</button></div>
+    ${pathHtml()}${countdownsHtml()}
     <div class="grid2">
       <div class="card"><h2>1. First line ${t.days != null ? `<span class="chip">day ${t.days}</span>` : ''}</h2>
         <div class="small">${medList(t.first)}</div>
@@ -485,6 +496,7 @@ function renderTreatment() {
         <li>Hyponatraemia: fluid restriction / salt tablets</li><li>Prophylaxis: PJP, bone, GI, VTE, glucose monitoring</li></ul></div>
     </div>`;
   const pd = $('#plexDone'); if (pd) pd.onchange = e => { S.user.plexDone = e.target.checked; renderAll(); };
+  wirePath(); wireCountdowns(); const hb = $('#hoBtn'); if (hb) hb.onclick = openHandout;
 }
 
 /* ---------------- requisition ---------------- */
@@ -688,12 +700,318 @@ function renderReference() {
       <li>Acute onset, no psychiatric history; viral prodrome or headache</li><li>Catatonia, mutism, fluctuating consciousness</li>
       <li>Seizures, dyskinesias, focal signs, dysautonomia</li><li>NMS-like reaction to antipsychotics</li><li>Hyponatraemia; recent HSV encephalitis</li>
       <li>Abnormal EEG, CSF or MRI; treatment-resistant psychosis</li></ul>
-      <div class="muted small">Low-titre serum-only NMDAR positivity in a typical psychiatric patient is often a false positive — CSF confirms.</div></div>`;
+      <div class="muted small">Low-titre serum-only NMDAR positivity in a typical psychiatric patient is often a false positive — CSF confirms.</div></div>` + feedbackHtml();
+  wireFeedback();
 }
 function renderAll() {
   renderOverview(); renderCriteria(); renderPhenotype(); renderWorkup(); renderTreatment(); renderNote(); renderReference();
   if (!$('#tab-requisition').innerHTML) renderRequisition();
+  if (!$('#tab-doses').innerHTML) renderDoses();
+  renderTrends(); renderTeach();
+  if (window.Interact) Interact.startTicker();
 }
+
+/* ================= interactive additions ================= */
+const IX = () => window.Interact;
+const pidKey = () => S.pid || 'manual';
+
+/* ---------- body measures (shared with every tab via Interact.shared) ---------- */
+function latestBody(loinc, re) {
+  const all = (S.body || []).concat(S.vitals || []).filter(o => codes(o.code).includes(loinc) || re.test(ccText(o.code)))
+    .filter(o => !isNaN(obsVal(o).num)).sort((a, b) => new Date(obsDate(b)) - new Date(obsDate(a)));
+  return all[0] ? { v: obsVal(all[0]).num, unit: (all[0].valueQuantity && all[0].valueQuantity.unit) || '', t: obsDate(all[0]) } : null;
+}
+function bodyValues() {
+  const sh = IX() ? IX().shared : null;
+  const w = latestBody('29463-7', /^body weight$|^weight/i), h = latestBody('8302-2', /height/i);
+  const hct = labsMatching(/hematocrit|haematocrit|\bhct\b/i)[0];
+  const sw = sh && sh.get(pidKey(), 'weightKg'), shh = sh && sh.get(pidKey(), 'heightCm');
+  return {
+    weight: sw != null ? +sw : (w ? (/lb/i.test(w.unit) ? Math.round(w.v * 0.4536 * 10) / 10 : w.v) : null),
+    weightSrc: sw != null ? 'entered (shared with other tabs)' : (w ? 'chart ' + fmtDate(w.t) : 'not found — enter it'),
+    height: shh != null ? +shh : (h ? (/in/i.test(h.unit) ? Math.round(h.v * 2.54) : h.v) : null),
+    heightSrc: shh != null ? 'entered (shared with other tabs)' : (h ? 'chart ' + fmtDate(h.t) : 'not found — enter it'),
+    hct: hct ? (obsVal(hct).num > 1 ? obsVal(hct).num / 100 : obsVal(hct).num) : null
+  };
+}
+
+/* ---------- 1 + 2. dose calculators with sliders ---------- */
+function doseMath(wt, ht, sex, useAdj, days, hct) {
+  const ibw = ht ? Math.max(30, (sex === 'male' ? 50 : 45.5) + 0.91 * (ht - 152.4)) : null;
+  const adj = ibw && wt > ibw ? ibw + 0.4 * (wt - ibw) : wt;
+  const bmi = ht ? wt / Math.pow(ht / 100, 2) : null;
+  const dosingWt = useAdj && ibw ? adj : wt;
+  const bsa = ht ? Math.sqrt(ht * wt / 3600) : null;
+  const ivigTotal = 2 * dosingWt;
+  const r5 = g => Math.round(g / 5) * 5;
+  const pv = (0.065 * wt) * (1 - (hct || 0.40));
+  const perDay = r5(ivigTotal / days);
+  return { ibw, adj, bmi, dosingWt, bsa, ivigTotal, ivigTotalR: perDay * days, ivigPerDay: perDay, pv,
+    ritux: bsa ? Math.round(375 * bsa / 10) * 10 : null, cyclo: bsa ? Math.round(750 * bsa / 10) * 10 : null,
+    pred: Math.min(60, Math.round(wt / 5) * 5) };
+}
+function taperRows(startDate, startMg) {
+  const rows = []; let d = new Date(startDate + 'T12:00'); let mg = startMg;
+  const add = (weeks, dose) => { const end = new Date(d.getTime() + weeks * 7 * DAY - DAY); rows.push({ from: d.toLocaleDateString('en-CA'), to: end.toLocaleDateString('en-CA'), mg: dose }); d = new Date(end.getTime() + DAY); };
+  add(2, mg);
+  while (mg > 20) { mg = Math.max(20, mg - 10); add(2, mg); }
+  while (mg > 0) { mg = Math.max(0, mg - 5); if (mg > 0) add(mg <= 10 ? 4 : 2, mg); }
+  return rows;
+}
+function renderDoses() {
+  const b = bodyValues(), d = demo();
+  const today = new Date().toLocaleDateString('en-CA');
+  $('#tab-doses').innerHTML = `
+    <div class="card"><h2>Patient measures</h2>
+      <div class="form">
+        <span>Weight (kg)</span><div class="row nowrap"><input type="range" id="dWtR" min="30" max="200" step="0.5" value="${b.weight || 70}"><input type="number" id="dWt" step="0.1" value="${b.weight || ''}" placeholder="kg" style="width:90px"></div>
+        <span></span><span class="muted small" id="dWtSrc">${esc(b.weightSrc)}</span>
+        <span>Height (cm)</span><div class="row nowrap"><input type="range" id="dHtR" min="130" max="215" step="1" value="${b.height || 170}"><input type="number" id="dHt" step="1" value="${b.height || ''}" placeholder="cm" style="width:90px"></div>
+        <span></span><span class="muted small" id="dHtSrc">${esc(b.heightSrc)}</span>
+        <span>Sex (for ideal weight)</span><select id="dSex"><option value="female" ${d.sex === 'female' ? 'selected' : ''}>Female</option><option value="male" ${d.sex === 'male' ? 'selected' : ''}>Male</option></select>
+        <span>Hematocrit</span><input type="number" id="dHct" step="0.01" value="${b.hct != null ? b.hct.toFixed(2) : ''}" placeholder="0.40 if unknown" style="width:120px">
+      </div>
+      <div class="muted small">Weight and height you type here are shared with the other tabs open for this patient.</div>
+    </div>
+    <div id="doseOut"></div>
+    <div class="card"><h2>Prednisone taper after IV methylprednisolone (example)</h2>
+      <div class="row"><label>Start date <input type="date" id="tpStart" value="${today}"></label><label>Start dose (mg/day) <input type="number" id="tpMg" step="5" style="width:80px"></label></div>
+      <div id="taperOut"></div>
+      <div class="muted small">Example only: 2 weeks at the start dose, then −10 mg every 2 weeks to 20 mg, then −5 mg every 2–4 weeks. Tapers vary widely (and some patients bridge to IVIG or a steroid-sparing drug). Edit to neurology's plan.</div>
+    </div>`;
+  const sync = (rangeId, numId, key) => {
+    const r = $('#' + rangeId), n = $('#' + numId);
+    r.oninput = () => { n.value = r.value; save(key, r.value); calc(); };
+    n.oninput = () => { if (n.value) r.value = n.value; save(key, n.value); calc(); };
+  };
+  const save = (key, v) => { if (IX()) IX().shared.set(pidKey(), key, v === '' ? '' : +v, 'Autoimmune encephalitis'); const src = key === 'weightKg' ? '#dWtSrc' : '#dHtSrc'; $(src).textContent = v === '' ? 'cleared' : 'entered (shared with other tabs)'; };
+  sync('dWtR', 'dWt', 'weightKg'); sync('dHtR', 'dHt', 'heightCm');
+  $('#dSex').onchange = calc; $('#dHct').oninput = calc;
+  $('#tpStart').onchange = taper; $('#tpMg').oninput = taper;
+  calc();
+  function calc() {
+    const wt = parseFloat($('#dWt').value), ht = parseFloat($('#dHt').value), sex = $('#dSex').value, hct = parseFloat($('#dHct').value) || null;
+    if (!wt) { $('#doseOut').innerHTML = '<div class="tip">Enter or slide the weight to calculate doses.</div>'; taper(); return; }
+    const days = S.ivigDays || 5, useAdj = S.ivigAdj != null ? S.ivigAdj : false;
+    const m = doseMath(wt, ht, sex, useAdj, days, hct);
+    const obese = m.bmi && m.bmi >= 30;
+    $('#doseOut').innerHTML = `
+      <div class="grid2">
+        <div class="card"><h2>IVIG 2 g/kg</h2>
+          <div class="row"><label><input type="radio" name="ivw" value="act" ${!useAdj ? 'checked' : ''}> Actual weight ${wt} kg</label>
+          <label><input type="radio" name="ivw" value="adj" ${useAdj ? 'checked' : ''} ${m.ibw ? '' : 'disabled'}> Adjusted weight ${m.ibw ? m.adj.toFixed(1) + ' kg' : '(needs height)'}</label></div>
+          ${obese ? `<div class="tip">BMI ${m.bmi.toFixed(1)}: many Canadian IVIG programs dose on adjusted body weight when BMI ≥ 30. Use your blood bank's IVIG calculator.</div>` : (m.bmi ? `<div class="muted small">BMI ${m.bmi.toFixed(1)}</div>` : '')}
+          <div class="row"><label>Spread over <input type="range" id="ivDays" min="2" max="5" step="1" value="${days}"> <b>${days} days</b></label></div>
+          <p class="big"><b>${m.ivigTotalR} g total</b> = <b>${m.ivigPerDay} g/day × ${days} days</b></p>
+          <div class="muted small">Exact: ${m.ivigTotal.toFixed(1)} g on ${m.dosingWt.toFixed(1)} kg; daily dose rounded to the nearest 5 g. Pharmacy rounds to vial size. Check renal function, hydration and thrombosis risk.</div></div>
+        <div class="card"><h2>IV methylprednisolone</h2><p class="big"><b>1 g IV daily × 3–5 days</b></p>
+          <div class="muted small">Fixed adult dose. Then an oral prednisone taper (below). Add PJP, GI and bone protection if a long course follows; watch glucose.</div></div>
+        <div class="card"><h2>Plasma exchange (PLEX)</h2><p class="big"><b>Plasma volume ≈ ${m.pv.toFixed(1)} L</b></p>
+          <div>1–1.5 plasma volumes per exchange = <b>${m.pv.toFixed(1)}–${(m.pv * 1.5).toFixed(1)} L</b>, 5–7 exchanges every other day.</div>
+          <div class="muted small">Estimate: 0.065 L/kg × weight × (1 − hematocrit ${hct || 0.40}). Apheresis team sets the actual volume. Do PLEX before IVIG.</div></div>
+        <div class="card"><h2>Rituximab</h2>
+          ${m.bsa ? `<p class="big"><b>${m.ritux} mg</b> weekly × 4 <span class="muted">(375 mg/m² × BSA ${m.bsa.toFixed(2)} m²)</span></p>` : '<div class="tip">Enter the height to calculate body surface area.</div>'}
+          <div>or <b>1000 mg</b> × 2 doses, 2 weeks apart.</div>
+          <div class="muted small">Check hepatitis B (sAg, core Ab) before the first dose. Premedicate per protocol.</div></div>
+        <div class="card"><h2>Cyclophosphamide</h2>
+          ${m.bsa ? `<p class="big"><b>${m.cyclo} mg</b> IV monthly <span class="muted">(750 mg/m²)</span></p>` : '<div class="tip">Enter the height to calculate body surface area.</div>'}
+          <div class="muted small">Dose reductions for kidney function and age, mesna and hydration per oncology/pharmacy protocol. PJP prophylaxis.</div></div>
+      </div>
+      <div class="muted small">BSA by Mosteller; ideal weight by Devine (${m.ibw ? m.ibw.toFixed(1) + ' kg' : 'needs height'}); adjusted weight = ideal + 0.4 × (actual − ideal). Doses are standard regimens to check against pharmacy and neurology orders.</div>`;
+    document.querySelectorAll('input[name=ivw]').forEach(r => r.onchange = () => { S.ivigAdj = r.value === 'adj'; calc(); });
+    $('#ivDays').oninput = e => { S.ivigDays = +e.target.value; calc(); };
+    if (!$('#tpMg').value) $('#tpMg').value = m.pred;
+    taper();
+  }
+  function taper() {
+    const mg = parseInt($('#tpMg').value, 10), st = $('#tpStart').value;
+    if (!mg || !st) { $('#taperOut').innerHTML = ''; return; }
+    const rows = taperRows(st, mg);
+    $('#taperOut').innerHTML = `<table><tr><th>From</th><th>To</th><th>Prednisone mg/day</th></tr>${rows.map(r => `<tr><td>${r.from}</td><td>${r.to}</td><td>${r.mg}</td></tr>`).join('')}</table>
+      <div class="row" style="margin-top:6px"><button class="btn sec" id="tpCopy">Copy taper</button><span class="muted small" id="tpMsg"></span></div>`;
+    $('#tpCopy').onclick = async () => { const txt = 'Prednisone taper: ' + rows.map(r => `${r.mg} mg daily ${r.from} to ${r.to}`).join('; ') + ', then stop.';
+      try { await navigator.clipboard.writeText(txt); $('#tpMsg').textContent = 'Copied.'; } catch (e) { $('#tpMsg').textContent = txt; } };
+  }
+}
+if (window.Interact) Interact.shared.on((pid, key) => { if (pid === pidKey() && (key === 'weightKg' || key === 'heightCm') && !document.activeElement.closest('#tab-doses')) { $('#tab-doses').innerHTML = ''; renderDoses(); } });
+
+/* ---------- 4. trend charts ---------- */
+const TREND_DEFS = [
+  { key: 'na', label: 'Sodium', unit: 'mmol/L', color: '#1d5fa8', lab: /^(sodium|na\b)/i, not: /urine/i, limits: [{ v: 135, label: '135' }] },
+  { key: 'csf', label: 'CSF WBC', unit: '/µL', color: '#7c3aed', lab: /(csf|cerebrospinal|spinal fluid)/i, and: /(wbc|leuk|white|nucleated)/i, limits: [{ v: 5, label: '5' }] },
+  { key: 'ck', label: 'CK', unit: 'U/L', color: '#b45309', lab: /(creatine kinase|^ck\b|\bcpk\b)/i },
+  { key: 'hr', label: 'Heart rate', unit: '/min', color: '#b42318', vit: '8867-4', vre: /heart rate|pulse/i, limits: [{ v: 120, label: '120' }, { v: 50, label: '50', color: '#1d5fa8' }] },
+  { key: 'sbp', label: 'Systolic BP', unit: 'mmHg', color: '#0f766e', vit: '8480-6', vre: /systolic/i },
+  { key: 'temp', label: 'Temperature', unit: '°C', color: '#c2410c', vit: '8310-5', vre: /temp/i, limits: [{ v: 38, label: '38.0' }] }
+];
+function trendPoints(def) {
+  if (def.lab) return labsMatching(def.lab, (o, n) => (!def.not || !def.not.test(n)) && (!def.and || def.and.test(n)))
+    .map(o => ({ t: new Date(obsDate(o)).getTime(), v: obsVal(o).num, unit: def.unit, name: ccText(o.code), o })).filter(p => !isNaN(p.v));
+  const out = [];
+  (S.vitals || []).forEach(o => {
+    if (codes(o.code).includes(def.vit) || def.vre.test(ccText(o.code))) { const n = obsVal(o).num; if (!isNaN(n)) out.push({ t: new Date(obsDate(o)).getTime(), v: n, unit: def.unit, name: ccText(o.code), o }); }
+    (o.component || []).forEach(c => { if (codes(c.code).includes(def.vit) && c.valueQuantity) out.push({ t: new Date(obsDate(o)).getTime(), v: c.valueQuantity.value, unit: def.unit, name: def.label, o }); });
+  });
+  return out;
+}
+function renderTrends() {
+  const el = $('#tab-trends'); if (!el) return;
+  const avail = TREND_DEFS.map(d => ({ d, pts: trendPoints(d) })).filter(x => x.pts.length);
+  const most = avail.slice().sort((x, y) => y.pts.length - x.pts.length)[0];
+  const sel = S.trendSel && avail.some(x => x.d.key === S.trendSel) ? S.trendSel : (most && most.d.key);
+  const markers = medsMatching(/(methylpred|solu-?medrol|immune glob|ivig|rituximab|cyclophosphamide|tocilizumab|haloperidol|olanzapine|quetiapine|risperidone)/i)
+    .filter(m => m.authoredOn).map(m => ({ t: new Date(m.authoredOn).getTime(), label: medName(m).split(' ')[0], color: /halo|olanz|quet|risper/i.test(medName(m)) ? '#b42318' : '#7c3aed' }));
+  el.innerHTML = `<div class="card"><h2>Trends</h2>
+    ${avail.length ? `<div class="row">${avail.map(x => `<label><input type="radio" name="trsel" value="${x.d.key}" ${x.d.key === sel ? 'checked' : ''}> ${esc(x.d.label)} <span class="muted small">(${x.pts.length})</span></label>`).join('')}</div>
+    <div id="trChart"></div><div class="muted small">Purple lines: immunotherapy orders. Red lines: antipsychotic orders.</div>` : '<div class="muted">No sodium, CSF, CK or vital-sign values found.</div>'}</div>`;
+  if (!avail.length || !IX()) return;
+  const cur = avail.find(x => x.d.key === sel);
+  const span = Math.max(2 * DAY, ...cur.pts.map(p => Date.now() - p.t)) + DAY;
+  IX().chart($('#trChart'), { title: cur.d.label, series: [{ label: cur.d.label, color: cur.d.color, points: cur.pts }], markers, limits: cur.d.limits || [],
+    ranges: [['48 h', 2 * DAY], ['7 d', 7 * DAY], ['30 d', 30 * DAY], ['All', Math.max(31 * DAY, span)]],
+    onPick: (se, q) => IX().showSource({ title: q.name + ' — ' + q.v + ' ' + (q.unit || ''), date: new Date(q.t).toLocaleString(), text: 'Result from the chart (FHIR Observation).\n\n' + JSON.stringify({ test: q.name, value: q.v, unit: q.unit, time: new Date(q.t).toISOString(), status: q.o.status || '', interpretation: q.o.interpretation ? ccText(q.o.interpretation[0]) : '', id: q.o.id || '' }, null, 2) }) });
+  el.querySelectorAll('input[name=trsel]').forEach(r => r.onchange = () => { S.trendSel = r.value; renderTrends(); });
+}
+
+/* ---------- 5. countdowns ---------- */
+function due(t, label) { return `<span data-due="${t}" data-label="${esc(label)}"></span>`; }
+function countdownsHtml() {
+  const t = treatment(), rows = [];
+  if (t.start) {
+    rows.push(['Second-line decision (if not improving)', t.start.getTime() + 10 * DAY, 'day 10–14 of first-line']);
+    if (!t.second.length) rows.push(['Second-line decision — latest', t.start.getTime() + 14 * DAY, 'day 14']);
+  }
+  const sent = store.get('mitoSent:' + pidKey(), '');
+  if (sent) { const r = addWorkdays(new Date(sent + 'T12:00'), 1 + 7); rows.push(['MitogenDx results expected (by)', r.getTime(), '~5–7 working days after receipt']); }
+  const pel = S.texts.filter(x => x.report && /(pelvi|transvaginal|ovar|adnex)/i.test(x.source + ' ' + x.text.slice(0, 120)) && !/teratoma|dermoid|mass|lesion/i.test(x.text));
+  if (pel.length && on('psych') && demo().sex === 'female') rows.push(['Repeat pelvic imaging (teratoma screen negative)', new Date(pel[0].date).getTime() + 182 * DAY, 'every ~6 months for ~2 years']);
+  return `<div class="card"><h2>Countdowns</h2>${rows.length ? `<table>${rows.map(r => `<tr><td>${esc(r[0])}</td><td>${new Date(r[1]).toLocaleDateString('en-CA')}</td><td>${due(r[1], r[0])}</td><td class="muted small">${esc(r[2])}</td></tr>`).join('')}</table>` : '<div class="muted">No dated items yet (start first-line therapy or enter the MitogenDx send date).</div>'}
+    <div class="row" style="margin-top:6px"><label class="small">MitogenDx samples sent <input type="date" id="mitoSent" value="${esc(sent)}"></label>
+    <button class="btn sec" id="ixAlerts">Turn on pop-up alerts</button><span class="muted small" id="ixAlertMsg"></span></div>
+    <div class="muted small">Counts update every 30 seconds while this page is open. Pop-up alerts only work while the page stays open.</div></div>`;
+}
+function addWorkdays(d, n) { const x = new Date(d); while (n > 0) { x.setDate(x.getDate() + 1); if (x.getDay() !== 0 && x.getDay() !== 6) n--; } return x; }
+function wireCountdowns() {
+  const s = $('#mitoSent'); if (s) s.onchange = () => { store.set('mitoSent:' + pidKey(), s.value); renderTreatment(); };
+  const b = $('#ixAlerts'); if (b && IX()) b.onclick = async () => { $('#ixAlertMsg').textContent = await IX().enableAlerts(); };
+  if (IX()) IX().startTicker();
+}
+
+/* ---------- 6. step-by-step treatment path ---------- */
+const PATH_Q = [
+  { k: 'inf', q: 'Has infection been reasonably excluded or covered (HSV/VZV PCR sent and acyclovir running; bacterial meningitis excluded)?', a: [['yes', 'Yes'], ['no', 'Not yet']] },
+  { k: 'ab', q: 'What kind of antibody / syndrome?', a: [['surface', 'Cell-surface (NMDAR, LGI1, CASPR2, AMPAR, GABA-A/B, DPPX)'], ['intra', 'Intracellular / onconeural (Hu, Ma2, CV2, amphiphysin)'], ['unk', 'Not known yet']] },
+  { k: 'sev', q: 'Is it severe (ICU, status epilepticus, hypoventilation, severe dysautonomia, unable to communicate)?', a: [['yes', 'Yes'], ['no', 'No']] },
+  { k: 'tum', q: 'Has a tumour been found?', a: [['yes', 'Yes'], ['no', 'No (screen negative)'], ['pending', 'Screen not done / pending']] },
+  { k: 'resp', q: 'Response to first-line therapy so far?', a: [['early', 'Too early (< 10 days)'], ['better', 'Clearly improving'], ['no', 'Not improving at 10–14 days']] }
+];
+function pathAnswers() {
+  const t = treatment(), A = Object.assign({}, S.path || {});
+  const auto = {};
+  if (A.ab == null) auto.ab = 'unk';
+  if (A.sev == null) auto.sev = (on('hypovent') || on('consciousness') || (on('seizure') && /status/i.test(JSON.stringify(S.auto.seizure || '')))) ? 'yes' : 'no';
+  if (A.tum == null) auto.tum = on('teratoma') || on('cancer') ? 'yes' : 'pending';
+  if (A.resp == null) auto.resp = t.days == null || t.days < 10 ? 'early' : 'no';
+  if (A.inf == null) auto.inf = t.acyclo.length || t.hsvNeg ? 'yes' : 'no';
+  return { A: Object.assign({}, auto, A), auto, t };
+}
+function pathAdvice(A, t) {
+  const out = [];
+  if (A.inf === 'no') out.push(['red', 'Send CSF HSV-1/2 and VZV PCR and start IV acyclovir now. Steroids can start once bacterial meningitis is excluded or covered.']);
+  if (A.tum === 'yes') out.push(['red', A.ab === 'intra' ? 'Treat the cancer — it is the main therapy for onconeural syndromes. Involve oncology now.' : 'Remove the tumour (e.g. teratoma resection) as soon as possible — it speeds recovery and lowers relapse.']);
+  if (A.tum === 'pending') out.push(['amber', 'Complete the tumour screen for the suspected antibody (Antibody & tumour tab).']);
+  if (!t.first.length && !t.plex) {
+    if (A.sev === 'yes') out.push(['amber', 'First line now, combined: IV methylprednisolone 1 g × 5 days PLUS IVIG 2 g/kg or PLEX (PLEX first if both). Doses: Doses tab.']);
+    else out.push(['amber', 'First line now: IV methylprednisolone 1 g daily × 3–5 days, ± IVIG 2 g/kg. Doses: Doses tab.']);
+  } else if (A.resp === 'early') out.push(['ok', 'First line under way' + (t.days != null ? ' (day ' + t.days + ')' : '') + '. Reassess at day 10–14 (Countdowns).' + (A.sev === 'yes' ? ' Severe: consider starting second line early.' : '')]);
+  else if (A.resp === 'better') out.push(['ok', 'Improving: oral prednisone taper' + (A.ab === 'surface' ? '; consider rituximab anyway to lower relapse (especially NMDAR), or monthly IVIG as a bridge.' : '.')]);
+  else if (A.resp === 'no') {
+    if (A.ab === 'intra') out.push(['amber', 'Not improving, intracellular antibody: cyclophosphamide (T-cell directed) is usually preferred over rituximab; treat the tumour. Outlook is guarded.']);
+    else out.push(['amber', 'Not improving: second line — rituximab (375 mg/m² weekly × 4 or 1 g × 2) and/or cyclophosphamide 750 mg/m². Refractory: tocilizumab or bortezomib with neurology.']);
+  }
+  if (t.antipsych.length) out.push(['red', 'Antipsychotic active: prefer benzodiazepines, low-dose quetiapine, dexmedetomidine; avoid high-potency typicals.']);
+  return out;
+}
+function pathHtml() {
+  const { A, auto, t } = pathAnswers();
+  const adv = pathAdvice(A, t);
+  const cls = { red: 'alert', amber: 'tip', ok: 'good' };
+  return `<div class="card"><h2>Step by step: what next?</h2>
+    ${PATH_Q.map(q => `<div class="pq"><div><b>${esc(q.q)}</b>${auto[q.k] ? ' <span class="chip">from chart — change if wrong</span>' : ''}</div>
+      <div class="row">${q.a.map(a => `<label><input type="radio" name="pq_${q.k}" value="${a[0]}" ${A[q.k] === a[0] ? 'checked' : ''}> ${esc(a[1])}</label>`).join('')}</div></div>`).join('')}
+    <h3>Suggested next steps</h3>${adv.map(a => `<div class="${cls[a[0]]}">${esc(a[1])}</div>`).join('')}
+    <div class="muted small">Follows the staged approach in the Reference tab; neurology decides. Answers here are not saved to the chart.</div></div>`;
+}
+function wirePath() {
+  document.querySelectorAll('#tab-treatment input[name^=pq_]').forEach(r => r.onchange = () => { S.path = S.path || {}; S.path[r.name.slice(3)] = r.value; renderTreatment(); });
+}
+
+/* ---------- 7. teaching mode ---------- */
+const AB_CHOICES = ['Anti-NMDAR', 'Anti-LGI1', 'Anti-CASPR2', 'Anti-GABA-B, anti-Hu, SOX1, AMPAR', 'Anti-Ma2', 'Anti-DPPX', 'Checkpoint-inhibitor encephalitis', 'No dominant phenotype yet'];
+function renderTeach() {
+  const el = $('#tab-teach'); if (!el) return;
+  if (el.dataset.ready === pidKey() && el.innerHTML) return;
+  el.dataset.ready = pidKey();
+  const notes = S.texts.filter(t => !t.report).slice(0, 4), reps = S.texts.filter(t => t.report).slice(0, 4);
+  const labs = S.labs.slice(0, 12).map(o => `${ccText(o.code)} ${obsVal(o).str} (${fmtDate(obsDate(o))})`);
+  const d = demo();
+  el.innerHTML = `<div class="card"><h2>Teaching case</h2>
+      <div class="muted small">For students and residents: read the case, answer, then reveal what the app found and why. Uses this patient's chart (or the demo patient).</div>
+      <h3>${d.age ?? '?'} y ${esc(d.sex)}</h3>
+      ${notes.map(n => `<details open><summary><b>${esc(n.source)}</b> ${n.date ? '· ' + fmtDate(n.date) : ''}</summary><p class="small" style="white-space:pre-wrap">${esc(n.text.slice(0, 1500))}</p></details>`).join('')}
+      ${reps.length ? `<h3>Reports</h3>${reps.map(r => `<p class="small"><b>${esc(r.source)}:</b> ${esc(r.text.slice(0, 400))}</p>`).join('')}` : ''}
+      ${labs.length ? `<h3>Labs</h3><p class="small">${esc(labs.join(' · '))}</p>` : ''}
+    </div>
+    <div class="card"><h2>Your answers</h2>
+      <div><b>1. Which Graus 2016 criteria sets are met?</b> (assume onset < 3 months and alternatives excluded)</div>
+      ${['Possible autoimmune encephalitis', 'Definite autoimmune limbic encephalitis', 'Probable anti-NMDAR encephalitis'].map((n, i) => `<label><input type="checkbox" class="tq1" value="${i}"> ${n}</label><br>`).join('')}
+      <div style="margin-top:8px"><b>2. Most likely antibody / phenotype?</b> <select id="tq2"><option value=""></option>${AB_CHOICES.map(a => `<option>${esc(a)}</option>`).join('')}</select></div>
+      <div style="margin-top:8px"><b>3. Name the red flags that argue against a primary psychiatric illness:</b><br><textarea id="tq3" rows="3"></textarea></div>
+      <div class="row" style="margin-top:8px"><button class="btn" id="tReveal">Reveal</button><button class="btn sec" id="tReset">Reset</button></div>
+      <div id="tAns"></div></div>`;
+  $('#tReset').onclick = () => { el.dataset.ready = ''; el.innerHTML = ''; renderTeach(); };
+  $('#tReveal').onclick = () => {
+    const keepU = Object.assign({}, S.user); S.user.onset3mo = true; S.user.altExcluded = true;
+    const cs = criteria(), ph = phenotypes(); S.user = keepU;
+    const picked = [...el.querySelectorAll('.tq1:checked')].map(x => +x.value), pAb = $('#tq2').value;
+    const flags = FINDINGS.filter(f => !f.manualOnly && f.type === 'clinical' && (S.auto[f.key] && S.auto[f.key].on)).map(f => f.label);
+    $('#tAns').innerHTML = `<h3>Answer</h3><table><tr><th>Criteria set</th><th>App</th><th>You</th></tr>${cs.map((c, i) => `<tr><td>${esc(c.name.replace(' (Graus 2016)', ''))}</td><td class="${c.met ? 'y' : 'n'}">${c.met ? 'MET' : 'not met'}</td><td>${picked.includes(i) === c.met ? '✔ agree' : '✘ differs'}</td></tr>`).join('')}</table>
+      <p><b>Antibody:</b> app suggests ${esc(ph.map(p => p.ab).join(' / '))} — ${ph.some(p => p.ab === pAb) ? '✔ you matched one' : (pAb ? '✘ you chose ' + esc(pAb) : 'no answer')}.<br><span class="small muted">Why: ${esc(ph.map(p => p.ab + ': ' + p.why.join(', ')).join(' | '))}</span></p>
+      <p><b>Red flags found in the chart:</b> ${flags.length ? esc(flags.join('; ')) : 'none'}</p>
+      <p class="small muted">Missing items for unmet sets are listed on the Criteria tab. The app's answer is keyword-based — discuss where it may be wrong.</p>`;
+  };
+}
+
+/* ---------- 8. family handout ---------- */
+function openHandout() {
+  if (!IX()) return;
+  IX().handout('Autoimmune encephalitis: information for patients and families', `
+    <h2>What is it?</h2><p>Autoimmune encephalitis means the body's immune system is attacking the brain by mistake. It can cause confusion, memory problems, seizures, changes in behaviour or mood, trouble speaking, unusual movements, and problems with heart rate, blood pressure or breathing. It is not caused by anything the person or family did.</p>
+    <h2>Why it can look like a mental illness</h2><p>Early on, it can look like anxiety, depression or psychosis. Doctors look for clues such as seizures, unusual movements, confusion, or abnormal test results that point to the brain itself.</p>
+    <h2>Tests</h2><ul><li><b>Lumbar puncture (spinal tap):</b> fluid from the lower back is tested for infection and inflammation.</li><li><b>MRI</b> of the brain and an <b>EEG</b> (brain wave test).</li><li><b>Blood and spinal fluid antibody tests</b>, often sent to a specialty lab in Calgary. Results take about 1–2 weeks.</li><li><b>Scans to look for a tumour</b>, because sometimes a growth (for example, on an ovary) triggers the immune reaction. Removing it helps recovery.</li></ul>
+    <h2>Treatment</h2><ul><li><b>Steroids</b> through a vein for 3–5 days, then by mouth, slowly reduced.</li><li><b>IVIG</b> (antibodies from donated blood) or <b>plasma exchange</b> (filtering the blood).</li><li>If needed, stronger medicines such as <b>rituximab</b> or <b>cyclophosphamide</b>.</li><li>Medicines for seizures, sleep and agitation. Some patients need the intensive care unit for a time.</li></ul>
+    <h2>What to expect</h2><p>Treatment often starts before all results are back. Recovery is usually slow — weeks to months — and many people improve a great deal. Memory, concentration and mood can take longer to recover, and rehabilitation helps. The illness can come back, so follow-up with neurology is important.</p>
+    <h2>Questions you may want to ask</h2><ul><li>Which tests are still pending, and when will we hear?</li><li>Has a tumour been looked for?</li><li>What is the treatment plan if there is no improvement?</li><li>Who do we call with concerns after discharge?</li></ul>`);
+}
+
+/* ---------- 9. rule feedback panel ---------- */
+function feedbackHtml() {
+  if (!IX()) return '';
+  const st = IX().stats('ae');
+  return `<div class="card"><h2>Auto-tick feedback (this browser)</h2>
+    <div class="muted small">Use ✓/✗ beside each auto-ticked finding. Votes stay in this browser and show which keyword rules need fixing — no patient name is stored, only the matched sentence.</div>
+    ${st.length ? `<table><tr><th>Finding rule</th><th>✓ right</th><th>✗ wrong</th><th>Accuracy</th><th>Examples marked wrong</th></tr>${st.map(r => `<tr><td>${esc((FMAP[r.rule] || {}).label || r.rule)}</td><td>${r.ok}</td><td>${r.bad}</td><td>${Math.round(100 * r.ok / (r.ok + r.bad))}%</td><td class="small">${esc(r.wrong.slice(0, 2).map(w => w.split(' | ').pop()).join(' / '))}</td></tr>`).join('')}</table>
+      <div class="row" style="margin-top:6px"><button class="btn sec" id="fbCsv">Download CSV</button><button class="btn sec" id="fbClear">Clear</button></div>` : '<div class="muted">No votes yet.</div>'}</div>`;
+}
+function wireFeedback() {
+  const c = $('#fbCsv'); if (c) c.onclick = () => IX().exportCsv('ae');
+  const d = $('#fbClear'); if (d) d.onclick = () => { IX().clearVotes('ae'); renderReference(); };
+}
+document.addEventListener('ix-voted', () => { renderReference(); });
+document.addEventListener('click', e => {
+  const s = e.target.closest && e.target.closest('[data-src]');
+  if (s && IX()) { e.preventDefault(); IX().showSource(S.srcs[+s.dataset.src]); }
+});
 
 /* ---------------- events & start ---------------- */
 document.addEventListener('change', e => {
