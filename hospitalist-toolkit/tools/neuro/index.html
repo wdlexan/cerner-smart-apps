@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Neuro (non-stroke)</title>
+  <style>
+    :root { --bg:#f5f7fa; --card:#fff; --ink:#1f2933; --muted:#5f6c7b; --accent:#0b6bcb; --line:#dde3ea;
+            --r-bg:#fde8e8; --r-ink:#9b1c1c; --a-bg:#fff1d6; --a-ink:#8a5200; --b-bg:#e3eefc; --b-ink:#0b4a99; --g-bg:#e4f4ea; --g-ink:#1d6b3a; --warn-bg:#fff4e5; --warn-line:#f0c27b; }
+    @media (prefers-color-scheme: dark) { :root { --bg:#111418; --card:#1a1f26; --ink:#e8edf2; --muted:#9aa7b5; --accent:#6aa9ff; --line:#2b333d;
+            --r-bg:#4a1d1d; --r-ink:#ffb3b3; --a-bg:#4a3511; --a-ink:#ffd38a; --b-bg:#14325c; --b-ink:#a9cdff; --g-bg:#16361f; --g-ink:#9be0b1; --warn-bg:#3a2e15; --warn-line:#6b5420; } }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); }
+    header { padding:14px 20px; border-bottom:1px solid var(--line); background:var(--card); }
+    header h1 { margin:0; font-size:19px; } header .sub { font-size:13px; color:var(--muted); margin-top:2px; }
+    main { max-width:980px; margin:16px auto 40px; padding:0 16px; display:grid; gap:14px; }
+    .banner { background:var(--warn-bg); border:1px solid var(--warn-line); border-radius:8px; padding:10px 14px; font-size:13px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:10px; font-size:13.5px; }
+    .card > summary { padding:10px 16px; font-weight:700; font-size:15px; cursor:pointer; display:flex; justify-content:space-between; gap:10px; }
+    .card > .body { padding:0 16px 14px; }
+    select, input, button { font:inherit; font-size:13px; padding:5px 8px; border:1px solid var(--line); border-radius:6px; background:var(--card); color:var(--ink); }
+    button { cursor:pointer; } button.primary { border-color:var(--accent); color:var(--accent); }
+    input[type=number] { width:80px; }
+    .row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:8px 0; }
+    .inl { display:inline-flex; gap:6px; align-items:center; }
+    .muted { color:var(--muted); } .err { color:var(--r-ink); }
+    .tiles { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px; }
+    .tile { border-radius:10px; padding:10px 14px; border:1px solid var(--line); background:var(--card); }
+    .tile .k { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; }
+    .tile .big { font-size:26px; font-weight:700; margin:2px 0; }
+    .tile .s { font-size:12.5px; }
+    .t0 { background:var(--g-bg); color:var(--g-ink); } .t1 { background:var(--b-bg); color:var(--b-ink); } .t2 { background:var(--a-bg); color:var(--a-ink); } .t3 { background:var(--r-bg); color:var(--r-ink); }
+    .t0 .k, .t1 .k, .t2 .k, .t3 .k { color:inherit; opacity:.8; }
+    .alert { border-left:4px solid; border-radius:6px; padding:8px 12px; margin:6px 0; }
+    .alert b { margin-right:6px; }
+    .alert.urgent { background:var(--r-bg); color:var(--r-ink); } .alert.action { background:var(--a-bg); color:var(--a-ink); } .alert.info { background:var(--b-bg); color:var(--b-ink); }
+    table { border-collapse:collapse; width:100%; font-size:13px; }
+    th, td { border-bottom:1px solid var(--line); padding:5px 8px; text-align:left; white-space:nowrap; }
+    th { color:var(--muted); font-weight:600; }
+    td.num { text-align:right; font-variant-numeric:tabular-nums; } td.wrap { white-space:normal; }
+    td.hi { color:var(--r-ink); font-weight:600; } td.old { color:var(--a-ink); }
+    .scroll { overflow-x:auto; }
+    .plan h3 { font-size:14px; margin:12px 0 4px; } .plan ul { margin:4px 0 8px 18px; padding:0; } .plan li { margin:3px 0; }
+    .plan .urgent h3 { color:var(--r-ink); } .plan .action h3 { color:var(--a-ink); }
+    .chip { display:inline-block; padding:1px 8px; border-radius:10px; font-size:12px; font-weight:600; }
+    .c-yes { background:var(--g-bg); color:var(--g-ink); } .c-no { background:var(--r-bg); color:var(--r-ink); } .c-unknown { background:var(--a-bg); color:var(--a-ink); }
+    .src { font-size:12px; color:var(--muted); margin-top:8px; }
+    svg text { fill:var(--muted); font-size:11px; }
+    .mgrid { display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:10px; margin:8px 0; }
+    .mgrid fieldset { border:1px solid var(--line); border-radius:8px; padding:6px 12px 8px; margin:0; display:grid; gap:6px; }
+    .mgrid legend { font-weight:600; font-size:13px; padding:0 4px; }
+    .mgrid label:not(.inl) { display:grid; grid-template-columns:90px 80px auto; align-items:center; gap:6px; }
+    .mgrid .u { font-size:12px; color:var(--muted); }
+    .mgrid label select { grid-column:span 2; justify-self:start; }
+    input.typed { border-color:var(--accent); font-weight:600; }
+    .verdict { border-radius:10px; padding:10px 14px; margin:10px 0 6px; }
+    .verdict .big { font-size:18px; font-weight:700; }
+    tr.match td { background:var(--b-bg); color:var(--b-ink); font-weight:600; }
+    td.lv-flag { color:var(--a-ink); font-weight:600; } td.lv-ok { color:var(--g-ink); font-weight:600; }
+    @media print { .noprint { display:none; } }
+    .ticks { display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:4px 14px; margin:6px 0; }
+    .ticks label { display:flex; gap:6px; align-items:flex-start; } .ticks .auto { font-size:11.5px; color:var(--accent); margin-left:4px; }
+    fieldset.grp { border:1px solid var(--line); border-radius:8px; margin:8px 0; padding:4px 12px 8px; }
+    fieldset.grp legend { font-weight:600; padding:0 4px; }
+    fieldset.grp.dim { opacity:.45; }
+    .pres button { margin:2px 4px 2px 0; } .pres button.on { background:var(--accent); color:#fff; border-color:var(--accent); }
+    .dx { display:flex; gap:10px; align-items:flex-start; border:1px solid var(--line); border-radius:8px; padding:8px 12px; margin:6px 0; }
+    .dx .nm { font-weight:700; } .dx .why { font-size:12.5px; color:var(--muted); margin-top:2px; } .dx .sp { flex:1; }
+    .dx.work { outline:2px solid var(--accent); }
+    .u-now { background:var(--r-bg); color:var(--r-ink); } .u-today { background:var(--a-bg); color:var(--a-ink); } .u-routine { background:var(--b-bg); color:var(--b-ink); }
+    .ref h4 { font-size:13.5px; margin:10px 0 3px; } .ref ul { margin:3px 0 6px 18px; padding:0; } .ref li { margin:2px 0; }
+    .ref .redbox { background:var(--r-bg); color:var(--r-ink); border-radius:6px; padding:6px 10px; margin:6px 0; }
+    .ref table td:first-child { font-weight:600; width:200px; white-space:normal; vertical-align:top; } .ref table td { white-space:normal; }
+    .ref .hit { outline:2px solid var(--accent); border-radius:8px; }
+    .typed input { width:90px; } th.num { text-align:right; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Neuro (non-stroke): weakness, cord, GBS, myasthenia, MS, subdural, vertigo</h1>
+    <div class="sub">Start from the problem, tick what you find, get a ranked list with the can't-miss diagnoses, chart checks (breathing, bladder, GCS, medicines, labs), tests and treatment, and a note draft. Read-only.</div>
+  </header>
+  <main>
+    <div class="banner"><b>Decision-support draft. It orders nothing.</b> Scores, thresholds and doses were written by Claude from general sources and have <b>not been verified</b>: check them with neurology, neurosurgery, pharmacy and local protocols before real use. Results are found by code and <b>name</b>, so something not shown may still be in the chart. Use made-up or Cerner sandbox patients until Island Health approves real data.</div>
+
+    <details class="card" open>
+      <summary><span>Patient and bedside findings</span><span class="muted" id="ptsum"></span></summary>
+      <div class="body">
+        <div id="pstatus" class="muted">Open from Cerner to read the chart, or pick a made-up patient:</div>
+        <div class="row"><select id="testsel"><option value="">Made-up patient…</option></select><button id="clear" hidden>Clear</button>
+          <label class="inl">Weight <input type="number" id="wt" min="25" max="350" step="0.1"> <span class="muted">kg</span></label></div>
+        <div class="row pres" id="pres"></div>
+        <div class="muted">Ticks with a blue "chart" label were set from the chart; untick them if they are wrong.</div>
+        <div id="ticks"></div>
+        <div id="errs" class="err"></div>
+      </div>
+    </details>
+
+    <div class="tiles" id="tiles"></div>
+
+    <details class="card" open><summary><span>Act now</span><span class="muted" id="alertsum"></span></summary><div class="body" id="alerts"></div></details>
+
+    <details class="card" open><summary><span>Most likely and can't-miss diagnoses</span><span class="muted" id="dxsum"></span></summary>
+      <div class="body"><div id="dxlist"></div><div class="src">Ranking is a simple weighted count of the ticked findings (unvalidated). It is a prompt, not a diagnosis.</div></div></details>
+
+    <details class="card" open><summary><span>Breathing: FVC / NIF / MEP (GBS, myasthenia)</span><span class="muted" id="brsum"></span></summary>
+      <div class="body"><div id="spark"></div><div class="scroll" id="brtable"></div>
+        <div class="row typed">Add a bedside value: <input type="datetime-local" id="b-t" style="width:auto"> FVC <input type="number" id="b-fvc" step="0.01" placeholder="L"> NIF <input type="number" id="b-nif" step="1" placeholder="cmH₂O"> MEP <input type="number" id="b-mep" step="1" placeholder="cmH₂O"> <button id="b-add" class="primary">Add</button></div>
+        <div class="src">20/30/40 rule: FVC under 20 mL/kg, NIF weaker than −30 cmH₂O, or MEP under 40 cmH₂O → ICU; also a fall of 30% or more. Values you add stay in this page only.</div></div></details>
+
+    <details class="card" open><summary><span>Medicines: myasthenia check, antithrombotics and reversal, MS therapy</span><span class="muted" id="medsum"></span></summary><div class="body" id="meds"></div></details>
+
+    <details class="card" open><summary><span>Labs from the chart</span><span class="muted" id="labsum"></span></summary><div class="body"><div class="scroll" id="labs"></div></div></details>
+
+    <details class="card" open><summary><span>Diagnosis card: tests and treatment</span><span class="muted">reference</span></summary>
+      <div class="body ref"><div class="row"><select id="cardsel"></select></div><div id="card"></div></div></details>
+
+    <details class="card noprint" open id="sec-note">
+      <summary><span>Note draft</span><span class="muted">check, edit, then paste into your PowerChart note</span></summary>
+      <div class="body" id="note"></div>
+    </details>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+  <script src="../../pdf-overlay.js?v=20261103a"></script>
+  <script src="rules.js?v=20261117a"></script>
+  <script src="reference.js?v=20261117a"></script>
+  <script src="chart.js?v=20261117a"></script>
+  <script src="samples.js?v=20261117a"></script>
+  <script src="../../notedraft.js?v=20261113a"></script>
+  <script src="app.js?v=20261117a"></script>
+</body>
+</html>
