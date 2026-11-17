@@ -396,7 +396,7 @@ async function copyText(txt) {
 
 async function init() {
   renderTemplates();
-  const launched = /[?&](code|state)=/.test(location.search) || sessionStorage.getItem("SMART_KEY");
+  const launched = /[?&](code|state|complete)=/.test(location.search) || sessionStorage.getItem("SMART_KEY");
   if (launched && window.FHIR && !window.FHIR_FAILED) {
     try { await loadFhir(await FHIR.oauth2.ready()); }
     catch (e) { console.error(e); $("#pt").textContent = "FHIR error: " + e.message; }
