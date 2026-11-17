@@ -803,10 +803,16 @@ async function start() {
     const client = await FHIR.oauth2.ready();
     ingest(await loadFHIR(client));
   } catch (e) {
-    if (!demo) console.warn("No SMART context - loading demo patient", e);
+    if (!demo) {
+      // Never fall back to the made-up patient silently - it could be mistaken for the real chart.
+      $("#banner").textContent = "Not connected";
+      $("#t-summary").innerHTML = `<div class="card"><div class="alert"><b>Not launched from the EHR</b> (${esc(e.message || e)}).<br>Launch via launch.html from PowerChart / the Cerner sandbox, or open <a href="?demo=1">demo mode</a> with a made-up patient.</div></div>`;
+      return;
+    }
     S.demo = true; ingest(demoData());
   }
   prefill(); render();
+  if (S.demo) $("main").insertAdjacentHTML("afterbegin", `<div class="warn" style="margin-bottom:10px"><b>DEMO - made-up patient.</b> Not real chart data.</div>`);
 }
 window.SeizureApp = { S, drivingRule, state, toSI, render };
 start();
