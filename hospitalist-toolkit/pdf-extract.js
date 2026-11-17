@@ -143,7 +143,7 @@
     const out = []; let sectionT = null;
     lines.forEach((ln, li) => {
       if (URINE.test(ln)) return; // urinalysis / urine chemistry: never read as blood values
-      if (DATE_HINT.test(ln)) { const d = findDate(ln); if (d && !/\d+(?:\.\d+)?\s*(?:-|–)\s*\d/.test(ln.replace(d ? "" : "", ""))) sectionT = d; }
+      if (DATE_HINT.test(ln)) { const d = findDate(ln); if (d && !/\d+(?:\.\d+)?\s*(?:-|–)\s*\d/.test(ln.replace(/\b\d{4}-\d{1,2}-\d{1,2}\b|\b\d{1,2}-\d{1,2}-\d{2,4}\b/g, ""))) sectionT = d; }
       const hits = [];
       LABS.forEach((def) => { def.re.lastIndex = 0; let m; while ((m = def.re.exec(ln))) { if (!m[0]) { def.re.lastIndex++; continue; } hits.push({ def, i: m.index, e: m.index + m[0].length }); } });
       hits.sort((a, b) => a.i - b.i || (b.e - b.i) - (a.e - a.i));
@@ -217,6 +217,18 @@
   function sectionAfter(text, re, n) { const m = re.exec(text); if (!m) return ""; return text.slice(m.index, m.index + (n || 700)).replace(/\s+/g, " ").trim(); }
   function procedureItems(lines, text, docT, fileName) {
     const out = [];
+    // A chart extract holding several reports, each under its own heading followed by a "Date of exam" line -> one report each
+    const EXAM_DATE = /date of (?:exam|study|procedure)/i, blocks = [];
+    for (let i = 0; i < lines.length; i++) {
+      if (!isHeading(lines[i]) || !(IMAGING.test(lines[i]) || /\b(?:cta|ct angio\w*|eeg|telemetry|ecg|ekg)\b/i.test(lines[i])) || !EXAM_DATE.test(lines[i + 1] || "")) continue;
+      let j = i + 2;
+      for (; j < lines.length; j++) if ((isHeading(lines[j]) && EXAM_DATE.test(lines[j + 1] || "")) || /\bpage \d+\s*$/i.test(lines[j])) break;
+      const body = lines.slice(i + 2, j).join("\n"), d = findDate(lines[i + 1]) || docT;
+      blocks.push({ kind: "report", key: "imaging", label: lines[i].trim(), text: (sectionAfter(body, /impression|conclusion/i, 800) || body.replace(/\s+/g, " ").trim()).slice(0, 800),
+        t: d ? d.t : null, ambiguous: !!(d && d.ambiguous), line: ("Report: " + lines[i].trim()).slice(0, 200), li: i });
+      i = j - 1;
+    }
+    if (blocks.length) return blocks;
     const all = text.match(new RegExp(ENDO.source, "ig")) || [], pick = all.find((x) => !/^endoscopy$/i.test(x)) || all[0], em = pick ? [pick] : null;
     if (em) {
       const concl = sectionAfter(text, /impression|conclusion|findings|summary|diagnosis/i, 800) || text.slice(0, 800).replace(/\s+/g, " ");

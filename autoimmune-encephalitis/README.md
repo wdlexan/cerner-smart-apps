@@ -27,6 +27,9 @@ Open `index.html?demo=1` up to `?demo=6`. There are links to the other patients 
 5. 29 F: post-HSV autoimmune encephalitis, with choreoathetosis 5 weeks after HSV
 6. 26 M: a mimic. First-episode psychosis with a normal workup, which should not meet the criteria
 
+## Test PDFs
+`test-pdfs/` holds made-up chart extracts for the same six patients, for the toolkit's **Import PDF** button. Run `python3 make-test-pdfs.py` to rebuild them.
+
 ## Manual mode
 Opening `index.html` directly, without a launch from the EHR, starts the app in manual mode. In manual mode you tick the findings yourself, and the criteria checks and the requisition still work. This lets anyone fill out the MitogenDx form without opening a chart.
 

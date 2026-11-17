@@ -1,0 +1,79 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, Amelia                    DOB: 2003-10-08     Sex: F
+MRN: TESTAE01                            Age: 23
+Admitted: 2026-11-10 (Hospitalist)
+
+HOSPITALIST ADMISSION NOTE
+Date of service: 2026-11-10 15:20
+23 F, no psychiatric history. Flu-like illness with headache 3 weeks ago, then insomnia,
+paranoia and auditory hallucinations over 10 days. Seen by psychiatry with first-episode
+psychosis and started on haloperidol. Over 48 h developed rigidity and CK rose; query
+neuroleptic malignant syndrome. Speech markedly reduced with periods of mutism.
+2026-11-10 14:00 BP: 168/96 HR: 148 RR: 22 Temp: 38.6 C SpO2: 97%
+
+HOSPITALIST PROGRESS NOTE
+Date of service: 2026-11-15 08:40
+Catatonic posturing, orofacial dyskinesias with lip-smacking and grimacing. Generalized
+tonic-clonic seizure overnight. Labile blood pressure and heart rate on telemetry
+(HR 52 to 148). Lumbar puncture 2026-11-12: CSF cell count 38 /uL, lymphocytic. CSF
+oligoclonal bands positive. HSV-1/2 PCR on CSF not detected. Paired serum and CSF sent to
+MitogenDx. Methylprednisolone started 2026-11-13, IVIG started 2026-11-15.
+2026-11-15 08:00 BP: 88/50 HR: 52 RR: 18 Temp: 37.9 C SpO2: 96%
+
+LABORATORY RESULTS
+Collected: 2026-11-14 05:30
+Test                      Result           Units           Reference       Flag
+
+Sodium                    139              mmol/L          135 - 145           
+
+Creatine kinase           3100             U/L             30 - 200        H   
+
+TSH                       1.8              mIU/L           0.35 - 5            
+
+Hemoglobin                124              g/L             120 - 160           
+
+Creatinine                68               umol/L          45 - 90             
+
+
+ACTIVE MEDICATION ORDERS (2026-11-14)
+Haloperidol 5 mg IM q6h PRN agitation
+Acyclovir 10 mg/kg IV q8h
+Methylprednisolone 1 g IV daily x 5 days (completed)
+Immune globulin (IVIG) 0.4 g/kg IV daily x 5 days
+Lorazepam 1 mg IV q4h PRN
+
+ACTIVE PROBLEM LIST
+Psychosis, unspecified
+Encephalitis, query autoimmune
+Ovarian mass, right
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Amelia MRN TESTAE01         Page 1
+
+RADIOLOGY AND NEURODIAGNOSTIC REPORTS
+
+MRI BRAIN WITH AND WITHOUT CONTRAST
+Date of exam: 2026-11-12 10:00
+FINDINGS:
+No abnormal signal. No abnormal enhancement. No diffusion restriction.
+IMPRESSION:
+No acute intracranial abnormality.
+
+EEG REPORT
+Date of exam: 2026-11-14 09:00
+FINDINGS:
+Diffuse slowing with extreme delta brush pattern. No electrographic seizures captured.
+IMPRESSION:
+Extreme delta brush; diffuse encephalopathy.
+
+ULTRASOUND PELVIS TRANSVAGINAL
+Date of exam: 2026-11-15 13:00
+FINDINGS:
+4.2 cm right ovarian lesion with echogenic fat and calcification.
+IMPRESSION:
+Consistent with mature cystic teratoma (dermoid) of the right ovary.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Amelia MRN TESTAE01         Page 2

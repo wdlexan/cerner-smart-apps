@@ -1,0 +1,63 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, Bernard                   DOB: 1959-10-08     Sex: M
+MRN: TESTAE02                            Age: 67
+Admitted: 2026-11-13 (Hospitalist)
+
+NEUROLOGY CONSULT NOTE
+Date of service: 2026-11-15 11:00
+67 M with 6 weeks of progressive short-term memory loss and disorientation. Wife
+describes many brief episodes a day where the left arm stiffens and the left side of the
+face pulls up for 2 to 3 seconds, consistent with faciobrachial dystonic seizures (FBDS).
+Not improved on levetiracetam. Hyponatremia felt to be SIADH. Lumbar puncture: CSF cell
+count 3 /uL, CSF protein mildly raised. HSV-1/2 PCR on CSF not detected.
+2026-11-15 08:00 BP: 134/80 HR: 74 RR: 16 Temp: 36.9 C SpO2: 97%
+
+LABORATORY RESULTS
+Collected: 2026-11-16 05:30
+Test                      Result           Units           Reference       Flag
+
+Sodium                    126              mmol/L          135 - 145       L   
+
+Potassium                 4.1              mmol/L          3.5 - 5.1           
+
+TSH                       2.1              mIU/L           0.35 - 5            
+
+Creatinine                92               umol/L          60 - 110            
+
+Hemoglobin                138              g/L             135 - 175           
+
+
+ACTIVE MEDICATION ORDERS (2026-11-16)
+Levetiracetam 750 mg PO BID
+Amlodipine 5 mg PO daily
+Fluid restriction 1.2 L/day
+
+ACTIVE PROBLEM LIST
+Essential hypertension
+Hyponatremia
+Memory loss, subacute
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Bernard MRN TESTAE02         Page 1
+
+RADIOLOGY AND NEURODIAGNOSTIC REPORTS
+
+MRI BRAIN WITH AND WITHOUT CONTRAST
+Date of exam: 2026-11-14 10:00
+FINDINGS:
+Bilateral mesial temporal FLAIR hyperintensity with mild hippocampal swelling, right greater
+than left. No enhancement or diffusion restriction.
+IMPRESSION:
+Bilateral mesial temporal FLAIR hyperintensity, in keeping with limbic encephalitis.
+
+EEG REPORT
+Date of exam: 2026-11-15 09:00
+FINDINGS:
+Intermittent right temporal sharp waves and right temporal slowing.
+IMPRESSION:
+Right temporal epileptiform activity.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Bernard MRN TESTAE02         Page 2

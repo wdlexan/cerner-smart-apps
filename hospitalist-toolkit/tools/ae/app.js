@@ -200,8 +200,16 @@ function detect() {
   const pleo = csfWbc.filter(o => obsVal(o).num > 5);
   set('csfPleo', pleo.slice(0, 3).map(o => `${ccText(o.code)} ${obsVal(o).str} (${fmtDate(obsDate(o))})`));
   if (!pleo.length && csfWbc.length) A.csfPleo.note = `Latest CSF WBC ${obsVal(csfWbc[0]).str} – not pleocytic`;
+  // Imported PDFs / free text: "CSF cell count 38 /uL", "CSF WBC 12"
+  if (!pleo.length) {
+    const tx = [];
+    S.texts.forEach(t => { const re = /\bCSF\b[^.\n]{0,40}?\b(cell count|wbc|white cells?|nucleated cells?|leukocytes?)\b[^\d\n]{0,15}(\d+(?:\.\d+)?)/ig; let m;
+      while ((m = re.exec(t.text))) { if (parseFloat(m[2]) > 5 && tx.length < 3) tx.push(`${t.source}: …${m[0].replace(/\s+/g, ' ')}…`); } });
+    if (tx.length) A.csfPleo = { on: true, ev: tx };
+  }
   const ocb = labsMatching(/(oligoclonal|igg index)/i).filter(o => /positive|present|detected|elevated|high|\bH\b/i.test(obsVal(o).str + ' ' + (o.interpretation ? ccText(o.interpretation[0]) : '')));
   set('csfOCB', ocb.slice(0, 2).map(o => `${ccText(o.code)}: ${obsVal(o).str}`));
+  if (!A.csfOCB.on) { const e = scanText(/oligoclonal bands?[^.\n]{0,25}\b(positive|present|detected)/i); if (e.length) A.csfOCB = { on: true, ev: e }; }
 
   // Sodium
   const na = labsMatching(/^(sodium|na\b)|sodium.*(serum|plasma|blood)/i, (o, n) => !/urine|ur\b/i.test(n));
@@ -322,6 +330,8 @@ function workup() {
   const lab = re => labsMatching(re);
   const row = (item, found, detail) => ({ item, found, detail });
   const csf = lab(/(csf|cerebrospinal|spinal fluid)/i);
+  const txt = re => S.texts.find(x => re.test(x.text));
+  const csfTxt = txt(/\b(CSF|lumbar puncture)\b/i), hsvTxt = txt(/\b(HSV|herpes simplex)\b[^.\n]{0,30}PCR/i);
   const hsv = lab(/(hsv|herpes simplex)/i);
   const abs = lab(/(nmda|lgi1|caspr|gaba|ampa|dppx|iglon|paraneoplastic|anti-?hu\b|\bma2\b|\bgad\b|aquaporin|\bmog\b)/i);
   const mri = t(/(mri|mr ).*(brain|head)|(brain|head).*(mri|mr\b)/i);
@@ -333,9 +343,9 @@ function workup() {
   const latest = arr => arr.length ? `${ccText(arr[0].code)}: ${obsVal(arr[0]).str} (${fmtDate(obsDate(arr[0]))})` : '';
   const latestT = arr => arr.length ? `${arr[0].source} (${fmtDate(arr[0].date)})` : '';
   return [
-    row('LP: cell count, protein, glucose', csf.length > 0, csf.slice(0, 3).map(o => `${ccText(o.code)} ${obsVal(o).str}`).join('; ')),
+    row('LP: cell count, protein, glucose', csf.length > 0 || !!csfTxt, csf.length ? csf.slice(0, 3).map(o => `${ccText(o.code)} ${obsVal(o).str}`).join('; ') : csfTxt ? 'mentioned in ' + csfTxt.source : ''),
     row('CSF oligoclonal bands / IgG index', lab(/oligoclonal|igg index/i).length > 0, latest(lab(/oligoclonal|igg index/i))),
-    row('HSV-1/2 (and VZV) PCR – keep acyclovir until negative', hsv.length > 0, hsv.map(o => obsVal(o).str).slice(0, 2).join('; ')),
+    row('HSV-1/2 (and VZV) PCR – keep acyclovir until negative', hsv.length > 0 || !!hsvTxt, hsv.length ? hsv.map(o => obsVal(o).str).slice(0, 2).join('; ') : hsvTxt ? 'mentioned in ' + hsvTxt.source : ''),
     row('Neural antibody panels – paired serum + CSF (MitogenDx)', abs.length > 0, abs.slice(0, 4).map(o => `${ccText(o.code)}: ${obsVal(o).str}`).join('; ')),
     row('MRI brain with gadolinium (FLAIR, DWI)', mri.length > 0, latestT(mri)),
     row('EEG (continuous if fluctuating LOC – NCSE?)', eeg.length > 0, latestT(eeg)),
@@ -359,7 +369,8 @@ function treatment() {
   const starts = first.map(m => new Date(m.authoredOn)).filter(d => !isNaN(d));
   const start = starts.length ? new Date(Math.min(...starts)) : null;
   const days = start ? Math.floor((Date.now() - start) / DAY) : null;
-  const hsvNeg = labsMatching(/(hsv|herpes simplex)/i).some(o => /not detected|negative/i.test(obsVal(o).str));
+  const hsvNeg = labsMatching(/(hsv|herpes simplex)/i).some(o => /not detected|negative/i.test(obsVal(o).str)) ||
+    S.texts.some(t => /\b(HSV|herpes simplex)\b[^.\n]{0,30}PCR[^.\n]{0,30}(not detected|negative)/i.test(t.text));
   return { first, second, maint, antipsych, acyclo, pjp, start, days, hsvNeg, plex: !!S.user.plexDone };
 }
 

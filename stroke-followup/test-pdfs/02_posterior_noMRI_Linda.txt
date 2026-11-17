@@ -1,0 +1,71 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, Linda                     DOB: 1968-09-02     Sex: F
+MRN: TESTSTK02                           Age: 58
+ED arrival: 2026-11-16 23:30    Admitted: 2026-11-17 03:30 (Hospitalist)
+
+ED PHYSICIAN NOTE
+Date of service: 2026-11-17 00:30
+Sudden onset vertigo at 06:30 this morning with vomiting. Unable to walk without assistance,
+falls to the left. Nystagmus on left gaze. NIHSS 2 (ataxia). CT and CTA negative. Discussed
+with neurology: not a lytic candidate given mild deficits outside window. Admit to
+hospitalist, MRI.
+
+NURSING NOTE
+Date of service: 2026-11-17 07:30
+Still dizzy, vomiting x2. Gait unsteady, needs assist of 2. Passed bedside swallow screen.
+
+VITAL SIGNS
+2026-11-16 23:42 BP: 168/88 HR: 84 Temp: 36.8 C SpO2: 98%
+2026-11-17 01:30 BP: 174/90 HR: 84 Temp: 36.8 C SpO2: 98%
+2026-11-17 04:30 BP: 162/84 HR: 84 Temp: 36.8 C SpO2: 98%
+2026-11-17 07:30 BP: 158/82 HR: 84 Temp: 36.8 C SpO2: 98%
+2026-11-17 09:00 BP: 160/80 HR: 84 Temp: 36.8 C SpO2: 98%
+
+LABORATORY RESULTS
+Collected: 2026-11-16 23:48
+Test                      Result           Units           Reference       Flag
+
+Glucose                   6.4              mmol/L          3.6 - 7.8           
+
+Creatinine                71               umol/L          45 - 90             
+
+Hemoglobin                132              g/L             120 - 160           
+
+
+MEDICATIONS GIVEN
+Acetylsalicylic acid 160 mg PO once 2026-11-17 02:30
+
+ACTIVE MEDICATION ORDERS (2026-11-17)
+Acetylsalicylic acid 81 mg PO daily
+Dimenhydrinate 25 mg IV q6h PRN
+
+ACTIVE ORDERS
+MRI brain without contrast
+
+PROCEDURES
+None
+
+ACTIVE PROBLEM LIST
+Hypertension
+Dyslipidemia
+Vertigo, acute
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Linda MRN TESTSTK02         Page 1
+
+RADIOLOGY AND CARDIAC REPORTS
+
+CT HEAD WITHOUT CONTRAST
+Date of exam: 2026-11-17 00:00
+IMPRESSION:
+No acute intracranial abnormality. No hemorrhage.
+
+CTA HEAD AND NECK
+Date of exam: 2026-11-17 00:06
+IMPRESSION:
+No large vessel occlusion. Vertebral and basilar arteries patent. No significant stenosis.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Linda MRN TESTSTK02         Page 2

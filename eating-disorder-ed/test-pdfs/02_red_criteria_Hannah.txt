@@ -1,0 +1,85 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, Hannah                    DOB: 2002-07-21     Sex: F
+MRN: TESTEDR02                           Age: 24
+Height: 163 cm      ED visit in progress since 2026-11-17 06:30
+
+ED PHYSICIAN NOTE (TODAY)
+Date of service: 2026-11-17 08:00
+Syncope at home, collapsed in kitchen. Refusing to eat for 4 days, drinking small amounts.
+Passive suicidal thoughts. Bradycardic to 38. ECG sinus bradycardia, QTc 476 ms.
+2026-11-17 06:48 BP: 86/54 HR: 41 Temp: 35.7 C Weight: 36.0 kg
+2026-11-17 08:30 BP: 84/52 HR: 38 Temp: 35.7 C
+
+LABORATORY RESULTS
+Collected: 2026-11-17 07:30
+Test                      Result           Units           Reference       Flag
+
+Potassium                 2.8              mmol/L          3.5 - 5.1       L   
+
+Sodium                    133              mmol/L          135 - 145       L   
+
+Phosphate                 0.62             mmol/L          0.80 - 1.45     L   
+
+Magnesium                 0.66             mmol/L          0.70 - 1.00     L   
+
+Glucose                   3.1              mmol/L          3.6 - 7.8       L   
+
+Hemoglobin                104              g/L             120 - 160       L   
+
+White blood cell count    2.9              x10^9/L         4.0 - 11.0      L   
+
+Albumin                   33               g/L             35 - 50         L   
+
+ALT                       145              U/L             0 - 40          H   
+
+
+ACTIVE MEDICATION ORDERS
+Fluoxetine 20 mg PO daily
+
+ACTIVE PROBLEM LIST
+Anorexia nervosa, restricting type
+Major depressive disorder
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Hannah MRN TESTEDR02         Page 1
+
+EATING DISORDER PROGRAM CLINIC NOTE
+Date of service: 2026-11-03 09:30
+Weight 39.0 kg, down from 40.2. Restricting to one small meal a day. Plan reviewed.
+2026-11-03 09:30 BP: 94/60 HR: 50 Temp: 36.3 C Weight: 39.0 kg
+
+PRIOR ED VISITS
+
+ED VISIT - Fatigue (discharged home)
+Date of service: 2026-06-10 12:30
+ED physician note: Fatigue. Discharged with eating disorder program referral.
+2026-06-10 10:30 BP: 94/60 HR: 48 Temp: 36.2 C Weight: 41.5 kg
+
+LABORATORY RESULTS
+Collected: 2026-06-10 11:30
+Test                      Result           Units           Reference       Flag
+
+Potassium                 3.6              mmol/L          3.5 - 5.1           
+
+Phosphate                 0.9              mmol/L          0.80 - 1.45         
+
+Glucose                   4.2              mmol/L          3.6 - 7.8           
+
+
+ED VISIT - Dizziness (discharged home)
+Date of service: 2026-08-19 12:30
+ED physician note: Dizziness. Declined admission. Psychiatry saw patient.
+2026-08-19 10:30 BP: 90/58 HR: 45 Temp: 36.0 C Weight: 40.2 kg
+
+LABORATORY RESULTS
+Collected: 2026-08-19 11:30
+Test                      Result           Units           Reference       Flag
+
+Potassium                 3.4              mmol/L          3.5 - 5.1       L   
+
+Phosphate                 0.82             mmol/L          0.80 - 1.45         
+
+Glucose                   3.9              mmol/L          3.6 - 7.8           
+
+

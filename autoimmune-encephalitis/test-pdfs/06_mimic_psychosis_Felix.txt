@@ -1,0 +1,55 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, Felix                     DOB: 2000-10-08     Sex: M
+MRN: TESTAE06                            Age: 26
+Admitted: 2026-11-14 (Hospitalist)
+
+PSYCHIATRY CONSULT NOTE
+Date of service: 2026-11-15 13:00
+26 M with 8 months of gradual social withdrawal, then paranoid delusions and auditory
+hallucinations. Daily cannabis. No seizures. No abnormal movements, no dyskinesias.
+No catatonia. Neurological exam normal. Tolerating risperidone without extrapyramidal
+side effects. Medicine asked to rule out an organic cause. Lumbar puncture: CSF cell
+count 1 /uL. HSV-1/2 PCR not detected.
+2026-11-15 08:00 BP: 124/76 HR: 78 RR: 14 Temp: 36.7 C SpO2: 99%
+
+LABORATORY RESULTS
+Collected: 2026-11-14 05:30
+Test                      Result           Units           Reference       Flag
+
+Sodium                    140              mmol/L          135 - 145           
+
+TSH                       1.4              mIU/L           0.35 - 5            
+
+Creatinine                88               umol/L          60 - 110            
+
+
+ACTIVE MEDICATION ORDERS (2026-11-14)
+Risperidone 2 mg PO daily
+
+ACTIVE PROBLEM LIST
+First episode psychosis
+Cannabis use disorder
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Felix MRN TESTAE06         Page 1
+
+RADIOLOGY AND NEURODIAGNOSTIC REPORTS
+
+MRI BRAIN WITH AND WITHOUT CONTRAST
+Date of exam: 2026-11-14 10:00
+FINDINGS:
+Normal appearance of the brain.
+IMPRESSION:
+Normal MRI of the brain.
+
+EEG REPORT
+Date of exam: 2026-11-15 09:00
+FINDINGS:
+Normal awake and drowsy recording.
+IMPRESSION:
+Normal EEG.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Felix MRN TESTAE06         Page 2

@@ -173,4 +173,8 @@ ok("med held per note", hm.find((i) => i.label === "Pramipexole").held === true 
 ok("med route before name kept", /Ceftriaxone 1 g IV daily/.test(hm.find((i) => i.label === "Ceftriaxone").text), hm.find((i) => i.label === "Ceftriaxone"));
 const hr = X.toResource(Object.assign({}, hm[0], { held: true }), { fileName: "f", patientId: "p", now: 0 });
 ok("held med -> on-hold order, text once", hr.status === "on-hold" && !hr.dosageInstruction && /0\.5 mg/.test(hr.medicationCodeableConcept.text), hr);
+// ISO dates on "Collected:" lines start a new section (the hyphens are not a reference range)
+r = X.fromText("LABORATORY RESULTS\nCollected: 2026-11-08 11:30\n\nPhosphate   0.82   mmol/L   0.80 - 1.45\n\nLABORATORY RESULTS\nCollected: 2026-11-09 11:30\n\nPhosphate   0.35   mmol/L   0.80 - 1.45   L\n", { fileName: "daily.pdf" });
+const ph = r.items.filter((i) => i.key === "phos");
+ok("ISO Collected dates per section", ph.length === 2 && X.iso(ph[1].t) === "2026-11-09" && X.iso(ph[0].t) === "2026-11-08", ph.map((i) => [i.value, X.iso(i.t)]));
 console.log(`\n${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);

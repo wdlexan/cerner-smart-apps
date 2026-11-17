@@ -1,0 +1,101 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, Nora                      DOB: 1984-02-17     Sex: F
+MRN: TESTSTK03                           Age: 42
+ED arrival: 2026-11-14 09:30    Admitted: 2026-11-14 14:30 (Hospitalist)
+
+ED PHYSICIAN NOTE
+Date of service: 2026-11-14 10:30
+Sudden left hand weakness and clumsiness on waking. NIHSS 3. Non-smoker. No hypertension or
+diabetes. CT/CTA negative. Neurology: not a lytic candidate (wake-up, mild). Aspirin, admit,
+MRI.
+
+HOSPITALIST PROGRESS NOTE
+Date of service: 2026-11-15 15:30
+MRI shows small right frontal cortical infarct. Passed swallow screen. Plan: echo with
+bubble, telemetry, lipids, A1c.
+
+HOSPITALIST PROGRESS NOTE
+Date of service: 2026-11-17 04:30
+Echo: PFO with atrial septal aneurysm and large shunt. Telemetry sinus rhythm throughout.
+Considering embolic stroke of undetermined source with PFO.
+
+VITAL SIGNS
+2026-11-14 10:30 BP: 138/84 HR: 72 Temp: 36.7 C SpO2: 99%
+2026-11-14 21:30 BP: 132/80 HR: 72 Temp: 36.7 C SpO2: 99%
+2026-11-15 21:30 BP: 128/78 HR: 72 Temp: 36.7 C SpO2: 99%
+2026-11-16 21:30 BP: 126/76 HR: 72 Temp: 36.7 C SpO2: 99%
+2026-11-17 07:30 BP: 130/78 HR: 72 Temp: 36.7 C SpO2: 99%
+
+LABORATORY RESULTS
+Collected: 2026-11-14 09:48
+Test                      Result           Units           Reference       Flag
+
+Glucose                   5.6              mmol/L          3.6 - 7.8           
+
+Creatinine                64               umol/L          45 - 90             
+
+LABORATORY RESULTS
+Collected: 2026-11-15 09:30
+Test                      Result           Units           Reference       Flag
+
+LDL cholesterol           2.9              mmol/L          < 2.0           H   
+
+Hemoglobin A1c            5.4              %               < 6.0               
+
+
+MEDICATIONS GIVEN
+
+ACTIVE MEDICATION ORDERS (2026-11-17)
+Acetylsalicylic acid 81 mg PO daily
+Atorvastatin 40 mg PO daily
+Enoxaparin 40 mg SC daily
+
+ACTIVE ORDERS
+Telemetry
+Physical therapy consult
+Occupational therapy consult
+
+PROCEDURES
+None
+
+ACTIVE PROBLEM LIST
+Migraine
+Acute ischemic stroke, right frontal
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Nora MRN TESTSTK03         Page 1
+
+RADIOLOGY AND CARDIAC REPORTS
+
+CT HEAD WITHOUT CONTRAST
+Date of exam: 2026-11-14 10:00
+IMPRESSION:
+No acute hemorrhage.
+
+CTA HEAD AND NECK
+Date of exam: 2026-11-14 10:06
+IMPRESSION:
+No large vessel occlusion. No dissection. No significant stenosis.
+
+MRI BRAIN
+Date of exam: 2026-11-15 05:30
+IMPRESSION:
+Small acute infarct with restricted diffusion in the right frontal cortex (precentral
+gyrus), 1.2 cm. No hemorrhage.
+
+ECHOCARDIOGRAM WITH BUBBLE STUDY
+Date of exam: 2026-11-16 09:30
+IMPRESSION:
+Normal LV size and function. Atrial septal aneurysm with patent foramen ovale; large
+right-to-left shunt with more than 20 microbubbles at rest and with Valsalva. No LV
+thrombus.
+
+TELEMETRY SUMMARY
+Date of exam: 2026-11-17 05:30
+IMPRESSION:
+72 h telemetry: sinus rhythm throughout, no arrhythmia detected.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Nora MRN TESTSTK03         Page 2

@@ -1,0 +1,48 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, Daniel                    DOB: 1992-10-08     Sex: M
+MRN: TESTAE04                            Age: 34
+Admitted: 2026-11-15 (Hospitalist)
+
+HOSPITALIST ADMISSION NOTE
+Date of service: 2026-11-15 16:00
+34 M with 2 months of excessive daytime sleepiness (hypersomnia), sleeping 16 h a day,
+and short-term memory loss. Vertical gaze limitation on exam. No fever. Testicular exam
+not documented. Lumbar puncture: CSF cell count 9 /uL. HSV-1/2 PCR not detected.
+Acyclovir started pending results.
+2026-11-15 15:00 BP: 118/72 HR: 66 RR: 14 Temp: 36.7 C SpO2: 99%
+
+LABORATORY RESULTS
+Collected: 2026-11-16 05:30
+Test                      Result           Units           Reference       Flag
+
+Sodium                    141              mmol/L          135 - 145           
+
+Creatinine                84               umol/L          60 - 110            
+
+Hemoglobin                152              g/L             135 - 175           
+
+
+ACTIVE MEDICATION ORDERS (2026-11-16)
+Acyclovir 10 mg/kg IV q8h
+
+ACTIVE PROBLEM LIST
+Hypersomnia
+Memory loss, subacute
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Daniel MRN TESTAE04         Page 1
+
+RADIOLOGY AND NEURODIAGNOSTIC REPORTS
+
+MRI BRAIN WITH AND WITHOUT CONTRAST
+Date of exam: 2026-11-15 12:00
+FINDINGS:
+Bilateral hippocampal FLAIR hyperintensity with additional hypothalamic and upper brainstem
+T2 signal change. Faint enhancement.
+IMPRESSION:
+Bilateral mesial temporal and diencephalic signal change, query paraneoplastic encephalitis.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Daniel MRN TESTAE04         Page 2

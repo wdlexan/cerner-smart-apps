@@ -1,0 +1,201 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, Sophie                    DOB: 1997-03-09     Sex: F
+MRN: TESTEDR01                           Age: 29
+Height: 165 cm      ED visit in progress since 2026-11-17 05:30
+
+ED PHYSICIAN NOTE (TODAY)
+Date of service: 2026-11-17 07:30
+Known anorexia nervosa. Presents with weakness after vomiting 3-4 times this week. Denies
+suicidal ideation. Eating small meals. Drinking fluids. No syncope. ECG sinus rhythm, QTc
+442 ms.
+2026-11-17 06:00 BP: 99/63 HR: 54 Temp: 36.5 C Weight: 43.8 kg
+2026-11-17 08:30 BP: 97/62 HR: 52 Temp: 36.5 C
+
+LABORATORY RESULTS
+Collected: 2026-11-17 06:30
+Test                      Result           Units           Reference       Flag
+
+Potassium                 3.2              mmol/L          3.5 - 5.1       L   
+
+Sodium                    137              mmol/L          135 - 145           
+
+Phosphate                 0.94             mmol/L          0.80 - 1.45         
+
+Magnesium                 0.78             mmol/L          0.70 - 1.00         
+
+Glucose                   4.7              mmol/L          3.6 - 7.8           
+
+Hemoglobin                121              g/L             120 - 160           
+
+White blood cell count    4.6              x10^9/L         4.0 - 11.0          
+
+Albumin                   38               g/L             35 - 50             
+
+ALT                       32               U/L             0 - 40              
+
+
+ACTIVE MEDICATION ORDERS
+Sertraline 100 mg PO daily
+Multivitamin PO daily
+
+ACTIVE PROBLEM LIST
+Anorexia nervosa, binge-eating/purging type
+Generalized anxiety disorder
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Sophie MRN TESTEDR01         Page 1
+
+INTERDISCIPLINARY CARE PLAN
+Date of service: 2025-11-02 09:30
+ED care plan for frequent presentations. Medical admission only if red MEED criteria are
+met. If medically stable: replace electrolytes in ED, contact the eating disorder program
+next business day, follow-up with family doctor within 1 week. Contact: ED program intake.
+Psychiatry consult only if suicidal ideation.
+
+PRIOR ED VISITS
+
+ED VISIT - Dizziness (discharged home)
+Date of service: 2025-05-26 12:30
+ED physician note: Presents with dizziness after vomiting. Tolerated oral intake. Discharged
+with eating disorder program follow-up.
+2025-05-26 10:30 BP: 100/64 HR: 54 Temp: 36.5 C Weight: 46.5 kg
+
+LABORATORY RESULTS
+Collected: 2025-05-26 11:30
+Test                      Result           Units           Reference       Flag
+
+Potassium                 3.4              mmol/L          3.5 - 5.1       L   
+
+Phosphate                 0.98             mmol/L          0.80 - 1.45         
+
+Glucose                   4.8              mmol/L          3.6 - 7.8           
+
+
+ED VISIT - Hypokalemia (admitted 4 days)
+Date of service: 2025-08-04 12:30
+ED physician note: Hypokalemia 2.7 after daily vomiting. Admitted for IV potassium and
+phosphate replacement. Refeeding syndrome precautions. ECG QTc 462 ms.
+2025-08-04 10:30 BP: 95/60 HR: 49 Temp: 36.3 C Weight: 45.0 kg
+
+LABORATORY RESULTS
+Collected: 2025-08-04 11:30
+Test                      Result           Units           Reference       Flag
+
+Potassium                 2.7              mmol/L          3.5 - 5.1       L   
+
+Phosphate                 0.74             mmol/L          0.80 - 1.45     L   
+
+Glucose                   4.1              mmol/L          3.6 - 7.8           
+
+
+ED VISIT - Abdominal pain (discharged home)
+Date of service: 2025-10-13 12:30
+ED physician note: Abdominal pain, benign exam. Seen by psychiatry in ED. Care plan
+reviewed.
+2025-10-13 10:30 BP: 102/66 HR: 56 Temp: 36.6 C Weight: 46.0 kg
+
+LABORATORY RESULTS
+Collected: 2025-10-13 11:30
+Test                      Result           Units           Reference       Flag
+
+Potassium                 3.5              mmol/L          3.5 - 5.1           
+
+Glucose                   5.0              mmol/L          3.6 - 7.8           
+
+
+ED VISIT - Weakness (discharged home)
+Date of service: 2025-12-22 12:30
+ED physician note: Generalized weakness. Potassium replaced orally. Discharged per care
+plan.
+2025-12-22 10:30 BP: 98/62 HR: 52 Temp: 36.4 C Weight: 45.2 kg
+
+LABORATORY RESULTS
+Collected: 2025-12-22 11:30
+Test                      Result           Units           Reference       Flag
+
+Potassium                 3.3              mmol/L          3.5 - 5.1       L   
+
+Phosphate                 0.92             mmol/L          0.80 - 1.45         
+
+Glucose                   4.6              mmol/L          3.6 - 7.8           
+
+
+ED VISIT - Palpitations (discharged home)
+Date of service: 2026-03-02 12:30
+ED physician note: Palpitations, ECG sinus rhythm. Dietitian follow-up arranged.
+2026-03-02 10:30 BP: 97/63 HR: 51 Temp: 36.5 C Weight: 44.8 kg
+
+LABORATORY RESULTS
+Collected: 2026-03-02 11:30
+Test                      Result           Units           Reference       Flag
+
+Potassium                 3.2              mmol/L          3.5 - 5.1       L   
+
+Glucose                   4.4              mmol/L          3.6 - 7.8           
+
+
+ED VISIT - Presyncope (admitted 3 days)
+Date of service: 2026-05-01 12:30
+ED physician note: Presyncope. Orthostatic. IV fluids, then admitted for monitoring. ECG QTc
+448 ms.
+2026-05-01 10:30 BP: 92/58 HR: 47 Temp: 36.2 C Weight: 43.9 kg
+
+LABORATORY RESULTS
+Collected: 2026-05-01 11:30
+Test                      Result           Units           Reference       Flag
+
+Potassium                 3.0              mmol/L          3.5 - 5.1       L   
+
+Phosphate                 0.85             mmol/L          0.80 - 1.45         
+
+Glucose                   4.0              mmol/L          3.6 - 7.8           
+
+
+ED VISIT - Anxiety (discharged home)
+Date of service: 2026-07-10 12:30
+ED physician note: Anxiety, denies suicidal ideation. Discharged with mental health worker
+follow-up.
+2026-07-10 10:30 BP: 101/65 HR: 55 Temp: 36.6 C Weight: 44.5 kg
+
+LABORATORY RESULTS
+Collected: 2026-07-10 11:30
+Test                      Result           Units           Reference       Flag
+
+Potassium                 3.6              mmol/L          3.5 - 5.1           
+
+Glucose                   4.9              mmol/L          3.6 - 7.8           
+
+
+ED VISIT - Vomiting (discharged home)
+Date of service: 2026-09-03 12:30
+ED physician note: Vomiting several times a week. Electrolytes replaced. Discharged with
+family doctor follow-up.
+2026-09-03 10:30 BP: 99/61 HR: 53 Temp: 36.4 C Weight: 44.2 kg
+
+LABORATORY RESULTS
+Collected: 2026-09-03 11:30
+Test                      Result           Units           Reference       Flag
+
+Potassium                 3.3              mmol/L          3.5 - 5.1       L   
+
+Phosphate                 0.9              mmol/L          0.80 - 1.45         
+
+Glucose                   4.6              mmol/L          3.6 - 7.8           
+
+
+ED VISIT - Chest discomfort (discharged home)
+Date of service: 2026-10-18 12:30
+ED physician note: Atypical chest discomfort, ECG normal, troponin negative. Discharged per
+care plan. ECG QTc 440 ms.
+2026-10-18 10:30 BP: 98/62 HR: 52 Temp: 36.5 C Weight: 44.0 kg
+
+LABORATORY RESULTS
+Collected: 2026-10-18 11:30
+Test                      Result           Units           Reference       Flag
+
+Potassium                 3.4              mmol/L          3.5 - 5.1       L   
+
+Glucose                   4.7              mmol/L          3.6 - 7.8           
+
+

@@ -1,0 +1,68 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, Marcus                    DOB: 1992-01-15     Sex: M
+MRN: TESTEDR03                           Age: 34
+Height: 178 cm      ED visit in progress since 2026-11-17 08:00
+
+TRIAGE NOTE (TODAY)
+Date of service: 2026-11-17 09:00
+Vomiting since last night. Labs drawn, pending. No ECG yet.
+2026-11-17 08:18 BP: 112/70 HR: 76 Temp: 36.7 C
+
+ACTIVE MEDICATION ORDERS
+Insulin glargine 100 unit/mL SC daily
+Insulin lispro 100 unit/mL SC with meals
+
+ACTIVE PROBLEM LIST
+Bulimia nervosa
+Type 1 diabetes mellitus
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Marcus MRN TESTEDR03         Page 1
+
+PRIOR ED VISITS
+
+ED VISIT - Hyperglycemia (discharged home)
+Date of service: 2026-01-21 12:30
+ED physician note: Hyperglycemia with insulin omission. Discharged.
+2026-01-21 10:30 BP: 118/74 HR: 72 Temp: 36.7 C Weight: 63 kg
+
+LABORATORY RESULTS
+Collected: 2026-01-21 11:30
+Test                      Result           Units           Reference       Flag
+
+Potassium                 3.3              mmol/L          3.5 - 5.1       L   
+
+Glucose                   14.2             mmol/L          3.6 - 7.8       H   
+
+
+ED VISIT - DKA (admitted 3 days)
+Date of service: 2026-05-21 12:30
+ED physician note: Mild DKA after insulin restriction. Admitted to medicine.
+2026-05-21 10:30 BP: 104/66 HR: 88 Temp: 36.8 C Weight: 61 kg
+
+LABORATORY RESULTS
+Collected: 2026-05-21 11:30
+Test                      Result           Units           Reference       Flag
+
+Potassium                 3.1              mmol/L          3.5 - 5.1       L   
+
+Phosphate                 0.8              mmol/L          0.80 - 1.45         
+
+Glucose                   22.5             mmol/L          3.6 - 7.8       H   
+
+
+ED VISIT - Vomiting (discharged home)
+Date of service: 2026-09-18 12:30
+ED physician note: Vomiting after binge. Tolerating fluids. Discharged with GP follow-up.
+2026-09-18 10:30 BP: 116/72 HR: 70 Temp: 36.6 C Weight: 62 kg
+
+LABORATORY RESULTS
+Collected: 2026-09-18 11:30
+Test                      Result           Units           Reference       Flag
+
+Potassium                 3.5              mmol/L          3.5 - 5.1           
+
+Glucose                   11.0             mmol/L          3.6 - 7.8       H   
+
+

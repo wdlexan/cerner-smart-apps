@@ -1,0 +1,71 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, Carol                     DOB: 1962-10-08     Sex: F
+MRN: TESTAE03                            Age: 64
+Admitted: 2026-11-01 (Hospitalist)
+
+HOSPITALIST PROGRESS NOTE
+Date of service: 2026-11-16 09:00
+64 F, current smoker 45 pack-years. Presented with new seizures progressing to status
+epilepticus, now confusion and short-term memory loss. Seizures still breaking through on
+two antiseizure medications. Minimal improvement since steroids started 2026-11-02.
+CT chest shows a right hilar mass, bronchoscopy pending; small cell lung cancer
+suspected. Lumbar puncture 2026-11-01: CSF cell count 12 /uL. HSV-1/2 PCR not detected.
+2026-11-16 08:00 BP: 126/74 HR: 92 RR: 18 Temp: 37.1 C SpO2: 94%
+
+LABORATORY RESULTS
+Collected: 2026-11-16 05:30
+Test                      Result           Units           Reference       Flag
+
+Sodium                    136              mmol/L          135 - 145           
+
+Glucose                   9.8              mmol/L          3.6 - 7.8       H   
+
+Creatinine                71               umol/L          45 - 90             
+
+Hemoglobin                121              g/L             120 - 160           
+
+
+ACTIVE MEDICATION ORDERS (2026-11-16)
+Methylprednisolone 1 g IV daily x 5 days (completed 2026-11-06)
+Prednisone 60 mg PO daily
+Levetiracetam 1500 mg PO BID
+Lacosamide 200 mg PO BID
+Pantoprazole 40 mg PO daily
+
+ACTIVE PROBLEM LIST
+COPD
+Lung mass, right hilar
+Status epilepticus, resolved
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Carol MRN TESTAE03         Page 1
+
+RADIOLOGY AND NEURODIAGNOSTIC REPORTS
+
+MRI BRAIN WITH AND WITHOUT CONTRAST
+Date of exam: 2026-11-02 10:00
+FINDINGS:
+Left mesial temporal T2/FLAIR hyperintensity involving the hippocampus and amygdala. No
+enhancement.
+IMPRESSION:
+Left mesial temporal FLAIR hyperintensity, query limbic encephalitis.
+
+CT CHEST WITH CONTRAST
+Date of exam: 2026-11-04 14:00
+FINDINGS:
+3.4 cm right hilar mass with bulky mediastinal adenopathy.
+IMPRESSION:
+Suspicious for small cell carcinoma.
+
+EEG REPORT
+Date of exam: 2026-11-03 09:00
+FINDINGS:
+Frequent left temporal epileptiform discharges; electrographic seizures arising from the
+left temporal region.
+IMPRESSION:
+Left temporal seizures.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Carol MRN TESTAE03         Page 2

@@ -1,0 +1,216 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, Claire                    DOB: 1994-05-30     Sex: F
+MRN: TESTEDR04                           Age: 32
+Height: 160 cm      Admitted to Internal Medicine 2026-11-08 15:30 (day 9)
+
+INTERNAL MEDICINE ADMISSION NOTE
+Date of service: 2026-11-08 12:30
+Admitted to GIM for supervised feeding. HR 38, food refusal 6 days. Refeeding protocol
+started with dietitian. Psychiatry liaison consulted.
+
+INTERNAL MEDICINE PROGRESS NOTE
+Date of service: 2026-11-14 13:30
+Glucose 3.7 one hour after lunch, postprandial, asymptomatic, resolved. Phosphate replaced
+earlier in admission, now stable. Tolerating full meal plan. ECG QTc 446 ms.
+
+DAILY VITALS AND LABS
+
+2026-11-08 11:30 BP: 92/58 HR: 38 Temp: 36.2 C Weight: 34.0 kg
+
+LABORATORY RESULTS
+Collected: 2026-11-08 11:30
+Test                      Result           Units           Reference       Flag
+
+Potassium                 3.5              mmol/L          3.5 - 5.1           
+
+Phosphate                 0.82             mmol/L          0.80 - 1.45         
+
+Sodium                    136              mmol/L          135 - 145           
+
+Bicarbonate               28               mmol/L          22 - 29             
+
+Glucose                   4.8              mmol/L          3.6 - 7.8           
+
+
+2026-11-09 11:30 BP: 93/58 HR: 39 Temp: 36.2 C
+
+LABORATORY RESULTS
+Collected: 2026-11-09 11:30
+Test                      Result           Units           Reference       Flag
+
+Potassium                 3.5              mmol/L          3.5 - 5.1           
+
+Phosphate                 0.35             mmol/L          0.80 - 1.45     L   
+
+Sodium                    136              mmol/L          135 - 145           
+
+Bicarbonate               28               mmol/L          22 - 29             
+
+Glucose                   4.8              mmol/L          3.6 - 7.8           
+
+
+2026-11-10 11:30 BP: 94/58 HR: 40 Temp: 36.2 C
+
+LABORATORY RESULTS
+Collected: 2026-11-10 11:30
+Test                      Result           Units           Reference       Flag
+
+Potassium                 3.5              mmol/L          3.5 - 5.1           
+
+Phosphate                 0.82             mmol/L          0.80 - 1.45         
+
+Sodium                    136              mmol/L          135 - 145           
+
+Bicarbonate               28               mmol/L          22 - 29             
+
+Glucose                   4.8              mmol/L          3.6 - 7.8           
+
+
+2026-11-11 11:30 BP: 95/58 HR: 47 Temp: 36.2 C Weight: 34.5 kg
+
+LABORATORY RESULTS
+Collected: 2026-11-11 11:30
+Test                      Result           Units           Reference       Flag
+
+Potassium                 3.5              mmol/L          3.5 - 5.1           
+
+Phosphate                 0.82             mmol/L          0.80 - 1.45         
+
+Sodium                    136              mmol/L          135 - 145           
+
+Bicarbonate               28               mmol/L          22 - 29             
+
+Glucose                   4.8              mmol/L          3.6 - 7.8           
+
+
+2026-11-12 11:30 BP: 96/58 HR: 44 Temp: 36.2 C
+
+LABORATORY RESULTS
+Collected: 2026-11-12 11:30
+Test                      Result           Units           Reference       Flag
+
+Potassium                 2.9              mmol/L          3.5 - 5.1       L   
+
+Phosphate                 0.82             mmol/L          0.80 - 1.45         
+
+Sodium                    136              mmol/L          135 - 145           
+
+Bicarbonate               28               mmol/L          22 - 29             
+
+Glucose                   4.8              mmol/L          3.6 - 7.8           
+
+
+2026-11-13 11:30 BP: 97/58 HR: 45 Temp: 36.2 C
+
+LABORATORY RESULTS
+Collected: 2026-11-13 11:30
+Test                      Result           Units           Reference       Flag
+
+Potassium                 3.5              mmol/L          3.5 - 5.1           
+
+Phosphate                 0.82             mmol/L          0.80 - 1.45         
+
+Sodium                    136              mmol/L          135 - 145           
+
+Bicarbonate               28               mmol/L          22 - 29             
+
+Glucose                   4.8              mmol/L          3.6 - 7.8           
+
+
+2026-11-14 11:30 BP: 98/58 HR: 46 Temp: 36.2 C Weight: 34.9 kg
+
+LABORATORY RESULTS
+Collected: 2026-11-14 11:30
+Test                      Result           Units           Reference       Flag
+
+Potassium                 3.5              mmol/L          3.5 - 5.1           
+
+Phosphate                 0.82             mmol/L          0.80 - 1.45         
+
+Sodium                    136              mmol/L          135 - 145           
+
+Bicarbonate               28               mmol/L          22 - 29             
+
+Glucose                   3.7              mmol/L          3.6 - 7.8           
+
+
+2026-11-15 11:30 BP: 99/58 HR: 47 Temp: 36.2 C
+
+LABORATORY RESULTS
+Collected: 2026-11-15 11:30
+Test                      Result           Units           Reference       Flag
+
+Potassium                 3.5              mmol/L          3.5 - 5.1           
+
+Phosphate                 0.82             mmol/L          0.80 - 1.45         
+
+Sodium                    136              mmol/L          135 - 145           
+
+Bicarbonate               28               mmol/L          22 - 29             
+
+Glucose                   4.8              mmol/L          3.6 - 7.8           
+
+
+2026-11-16 11:30 BP: 100/58 HR: 44 Temp: 36.2 C
+
+LABORATORY RESULTS
+Collected: 2026-11-16 11:30
+Test                      Result           Units           Reference       Flag
+
+Potassium                 3.5              mmol/L          3.5 - 5.1           
+
+Phosphate                 0.82             mmol/L          0.80 - 1.45         
+
+Sodium                    136              mmol/L          135 - 145           
+
+Bicarbonate               28               mmol/L          22 - 29             
+
+Glucose                   4.8              mmol/L          3.6 - 7.8           
+
+
+2026-11-17 07:30 BP: 101/58 HR: 45 Temp: 36.2 C Weight: 35.4 kg
+
+LABORATORY RESULTS
+Collected: 2026-11-17 07:30
+Test                      Result           Units           Reference       Flag
+
+Potassium                 3.5              mmol/L          3.5 - 5.1           
+
+Phosphate                 0.82             mmol/L          0.80 - 1.45         
+
+Sodium                    136              mmol/L          135 - 145           
+
+Bicarbonate               28               mmol/L          22 - 29             
+
+Glucose                   4.8              mmol/L          3.6 - 7.8           
+
+
+ACTIVE MEDICATION ORDERS
+Thiamine 100 mg PO daily
+Potassium phosphate PO
+
+ACTIVE PROBLEM LIST
+Anorexia nervosa, restricting type
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Claire MRN TESTEDR04         Page 1
+
+PRIOR ED VISITS
+
+ED VISIT - Weakness (discharged home)
+Date of service: 2026-07-20 12:30
+ED physician note: Weakness. Discharged per care plan.
+2026-07-20 10:30 BP: 96/60 HR: 50 Temp: 36.3 C Weight: 37.5 kg
+
+LABORATORY RESULTS
+Collected: 2026-07-20 11:30
+Test                      Result           Units           Reference       Flag
+
+Potassium                 3.4              mmol/L          3.5 - 5.1       L   
+
+Phosphate                 0.85             mmol/L          0.80 - 1.45         
+
+Glucose                   4.3              mmol/L          3.6 - 7.8           
+
+

@@ -1,0 +1,56 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, Elena                     DOB: 1997-10-08     Sex: F
+MRN: TESTAE05                            Age: 29
+Admitted: 2026-11-14 (Hospitalist)
+
+HOSPITALIST PROGRESS NOTE
+Date of service: 2026-11-16 10:00
+Treated for HSV encephalitis 5 weeks ago, was improving at discharge. Re-presents with
+new agitation, insomnia and abnormal involuntary movements: choreoathetosis of the arms
+and orofacial dyskinesias. Lumbar puncture: CSF cell count 22 /uL. Repeat HSV-1/2 PCR
+not detected. Concern for post-HSV autoimmune encephalitis (anti-NMDAR).
+2026-11-16 08:00 BP: 130/78 HR: 108 RR: 18 Temp: 37.4 C SpO2: 98%
+
+LABORATORY RESULTS
+Collected: 2026-11-15 05:30
+Test                      Result           Units           Reference       Flag
+
+Sodium                    137              mmol/L          135 - 145           
+
+Creatinine                62               umol/L          45 - 90             
+
+Hemoglobin                128              g/L             120 - 160           
+
+
+ACTIVE MEDICATION ORDERS (2026-11-15)
+Quetiapine 25 mg PO BID
+Acyclovir 10 mg/kg IV q8h (completed 2026-10-24)
+
+ACTIVE PROBLEM LIST
+Herpes simplex encephalitis, recent
+Movement disorder, new
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Elena MRN TESTAE05         Page 1
+
+RADIOLOGY AND NEURODIAGNOSTIC REPORTS
+
+MRI BRAIN WITH AND WITHOUT CONTRAST
+Date of exam: 2026-11-14 11:00
+FINDINGS:
+Expected evolution of left temporal and insular encephalomalacia from prior HSV
+encephalitis. No new diffusion restriction.
+IMPRESSION:
+No new lesion.
+
+EEG REPORT
+Date of exam: 2026-11-15 09:00
+FINDINGS:
+Diffuse slowing, no epileptiform discharges.
+IMPRESSION:
+Diffuse encephalopathy.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Elena MRN TESTAE05         Page 2
