@@ -1,0 +1,379 @@
+// Generated from build/aed_data.py - adult dosing reference. Verify with pharmacy/monograph.
+window.AED_DATA = [
+ {
+  "id": "lev",
+  "name": "Levetiracetam",
+  "brand": "Keppra",
+  "iv": true,
+  "spectrum": [
+   "focal",
+   "gtc",
+   "myoclonic"
+  ],
+  "worsens": [],
+  "start": "250-500 mg PO BID",
+  "titrate": "+500 mg/day every 1-2 weeks (can start at target if urgent)",
+  "target": "500-1500 mg BID (1000-3000 mg/day)",
+  "max": "3000 mg/day (some use 4000)",
+  "renal": "CrCl 50-80: 500-1000 mg BID; 30-50: 250-750 mg BID; <30: 250-500 mg BID; HD: 500-1000 mg daily + 250-500 mg after HD",
+  "levels": "Not routine (adherence check only)",
+  "se": "Somnolence, dizziness, irritability, low mood, anxiety; rarely aggression or psychosis",
+  "monitor": "Mood/behaviour (ask family); renal function",
+  "best": "Broad spectrum first line when seizure type unclear; IV available; few interactions; elderly; pregnancy (low teratogenic risk)",
+  "avoid": "Significant psychiatric history (consider brivaracetam or lamotrigine)",
+  "load": "IV load 60 mg/kg (max 4500 mg) for status; 20-40 mg/kg (max ~3000 mg) for non-status loading"
+ },
+ {
+  "id": "ltg",
+  "name": "Lamotrigine",
+  "brand": "Lamictal",
+  "iv": false,
+  "spectrum": [
+   "focal",
+   "gtc",
+   "absence"
+  ],
+  "worsens": [
+   "myoclonic"
+  ],
+  "start": "25 mg daily x 2 weeks, then 50 mg daily x 2 weeks",
+  "titrate": "+25-50 mg/day every 1-2 weeks. With valproate: 25 mg every other day x 2 weeks, then 25 mg daily x 2 weeks (half the speed). With inducers (CBZ, PHT, PB): 50 mg daily x 2 weeks, then 100 mg/day divided",
+  "target": "100-200 mg BID (200-400 mg/day); 100-200 mg/day with valproate; 300-500 mg/day with inducers",
+  "max": "500 mg/day (higher with inducers)",
+  "renal": "Reduce maintenance in severe impairment; hepatic: reduce 25-50% (moderate-severe)",
+  "levels": "Not routine; useful in pregnancy (levels fall) and when starting/stopping estrogen",
+  "se": "Rash (SJS/TEN risk highest with fast titration or valproate), dizziness, diplopia, insomnia, headache",
+  "monitor": "Rash in first 8 weeks - stop if rash with fever/mucosal involvement",
+  "best": "Focal (SANAD II first choice) and generalized; elderly; women of childbearing potential; comorbid depression/bipolar",
+  "avoid": "Need for rapid control (slow titration); myoclonic epilepsy (may worsen); prior serious rash",
+  "load": "No loading - must titrate"
+ },
+ {
+  "id": "vpa",
+  "name": "Valproate (divalproex)",
+  "brand": "Epival / Depakene",
+  "iv": true,
+  "spectrum": [
+   "focal",
+   "gtc",
+   "absence",
+   "myoclonic"
+  ],
+  "worsens": [],
+  "start": "250-500 mg PO BID (10-15 mg/kg/day)",
+  "titrate": "+5-10 mg/kg/day weekly",
+  "target": "750-2000 mg/day (20-30 mg/kg/day)",
+  "max": "60 mg/kg/day",
+  "renal": "No renal adjustment; avoid in liver disease",
+  "levels": "Total 350-700 umol/L (50-100 mg/L); free level if low albumin",
+  "se": "Tremor, weight gain, hair loss, nausea, thrombocytopenia, hyperammonemia, hepatotoxicity, pancreatitis, PCOS",
+  "monitor": "CBC/platelets, LFTs, ammonia if confused, weight",
+  "best": "Generalized epilepsies (JME, absence, GTC) - SANAD II first choice in men/non-childbearing; status (IV)",
+  "avoid": "Women/girls of childbearing potential (major teratogen, neurodevelopmental harm - Health Canada); liver disease; POLG/mitochondrial disease; urea-cycle disorders",
+  "load": "IV 40 mg/kg (max 3000 mg) over 10 min for status",
+  "interact": "Carbapenems (meropenem, ertapenem, imipenem) drop VPA levels 60-100% within 24 h - avoid combination. Doubles lamotrigine levels."
+ },
+ {
+  "id": "cbz",
+  "name": "Carbamazepine",
+  "brand": "Tegretol",
+  "iv": false,
+  "spectrum": [
+   "focal"
+  ],
+  "worsens": [
+   "absence",
+   "myoclonic"
+  ],
+  "start": "100-200 mg PO BID (100 mg BID elderly)",
+  "titrate": "+200 mg/day weekly (autoinduction over 3-5 weeks)",
+  "target": "400-600 mg BID (800-1200 mg/day)",
+  "max": "1600 mg/day",
+  "renal": "Caution CrCl <10",
+  "levels": "17-51 umol/L (4-12 mg/L); recheck after autoinduction",
+  "se": "Dizziness, diplopia, ataxia, hyponatremia, rash/SJS, leukopenia, hepatotoxicity, osteoporosis, AV block",
+  "monitor": "Na, CBC, LFTs; HLA-B*15:02 before starting in patients of Asian ancestry (HLA-A*31:01 also)",
+  "best": "Focal epilepsy (older first line); trigeminal neuralgia",
+  "avoid": "Generalized absence/myoclonic; elderly with hyponatremia; heart block; many interacting drugs",
+  "load": "No IV; oral only",
+  "interact": "Strong enzyme inducer: lowers DOACs, warfarin, OCP, statins, many others. Macrolides/azoles raise CBZ."
+ },
+ {
+  "id": "oxc",
+  "name": "Oxcarbazepine",
+  "brand": "Trileptal",
+  "iv": false,
+  "spectrum": [
+   "focal"
+  ],
+  "worsens": [
+   "absence",
+   "myoclonic"
+  ],
+  "start": "150-300 mg PO BID",
+  "titrate": "+300-600 mg/day weekly",
+  "target": "600-1200 mg BID (1200-2400 mg/day)",
+  "max": "2400 mg/day",
+  "renal": "CrCl <30: start 150 mg BID, titrate slowly",
+  "levels": "Not routine",
+  "se": "Hyponatremia (more than CBZ), dizziness, diplopia, fatigue, rash (25-30% cross-reactivity with CBZ)",
+  "monitor": "Na at baseline, 2-4 weeks, then periodically (esp. elderly, diuretics, SSRIs)",
+  "best": "Focal epilepsy; fewer interactions than CBZ",
+  "avoid": "Hyponatremia, elderly on thiazides/SSRIs; generalized absence/myoclonic",
+  "load": "No IV",
+  "interact": "Weaker inducer - still lowers OCP at >1200 mg/day"
+ },
+ {
+  "id": "esl",
+  "name": "Eslicarbazepine",
+  "brand": "Aptiom",
+  "iv": false,
+  "spectrum": [
+   "focal"
+  ],
+  "worsens": [
+   "absence",
+   "myoclonic"
+  ],
+  "start": "400 mg PO daily x 1-2 weeks",
+  "titrate": "Increase to 800 mg daily",
+  "target": "800-1200 mg daily",
+  "max": "1600 mg daily",
+  "renal": "CrCl <50: start 200 mg, max 600 mg daily",
+  "levels": "Not routine",
+  "se": "Dizziness, diplopia, hyponatremia, headache",
+  "monitor": "Na",
+  "best": "Focal epilepsy; once daily",
+  "avoid": "Hyponatremia; PR prolongation",
+  "load": "No IV"
+ },
+ {
+  "id": "lcm",
+  "name": "Lacosamide",
+  "brand": "Vimpat",
+  "iv": true,
+  "spectrum": [
+   "focal",
+   "gtc"
+  ],
+  "worsens": [],
+  "start": "50-100 mg PO/IV BID",
+  "titrate": "+50 mg BID weekly (100 mg/day per week)",
+  "target": "100-200 mg BID (200-400 mg/day)",
+  "max": "400 mg/day (600 mg/day monotherapy in some)",
+  "renal": "CrCl <30 or ESRD: max 300 mg/day; mild-moderate hepatic: max 300 mg/day",
+  "levels": "Not routine",
+  "se": "Dizziness, diplopia, ataxia, nausea, PR prolongation/AV block",
+  "monitor": "Baseline ECG if cardiac disease, conduction disease or on other PR-prolonging drugs",
+  "best": "Focal (incl. focal to bilateral); IV available; few interactions; elderly",
+  "avoid": "2nd/3rd-degree AV block, significant conduction disease",
+  "load": "IV/PO load 200-400 mg once, then maintenance"
+ },
+ {
+  "id": "brv",
+  "name": "Brivaracetam",
+  "brand": "Brivlera",
+  "iv": true,
+  "spectrum": [
+   "focal"
+  ],
+  "worsens": [],
+  "start": "50 mg PO/IV BID (no titration needed)",
+  "titrate": "Adjust 25-100 mg BID",
+  "target": "50-100 mg BID",
+  "max": "200 mg/day",
+  "renal": "No renal adjustment (avoid in dialysis); hepatic: max 75 mg BID",
+  "levels": "Not routine",
+  "se": "Somnolence, dizziness, fatigue; fewer behavioural effects than levetiracetam",
+  "monitor": "Mood",
+  "best": "Focal; switch from levetiracetam when behavioural side effects (switch 10:1 LEV:BRV, no taper)",
+  "avoid": "Do not combine with levetiracetam",
+  "load": "IV 50-100 mg"
+ },
+ {
+  "id": "pht",
+  "name": "Phenytoin / fosphenytoin",
+  "brand": "Dilantin / Cerebyx",
+  "iv": true,
+  "spectrum": [
+   "focal",
+   "gtc"
+  ],
+  "worsens": [
+   "absence",
+   "myoclonic"
+  ],
+  "start": "Load 15-20 mg/kg then 300 mg/day (4-7 mg/kg/day) in 1-3 doses",
+  "titrate": "Small steps (30-50 mg) - zero-order kinetics, levels rise steeply",
+  "target": "300-400 mg/day guided by levels",
+  "max": "Guided by levels/toxicity",
+  "renal": "Free level in renal failure / low albumin",
+  "levels": "Total 40-80 umol/L (10-20 mg/L) - correct for albumin; free 4-8 umol/L (1-2 mg/L)",
+  "se": "Nystagmus, ataxia, confusion when toxic; gingival hyperplasia, hirsutism, rash/SJS, osteoporosis, neuropathy; IV: hypotension, arrhythmia, purple glove",
+  "monitor": "Levels (trough), albumin, LFTs, ECG/BP on cardiac monitor during IV load",
+  "best": "Status epilepticus second line; focal and GTC",
+  "avoid": "Long-term use in elderly (bone, interactions, cognition); absence/myoclonic; heart block with IV",
+  "load": "Fosphenytoin 20 mg PE/kg IV (max 1500 mg PE) at <=150 mg PE/min; phenytoin IV <=50 mg/min",
+  "interact": "Strong enzyme inducer (DOACs, warfarin, OCP, many others); HLA-B*15:02 risk as for CBZ"
+ },
+ {
+  "id": "tpm",
+  "name": "Topiramate",
+  "brand": "Topamax",
+  "iv": false,
+  "spectrum": [
+   "focal",
+   "gtc"
+  ],
+  "worsens": [],
+  "start": "25 mg PO daily (or 25 mg BID)",
+  "titrate": "+25-50 mg/day weekly",
+  "target": "100-200 mg/day divided BID",
+  "max": "400 mg/day",
+  "renal": "CrCl <70: halve dose",
+  "levels": "Not routine",
+  "se": "Cognitive slowing, word-finding difficulty, paresthesia, kidney stones, weight loss, metabolic acidosis, acute angle-closure glaucoma, oligohidrosis",
+  "monitor": "Bicarbonate, renal function, mood",
+  "best": "Focal and GTC; comorbid migraine or obesity",
+  "avoid": "Pregnancy (oral clefts, low birth weight); kidney stones; cognitive concerns",
+  "load": "No IV",
+  "interact": "Reduces OCP efficacy at >200 mg/day"
+ },
+ {
+  "id": "zns",
+  "name": "Zonisamide",
+  "brand": "Zonegran",
+  "iv": false,
+  "spectrum": [
+   "focal",
+   "gtc",
+   "myoclonic"
+  ],
+  "worsens": [],
+  "start": "100 mg PO daily",
+  "titrate": "+100 mg every 2 weeks",
+  "target": "200-400 mg/day",
+  "max": "600 mg/day",
+  "renal": "Avoid if CrCl <50 (limited data)",
+  "levels": "Not routine",
+  "se": "Somnolence, cognitive slowing, weight loss, kidney stones, metabolic acidosis, rash (sulfonamide)",
+  "monitor": "Bicarbonate, renal function",
+  "best": "Focal and generalized adjunct; long half-life (once daily)",
+  "avoid": "Sulfonamide allergy, kidney stones",
+  "load": "No IV"
+ },
+ {
+  "id": "clb",
+  "name": "Clobazam",
+  "brand": "Frisium",
+  "iv": false,
+  "spectrum": [
+   "focal",
+   "gtc",
+   "absence",
+   "myoclonic"
+  ],
+  "worsens": [],
+  "start": "5-10 mg PO at bedtime",
+  "titrate": "+5-10 mg weekly",
+  "target": "10-20 mg/day",
+  "max": "40 mg/day (divided)",
+  "renal": "No adjustment; reduce in elderly/hepatic",
+  "levels": "Not routine",
+  "se": "Sedation, tolerance, dependence, falls",
+  "monitor": "Sedation, falls, respiratory depression with opioids",
+  "best": "Adjunct; short 'bridging' course while titrating another drug; catamenial or cluster seizures",
+  "avoid": "Respiratory failure, severe OSA; combination with opioids",
+  "load": "No IV"
+ },
+ {
+  "id": "per",
+  "name": "Perampanel",
+  "brand": "Fycompa",
+  "iv": false,
+  "spectrum": [
+   "focal",
+   "gtc"
+  ],
+  "worsens": [],
+  "start": "2 mg PO at bedtime",
+  "titrate": "+2 mg every 1-2 weeks",
+  "target": "4-8 mg at bedtime",
+  "max": "12 mg/day",
+  "renal": "Not recommended in severe renal impairment",
+  "levels": "Not routine",
+  "se": "Dizziness, somnolence, irritability, aggression/hostility (boxed warning), falls",
+  "monitor": "Mood/behaviour",
+  "best": "Adjunct for focal and GTC",
+  "avoid": "Psychiatric history, aggression",
+  "load": "No IV",
+  "interact": "Dose higher with inducers (CBZ, OXC, PHT)"
+ },
+ {
+  "id": "esm",
+  "name": "Ethosuximide",
+  "brand": "Zarontin",
+  "iv": false,
+  "spectrum": [
+   "absence"
+  ],
+  "worsens": [],
+  "start": "250 mg PO BID",
+  "titrate": "+250 mg/day every 4-7 days",
+  "target": "750-1500 mg/day",
+  "max": "1500 mg/day",
+  "renal": "Caution",
+  "levels": "280-710 umol/L (40-100 mg/L)",
+  "se": "GI upset, hiccups, drowsiness, rare blood dyscrasia",
+  "monitor": "CBC",
+  "best": "Absence seizures only",
+  "avoid": "Any other seizure type (no effect on GTC)",
+  "load": "No IV"
+ },
+ {
+  "id": "cnb",
+  "name": "Cenobamate",
+  "brand": "Xcopri",
+  "iv": false,
+  "spectrum": [
+   "focal"
+  ],
+  "worsens": [],
+  "start": "12.5 mg PO daily x 2 weeks",
+  "titrate": "25, 50, 100, 150, 200 mg daily - step every 2 weeks (slow to avoid DRESS)",
+  "target": "200 mg daily",
+  "max": "400 mg daily",
+  "renal": "Caution mild-moderate; avoid ESRD",
+  "levels": "Not routine",
+  "se": "Somnolence, dizziness, diplopia, DRESS (fast titration), QT shortening",
+  "monitor": "Rash/DRESS; ECG if familial short QT",
+  "best": "Drug-resistant focal epilepsy (specialist start)",
+  "avoid": "Familial short QT syndrome",
+  "load": "No IV",
+  "interact": "Raises phenytoin, phenobarbital, clobazam; lowers lamotrigine and OCP"
+ },
+ {
+  "id": "pb",
+  "name": "Phenobarbital",
+  "brand": "",
+  "iv": true,
+  "spectrum": [
+   "focal",
+   "gtc"
+  ],
+  "worsens": [
+   "absence"
+  ],
+  "start": "Status: 15-20 mg/kg IV (rate <=50-100 mg/min). Maintenance 1-3 mg/kg/day (60-180 mg/day)",
+  "titrate": "Guided by levels",
+  "target": "60-180 mg/day",
+  "max": "Guided by levels",
+  "renal": "Reduce in severe renal/hepatic impairment",
+  "levels": "65-170 umol/L (15-40 mg/L)",
+  "se": "Sedation, respiratory depression, hypotension, cognitive impairment, dependence",
+  "monitor": "Airway/BP during load; levels",
+  "best": "Status epilepticus (second/third line); alcohol withdrawal protocols in some centres",
+  "avoid": "Long-term in elderly; without airway support at high doses",
+  "load": "15-20 mg/kg IV"
+ }
+];
