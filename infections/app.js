@@ -109,18 +109,58 @@ function sepsis() {
   const shock = (sbp && sbp.v < 90) || (lac && lac.si >= 4);
   return { q, qsofa: q.length, sirs, shock, lac, rr, sbp, hr, t, data: !!(rr || sbp || hr || t) };
 }
+// LRINEC (Wong 2004). Values kept in SI units in S.lrVals; pre-filled from the chart, editable in the calculator.
+const LR_ITEMS = [
+  { k: "crp", lab: "crp", label: "CRP", si: "mg/L", us: "mg/dL", toSI: v => v * 10, pts: v => v >= 150 ? 4 : 0, rule: "&ge;150 mg/L (15 mg/dL) = 4" },
+  { k: "wbc", lab: "wbc", label: "WBC", si: "x10^9/L", us: "x10^3/uL", toSI: v => v, pts: v => v > 25 ? 2 : v >= 15 ? 1 : 0, rule: "15-25 = 1, &gt;25 = 2" },
+  { k: "hgb", lab: "hgb", label: "Hemoglobin", si: "g/L", us: "g/dL", toSI: v => v * 10, pts: v => v < 110 ? 2 : v <= 135 ? 1 : 0, rule: "110-135 g/L (11-13.5 g/dL) = 1, &lt;110 = 2" },
+  { k: "na", lab: "sodium", label: "Sodium", si: "mmol/L", us: "mEq/L", toSI: v => v, pts: v => v < 135 ? 2 : 0, rule: "&lt;135 = 2" },
+  { k: "cr", lab: "creatinine", label: "Creatinine", si: "umol/L", us: "mg/dL", toSI: v => v * 88.4, pts: v => v > 141 ? 2 : 0, rule: "&gt;141 umol/L (1.6 mg/dL) = 2" },
+  { k: "glu", lab: "glucose", label: "Glucose", si: "mmol/L", us: "mg/dL", toSI: v => v / 18.016, pts: v => v > 10 ? 1 : 0, rule: "&gt;10 mmol/L (180 mg/dL) = 1" }
+];
+function lrInit(force) {
+  if (S.lrVals && !force) return;
+  S.lrVals = {}; LR_ITEMS.forEach(it => { const l = latest(it.lab); S.lrVals[it.k] = l ? Math.round(l.si * 10) / 10 : null; });
+}
 function lrinec() {
-  const crp = latest("crp"), wbc = latest("wbc"), hgb = latest("hgb"), na = latest("sodium"), cr = latest("creatinine"), glu = latest("glucose");
-  const parts = [], missing = [];
-  const add = (lab, name, pts, txt) => { if (!lab) { missing.push(name); return 0; } parts.push(`${name} ${txt} (${pts})`); return pts; };
+  lrInit();
+  const parts = [], missing = [], pts = {};
   let s = 0;
-  s += add(crp, "CRP", crp && crp.si >= 150 ? 4 : 0, crp ? `${round(crp.si)}` : "");
-  s += add(wbc, "WBC", wbc ? (wbc.si > 25 ? 2 : wbc.si >= 15 ? 1 : 0) : 0, wbc ? `${round(wbc.si)}` : "");
-  s += add(hgb, "Hb", hgb ? (hgb.si < 110 ? 2 : hgb.si <= 135 ? 1 : 0) : 0, hgb ? `${round(hgb.si)}` : "");
-  s += add(na, "Na", na && na.si < 135 ? 2 : 0, na ? `${round(na.si)}` : "");
-  s += add(cr, "Creatinine", cr && cr.si > 141 ? 2 : 0, cr ? `${round(cr.si)}` : "");
-  s += add(glu, "Glucose", glu && glu.si > 10 ? 1 : 0, glu ? `${round(glu.si)}` : "");
-  return { s, parts, missing };
+  LR_ITEMS.forEach(it => { const v = S.lrVals[it.k]; if (v == null || isNaN(v)) { missing.push(it.label); pts[it.k] = null; return; } const p = it.pts(v); pts[it.k] = p; s += p; parts.push(`${it.label} ${round(v)} (${p})`); });
+  return { s, parts, missing, pts, ...lrRisk(s, missing.length) };
+}
+function lrRisk(s, nMissing) {
+  if (s >= 8) return { cls: "alert", risk: "HIGH risk (score >=8; >75% probability in the original study)" };
+  if (s >= 6) return { cls: "warn", risk: "INTERMEDIATE risk (6-7; 50-75%)" };
+  return { cls: "info", risk: `LOW risk (<=5; <50%)${nMissing ? " - incomplete, missing values count as 0" : ""}` };
+}
+function lrCalcHTML() {
+  const r = lrinec(), us = S.lrUnits === "us";
+  const show = (it, v) => v == null ? "" : us ? round(it.k === "crp" ? v / 10 : it.k === "hgb" ? v / 10 : it.k === "cr" ? v / 88.4 : it.k === "glu" ? v * 18.016 : v) : v;
+  return `<div id="lrBox" class="${r.cls}" style="padding:10px 12px">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+      <div><b>LRINEC calculator</b> <span class="muted">(Laboratory Risk Indicator for Necrotizing Fasciitis)</span></div>
+      <div class="seg"><button data-lru="si" class="${us ? "" : "on"}">SI units</button><button data-lru="us" class="${us ? "on" : ""}">US units</button></div>
+    </div>
+    <table style="margin-top:6px;background:#fff">
+      <tr><th>Lab</th><th style="width:130px">Value</th><th>Unit</th><th>Points</th><th>Rule</th><th>Chart</th></tr>
+      ${LR_ITEMS.map(it => { const l = latest(it.lab); return `<tr><td>${it.label}</td>
+        <td><input type="number" step="any" class="lrIn" data-k="${it.k}" value="${show(it, S.lrVals[it.k])}" style="width:110px;font:inherit;padding:4px 6px;border:1px solid var(--line);border-radius:6px"></td>
+        <td class="muted">${us ? it.us : it.si}</td><td><b id="lrp-${it.k}">${r.pts[it.k] == null ? "-" : r.pts[it.k]}</b></td><td class="muted">${it.rule}</td>
+        <td class="muted">${l ? `${round(l.si)} ${it.si} (${fmtDate(l.t)})` : "none"}</td></tr>`; }).join("")}
+    </table>
+    <div style="margin-top:8px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <span class="score" id="lrScore">${r.s}</span><span>/13</span> <b id="lrRisk">${r.risk}</b>
+      <button class="btn sec" id="lrReset" style="padding:4px 10px">Reset to chart values</button>
+    </div>
+    <div class="muted" style="margin-top:6px">Score &ge;6 should raise suspicion; &ge;8 strongly predictive. Later studies show LOW sensitivity (a low score misses many cases) - pain out of proportion, rapid spread, bullae, crepitus, anesthesia or toxicity mean surgical exploration regardless of the score.</div>
+  </div>`;
+}
+function lrUpdate() {
+  const r = lrinec();
+  LR_ITEMS.forEach(it => { const e = $("#lrp-" + it.k); if (e) e.textContent = r.pts[it.k] == null ? "-" : r.pts[it.k]; });
+  $("#lrScore").textContent = r.s; $("#lrRisk").textContent = r.risk; $("#lrBox").className = r.cls;
+  if (!S.noteDirty) { const site = INF_SITES.find(x => x.id === S.site); $("#note").value = buildNote(site, sepsis()); }
 }
 function curb65() {
   const urea = latest("urea"), rr = maxV("rr"), sbp = minV("sbp"), dbp = minV("dbp"), age = S.patient?.age;
@@ -159,6 +199,7 @@ function render() {
     <div style="margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
       <span class="muted">Severity:</span>
       <div class="seg">${[["mild", "Mild / outpatient"], ["moderate", "Moderate / inpatient"], ["severe", "Severe / sepsis"]].map(([k, l]) => `<button data-tier="${k}" class="${k === S.tier ? "on" : ""}">${l}</button>`).join("")}</div>
+      <button class="btn sec" id="lrJump" style="padding:4px 10px">LRINEC calculator</button>
       <span class="muted">${suggestedTier() === "severe" ? '<span class="pill p-red">Suggested: severe (qSOFA/shock)</span>' : "Suggested from vitals: moderate"}</span>
     </div>
   </div>
@@ -236,8 +277,7 @@ function siteBlock(site, sp) {
   <div class="card"><h2>${esc(site.label)} <span class="muted">- ${esc(site.sub)}</span></h2>
   <details open><summary>Likely organisms</summary><div class="body">${list(site.organisms)}</div></details>
   <details open class="red"><summary>What to watch out for${site.id === "skin" ? " - necrotizing fasciitis" : ""}</summary><div class="body">
-    ${lr ? `<div class="${lr.s >= 8 ? "alert" : lr.s >= 6 ? "warn" : "info"}"><b>LRINEC ${lr.s}/13</b> ${lr.s >= 8 ? "- HIGH risk of necrotizing infection" : lr.s >= 6 ? "- intermediate/suspicious" : "- low (does not exclude)"}<br><span class="muted">${lr.parts.join(" &middot; ")}${lr.missing.length ? ` &middot; missing: ${lr.missing.join(", ")}` : ""}</span><br>
-      <span class="muted">Points: CRP &ge;150 mg/L 4; WBC 15-25 1, &gt;25 2; Hb 110-135 1, &lt;110 2; Na &lt;135 2; creatinine &gt;141 2; glucose &gt;10 1. Clinical suspicion overrides the score.</span></div>` : ""}
+    ${lr ? lrCalcHTML() : ""}
     ${cb ? `<div class="${cb.s >= 3 ? "alert" : cb.s === 2 ? "warn" : "info"}"><b>CURB-65 ${cb.s}/5</b> ${cb.s >= 3 ? "- severe, consider ICU review" : cb.s === 2 ? "- admit" : "- low risk (outpatient if otherwise OK)"}<br><span class="muted">${cb.items.map(([n, v]) => `${v === null ? "?" : v ? "&#10003;" : "&#10007;"} ${n}`).join(" &middot; ")}</span></div>` : ""}
     ${list(site.watch)}
   </div></details>
@@ -276,7 +316,7 @@ function buildNote(site, sp) {
     "",
     `Site: ${site.label} (${site.sub}). Severity: ${S.tier}.`,
     `Sepsis screen: qSOFA ${sp.qsofa}/3${sp.q.length ? ` (${sp.q.join(", ")})` : ""}, SIRS ${sp.sirs.length}/4, lactate ${sp.lac ? round(sp.lac.si) : "not done"}${sp.shock ? " - possible septic shock" : ""}.`,
-    lr ? `LRINEC ${lr.s}/13${lr.missing.length ? ` (missing ${lr.missing.join(", ")})` : ""}.` : "",
+    lr ? `LRINEC ${lr.s}/13 - ${lr.risk} (${lr.parts.join(", ")}${lr.missing.length ? `; missing ${lr.missing.join(", ")}` : ""}).` : "",
     cb ? `CURB-65 ${cb.s}/5.` : "",
     `Labs: WBC ${labTxt("wbc")}, CRP ${labTxt("crp")}, creatinine ${labTxt("creatinine")}, eGFR ${labTxt("egfr")}.`,
     `Allergies: ${S.allergies.length ? S.allergies.map(a => allergyName(a) + (allergyReactions(a) ? ` (${allergyReactions(a)})` : "")).join("; ") : "none recorded"}.${ba.length ? ` PEN-FAST ${penFast().s}/5.` : ""}`,
@@ -299,6 +339,13 @@ function wire() {
   document.querySelectorAll("[data-tier]").forEach(b => b.onclick = () => { S.tier = b.dataset.tier; render(); });
   const c = $("#confused"); if (c) c.onchange = () => { S.confused = c.checked; render(); };
   document.querySelectorAll(".pen").forEach(x => x.onchange = () => { S.pen[x.dataset.k] = x.checked; render(); });
+  document.querySelectorAll(".lrIn").forEach(x => x.oninput = () => {
+    const it = LR_ITEMS.find(i => i.k === x.dataset.k), v = parseFloat(x.value);
+    S.lrVals[it.k] = isNaN(v) ? null : Math.round((S.lrUnits === "us" ? it.toSI(v) : v) * 10) / 10; lrUpdate();
+  });
+  document.querySelectorAll("[data-lru]").forEach(b => b.onclick = () => { S.lrUnits = b.dataset.lru; render(); });
+  const lrr = $("#lrReset"); if (lrr) lrr.onclick = () => { lrInit(true); render(); };
+  const lrj = $("#lrJump"); if (lrj) lrj.onclick = () => { S.site = "skin"; render(); setTimeout(() => $("#lrBox")?.scrollIntoView({ behavior: "smooth", block: "center" }), 50); };
   $("#note").oninput = () => { S.noteDirty = true; S.noteText = $("#note").value; };
   $("#rebuildNote").onclick = () => { S.noteDirty = false; S.noteText = null; render(); };
   $("#copyNote").onclick = async () => { try { await navigator.clipboard.writeText($("#note").value); } catch { $("#note").select(); document.execCommand("copy"); } $("#copied").textContent = "Copied"; setTimeout(() => { const e = $("#copied"); if (e) e.textContent = ""; }, 1500); };
