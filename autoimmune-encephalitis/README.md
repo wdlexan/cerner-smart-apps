@@ -18,6 +18,15 @@
 - Any field can be edited before you generate, even for a saved physician (for example, to add a fax number).
 - Saved physicians and the ordering-lab details are stored in that browser's local storage. They never go into the repo.
 
+## Test patients (made up)
+Open `index.html?demo=1` up to `?demo=6`. There are links to the other patients in the yellow banner.
+1. 23 F: anti-NMDAR pattern with an ovarian teratoma, on haloperidol with a high CK, first-line therapy day 4
+2. 67 M: anti-LGI1 pattern, with FBDS, Na 126 and bilateral mesial temporal MRI change
+3. 64 F: smoker with refractory seizures and a hilar mass (GABA-B / SCLC pattern), on steroids day 15 with no second-line agent
+4. 34 M: anti-Ma2 pattern, with hypersomnia and hippocampal + hypothalamic MRI change
+5. 29 F: post-HSV autoimmune encephalitis, with choreoathetosis 5 weeks after HSV
+6. 26 M: a mimic. First-episode psychosis with a normal workup, which should not meet the criteria
+
 ## Manual mode
 Opening `index.html` directly, without a launch from the EHR, starts the app in manual mode. In manual mode you tick the findings yourself, and the criteria checks and the requisition still work. This lets anyone fill out the MitogenDx form without opening a chart.
 

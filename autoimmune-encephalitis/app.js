@@ -429,7 +429,8 @@ function medList(arr) { return arr.length ? arr.map(m => `${esc(medName(m))} <sp
 function renderTreatment() {
   const t = treatment();
   const alerts = [];
-  if (t.antipsych.length) alerts.push(`<div class="alert"><b>Active antipsychotic:</b> ${t.antipsych.map(m => esc(medName(m))).join(', ')}. Patients with NMDAR encephalitis are prone to NMS-like reactions. Prefer benzodiazepines, low-dose quetiapine, dexmedetomidine/clonidine; avoid high-potency typicals.</div>`);
+  const redFlags = ['seizure','fbds','movement','catatonia','nmsReaction','autonomic','consciousness','csfPleo','deltaBrush','mriLimbic'].some(on);
+  if (t.antipsych.length) alerts.push(`<div class="${redFlags ? 'alert' : 'tip'}"><b>Active antipsychotic:</b> ${t.antipsych.map(m => esc(medName(m))).join(', ')}. Patients with NMDAR encephalitis are prone to NMS-like reactions. Prefer benzodiazepines, low-dose quetiapine, dexmedetomidine/clonidine; avoid high-potency typicals.</div>`);
   if (t.acyclo.length && t.hsvNeg) alerts.push(`<div class="tip">Acyclovir active and an HSV PCR is negative — review whether acyclovir can stop.</div>`);
   if (t.days != null && t.days >= 10 && !t.second.length) alerts.push(`<div class="tip">First-line therapy started ${t.days} days ago with no second-line agent found. If not clearly improving, consider rituximab ± cyclophosphamide (usual threshold ~10–14 days; earlier if ICU).</div>`);
   if ((t.second.some(m => /cyclophosph/i.test(medName(m))) || (t.days != null && t.days > 21)) && !t.pjp.length) alerts.push(`<div class="tip">On cyclophosphamide or prolonged steroids without PJP prophylaxis found — consider TMP-SMX.</div>`);
@@ -671,8 +672,15 @@ document.getElementById('tabs').addEventListener('click', e => {
 
 (async function start() {
   try {
-    if (!window.FHIR) throw new Error('no fhirclient');
-    S.client = await FHIR.oauth2.ready();
+    const demoN = new URLSearchParams(location.search).get('demo');
+    if (demoN && window.AE_MOCK) {
+      S.client = window.AE_MOCK.client(parseInt(demoN, 10) || 1);
+      const links = Array.from({ length: window.AE_MOCK.count }, (_, i) => `<a href="?demo=${i + 1}"${String(i + 1) === demoN ? ' style="font-weight:700"' : ''}>${i + 1}</a>`).join(' · ');
+      $('#banner').innerHTML = `<div class="banner warn">DEMO – made-up test patient ${esc(demoN)}. Other test patients: ${links}</div>`;
+    } else {
+      if (!window.FHIR) throw new Error('no fhirclient');
+      S.client = await FHIR.oauth2.ready();
+    }
     S.pid = S.client.patient.id;
     if (!S.pid) throw new Error('No patient in context');
     setStatus('Loading chart…');
