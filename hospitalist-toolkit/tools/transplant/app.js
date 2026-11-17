@@ -9,16 +9,25 @@ const r1 = (v) => Math.round(v * 10) / 10;
 const short = (n) => n.replace(/\s+\d.*$/, "").trim() || n;
 const SEVLABEL = { critical: "Avoid / call transplant", major: "Act", moderate: "Monitor", info: "Note" };
 const CTX = [["npo", "NPO / can't take oral"], ["diarrhea", "Diarrhea"], ["contrast", "IV contrast planned"], ["unwell", "Acutely unwell or going to surgery"]];
-const state = { f: null, ctx: {}, auto: {}, targets: {} };
+const state = { f: null, raw: null, ctx: {}, auto: {}, targets: {}, infx: {} };
 
 function evalNow() { return E.evaluate(state.f, RULES, { ctx: state.ctx, targets: state.targets }); }
 
 function draw() {
   $("rulever").textContent = RULES.meta.version;
   const ids = ["tiles", "alerts", "levels", "labs", "context", "watch", "imm", "ctxrow", "targetrow"];
+  drawInfx();
   if (!state.f) { ids.forEach((id) => ($(id).innerHTML = "")); ["alertsum", "levelsum", "labsum", "ctxsum", "watchsum", "immsum", "ptsum"].forEach((id) => ($(id).textContent = "")); $("alerts").innerHTML = '<div class="muted">No patient loaded.</div>'; return; }
   const ev = evalNow();
   drawCtx(ev); drawTargets(ev); drawTiles(ev); drawAlerts(ev); drawLevels(ev); drawLabs(ev); drawContext(ev); drawWatch(ev); drawImm(ev);
+}
+
+function drawInfx() {
+  if (!window.TxInfx) return;
+  const st = Object.assign({}, state, { infx: state.infx });
+  state.infx.sym = state.infx.sym || {};
+  if (state.ctx.diarrhea && !("gi" in state.infx.sym)) state.infx.sym.gi = true;
+  window.TxInfx.render($("infx"), $("infxsum"), st);
 }
 
 function drawCtx(ev) {
@@ -128,7 +137,8 @@ function drawImm(ev) {
 }
 
 function load(raw, note, errors, preset) {
-  state.f = raw ? E.parse(raw) : null; preset = preset || {};
+  state.f = raw ? E.parse(raw) : null; state.raw = raw || null; preset = preset || {};
+  state.infx = JSON.parse(JSON.stringify(preset.infx || {}));
   state.ctx = {}; state.auto = {}; state.targets = Object.assign({}, preset.targets || {});
   if (state.f) {
     state.auto = E.detectContext(state.f, RULES);

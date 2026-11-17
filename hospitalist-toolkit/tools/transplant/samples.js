@@ -63,6 +63,28 @@
     { label: "F: Not a transplant patient (pneumonia on clarithromycin)", targets: {}, build: (now) => ({
       patient: pt(80, "female"), conditions: [cond("Community acquired pneumonia", "J18.9")],
       medreqs: [req(now, "Clarithromycin 500 mg PO BID", 30), req(now, "Ceftriaxone 1 g IV q24h", 30)],
-      obs: [cr(now, 80, 20)] }) }
+      obs: [cr(now, 80, 20)] }) },
+    { label: "G: Late-onset CMV — D+/R−, 8 months, prophylaxis stopped; fever, diarrhea, rising CMV PCR", targets: { tacrolimus: [5, 8] }, infx: { sero: "D+/R-", wt: 80 }, build: (now) => ({
+      patient: pt(54, "male"), conditions: [Object.assign(cond("Kidney transplant status", "Z94.0"), { onsetDateTime: iso(now, 8 * 730) }), cond("Fever", "R50.9"), cond("Diarrhea", "R19.7")],
+      medreqs: [base(now, "tacrolimus"), base(now, "mmf"), base(now, "pred"), req(now, "Valganciclovir 900 mg PO daily", 8 * 730, "stopped", 2 * 730),
+        req(now, "Sulfamethoxazole-trimethoprim SS 400-80 mg PO daily", 8 * 730, "stopped", 2 * 730), req(now, "Acetaminophen 650 mg PO q6h PRN fever", 30)],
+      obs: [tac(now, 6.8, 30), cr(now, 108, 600), cr(now, 112, 240), cr(now, 118, 6), lab(now, "30247-1", "CMV DNA Quantitative PCR Plasma", 4200, "IU/mL", 240),
+        lab(now, "30247-1", "CMV DNA Quantitative PCR Plasma", 52000, "IU/mL", 20), lab(now, "6690-2", "WBC", 2.6, "10*9/L", 6), lab(now, "751-8", "Neutrophils", 1.1, "10*9/L", 6),
+        lab(now, "777-3", "Platelets", 112, "10*9/L", 6), lab(now, "1742-6", "ALT", 84, "U/L", 6), lab(now, "2823-3", "Potassium", 4.1, "mmol/L", 6)] }) },
+
+    { label: "H: BK nephropathy — 4 months, creatinine up 43%, BK PCR 25,000; valganciclovir dose high for CrCl", targets: { tacrolimus: [8, 10] }, infx: { sero: "R+", wt: 58 }, build: (now) => ({
+      patient: pt(61, "female"), conditions: [Object.assign(cond("Kidney transplant status", "Z94.0"), { onsetDateTime: iso(now, 4 * 730) }), cond("Acute kidney injury", "N17.9")],
+      medreqs: [base(now, "tacrolimus"), base(now, "mmf"), base(now, "pred"), req(now, "Valganciclovir 900 mg PO daily (CMV prophylaxis)", 4 * 730),
+        req(now, "Sulfamethoxazole-trimethoprim SS 400-80 mg PO daily (PJP prophylaxis)", 4 * 730)],
+      obs: [tac(now, 9.1, 30), cr(now, 104, 1400), cr(now, 105, 700), cr(now, 128, 200), cr(now, 150, 5), lab(now, "", "BK Virus DNA Quantitative PCR Plasma", 2600, "copies/mL", 900),
+        lab(now, "", "BK Virus DNA Quantitative PCR Plasma", 25000, "copies/mL", 40), lab(now, "6690-2", "WBC", 4.4, "10*9/L", 5), lab(now, "2823-3", "Potassium", 5.3, "mmol/L", 5)] }) },
+
+    { label: "I: Possible PJP — 10 months, thymoglobulin for rejection 2 months ago, TMP-SMX stopped; hypoxia, LDH 520", targets: { tacrolimus: [6, 9] }, infx: { sero: "R+", wt: 75, sym: { resp: true, fever: true } }, build: (now) => ({
+      patient: pt(66, "male"), conditions: [Object.assign(cond("Kidney transplant status", "Z94.0"), { onsetDateTime: iso(now, 10 * 730) }), cond("Acute T-cell mediated rejection", "T86.11"), cond("Hypoxemia", "R09.02")],
+      medreqs: [base(now, "tacrolimus"), base(now, "mmf"), req(now, "Prednisone 20 mg PO daily", 1400), req(now, "Valganciclovir 450 mg PO daily (CMV prophylaxis)", 1400),
+        req(now, "Sulfamethoxazole-trimethoprim DS 800-160 mg PO three times weekly", 7000, "stopped", 500), req(now, "Ceftriaxone 1 g IV q24h", 20)],
+      admins: [adm(now, "Thymoglobulin (anti-thymocyte globulin) 100 mg IV", 1450), adm(now, "Thymoglobulin (anti-thymocyte globulin) 100 mg IV", 1426)],
+      obs: [tac(now, 7.5, 48), cr(now, 132, 400), cr(now, 136, 10), lab(now, "", "Lactate Dehydrogenase", 520, "U/L", 10), lab(now, "", "Beta-D-Glucan", 380, "pg/mL", 8),
+        lab(now, "30247-1", "CMV DNA Quantitative PCR Plasma", 0, "IU/mL", 60), lab(now, "6690-2", "WBC", 5.2, "10*9/L", 10), lab(now, "2823-3", "Potassium", 4.9, "mmol/L", 10)] }) }
   ];
 })();
