@@ -2,6 +2,7 @@ PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
 MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
 Patient: DEMO, GORDON                    DOB: 1955-10-30     Sex: M
 MRN: TESTSZ03                            Age: 71
+Address: 303 Demo Crescent, Saanichton BC V8M 0C3
 ED arrival: 2026-11-14 21:30    Admitted: 2026-11-15 00:30 (Hospitalist)
 
 HOSPITALIST ADMISSION NOTE

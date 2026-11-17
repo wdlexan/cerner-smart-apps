@@ -3,6 +3,7 @@
 Standalone app for new-onset and breakthrough seizures.
 
 ## Files
+- `mv2351-fill.js`, `mv2351-roadsafetybc.pdf` - fills RoadSafetyBC MV2351 (Report of a Condition Affecting Fitness and Ability to Drive) from the chart; Driving tab > Report to RoadSafetyBC. Clinician details are saved per browser only (none in this public repo). Long text goes on an attached page; signature left blank.
 - `build/` - run `python3 aed_data.py ../aed-data.js` and `python3 make_pdf.py ../aed-dosing-reference.pdf` from inside `build/` to regenerate the data and PDF
 - `launch.html` - EHR launch, or standalone launch when opened directly (sandbox)
 - `index.html` - UI

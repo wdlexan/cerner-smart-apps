@@ -21,6 +21,16 @@ window.SEIZURE_DEMOS = [
      },
      "value": "TESTSZ01"
     }
+   ],
+   "address": [
+    {
+     "use": "home",
+     "line": [
+      "101 Test Avenue"
+     ],
+     "city": "Langford",
+     "postalCode": "V9B 0A1"
+    }
    ]
   },
   "labs": [
@@ -192,6 +202,16 @@ window.SEIZURE_DEMOS = [
      },
      "value": "TESTSZ02"
     }
+   ],
+   "address": [
+    {
+     "use": "home",
+     "line": [
+      "202 Sample Road"
+     ],
+     "city": "Victoria",
+     "postalCode": "V8T 0B2"
+    }
    ]
   },
   "labs": [
@@ -329,6 +349,16 @@ window.SEIZURE_DEMOS = [
       "text": "MRN"
      },
      "value": "TESTSZ03"
+    }
+   ],
+   "address": [
+    {
+     "use": "home",
+     "line": [
+      "303 Demo Crescent"
+     ],
+     "city": "Saanichton",
+     "postalCode": "V8M 0C3"
     }
    ]
   },

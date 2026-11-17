@@ -55,6 +55,8 @@
   @media(max-width:800px){.twocol{grid-template-columns:1fr}}
   #note{min-height:360px;font-family:ui-monospace,Consolas,monospace;font-size:12.5px}
   .links li{margin:3px 0}
+  .mvgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px 12px}
+  .mvgrid input[type=text]{width:100%;font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:6px}
   .loading{padding:40px;text-align:center;color:var(--mute)}
 </style>
 </head>
@@ -129,7 +131,7 @@
   </div>
 
   <section class="tab on" id="t-summary"><div class="loading">Reading chart&hellip;</div></section>
-  <section class="tab" id="t-driving"></section>
+  <section class="tab" id="t-driving"><div id="t-driving-main"></div><div id="mvReport"></div></section>
   <section class="tab" id="t-ix"></section>
   <section class="tab" id="t-tx"></section>
   <section class="tab" id="t-aed"></section>
@@ -148,6 +150,8 @@
   </section>
   <p class="muted" style="text-align:center;margin-top:20px">Decision support only. Verify doses with pharmacy/monograph and driving decisions with RoadSafetyBC standards. Not a substitute for clinical judgment.</p>
 </main>
+<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<script src="mv2351-fill.js"></script>
 <script src="aed-data.js"></script>
 <script src="demo-patients.js"></script>
 <script src="app.js"></script>

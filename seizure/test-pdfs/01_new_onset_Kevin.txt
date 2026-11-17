@@ -2,6 +2,7 @@ PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
 MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
 Patient: DEMO, KEVIN                     DOB: 1980-06-03     Sex: M
 MRN: TESTSZ01                            Age: 46
+Address: 101 Test Avenue, Langford BC V9B 0A1
 ED arrival: 2026-11-16 13:30    Admitted: 2026-11-16 16:30 (Hospitalist)
 
 ED PHYSICIAN NOTE

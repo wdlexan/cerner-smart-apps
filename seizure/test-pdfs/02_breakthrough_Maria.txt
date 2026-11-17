@@ -2,6 +2,7 @@ PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
 MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
 Patient: DEMO, MARIA                     DOB: 1997-02-21     Sex: F
 MRN: TESTSZ02                            Age: 29
+Address: 202 Sample Road, Victoria BC V8T 0B2
 ED arrival: 2026-11-16 19:30    Admitted: 2026-11-16 22:30 (Hospitalist)
 
 ED PHYSICIAN NOTE

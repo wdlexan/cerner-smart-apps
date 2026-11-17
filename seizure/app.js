@@ -346,7 +346,7 @@ function driveLine(dr) {
 // ---------- Rendering ----------
 function render() {
   const st = state();
-  renderSummary(st); renderDriving(st); renderIx(st); renderTx(st); renderAED(st); renderFU(st);
+  renderSummary(st); renderDriving(st); renderIx(st); renderTx(st); renderAED(st); renderFU(st); renderReport(st);
   if (!S.noteDirty) $("#note").value = buildNote(st);
 }
 
@@ -404,7 +404,7 @@ function renderSummary(st) {
 function renderDriving(st) {
   const dr = drivingRule(st);
   const earliest = dr.months != null && dr.from ? addMonths(dr.from, dr.months) : null;
-  $("#t-driving").innerHTML = `
+  $("#t-driving-main").innerHTML = `
   <div class="card drive"><h2>When can this patient drive again?</h2>
     ${st.driver === "none" ? `<p>${esc(dr.text)}</p>` : `
     <p class="big">${esc(driveLine(dr))}</p>
@@ -741,6 +741,149 @@ flags.length ? `Medication flags:\n${flags.join("\n")}` : ``,
   ].filter((l, i, a) => !(l === "" && a[i - 1] === "")).join("\n");
 }
 
+// ---------- RoadSafetyBC report (MV2351) ----------
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("seizure." + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem("seizure." + k, JSON.stringify(v)); } catch (e) { /* storage blocked */ } }
+};
+const MV = { built: false, dirty: { details: false, further: false } };
+const ymd = d => d ? fmtDate(d).replace(/-/g, "/") : "";
+function mvDetails(st) {
+  const ids = S.meds.filter(m => AED_MATCH.some(([, re]) => re.test(medName(m)))).map(m => medName(m));
+  const lv = ["phenytoin", "phenytoinFree", "valproate", "carbamazepine", "phenobarb", "lamotrigine", "levetiracetam"].map(k => latest(k)).filter(Boolean).map(l => `${LABS[l.key].label} ${l.si != null ? round(l.si) : l.v} ${l.si != null && LABS[l.key].lvl ? "umol/L" : l.unit} (${fmtDate(l.t)})`);
+  const acute = acuteSymptomaticFlags().map(x => x.replace(/&lt;/g, "<").replace(/&gt;/g, ">"));
+  const reps = ["ct", "mri", "eeg"].map(k => { const r = reportFor(k); return r ? `${REPORTS[k].label} ${repDate(r)}: ${repConcl(r)}` : null; }).filter(Boolean);
+  return [
+    `Diagnosis: ${PRES_LABEL[st.presentation]} - ${STYPE_LABEL[st.stype]}, ${CAUSE_LABEL[st.cause]}${st.epilepsyDx ? "; epilepsy diagnosed" : ""}.`,
+    `Most recent seizure: ${st.lastSz ? fmtDate(st.lastSz) : "[date]"}.${st.notBaseline ? " Not back to baseline at time of report." : ""} Seizures cause sudden loss of awareness and control (risk of sudden incapacitation).`,
+    acute.length ? `Provoking factors: ${acute.join("; ")}.` : "",
+    `Antiseizure medication: ${ids.length ? ids.join("; ") : "none"}.${lv.length ? " Levels: " + lv.join("; ") + "." : ""}`,
+    reps.length ? `Investigations: ${reps.join(" ")}` : "Investigations: [EEG / imaging pending].",
+    `Treatment adherence / seizure control: [edit]. Insight into driving restriction: [edit].`
+  ].filter(Boolean).join("\n");
+}
+function mvFurther(st) {
+  const dr = drivingRule(st);
+  const d = dr.months != null && dr.from ? fmtDate(addMonths(dr.from, dr.months)) : null;
+  return [
+    `Patient advised not to drive on ${fmtDate(today())}.`,
+    dr.section ? `Applicable standard: CCMTA ${dr.section} (${dr.title}). ${dr.months != null ? `May be fit to drive in ${waitText(dr.months)}${d ? ` (on or after ${d})` : ""} if seizure-free and conditions met.` : dr.text}` : "",
+    dr.conditions.length ? `Conditions: ${dr.conditions.join("; ")}.` : "",
+    `Recommend licence not be reinstated until the seizure-free period is met, with a Driver's Medical Examination Report / neurology assessment at that time.`
+  ].filter(Boolean).join(" ");
+}
+function physicians() { return store.get("physicians", []); }
+function renderReport(st) {
+  const box = $("#mvReport"); if (!box) return;
+  if (!MV.built) {
+    MV.built = true;
+    const p = S.patient || {};
+    const phs = physicians(), last = store.get("lastPhysician", phs.length ? 0 : "new");
+    box.innerHTML = `
+    <div class="card"><h2>Report to RoadSafetyBC - MV2351 (filled PDF)</h2>
+      <div class="info"><b>When you must report (Motor Vehicle Act s. 230):</b> the patient has a medical condition that makes it dangerous to drive <i>and</i> continues to drive after being warned. You may also report concerns that do not meet this. Uncontrolled seizures are a listed example. No action for damages lies for a report made in good faith (s. 230(3)).<br>
+      Fax the signed form to <b>250-952-6888</b> (printed on the form). RoadSafetyBC nurse case manager: <b>250-953-8612</b> (Mon-Fri 8:30-4:30).</div>
+      <h3>Patient</h3>
+      <div class="mvgrid">
+        <div><label class="f">Name</label><input type="text" id="mvName" value="${esc([p.given, p.family].filter(Boolean).join(" ") || p.name || "")}"></div>
+        <div><label class="f">Date of birth (YYYY/MM/DD)</label><input type="text" id="mvDob" value="${esc(ymd(p.birthDate))}"></div>
+        <div><label class="f">Driver's licence # (if known)</label><input type="text" id="mvLic" placeholder="Not in Cerner - ask patient"></div>
+        <div><label class="f">Address</label><input type="text" id="mvAddr" value="${esc(p.address || "")}"></div>
+        <div><label class="f">City</label><input type="text" id="mvCity" value="${esc(p.city || "")}"></div>
+        <div><label class="f">Postal code</label><input type="text" id="mvPostal" value="${esc(p.postal || "")}"></div>
+      </div>
+      <h3>Clinician</h3>
+      <div class="mvgrid">
+        <div><label class="f">Saved clinicians (this browser only)</label><select id="mvPhSel">${phs.map((x, i) => `<option value="${i}" ${String(last) === String(i) ? "selected" : ""}>${esc(x.name)}</option>`).join("")}<option value="new" ${last === "new" ? "selected" : ""}>Other / new clinician...</option></select></div>
+        <div><label class="f">Name</label><input type="text" id="mvPhName"></div>
+        <div><label class="f">Phone</label><input type="text" id="mvPhPhone"></div>
+        <div><label class="f">Secure fax for receipt confirmation</label><input type="text" id="mvPhFax"></div>
+        <div><label class="f">Qualification</label><select id="mvPhQual"><option value="family">Family physician</option><option value="specialist">Specialist physician</option><option value="np">Nurse practitioner</option><option value="other">Other (type below)</option></select></div>
+        <div><label class="f">Other qualification</label><input type="text" id="mvPhOther" placeholder="e.g. Hospitalist"></div>
+        <div><label class="f">Patient under your care for</label><input type="text" id="mvCare" placeholder="e.g. 3 days (admission)"></div>
+      </div>
+      <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn sec" id="mvPhSave">Save clinician on this computer</button><button class="btn sec" id="mvPhDel">Remove saved clinician</button>
+        <span class="muted">Clinician details are kept in this browser only - none are stored in the app (public repo).</span></div>
+      <h3>Form boxes</h3>
+      <div class="mvgrid">
+        <div><label class="chk"><input type="checkbox" id="mvOpinion" checked> In my opinion the patient has a condition that puts the public or themselves at risk when driving</label>
+             <label class="chk"><input type="checkbox" id="mvContinues"> Patient continues to drive after being warned (s. 230 duty)</label></div>
+        <div><b class="muted">Impairments</b>
+             <label class="chk"><input type="checkbox" id="mvSudden" checked> Risk of sudden incapacitation</label>
+             <label class="chk"><input type="checkbox" id="mvMotor"> Motor</label>
+             <label class="chk"><input type="checkbox" id="mvCog"> Cognitive</label>
+             <label class="chk"><input type="checkbox" id="mvOther"> Other</label></div>
+        <div><b class="muted">Optional recommendations</b>
+             <label class="chk"><input type="checkbox" id="mvRecCancel"> Recommend cancellation of driver's licence</label>
+             <label class="chk"><input type="checkbox" id="mvRecMed" checked> Recommend further medical assessment</label>
+             <label class="chk"><input type="checkbox" id="mvRecDrive"> Recommend driving assessment</label></div>
+      </div>
+      <h3>Details of medical condition <span class="muted">(auto-filled; edit freely - long text continues on an attached page)</span></h3>
+      <textarea id="mvDetails" rows="7"></textarea>
+      <h3>Further recommendations</h3>
+      <textarea id="mvFurther" rows="4"></textarea>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">
+        <label class="f" style="margin:0">Date</label><input type="date" id="mvDate" value="${today()}" style="width:auto">
+        <button class="btn sec" id="mvRebuild">Rebuild text from chart</button>
+        <button class="btn" id="mvGen">Create filled MV2351 PDF</button>
+        <span id="mvMsg" class="muted"></span>
+      </div>
+      <p class="muted">Signature is left blank - print, sign and fax. Official form: <a target="_blank" href="https://www2.gov.bc.ca/assets/gov/driving-and-transportation/driving/roadsafetybc/medical-fitness/medical-prof/mv2351_condition_affecting_ability_to_drive_2022may.pdf">MV2351 (RoadSafetyBC)</a> &middot; <a target="_blank" href="https://www2.gov.bc.ca/gov/content/transportation/driving-and-cycling/roadsafetybc/medical-fitness/medical-prof/reporting-person">Reporting a patient who may be unfit to drive</a></p>
+    </div>`;
+    const loadPh = () => {
+      const v = $("#mvPhSel").value, x = v === "new" ? {} : (physicians()[+v] || {});
+      $("#mvPhName").value = x.name || ""; $("#mvPhPhone").value = x.phone || ""; $("#mvPhFax").value = x.fax || "";
+      $("#mvPhQual").value = x.qual || "other"; $("#mvPhOther").value = x.otherQual ?? "Hospitalist";
+      store.set("lastPhysician", v === "new" ? "new" : +v);
+    };
+    const phOptions = sel => { $("#mvPhSel").innerHTML = physicians().map((x, i) => `<option value="${i}">${esc(x.name)}</option>`).join("") + `<option value="new">Other / new clinician...</option>`; $("#mvPhSel").value = String(sel); };
+    $("#mvPhSel").onchange = loadPh; loadPh();
+    $("#mvPhSave").onclick = () => {
+      const x = { name: $("#mvPhName").value.trim(), phone: $("#mvPhPhone").value.trim(), fax: $("#mvPhFax").value.trim(), qual: $("#mvPhQual").value, otherQual: $("#mvPhOther").value.trim() };
+      if (!x.name) { $("#mvMsg").textContent = "Enter the clinician name first."; return; }
+      const list = physicians(), v = $("#mvPhSel").value, i = list.findIndex(y => y.name === x.name);
+      if (v !== "new") list[+v] = x; else if (i >= 0) list[i] = x; else list.push(x);
+      const idx = list.findIndex(y => y.name === x.name);
+      store.set("physicians", list); store.set("lastPhysician", idx);
+      phOptions(idx); $("#mvMsg").textContent = "Saved " + x.name + " on this computer.";
+    };
+    $("#mvPhDel").onclick = () => {
+      const v = $("#mvPhSel").value; if (v === "new") return;
+      const list = physicians(); list.splice(+v, 1); store.set("physicians", list); store.set("lastPhysician", "new");
+      phOptions("new"); loadPh();
+    };
+    $("#mvDetails").oninput = () => MV.dirty.details = true;
+    $("#mvFurther").oninput = () => MV.dirty.further = true;
+    $("#mvRebuild").onclick = () => { MV.dirty = { details: false, further: false }; renderReport(state()); };
+    $("#mvGen").onclick = () => mvGenerate();
+  }
+  if (!MV.dirty.details) $("#mvDetails").value = mvDetails(st);
+  if (!MV.dirty.further) $("#mvFurther").value = mvFurther(st);
+}
+let MV_TEMPLATE = null;
+async function mvGenerate() {
+  const msg = t => $("#mvMsg").textContent = t;
+  try {
+    if (!window.PDFLib || !window.MV2351Fill) throw new Error("PDF library did not load (check internet access to cdn.jsdelivr.net).");
+    if (!MV_TEMPLATE) { const r = await fetch("mv2351-roadsafetybc.pdf"); if (!r.ok) throw new Error("Could not load mv2351-roadsafetybc.pdf (" + r.status + ")"); MV_TEMPLATE = await r.arrayBuffer(); }
+    const v = id => $("#" + id).value.trim(), c = id => $("#" + id).checked;
+    if (!v("mvPhName")) { msg("Enter the clinician name."); return; }
+    const bytes = await window.MV2351Fill.fillMV2351(window.PDFLib, MV_TEMPLATE.slice(0), {
+      patient: { name: v("mvName"), address: v("mvAddr"), city: v("mvCity"), postal: v("mvPostal"), dob: v("mvDob"), licence: v("mvLic") },
+      clinician: { name: v("mvPhName"), phone: v("mvPhPhone"), fax: v("mvPhFax"), qual: v("mvPhQual"), otherQual: v("mvPhOther"), lengthOfCare: v("mvCare") },
+      boxes: { opinionRisk: c("mvOpinion"), continuesToDrive: c("mvContinues"), impSudden: c("mvSudden"), impMotor: c("mvMotor"), impCognitive: c("mvCog"), impOther: c("mvOther"),
+               recCancel: c("mvRecCancel"), recMedical: c("mvRecMed"), recDriving: c("mvRecDrive") },
+      details: $("#mvDetails").value, further: $("#mvFurther").value, date: ymd($("#mvDate").value),
+      attachTitle: "Attachment to MV2351 - seizure details"
+    });
+    const url = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
+    const a = document.createElement("a"); a.href = url; a.download = `MV2351_RoadSafetyBC_${(v("mvName") || "patient").replace(/\W+/g, "_")}.pdf`;
+    document.body.appendChild(a); a.click(); a.remove(); window.open(url, "_blank");
+    setTimeout(() => URL.revokeObjectURL(url), 120000);
+    msg("Created. Review, sign and fax to 250-952-6888.");
+  } catch (e) { msg("Error: " + e.message); console.error(e); }
+}
+
 // ---------- FHIR loading ----------
 async function loadFHIR(client) {
   const pid = client.patient.id;
@@ -762,7 +905,10 @@ function ingest({ pt, labs, wt, meds, conds, reps }) {
     const name = n?.text || [n?.given?.join(" "), n?.family].filter(Boolean).join(" ") || "Patient";
     const age = pt.birthDate ? Math.floor((Date.now() - new Date(pt.birthDate)) / 3.15576e10) : null;
     const mrn = pt.identifier?.find(i => /mrn|medical record/i.test(i.type?.text || i.type?.coding?.[0]?.display || ""))?.value || pt.identifier?.[0]?.value || "";
-    S.patient = { name, age, gender: pt.gender, birthDate: pt.birthDate, mrn };
+    const ad = (pt.address || []).find(a => a.use === "home") || (pt.address || [])[0] || {};
+    const phone = (pt.telecom || []).find(t => t.system === "phone")?.value || "";
+    S.patient = { name, age, gender: pt.gender, birthDate: pt.birthDate, mrn, family: n?.family || "", given: (n?.given || []).join(" "),
+      address: (ad.line || []).join(", ") || ad.text || "", city: ad.city || "", postal: ad.postalCode || "", phone };
   }
   S.labs = (labs || []).map(o => {
     const key = classifyObs(o); if (!key) return null;
@@ -816,7 +962,7 @@ function demoDana() {
   const d = n => daysAgo(n).toISOString();
   const lab = (text, loinc, v, unit, n = 0) => ({ resourceType: "Observation", code: { text, coding: [{ system: "http://loinc.org", code: loinc }] }, valueQuantity: { value: v, unit }, effectiveDateTime: d(n) });
   return {
-    pt: { resourceType: "Patient", name: [{ given: ["Dana"], family: "Testpatient" }], gender: "female", birthDate: "1991-04-12", identifier: [{ type: { text: "MRN" }, value: "DEMO-0042" }] },
+    pt: { resourceType: "Patient", name: [{ given: ["Dana"], family: "Testpatient" }], gender: "female", birthDate: "1991-04-12", identifier: [{ type: { text: "MRN" }, value: "DEMO-0042" }], address: [{ use: "home", line: ["100 Example Street"], city: "Victoria", postalCode: "V8Z 0A0" }] },
     labs: [lab("Sodium", "2951-2", 132, "mmol/L"), lab("Glucose", "2345-7", 6.1, "mmol/L"), lab("Calcium", "17861-6", 2.31, "mmol/L"),
       lab("Magnesium", "19123-9", 0.72, "mmol/L"), lab("Creatinine", "2160-0", 68, "umol/L"), lab("eGFR", "33914-3", 98, "mL/min/1.73m2"),
       lab("Albumin", "1751-7", 31, "g/L"), lab("ALT", "1742-6", 22, "U/L"), lab("WBC", "6690-2", 11.2, "x10^9/L"), lab("CK", "2157-6", 640, "U/L"),

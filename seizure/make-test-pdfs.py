@@ -36,7 +36,7 @@ def labs(collected, rows):
 
 def build(p):
     L = ["PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)", "MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY",
-         f"Patient: {p['name']:<32}DOB: {p['dob']}     Sex: {p['sex']}", f"MRN: {p['mrn']:<36}Age: {p['age']}",
+         f"Patient: {p['name']:<32}DOB: {p['dob']}     Sex: {p['sex']}", f"MRN: {p['mrn']:<36}Age: {p['age']}", f"Address: {p['addr'][0]}, {p['addr'][1]} BC {p['addr'][2]}",
          f"ED arrival: {f(H(p['arrive']))}    Admitted: {f(H(p['arrive'] - 3))} (Hospitalist)", ""]
     for title, h, text in p["notes"]:
         L += [title, f"Date of service: {f(H(h))}"] + wrap(text) + [""]
@@ -56,7 +56,8 @@ def demo(p):
     return {
       "label": p["label"],
       "pt": {"resourceType": "Patient", "name": [{"given": [given.title()], "family": fam.title()}], "gender": "male" if p["sex"] == "M" else "female",
-             "birthDate": p["dob"], "identifier": [{"type": {"text": "MRN"}, "value": p["mrn"]}]},
+             "birthDate": p["dob"], "identifier": [{"type": {"text": "MRN"}, "value": p["mrn"]}],
+             "address": [{"use": "home", "line": [p["addr"][0]], "city": p["addr"][1], "postalCode": p["addr"][2]}]},
       "labs": [{"text": r[0], "loinc": LOINC.get(r[0], ""), "v": float(r[1]) if r[1].replace(".", "", 1).isdigit() else None, "unit": r[2], "h": h}
                for h, rows in p["labs"] for r in rows],
       "weight": p["weight"],
@@ -66,7 +67,7 @@ def demo(p):
     }
 
 P = [
- dict(file="01_new_onset_Kevin", label="New-onset seizure (cavernoma, commercial driver)", name="DEMO, KEVIN", dob="1980-06-03", sex="M", mrn="TESTSZ01", age=46, arrive=20, weight=92,
+ dict(file="01_new_onset_Kevin", label="New-onset seizure (cavernoma, commercial driver)", name="DEMO, KEVIN", dob="1980-06-03", sex="M", mrn="TESTSZ01", age=46, arrive=20, weight=92, addr=("101 Test Avenue", "Langford", "V9B 0A1"),
   notes=[("ED PHYSICIAN NOTE", 19.5, "46 year old long-haul truck driver (Class 1 licence). Witnessed generalized tonic-clonic seizure at the depot about 2 minutes, tongue bite on the left side, urinary incontinence, confused for about 20 minutes afterward. No prior seizures. No alcohol excess, no recreational drugs, slept normally. No head injury. Normal neurological exam now. CT head negative. Admit to hospitalist for MRI and EEG."),
          ("HOSPITALIST ADMISSION NOTE", 16, "First seizure, appears unprovoked: sodium, glucose, calcium and magnesium normal, ethanol negative, no new medications. Lactate and CK raised in keeping with a generalized convulsion. Plan MRI brain epilepsy protocol, EEG, neurology input. Counselled not to drive; commercial licence."),
          ("NEUROLOGY CONSULT NOTE", 3, "MRI shows a left temporal cavernoma and EEG shows left temporal sharp waves. Single seizure with structural lesion and epileptiform EEG gives high recurrence risk, meets the ILAE practical definition of epilepsy. Started levetiracetam 500 mg BID. Neurosurgery outpatient referral regarding cavernoma. Driving: no commercial driving; report to RoadSafetyBC.")],
@@ -84,7 +85,7 @@ P = [
            ("MRI BRAIN EPILEPSY PROTOCOL", 8, "1.4 cm left anterior temporal cavernous malformation with complete hemosiderin rim, no recent hemorrhage. Hippocampi normal and symmetric. No other lesion."),
            ("ELECTROENCEPHALOGRAM (EEG)", 5, "Abnormal awake and drowsy EEG: intermittent left temporal sharp waves, maximal T7/F7. No electrographic seizures. Supports a left temporal epileptogenic focus."),
            ("ECG 12 LEAD", 19.3, "Sinus tachycardia 104. Normal intervals, QTc 432 ms. No Brugada pattern.")]),
- dict(file="02_breakthrough_Maria", label="Breakthrough seizure (JME on lamotrigine, new OCP)", name="DEMO, MARIA", dob="1997-02-21", sex="F", mrn="TESTSZ02", age=29, arrive=14, weight=58,
+ dict(file="02_breakthrough_Maria", label="Breakthrough seizure (JME on lamotrigine, new OCP)", name="DEMO, MARIA", dob="1997-02-21", sex="F", mrn="TESTSZ02", age=29, arrive=14, weight=58, addr=("202 Sample Road", "Victoria", "V8T 0B2"),
   notes=[("ED PHYSICIAN NOTE", 13.5, "29 year old with juvenile myoclonic epilepsy, seizure free 3 years on lamotrigine 150 mg BID. Generalized tonic-clonic seizure at home this morning shortly after waking, witnessed by partner; also morning myoclonic jerks for the past 2 weeks. Started a combined oral contraceptive 6 weeks ago. Took ciprofloxacin for a urinary tract infection since 3 days ago. Slept 4 hours the night before (night shift nurse). Reports taking lamotrigine regularly. Exam normal."),
          ("HOSPITALIST NOTE", 2, "Breakthrough seizure in known generalized epilepsy. Likely trigger: lamotrigine level reduced by estrogen-containing contraceptive, plus sleep deprivation and ciprofloxacin. Lamotrigine level low. Pregnancy test negative. Plan discuss dose increase and contraception with neurology; myoclonus may also be worsened by lamotrigine, consider switch to levetiracetam. Drives a car (Class 5).")],
   vitals=[(13.6, 128, 78, 96, 36.8, 99), (8, 116, 72, 74, 36.7, 99), (2, 112, 70, 70, 36.6, 99)],
@@ -99,7 +100,7 @@ P = [
   reports=[("CT HEAD WITHOUT CONTRAST", 12.5, "Normal non-contrast CT head."),
            ("MRI BRAIN", 8000, "Normal MRI brain (outpatient)."),
            ("ELECTROENCEPHALOGRAM (EEG)", 8100, "Generalized 4-6 Hz polyspike-and-wave discharges with photoparoxysmal response, consistent with juvenile myoclonic epilepsy (outpatient study).")]),
- dict(file="03_status_Gordon", label="Status epilepticus (post-stroke epilepsy, Na 114, cefepime, phenytoin + apixaban)", name="DEMO, GORDON", dob="1955-10-30", sex="M", mrn="TESTSZ03", age=71, arrive=60, weight=78,
+ dict(file="03_status_Gordon", label="Status epilepticus (post-stroke epilepsy, Na 114, cefepime, phenytoin + apixaban)", name="DEMO, GORDON", dob="1955-10-30", sex="M", mrn="TESTSZ03", age=71, arrive=60, weight=78, addr=("303 Demo Crescent", "Saanichton", "V8M 0C3"),
   notes=[("HOSPITALIST ADMISSION NOTE", 58, "Admitted with right lower lobe pneumonia. Background post-stroke epilepsy after left MCA infarct in 2023, on phenytoin 300 mg daily, atrial fibrillation on apixaban, hypertension. Started cefepime. Acute kidney injury on admission."),
          ("RAPID RESPONSE NOTE", 6, "Called for generalized tonic-clonic seizure. Three seizures over 25 minutes without return to baseline between them. Given lorazepam 4 mg IV twice, then levetiracetam 4500 mg IV load. Convulsions stopped but remains GCS 9 and not following commands 40 minutes later. Sodium 114. Concern for non-convulsive status epilepticus and cefepime neurotoxicity with eGFR 24. ICU consulted, continuous EEG requested, 3% saline 150 mL given."),
          ("ICU CONSULT NOTE", 4, "Status epilepticus, now non-convulsive on initial EEG review. Provoking factors: severe hyponatremia, cefepime with acute kidney injury, subtherapeutic phenytoin (albumin 24). Change cefepime to ceftriaxone. Continue levetiracetam 1000 mg IV q12h. Transfer to ICU for continuous EEG and airway monitoring.")],
