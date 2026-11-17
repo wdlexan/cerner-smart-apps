@@ -48,7 +48,9 @@
       notes: [
         { time: arrive + 0.5 * HOUR, title: 'ED Physician Note', text: 'Code stroke. Last known well 07:40. Right hemiparesis and aphasia, NIHSS 14. Right homonymous hemianopia. Discussed with neurology: tenecteplase given, transferred for EVT.' },
         { time: evtEnd + 0.5 * HOUR, title: 'Neurology Note', text: 'Post thrombectomy left M1, eTICI 2b. NIHSS improving. BP target less than 180/105 for 24 h. Repeat CT at 24 h before antithrombotics. NPO until swallow screen.' },
-        { time: now - 8 * HOUR, title: 'Nursing Note', text: 'Telemetry showing atrial fibrillation, rate 90s, intermittent. Right groin site soft, no hematoma. Swallow screen failed, remains NPO.' }
+        { time: now - 8 * HOUR, title: 'Nursing Note', text: 'Telemetry showing atrial fibrillation, rate 90s, intermittent. Right groin site soft, no hematoma. Swallow screen failed, remains NPO.' },
+        { time: now - 5 * HOUR, title: 'Physiotherapy Initial Assessment', text: 'Bed mobility moderate assist x1. Sit to stand with 2 person assist. Unable to ambulate today; dense right leg weakness. High falls risk. Plan: daily PT, tilt table, recommend inpatient rehabilitation (GRU) referral.' },
+        { time: now - 4 * HOUR, title: 'Speech-Language Pathology Swallowing Assessment', text: 'Clinical swallow assessment. Wet voice and coughing with thin fluids on oral trials. Recommend NPO except meds crushed in puree; consider NG tube for nutrition. Expressive aphasia with word-finding difficulty; follows 1-step commands. VFSS if not improving in 48 h.' }
       ] };
     k.sbpSeries(out, tnk, [[0.2, 172, 92], [1, 168, 90], [3, 176, 94], [6.5, 186, 101], [7, 171, 95], [10, 162, 88], [14, 158, 84], [18, 150, 82], [20, 154, 80]]);
     return out;
@@ -71,7 +73,8 @@
       observations: [k.obs('laboratory', '2345-7', 'Glucose', arrive + 0.3 * HOUR, 6.4, 'mmol/L')],
       notes: [
         { time: arrive + HOUR, title: 'ED Physician Note', text: 'Sudden onset vertigo at 06:30 this morning with vomiting. Unable to walk without assistance, falls to the left. Nystagmus on left gaze. NIHSS 2 (ataxia). CT and CTA negative. Discussed with neurology: not a lytic candidate given mild deficits outside window. Admit to hospitalist, MRI.' },
-        { time: now - 2 * HOUR, title: 'Nursing Note', text: 'Still dizzy, vomiting x2. Gait unsteady, needs assist of 2. Passed bedside swallow screen.' }
+        { time: now - 2 * HOUR, title: 'Nursing Note', text: 'Still dizzy, vomiting x2. Gait unsteady, needs assist of 2. Passed bedside swallow screen.' },
+        { time: now - 1 * HOUR, title: 'Physiotherapy Note', text: 'Truncal ataxia, falls to the left in sitting. Transfers with 1 person assist. Ambulated 5 m with 2 person assist and walker. High falls risk; bed alarm. Will reassess tomorrow.' }
       ] };
     k.sbpSeries(out, arrive, [[0.2, 168, 88], [2, 174, 90], [5, 162, 84], [8, 158, 82], [9.5, 160, 80]]);
     return out;
@@ -99,7 +102,10 @@
       notes: [
         { time: arrive + HOUR, title: 'ED Physician Note', text: 'Sudden left hand weakness and clumsiness on waking. NIHSS 3. Non-smoker. No hypertension or diabetes. CT/CTA negative. Neurology: not a lytic candidate (wake-up, mild). Aspirin, admit, MRI.' },
         { time: arrive + 30 * HOUR, title: 'Hospitalist Progress Note', text: 'MRI shows small right frontal cortical infarct. Passed swallow screen. Plan: echo with bubble, telemetry, lipids, A1c.' },
-        { time: now - 5 * HOUR, title: 'Hospitalist Progress Note', text: 'Echo: PFO with atrial septal aneurysm and large shunt. Telemetry no AF. Considering embolic stroke of undetermined source with PFO.' }
+        { time: now - 5 * HOUR, title: 'Hospitalist Progress Note', text: 'Echo: PFO with atrial septal aneurysm and large shunt. Telemetry no AF. Considering embolic stroke of undetermined source with PFO.' },
+        { time: arrive + 26 * HOUR, title: 'Physiotherapy Assessment', text: 'Independent with transfers and bed mobility. Ambulating 100 m independently without gait aid; managed stairs with rail. Low falls risk. No further PT needs; safe for discharge home from a mobility point of view.' },
+        { time: arrive + 28 * HOUR, title: 'Occupational Therapy Assessment', text: 'Independent with dressing and grooming. Mild left hand clumsiness affecting fine motor tasks (buttons, typing). MoCA 27/30. No neglect. Recommend outpatient OT for hand function; return to work and driving to be discussed at stroke prevention clinic.' },
+        { time: arrive + 24 * HOUR, title: 'SLP Note', text: 'Bedside swallow assessment passed. Regular diet and thin fluids. Speech and language within normal limits. No SLP follow-up needed.' }
       ] };
     k.sbpSeries(out, arrive, [[1, 138, 84], [12, 132, 80], [36, 128, 78], [60, 126, 76], [70, 130, 78]]);
     return out;

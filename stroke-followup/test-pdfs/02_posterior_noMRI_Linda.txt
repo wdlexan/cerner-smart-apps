@@ -15,6 +15,11 @@ NURSING NOTE
 Date of service: 2026-11-17 07:30
 Still dizzy, vomiting x2. Gait unsteady, needs assist of 2. Passed bedside swallow screen.
 
+PHYSIOTHERAPY NOTE
+Date of service: 2026-11-17 08:30
+Truncal ataxia, falls to the left in sitting. Transfers with 1 person assist. Ambulated 5 m
+with 2 person assist and walker. High falls risk; bed alarm. Will reassess tomorrow.
+
 VITAL SIGNS
 2026-11-16 23:42 BP: 168/88 HR: 84 Temp: 36.8 C SpO2: 98%
 2026-11-17 01:30 BP: 174/90 HR: 84 Temp: 36.8 C SpO2: 98%

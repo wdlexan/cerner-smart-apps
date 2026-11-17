@@ -108,3 +108,12 @@ details:not([open]) > .sf-h { margin-bottom: 0; }
 .sf-disclaimer { font-size: 12px; color: #3d3d3d; border-top: 1px solid #e3e3e3; padding-top: 8px; }
 .sf-esus-tx { background: #f3f3f3; border-radius: 8px; padding: 6px 10px; }
 @media (max-width: 600px) { .sf-head { flex-direction: column; } .sf-table tbody th { width: auto; } }
+/* BP target, LDL, rehab summary */
+.sf-bp-now { display: flex; gap: 14px; align-items: center; border: 1px solid #d0d0d0; border-radius: 10px; padding: 10px 14px; margin: 6px 0 10px; background: #fff; }
+.sf-bp-t { font-size: 22px; font-weight: 700; color: #0c447c; white-space: nowrap; }
+.sf-bp-t.sf-ok { color: #27500a; } .sf-bp-t.sf-bad { color: #a32d2d; }
+.sf-list { margin: 4px 0; padding-left: 20px; } .sf-list li { margin: 2px 0; }
+.sf-rehab h4 { margin: 2px 0 6px; font-size: 14px; }
+.sf-rehab-dl { margin: 0; } .sf-rehab-dl dt { font-weight: 600; font-size: 13px; margin-top: 6px; } .sf-rehab-dl dd { margin: 0; }
+.sf-rehab-full summary { cursor: pointer; font-size: 12.5px; color: #555; margin-top: 6px; }
+.sf-rehab-full p { white-space: pre-wrap; font-size: 12.5px; background: #f7f7f7; padding: 8px; border-radius: 6px; }

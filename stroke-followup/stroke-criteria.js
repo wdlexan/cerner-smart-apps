@@ -180,7 +180,75 @@
     fever: /\bfebrile\b|\bfever\b|\btemp(?:erature)? (?:of )?3[89]\.\d/i
   };
 
-  const api = { DRUGS, BRANDS, POST_TREATMENT, ELAN, DAPT, POSTERIOR, HINTS, PROGNOSIS, WORKUP, ESUS_TESTS, ROPE, ESUS_TREATMENT, TEXT };
+
+  // BP targets for the first 48 h and after. Sources: CSBPR acute management 2022 (section 4.3: not lytic-eligible — do not routinely
+  // treat up to 220 systolic; if >220/120 lower ~15%, not >25%, over 24 h; lytic — below 185/110 during and for the next 24 h) and CSBPR
+  // Secondary Prevention 2020 (start/adjust antihypertensives after the acute phase and before discharge; long-term <140/90, lacunar
+  // systolic <130, diabetes <130/80). AHA/ASA and ESO use ≤180/105 after lytic/EVT; the app keeps that line. Checked Nov 2026 against
+  // strokebestpractices.ca; confirm against the current CSBPR and local order sets.
+  const BP_TARGETS = {
+    treated: [
+      { fromH: 0, toH: 24, sbp: 180, dbp: 105, label: '0–24 h after lytic/EVT', target: '≤180/105',
+        text: 'Keep BP ≤180/105 (CSBPR wording after thrombolysis: below 185/110 during and for 24 h). After successful EVT, follow neurology; do not push SBP below 140 (intensive lowering did worse in trials). Hold home antihypertensives unless directed.' },
+      { fromH: 24, toH: 48, sbp: 180, dbp: 105, label: '24–48 h', target: '≤180/105, lower gradually',
+        text: 'Still avoid >180/105 and avoid sudden drops. Once neurologically stable, swallowing safely (or by NG), and the 24 h scan shows no hemorrhage, restart home antihypertensives at low dose.' }
+    ],
+    untreated: [
+      { fromH: 0, toH: 24, sbp: 220, dbp: 120, label: '0–24 h (no lytic/EVT)', target: 'Treat only if >220/120',
+        text: 'Do not routinely treat up to 220 systolic. If SBP >220 or DBP >120, lower by about 15% (not more than 25%) over the first 24 h. Lower sooner if another condition needs it (aortic dissection, ACS, acute heart failure, hypertensive encephalopathy, pre-eclampsia).' },
+      { fromH: 24, toH: 48, sbp: 220, dbp: 120, label: '24–48 h', target: 'Permissive; avoid >220/120',
+        text: 'Still permissive. Gradual lowering toward the long-term target can begin once the patient is neurologically stable; avoid rapid drops.' }
+    ],
+    after: { fromH: 48, label: 'After 48 h', target: 'Start/adjust if ≥140/90',
+      text: 'If neurologically stable and BP is consistently ≥140/90, start or adjust antihypertensives (CSBPR: after the acute phase, which it counts as 0–72 h, and before discharge). Lower gradually.' },
+    longTerm: {
+      general: { sbp: 140, dbp: 90, target: '<140/90', text: 'Long term: consistently <140/90 (CSBPR).' },
+      lacunar: { sbp: 130, dbp: null, target: 'SBP <130', text: 'Long term (lacunar / small subcortical stroke): systolic consistently <130 (CSBPR).' },
+      diabetes: { sbp: 130, dbp: 80, target: '<130/80', text: 'Long term (diabetes): <130/80 (CSBPR).' },
+      note: 'AHA/ASA 2021 suggests <130/80 for most patients after stroke or TIA.'
+    },
+    hemorrhage: 'Hemorrhage or hemorrhagic transformation on imaging: BP target per neurology (often lower).'
+  };
+
+  // LDL. Source: CSBPR Secondary Prevention (lipid management): statin for non-cardioembolic ischemic stroke/TIA; target LDL <1.8 mmol/L;
+  // ezetimibe if LDL >1.8 on maximal tolerated statin with atherosclerotic disease, then PCSK9 inhibitor; no statin started for ICH.
+  // Treat Stroke to Target (TST, NEJM 2020): <1.8 vs 2.3–2.8 mmol/L reduced vascular events. Checked Nov 2026; confirm against current CSBPR/CCS.
+  const LIPIDS = {
+    target: 1.8,
+    highIntensity: /\batorvastatin\b[^0-9]{0,15}\b(40|80)\b|\brosuvastatin\b[^0-9]{0,15}\b(20|40)\b/i,
+    recheckWeeks: '4–12 weeks',
+    start: 'Start a high-intensity statin (atorvastatin 40–80 mg or rosuvastatin 20–40 mg) unless contraindicated.',
+    intensify: 'Increase to a high-intensity statin (atorvastatin 40–80 mg or rosuvastatin 20–40 mg).',
+    addEze: 'Add ezetimibe 10 mg (LDL above target on maximal tolerated statin).',
+    pcsk9: 'If still above target on statin + ezetimibe: PCSK9 inhibitor (evolocumab, alirocumab) — usually outpatient.',
+    cardioembolic: 'AF / cardioembolic stroke without other atherosclerotic disease: CSBPR statin recommendation is for non-cardioembolic stroke; follow CCS lipid guidelines for the patient\'s overall risk.'
+  };
+
+  // PT / OT / SLP note summary. Notes are matched by title first, then by the start of the note text.
+  // Each topic pulls sentences that mention it from the latest notes. Source for timing: CSBPR (rehabilitation
+  // assessment by PT/OT/SLP as early as possible after admission).
+  const REHAB = {
+    disciplines: [
+      { key: 'pt', label: 'Physiotherapy (PT)', title: /\bphysio\w*|\bphysical therap\w*|\bPT\b(?! ?INR)/i, lead: /\bphysiotherap\w*|\bphysical therap\w*|\bPT (?:assessment|note|initial|progress)\b/i,
+        topics: ['mobility', 'balance', 'dc'] },
+      { key: 'ot', label: 'Occupational therapy (OT)', title: /\boccupational therap\w*|\bOT\b/i, lead: /\boccupational therap\w*|\bOT (?:assessment|note|initial|progress)\b/i,
+        topics: ['adl', 'cog', 'mobility', 'dc'] },
+      { key: 'slp', label: 'Speech-language pathology (SLP)', title: /\bspeech\b|\bSLP\b|\blanguage path\w*|\bswallow\w*/i, lead: /\bspeech[- ]language\b|\bSLP\b|\bswallowing assessment\b|\bclinical swallow\w*/i,
+        topics: ['swallow', 'comm', 'dc'] }
+    ],
+    topics: {
+      mobility: { label: 'Mobility / transfers', re: /\b(?:independent\w*|supervision|stand-?by|contact guard|min(?:imal)? assist\w*|mod(?:erate)? assist\w*|max(?:imal)? assist\w*|(?:1|2|one|two)[- ]person|assist (?:x|of) ?\d|transfer\w*|ambulat\w*|gait|walk\w*|walker|cane|wheelchair|mechanical lift|hoyer|bed mobility|stairs?|sit to stand)\b/i },
+      balance: { label: 'Balance / falls', re: /\b(?:fall\w*|balance|berg|TUG|timed up and go|unsteady)\b/i },
+      adl: { label: 'ADLs / function', re: /\b(?:ADLs?|IADLs?|dressing|toileting|bathing|shower\w*|grooming|feeding|self[- ]care|meal prep\w*)\b/i },
+      cog: { label: 'Cognition / perception', re: /\b(?:cognit\w*|MoCA|neglect|inattention|impulsiv\w*|insight|safety awareness|apraxi\w*|visual field|judg(?:e)?ment|orient\w*)\b/i },
+      swallow: { label: 'Swallow / diet', re: /\b(?:NPO|nil by mouth|IDDSI|pur[eé]e?d?|minced|soft and bite[- ]sized|regular (?:diet|texture)|thin (?:fluids|liquids)|(?:mildly|moderately|extremely) thick\w*|nectar|honey[- ]thick|aspirat\w*|VFSS|FEES|modified barium|dysphagi\w*|NG tube|nasogastric|cough\w* (?:on|with)|wet voice|oral trials?)\b/i },
+      comm: { label: 'Communication', re: /\b(?:aphasi\w*|dysarthri\w*|word[- ]finding|comprehension|expressive|receptive|communicat\w*|speech)\b/i },
+      dc: { label: 'Recommendation / discharge', re: /\b(?:recommend\w*|discharge\w*|rehab\w*|GRU|home with|home support|home care|LTC|long[- ]term care|assisted living|equipment|follow[- ]up|plan)\b/i }
+    },
+    noneText: 'No note found. CSBPR: all stroke patients should be assessed by PT, OT and SLP as early as possible after admission.'
+  };
+
+  const api = { DRUGS, BRANDS, POST_TREATMENT, ELAN, DAPT, POSTERIOR, HINTS, PROGNOSIS, WORKUP, ESUS_TESTS, ROPE, ESUS_TREATMENT, TEXT, BP_TARGETS, LIPIDS, REHAB };
   root.StrokeCriteria = api;
   if (typeof module === 'object' && module.exports) module.exports = api;
 })(typeof self !== 'undefined' ? self : this);

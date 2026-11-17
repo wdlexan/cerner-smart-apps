@@ -494,12 +494,138 @@
     return { esus, items, extra, rope, multi };
   }
 
+
+  // ------------------------------------------------------------------ BP target (first 48 h and after)
+  function bpPlan(ctx, A, ans) {
+    const B = C.BP_TARGETS, now = ctx.now;
+    const treated = !!A.anchor;
+    const scanTimes = A.imaging.map(r => r.time).filter(t => t != null && t > 0), firstScan = scanTimes.length ? Math.min(...scanTimes) : null; // no encounter (e.g. imported PDF): first CT/CTA ≈ arrival
+    const base = treated ? A.anchor : (A.onset || ctx.arrival || firstScan || null);
+    const baseLabel = treated ? 'treatment' : (A.onset ? 'onset' : (ctx.arrival ? 'arrival' : (firstScan ? 'first scan (no arrival time found)' : '')));
+    const hrs = base != null ? Math.max(0, (now - base) / HOUR) : null; // a date-only time (imported PDF) can land after now
+    const phases = (treated ? B.treated : B.untreated).concat([B.after]);
+    const cur = hrs == null ? null : phases.find(p => hrs >= p.fromH && (p.toH == null || hrs < p.toH)) || B.after;
+    const sbp = ctx.obs.filter(o => o.kind === 'sbp').sort((a, b) => a.time - b.time), dbp = ctx.obs.filter(o => o.kind === 'dbp');
+    const last = sbp[sbp.length - 1] || null;
+    const lastD = last ? (dbp.find(d => Math.abs(d.time - last.time) < 5 * MIN) || null) : null;
+    const lacunar = ans.location === 'lacunar' || !!findIn(A.mris, /\blacun\w*|\bsmall (?:deep|subcortical) infarct/i)[0];
+    const lt = A.dm ? B.longTerm.diabetes : (lacunar ? B.longTerm.lacunar : B.longTerm.general);
+    const onAntiHtn = ctx.meds.filter(m => m.cls.antihypertensive);
+    const rows = phases.map(p => {
+      const from = base != null ? base + p.fromH * HOUR : null, to = base != null && p.toH != null ? base + p.toH * HOUR : null;
+      let status = 'info', above = 0;
+      if (hrs != null) {
+        status = hrs >= (p.toH == null ? Infinity : p.toH) ? 'done' : (hrs >= p.fromH ? 'now' : 'due');
+        if (p.sbp) above = sbp.filter(o => o.time >= from && o.time < Math.min(to, now) && (o.value > p.sbp || (dbp.find(d => Math.abs(d.time - o.time) < 5 * MIN) || { value: 0 }).value > p.dbp)).length;
+      }
+      return { label: p.label, target: p.target, status, from, to, above, text: p.text };
+    });
+    // After 48 h: is BP consistently ≥140/90?
+    const recent = sbp.filter(o => o.time >= now - 24 * HOUR).map(o => o.value).sort((a, b) => a - b);
+    const median = recent.length ? recent[Math.floor(recent.length / 2)] : null;
+    const needStart = hrs != null && hrs >= 48 && median != null && median >= 140;
+    rows.push({ label: 'Long term (start before discharge)', target: lt.target, status: needStart ? (onAntiHtn.length ? 'now' : 'due') : 'info', text: lt.text + ' ' + B.longTerm.note });
+    return { treated, base, baseLabel, hrs, cur, rows, last, lastD, lt, lacunar, onAntiHtn, median, needStart, hem: A.anyHem || A.fuHem === 'yes' };
+  }
+  function bpPlanHtml(bp) {
+    const B = C.BP_TARGETS;
+    const lastTxt = bp.last ? 'Latest BP ' + bp.last.value + (bp.lastD ? '/' + bp.lastD.value : '') + ' (' + fmtTime(bp.last.time) + ')' : 'No BP readings found';
+    const head = bp.hrs == null
+      ? '<div class="sf-alert sf-a-amber">No treatment, onset or arrival time found. Enter the onset time above to place the BP windows.</div>'
+      : '<div class="sf-bp-now"><div class="sf-bp-t">' + esc(bp.cur.target) + '</div><div><strong>Target now</strong> · ' + esc(bp.cur.label) + ' · ' + round(bp.hrs, 0) + ' h after ' + esc(bp.baseLabel) +
+        '<br>' + esc(lastTxt) + (bp.median != null && bp.hrs >= 48 ? ' · median SBP last 24 h ' + bp.median : '') + '</div></div>';
+    const hem = bp.hem ? '<div class="sf-alert sf-a-red">' + esc(B.hemorrhage) + '</div>' : '';
+    const start = bp.needStart ? '<div class="sf-alert sf-a-amber">BP has been ≥140 systolic (median, last 24 h) after the first 48 h — ' +
+      (bp.onAntiHtn.length ? 'on ' + esc(bp.onAntiHtn.map(m => m.name).join(', ')) + '; consider adjusting.' : 'no antihypertensive found; consider starting one before discharge.') + '</div>' : '';
+    const table = '<div class="sf-table-wrap"><table class="sf-table"><thead><tr><th>Window</th><th></th><th>Target</th><th>Details</th></tr></thead><tbody>' + bp.rows.map(r =>
+      '<tr><th scope="row">' + esc(r.label) + (r.from ? '<div class="sf-muted">' + esc(fmtTime(r.from)) + (r.to ? ' – ' + esc(fmtTime(r.to)) : ' →') + '</div>' : '') + '</th><td>' + badge(r.status) + '</td><td><strong>' + esc(r.target) + '</strong>' +
+      (r.above ? '<div class="sf-hs-red">' + plural(r.above, 'reading') + ' above</div>' : '') + '</td><td>' + esc(r.text) + '</td></tr>').join('') + '</tbody></table></div>';
+    return head + hem + start + table + '<p class="sf-small">Long-term target chosen from the chart: ' + esc(bp.lt.target) + (bp.lacunar ? ' (lacunar stroke)' : '') + '. Sources: CSBPR acute (2022) and secondary prevention; confirm with neurology and local order sets.</p>';
+  }
+
+  // ------------------------------------------------------------------ LDL target
+  function lipidPlan(ctx, A) {
+    const L = C.LIPIDS;
+    const ldls = ctx.obs.filter(o => o.kind === 'ldl').sort((a, b) => a.time - b.time);
+    const ldl = ldls[ldls.length - 1] || null;
+    const statins = A.onStatin, high = statins.filter(m => L.highIntensity.test(m.text));
+    const eze = ctx.meds.filter(m => /ezetimibe/i.test(normMed(m.name)));
+    const pcsk = ctx.meds.filter(m => /evolocumab|alirocumab|inclisiran/i.test(normMed(m.name)));
+    const steps = [];
+    let status;
+    if (!ldl) { status = 'missing'; steps.push('Order a lipid panel (fasting not needed).'); }
+    else status = ldl.value < L.target ? 'atTarget' : 'above';
+    if (!statins.length) steps.push(L.start);
+    else if (!high.length && (!ldl || ldl.value >= L.target)) steps.push(L.intensify + ' Currently: ' + statins.map(m => m.name).join(', ') + '.');
+    // A statin ordered less than ~4 weeks before the LDL (or after it) has not had its full effect on that LDL
+    const preStatin = ldl && statins.length && statins.every(m => m.time != null && m.time > ldl.time - 28 * DAY);
+    if (preStatin && ldl.value >= L.target) steps.push('The statin order (' + statins.map(m => m.name + ', ' + fmtDate(m.time)).join('; ') + ') is from less than 4 weeks before this LDL, so the LDL does not show its full effect. If the statin is new: recheck in ' + L.recheckWeeks + ' and add ezetimibe if still ≥' + L.target + '. If it is long-standing at this dose: ' + L.addEze.charAt(0).toLowerCase() + L.addEze.slice(1));
+    else if (ldl && ldl.value >= L.target && high.length && !eze.length) steps.push(L.addEze);
+    if (!preStatin && ldl && ldl.value >= L.target && high.length && eze.length && !pcsk.length) steps.push(L.pcsk9);
+    if (!preStatin && ldl && ldl.value >= L.target && statins.length && !high.length) steps.push('If LDL is still ≥' + L.target + ' on a high-intensity statin: ' + L.addEze.toLowerCase());
+    if (status === 'atTarget' && statins.length) steps.push('At target: continue current therapy.');
+    if (!preStatin && (statins.length || steps.some(x => /statin|ezetimibe/i.test(x)))) steps.push('Recheck lipids ' + L.recheckWeeks + ' after starting or changing therapy, then yearly.');
+    return { ldl, ldls, status, statins, high, eze, pcsk, steps, af: A.af };
+  }
+  function lipidHtml(lp) {
+    const L = C.LIPIDS;
+    const v = lp.ldl ? '<div class="sf-bp-now"><div class="sf-bp-t ' + (lp.status === 'atTarget' ? 'sf-ok' : 'sf-bad') + '">' + lp.ldl.value + '</div><div><strong>LDL mmol/L</strong> (' + esc(fmtDate(lp.ldl.time)) + ') · target <strong>&lt;' + L.target + '</strong>' +
+      (lp.ldls.length > 1 ? '<br><span class="sf-muted">Earlier: ' + lp.ldls.slice(0, -1).slice(-3).map(o => o.value + ' (' + fmtDate(o.time) + ')').join(', ') + '</span>' : '') + '</div></div>'
+      : '<div class="sf-alert sf-a-amber">No LDL in the chart for this look-back period.</div>';
+    const meds = '<p><strong>Lipid therapy:</strong> ' + (lp.statins.length || lp.eze.length || lp.pcsk.length ? esc(lp.statins.concat(lp.eze, lp.pcsk).map(m => m.name).join(', ')) + (lp.statins.length ? (lp.high.length ? ' (high intensity)' : ' (not high intensity)') : '') : 'none found') + '</p>';
+    return v + meds + '<ul class="sf-list">' + lp.steps.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>' + (lp.af ? '<p class="sf-small">' + esc(L.cardioembolic) + '</p>' : '') +
+      '<p class="sf-small">Target LDL &lt;1.8 mmol/L (CSBPR secondary prevention; Treat Stroke to Target trial). Statins are not started for intracerebral hemorrhage.</p>';
+  }
+
+  // ------------------------------------------------------------------ PT / OT / SLP summary
+  // Notes that hold several notes (an imported PDF chart): pull out sections whose CAPITALISED heading names the discipline
+  function sectionsIn(n, titleRe) {
+    const lines = String(n.text || '').split(/\r?\n/), out = [];
+    const isHead = l => { const t = l.trim(); return t.length >= 4 && t.length <= 70 && /[A-Z]{3}/.test(t) && t === t.toUpperCase() && !/\d{2}:\d{2}/.test(t); };
+    for (let i = 0; i < lines.length; i++) {
+      if (!isHead(lines[i]) || !titleRe.test(lines[i])) continue;
+      let j = i + 1; while (j < lines.length && !isHead(lines[j])) j++;
+      const body = lines.slice(i + 1, j).join('\n');
+      const dm = /(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}))?/.exec(lines[i + 1] || '');
+      const time = dm ? new Date(+dm[1], +dm[2] - 1, +dm[3], +(dm[4] || 0), +(dm[5] || 0)).getTime() : n.time;
+      out.push({ time, title: lines[i].trim().replace(/\b\w+/g, w => w.charAt(0) + w.slice(1).toLowerCase()), text: body.replace(/^\s*date of service:[^\n]*\n?/i, '') });
+      i = j - 1;
+    }
+    return out;
+  }
+  function rehabSummary(ctx) {
+    const R = C.REHAB;
+    const sentences = t => String(t || '').replace(/\s+/g, ' ').split(/(?<=[.;!?])\s+|\s+(?=\d+\.\s)/).map(x => x.trim().replace(/[;,]\s*$/, '')).filter(x => x.length > 3);
+    return R.disciplines.map(d => {
+      const notes = ctx.notes.filter(n => d.title.test(n.title || '') || d.lead.test(String(n.text || '').slice(0, 160)))
+        .concat(ctx.notes.filter(n => !d.title.test(n.title || '')).flatMap(n => sectionsIn(n, d.title)))
+        .sort((a, b) => b.time - a.time);
+      const latest = notes.slice(0, 2);
+      const seen = new Set();
+      const topics = d.topics.map(k => {
+        const T = R.topics[k], hits = [];
+        latest.forEach(n => sentences(n.text).forEach(sn => { if (hits.length < 3 && T.re.test(sn) && !seen.has(sn.toLowerCase())) { seen.add(sn.toLowerCase()); hits.push({ text: sn, time: n.time }); } }));
+        return { key: k, label: T.label, hits };
+      }).filter(t => t.hits.length);
+      return { key: d.key, label: d.label, notes, topics };
+    });
+  }
+  function rehabHtml(rs) {
+    return rs.map(d => '<div class="sf-card sf-rehab"><h4>' + esc(d.label) + ' <span class="sf-muted">' + (d.notes.length ? plural(d.notes.length, 'note') + ', latest ' + esc(fmtTime(d.notes[0].time)) : '') + '</span></h4>' +
+      (!d.notes.length ? '<p class="sf-alert sf-a-amber">' + esc(C.REHAB.noneText) + '</p>'
+        : (d.topics.length ? '<dl class="sf-rehab-dl">' + d.topics.map(t => '<dt>' + esc(t.label) + '</dt><dd><ul class="sf-list">' + t.hits.map(h => '<li>' + esc(h.text) + '</li>').join('') + '</ul></dd>').join('') + '</dl>'
+          : '<p class="sf-muted">Note found, but no mobility, function, swallow or discharge wording was recognised. Read the note.</p>') +
+          '<details class="sf-rehab-full"><summary>Latest note: ' + esc(d.notes[0].title) + '</summary><p>' + esc(String(d.notes[0].text).slice(0, 2500)) + '</p></details>')
+      + '</div>').join('') + '<p class="sf-small">Sentences are copied from the notes by keyword, not interpreted. Read the full note before acting.</p>';
+  }
+
   // ------------------------------------------------------------------ handoff text
   const PATHWAY_LABEL = {
     treated: 'Treated (lytic and/or EVT)', mriPending: 'CTA negative — MRI pending', confirmed: 'Stroke confirmed on MRI (no lytic/EVT)',
     mriNegative: 'MRI negative (TIA or mimic?)', esus: 'ESUS — embolic stroke of undetermined source'
   };
-  function summaryText(ctx, A, al, tl, post, prog, wk) {
+  function summaryText(ctx, A, al, tl, post, prog, wk, ex) {
+    ex = ex || {};
     const L = [];
     L.push('Stroke follow-up (hospitalist), ' + fmtTime(ctx.now) + '. Pathway: ' + PATHWAY_LABEL[A.pathway] + '.');
     if (A.lytic) L.push('Lytic: ' + A.lytic.drug + ' ' + fmtTime(A.lytic.time) + (A.lytic.approx ? ' (time from note)' : '') + '.');
@@ -515,6 +641,13 @@
     const extra = wk.extra.filter(i => i.status !== 'done' && (i.priority || i.status === 'defer')).map(i => i.label + (i.status === 'defer' ? ' (defer to outpatient)' : ''));
     if (outstanding.length || extra.length) L.push('Outstanding workup / follow-up: ' + outstanding.concat(extra).join('; ') + '.');
     if (wk.rope) L.push('PFO: RoPE ' + wk.rope.score + '/10.');
+    if (ex.bp && ex.bp.cur) L.push('BP target now: ' + ex.bp.cur.target + ' (' + ex.bp.cur.label + '); long term ' + ex.bp.lt.target + '.' + (ex.bp.needStart ? ' BP ≥140 after 48 h: start/adjust antihypertensive.' : ''));
+    if (ex.lp) L.push('LDL: ' + (ex.lp.ldl ? ex.lp.ldl.value + ' mmol/L (' + fmtDate(ex.lp.ldl.time) + ')' : 'not found') + ', target <' + C.LIPIDS.target + '. ' + ex.lp.steps.filter(x => !/^Recheck/.test(x)).join(' '));
+    if (ex.rehab) ex.rehab.forEach(d => {
+      if (!d.notes.length) { L.push(d.key.toUpperCase() + ': no note found.'); return; }
+      const bits = d.topics.map(t => t.label + ': ' + t.hits[0].text.replace(/\.$/, '')).slice(0, 3);
+      L.push(d.key.toUpperCase() + ' (' + fmtDate(d.notes[0].time) + '): ' + (bits.length ? bits.join('; ') + '.' : 'see note.'));
+    });
     L.push('Decision support only; follow neurology recommendations.');
     return L.join('\n');
   }
@@ -602,7 +735,7 @@
 
   // ------------------------------------------------------------------ rendering
   const ST = { done: ['Done', 'st-done'], due: ['Due', 'st-due'], overdue: ['Overdue', 'st-over'], now: ['Now', 'st-now'], info: ['Info', 'st-info'],
-    missing: ['Missing', 'st-over'], ordered: ['Ordered', 'st-due'], outpatient: ['Outpatient', 'st-info'], consider: ['Consider', 'st-due'], defer: ['Defer', 'st-info'] };
+    missing: ['Missing', 'st-over'], ordered: ['Ordered', 'st-due'], outpatient: ['Outpatient', 'st-info'], consider: ['Consider', 'st-due'], defer: ['Defer', 'st-info'], atTarget: ['At target', 'st-done'], above: ['Above target', 'st-over'] };
   const badge = s => '<span class="sf-badge ' + ST[s][1] + '">' + ST[s][0] + '</span>';
   const sel = (key, options, val) => '<select data-k="' + esc(key) + '">' + options.map(o => '<option value="' + esc(o[0]) + '"' + ((val || '') === o[0] ? ' selected' : '') + '>' + esc(o[1]) + '</option>').join('') + '</select>';
   const YN = [['', 'Auto / not answered'], ['yes', 'Yes'], ['no', 'No']];
@@ -744,11 +877,18 @@
     H.push('<div class="sf-toolbar"><button type="button" class="sf-btn sf-all" data-all="open">Expand all</button> <button type="button" class="sf-btn sf-all" data-all="close">Collapse all</button></div>');
     H.push(sec('alerts', 'Alerts', al.length ? [reds ? reds + ' red' : '', ambers ? ambers + ' amber' : ''].filter(Boolean).join(', ') || plural(al.length, 'alert') : 'None', reds ? 'sf-hs-red' : ambers ? 'sf-hs-amber' : 'sf-hs-ok', alertsHtml(al)));
     H.push(sec('timeline', 'Timeline and BP', tlNow ? tlNow + ' overdue' : (A.anchor ? 'Post-treatment' : 'No lytic/EVT'), tlNow ? 'sf-hs-red' : '', timelineHtml(tl) + '<div class="sf-card">' + bpChart(ctx, A) + '</div>'));
+    const bp = parts.bp, lp = parts.lp, rehab = parts.rehab;
+    if (bp) H.push(sec('bptarget', 'BP target (first 48 h and long term)', bp.cur ? 'Now: ' + bp.cur.target + (bp.rows.some(r => r.status === 'now' && r.above) ? ' · readings above' : '') : 'Needs onset time',
+      bp.rows.some(r => r.status === 'now' && r.above) || bp.hem ? 'sf-hs-red' : (bp.needStart ? 'sf-hs-amber' : ''), bpPlanHtml(bp)));
+    if (lp) H.push(sec('ldl', 'LDL target', lp.ldl ? 'LDL ' + lp.ldl.value + (lp.status === 'atTarget' ? ' · at target' : ' · above target <' + C.LIPIDS.target) : 'No LDL',
+      lp.status === 'atTarget' ? 'sf-hs-ok' : (lp.status === 'above' ? 'sf-hs-red' : 'sf-hs-amber'), lipidHtml(lp)));
+    if (rehab) { const missing = rehab.filter(d => !d.notes.length).map(d => d.key.toUpperCase());
+      H.push(sec('rehab', 'PT / OT / SLP summary', missing.length ? 'No ' + missing.join(', ') + ' note' : 'All three seen', missing.length ? 'sf-hs-amber' : 'sf-hs-ok', rehabHtml(rehab))); }
     H.push(sec('posterior', 'Posterior circulation check', post.needMri ? 'MRI needed' : post.repeatMri ? 'Consider repeat MRI' : post.suspect ? 'Features present, MRI done' : 'No features found',
       post.needMri ? 'sf-hs-red' : post.repeatMri ? 'sf-hs-amber' : '', posteriorHtml(post, ans, A)));
     H.push(sec('prognosis', 'Prognosis', prog.thrive != null ? 'THRIVE ' + prog.thrive + ' · ASTRAL ' + prog.astral : 'Needs NIHSS', '', prognosisHtml(prog, ans, A)));
     H.push(sec('workup', 'Workup and secondary prevention', (wkMissing ? wkMissing + ' missing' : 'Nothing missing') + (wk.esus ? ' · ESUS' : ''), wkMissing ? 'sf-hs-amber' : 'sf-hs-ok', workupHtml(wk, A, ans, ctx)));
-    H.push(sec('summary', 'Summary for the note / discharge handoff', '', '', '<textarea class="sf-summary" rows="12" readonly>' + esc(summaryText(ctx, A, al, tl, post, prog, wk)) +
+    H.push(sec('summary', 'Summary for the note / discharge handoff', '', '', '<textarea class="sf-summary" rows="12" readonly>' + esc(summaryText(ctx, A, al, tl, post, prog, wk, parts)) +
       '</textarea><button type="button" class="sf-btn sf-copy">Copy summary</button> <span class="sf-copied" aria-live="polite"></span>'));
     H.push('<p class="sf-disclaimer">Decision support only, from FHIR data and what you enter. Follow neurology and local stroke order sets. Rules are in stroke-criteria.js (sources listed there). Tested on made-up patients only.</p></div>');
     return H.join('');
@@ -762,7 +902,8 @@
     const tl = timeline(ctx, A, ans);
     const prog = prognosis(ctx, A, ans);
     const wk = workup(ctx, A, ans);
-    return { A, post, al, tl, prog, wk };
+    const bp = bpPlan(ctx, A, ans), lp = lipidPlan(ctx, A), rehab = rehabSummary(ctx);
+    return { A, post, al, tl, prog, wk, bp, lp, rehab };
   }
 
   async function mount(container, client, opts) {
