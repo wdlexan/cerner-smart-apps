@@ -917,13 +917,14 @@
     const bp = parts.bp, lp = parts.lp, A = parts.A;
     const meds = ctx.meds.filter(m => m.cls.antiplatelet || m.cls.anticoag || m.cls.statin || m.cls.lipidOther || m.cls.antihypertensive).map(m => m.name);
     IX().handout('After your stroke: your goals and warning signs',
-      '<h2>Warning signs — call 911 right away</h2><p><b>BE FAST:</b> <b>B</b>alance loss, <b>E</b>yesight change, <b>F</b>ace drooping, <b>A</b>rm weakness, <b>S</b>peech trouble — <b>T</b>ime to call 911. Note the time it started.</p>' +
+      '<h2>Signs of another stroke — call 911 right away</h2><p><b>BE FAST:</b> <b>B</b>alance loss, <b>E</b>yesight change, <b>F</b>ace drooping, <b>A</b>rm weakness, <b>S</b>peech trouble — <b>T</b>ime to call 911. Note the time it started. Do not drive yourself; do not wait to see if it goes away.</p>' +
       '<h2>Your blood pressure goal</h2><p>Long term: <b>' + esc(bp ? bp.lt.target.replace('SBP', 'top number') : 'below 140/90') + '</b>. Check it at home or at a pharmacy and bring the numbers to your family doctor. Blood pressure medicine is often started or adjusted before or soon after you go home.</p>' +
       '<h2>Your cholesterol (LDL) goal</h2><p>LDL below <b>1.8 mmol/L</b>.' + (lp && lp.ldl ? ' Your last LDL was <b>' + lp.ldl.value + '</b>.' : '') + ' A statin is the main medicine; a blood test is repeated in about 1–3 months.</p>' +
       (meds.length ? '<h2>Stroke prevention medicines on your list</h2><ul>' + meds.map(m => '<li>' + esc(m) + '</li>').join('') + '</ul><p>Do not stop these without talking to your doctor.</p>' : '') +
       (A && A.af ? '<h2>Irregular heartbeat (atrial fibrillation)</h2><p>A blood thinner lowers the chance of another stroke. Take it every day and tell any doctor or dentist you are on it.</p>' : '') +
       '<h2>Other things that help</h2><ul><li>Stop smoking and vaping — ask about free help (QuitNow in BC).</li><li>Move every day as your therapists advise; aim for 150 minutes a week when you can.</li><li>Mediterranean-style eating, less salt; limit alcohol.</li><li>Keep diabetes in your target range if you have it.</li><li>Do not drive until your doctor says it is safe.</li></ul>' +
-      '<h2>Follow-up</h2><p>Stroke prevention clinic and your family doctor. Bring this sheet and your medicine list.</p>');
+      '<h2>Follow-up</h2><p>Stroke prevention clinic and your family doctor. Bring this sheet and your medicine list.</p>',
+      { meds: ctx.meds.map(m => m.name), conds: ctx.conditions.map(c => c.text), age: ctx.age, extra: ['falls'] });
   }
   function drawIxChart(container, ctx, parts) {
     const el = container.querySelector('.sf-ixchart'); if (!el || !IX()) return;

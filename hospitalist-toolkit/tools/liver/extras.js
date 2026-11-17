@@ -72,6 +72,7 @@
       <li><b>Eat enough protein</b> and have a bedtime snack — do not cut protein unless your team says so.</li><li><b>Avoid</b> ibuprofen, naproxen and other anti-inflammatories; acetaminophen (Tylenol) up to 2 grams a day is usually safe — ask first.</li>
       <li>If you take <b>lactulose</b>, aim for 2–3 soft bowel movements a day.</li><li>Weigh yourself every morning if you take water pills, and write it down.</li></ul>
       <h2>Get help right away for</h2><ul><li>Fever, belly pain or a tender, swollen belly.</li><li>New confusion, very sleepy, or shaky hands.</li><li>Vomiting blood, or black or bloody stools.</li><li>Yellow skin or eyes getting worse, or passing very little urine.</li><li>Weight up more than 1 kg a day for 2 days, or 2 kg in a week.</li></ul>
-      <h2>Follow-up</h2><ul><li>Blood tests as your doctor orders.</li><li>Liver ultrasound every 6 months to check for liver cancer.</li><li>Vaccines (hepatitis A and B, flu, pneumonia) if you have not had them.</li></ul>`);
+      <h2>Follow-up</h2><ul><li>Blood tests as your doctor orders.</li><li>Liver ultrasound every 6 months to check for liver cancer.</li><li>Vaccines (hepatitis A and B, flu, pneumonia) if you have not had them.</li></ul>`,
+      { meds: (state.f && state.f.medList || []).map((m) => m.name), conds: state.f ? state.f.problems || [] : [], age: state.f ? state.f.age : null });
   }
 })();

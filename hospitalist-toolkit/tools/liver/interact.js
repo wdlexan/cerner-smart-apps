@@ -170,12 +170,94 @@
     draw();
   }
 
-  /* ---------- 5. printable handout ---------- */
-  function handout(title, html) {
+  /* ---------- 5. printable handout + "when to get help" sections ---------- */
+  // Each section: who it applies to (match on medicine names / problem list / age), then what to watch for.
+  // 911 = emergency now; ER = go to emergency or urgent care today; CALL = call the family doctor or clinic soon. HealthLink BC 8-1-1 for advice any time.
+  const WARN = [
+    { key: 'general', label: 'Everyone: emergencies and when to get help', always: true,
+      e911: ['Chest pain or pressure, or trouble breathing', 'Fainting, or cannot be woken up', 'New confusion, a seizure, or the worst headache of your life',
+        'Stroke signs — <b>BE FAST</b>: <b>B</b>alance loss, <b>E</b>yesight change, <b>F</b>ace drooping, <b>A</b>rm or leg weakness, <b>S</b>peech trouble: <b>T</b>ime to call 911'],
+      er: ['Symptoms that brought you to hospital come back or get worse', 'Cannot keep fluids or medicines down for more than 12 hours', 'Passing much less urine than usual, or very dizzy when standing'],
+      call: ['Questions about your medicines or new side effects', 'You cannot get the tests or appointments that were arranged'] },
+    { key: 'bloodthinner', label: 'Blood thinners', meds: /apixaban|eliquis|rivaroxaban|xarelto|edoxaban|lixiana|dabigatran|pradaxa|warfarin|coumadin|enoxaparin|lovenox|dalteparin|fragmin|tinzaparin|innohep|heparin|fondaparinux|clopidogrel|plavix|ticagrelor|brilinta|prasugrel|acetylsalicylic|\baspirin\b|\basa\b/i,
+      e911: ['Vomiting blood or material that looks like coffee grounds', 'Large amounts of black, tarry or bloody stool', 'Coughing up blood', 'A sudden severe headache, or new weakness or confusion'],
+      er: ['Any fall where you hit your head — even if you feel fine (bleeding inside the head can show up hours later)', 'A nosebleed that does not stop after 15 minutes of firm pressure', 'Red or dark-brown urine', 'Large bruises you cannot explain, or bleeding that will not stop from a cut'],
+      call: ['Bleeding gums or easy bruising', 'Before any surgery, dental work or new medicine — tell them you take a blood thinner'],
+      tips: ['Do not stop or skip it without talking to your doctor.', 'Avoid ibuprofen, naproxen and other anti-inflammatories unless your doctor says they are OK.', 'If you take warfarin, keep your INR blood tests and eat a steady amount of green vegetables.'] },
+    { key: 'infection', label: 'Infection and antibiotics', meds: /cillin|cef|ceph|penem|cipro|levoflox|moxiflox|azithro|clarithro|doxycycl|minocycl|metronidazole|vancomycin|linezolid|sulfamethox|trimethoprim|septra|nitrofurantoin|fosfomycin|clindamycin|tazobactam|gentamicin|tobramycin|acyclovir|valacyclovir|fluconazole/i,
+      conds: /infection|pneumonia|cellulitis|sepsis|abscess|pyelo|urinary tract|osteomyelitis|endocarditis|bacteremia|meningitis|encephalitis|SBP|peritonitis/i,
+      e911: ['Swelling of the lips, tongue or throat, or sudden trouble breathing after a medicine (allergic reaction)', 'Very hard to wake, very confused, or breathing very fast'],
+      er: ['Fever of 38.0 °C or higher with shaking chills, or a fever that comes back after it settled', 'Feeling much worse: fast heartbeat, fast breathing, cold or blotchy skin, or passing very little urine (possible sepsis)', 'Redness, swelling or pain spreading around a wound or IV site, or pus'],
+      call: ['Watery diarrhea 3 or more times a day during or after antibiotics', 'A new rash or itching', 'Not getting better after 2–3 days on antibiotics'],
+      tips: ['Take every dose for the full course unless told to stop.'] },
+    { key: 'immune', label: 'Weakened immune system (steroids, chemotherapy, immune-lowering medicines)', meds: /prednis|methylpred|dexamethasone|hydrocortisone|solu-?medrol|rituximab|cyclophosphamide|tocilizumab|azathioprine|mycophenol|tacrolimus|cyclosporine|sirolimus|everolimus|methotrexate|infliximab|adalimumab|vedolizumab|ustekinumab|teclistamab|elranatamab|chemo|immune glob/i,
+      conds: /transplant|myeloma|lymphoma|leukemia|cancer|neutropenia|chemotherapy|HIV/i,
+      e911: ['Fever with confusion, fainting or trouble breathing'],
+      er: ['<b>Any fever of 38.0 °C or higher</b> — go the same day and tell them which medicine you take. Do not wait to see if it settles.', 'New cough with shortness of breath', 'Sores in the mouth that stop you eating or drinking'],
+      call: ['Burning when passing urine, a new cough, or a painful rash with blisters (shingles)'],
+      tips: ['Do not stop steroids suddenly — they must be lowered slowly.', 'Steroids can raise blood sugar; mood and sleep changes are common.', 'Wash hands often and avoid people who are sick; ask before any live vaccine.'] },
+    { key: 'diabetes', label: 'Diabetes medicines and low blood sugar', meds: /insulin|glargine|lispro|aspart|detemir|degludec|glyburide|gliclazide|glimepiride|repaglinide|metformin|sitagliptin|linagliptin|empagliflozin|dapagliflozin|canagliflozin|semaglutide|dulaglutide/i, conds: /diabet/i,
+      e911: ['Cannot be woken or cannot swallow because of low sugar — call 911 (do not give food or drink)'],
+      er: ['Sugar under 4 that keeps coming back after treating it', 'Sugar over 20 with vomiting, belly pain or fast breathing', 'On empagliflozin, dapagliflozin or canagliflozin: vomiting, belly pain or feeling very unwell — even with normal sugar'],
+      call: ['Sugars often under 4 or over 15'],
+      tips: ['Low sugar signs: shaky, sweaty, fast heartbeat, hungry, confused. If under 4: take 15 g of fast sugar (4 glucose tablets or 3/4 cup juice), recheck in 15 minutes.', 'If you cannot eat, ask your team what to do with your diabetes medicines (sick-day rules).'] },
+    { key: 'opioid', label: 'Opioid pain medicines and sedatives', meds: /morphine|hydromorphone|oxycodone|fentanyl|codeine|tramadol|tapentadol|methadone|buprenorphine|lorazepam|clonazepam|diazepam|alprazolam|zopiclone|temazepam|gabapentin|pregabalin/i,
+      e911: ['Very sleepy and hard to wake, slow or shallow breathing, or blue lips — give naloxone if you have it, then call 911'],
+      er: ['Severe constipation with belly pain or vomiting', 'New confusion or falls'],
+      call: ['No bowel movement for 3 days', 'Pain not controlled, or needing more doses than prescribed'],
+      tips: ['No alcohol or sleeping pills with these medicines unless your doctor says so.', 'Ask your pharmacy for a free take-home naloxone kit.', 'Do not drive if drowsy.'] },
+    { key: 'heart', label: 'Heart failure and water pills', meds: /furosemide|lasix|bumetanide|torsemide|metolazone|hydrochlorothiazide|chlorthalidone|indapamide|spironolactone|eplerenone/i, conds: /heart failure|cardiomyopathy|\bHF\b|reduced ejection/i,
+      e911: ['Severe shortness of breath, or cannot lie flat and feel like you are drowning'],
+      er: ['Fainting, or very dizzy when standing', 'Much more short of breath than usual'],
+      call: ['Weight up more than 1 kg in a day for 2 days in a row, or 2 kg in a week', 'More swelling of the legs or belly', 'Passing much less urine, or muscle cramps'],
+      tips: ['Weigh yourself every morning after the toilet, before breakfast, and write it down.'] },
+    { key: 'falls', label: 'Falls', age: 65, conds: /dementia|stroke|parkinson|fall|fracture|osteopor|neuropathy|ataxia/i,
+      e911: ['A fall with a head injury and drowsiness, vomiting or confusion, or a fall where you cannot get up'],
+      er: ['Any fall where you hit your head if you take a blood thinner', 'New hip, back or wrist pain after a fall, or you cannot put weight on a leg'],
+      call: ['Feeling unsteady or dizzy, or a fall without injury — your team can check medicines and balance'],
+      tips: ['Use your walker or cane, wear proper footwear, keep a light on at night, and remove loose rugs.'] }
+  ];
+  function detectSections(o) {
+    o = o || {};
+    const meds = (o.meds || []).join(' | '), conds = (o.conds || []).join(' | ');
+    return WARN.filter(w => w.always || (w.meds && w.meds.test(meds)) || (w.conds && w.conds.test(conds)) || (w.age && o.age != null && o.age >= w.age)).map(w => w.key);
+  }
+  function sectionsHtml(keys) {
+    const li = a => a && a.length ? '<ul>' + a.map(x => '<li>' + x + '</li>').join('') + '</ul>' : '';
+    return '<h2 class="warn-h">When to get help</h2>' + WARN.filter(w => keys.includes(w.key)).map(w => '<div class="warn"><h3>' + esc(w.label) + '</h3>' +
+      (w.e911 ? '<div class="w911"><b>Call 911</b>' + li(w.e911) + '</div>' : '') +
+      (w.er ? '<div class="wer"><b>Go to the emergency department today</b>' + li(w.er) + '</div>' : '') +
+      (w.call ? '<div class="wcall"><b>Call your family doctor or clinic</b>' + li(w.call) + '</div>' : '') +
+      (w.tips ? '<div class="wtips"><b>Good to know</b>' + li(w.tips) + '</div>' : '') + '</div>').join('') +
+      '<p><b>Not sure? Call HealthLink BC at 8-1-1</b> to speak with a nurse any time, day or night. In an emergency, always call 911.</p>';
+  }
+  // opts: { meds: [names], conds: [problem text], age, extra: [section keys] }. Shows a short chooser first (sections pre-ticked from the chart).
+  function handout(title, html, opts) {
+    addCss();
+    opts = opts || {};
+    const pre = new Set(detectSections(opts).concat(opts.extra || []));
+    const wrap = document.createElement('div');
+    wrap.className = 'ix-modal';
+    wrap.innerHTML = '<div class="ix-box" role="dialog" aria-modal="true"><div class="ix-head"><h3>Handout: choose the "when to get help" sections</h3><button class="ix-close" type="button">Cancel</button></div><div class="ix-body" style="white-space:normal">' +
+      '<p style="margin-top:0">Suggested from the medicine list, problem list, age and this condition. Add or remove any, then open the handout.</p>' +
+      WARN.map(w => '<label style="display:block;margin:4px 0"><input type="checkbox" value="' + w.key + '"' + (pre.has(w.key) ? ' checked' : '') + (w.always ? ' disabled' : '') + '> ' + esc(w.label) + (pre.has(w.key) && !w.always ? ' <span style="color:#1d5fa8;font-size:12px">(suggested)</span>' : '') + '</label>').join('') +
+      '<p><button type="button" class="ix-open" style="font:inherit;padding:6px 14px;border-radius:6px;border:0;background:#1d5fa8;color:#fff;cursor:pointer">Open handout</button></p></div></div>';
+    document.body.appendChild(wrap);
+    const close = () => wrap.remove();
+    wrap.addEventListener('click', e => { if (e.target === wrap || e.target.classList.contains('ix-close')) close(); });
+    wrap.querySelector('.ix-open').onclick = () => {
+      const keys = [...wrap.querySelectorAll('input:checked')].map(i => i.value);
+      close();
+      openPrint(title, html + sectionsHtml(keys));
+    };
+  }
+  function openPrint(title, html) {
     const w = window.open('', '_blank');
     if (!w) { alert('Allow pop-ups for this site to print the handout.'); return; }
-    w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>' + esc(title) + '</title><style>body{font:16px/1.6 Georgia,serif;max-width:720px;margin:32px auto;padding:0 20px;color:#111}h1{font-size:24px}h2{font-size:18px;margin-top:22px}' +
-      'li{margin:4px 0}.note{font-size:13px;color:#555;border-top:1px solid #ccc;margin-top:28px;padding-top:8px}@media print{button{display:none}}</style></head><body><button onclick="window.print()" style="float:right;font:14px sans-serif;padding:6px 12px">Print</button><h1>' +
+    w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>' + esc(title) + '</title><style>body{font:16px/1.6 Georgia,serif;max-width:720px;margin:32px auto;padding:0 20px;color:#111}h1{font-size:24px}h2{font-size:19px;margin-top:22px}h3{font-size:16px;margin:16px 0 4px}' +
+      'li{margin:3px 0}ul{margin:4px 0 8px}.warn{border:1px solid #ccc;border-radius:8px;padding:6px 14px;margin:10px 0;page-break-inside:avoid}.w911{border-left:5px solid #b42318;padding-left:10px;margin:6px 0}' +
+      '.wer{border-left:5px solid #c2410c;padding-left:10px;margin:6px 0}.wcall{border-left:5px solid #1d5fa8;padding-left:10px;margin:6px 0}.wtips{border-left:5px solid #94a3b8;padding-left:10px;margin:6px 0}.warn-h{border-top:2px solid #111;padding-top:12px}' +
+      '.note{font-size:13px;color:#555;border-top:1px solid #ccc;margin-top:28px;padding-top:8px}@media print{button{display:none}}</style></head><body><button onclick="window.print()" style="float:right;font:14px sans-serif;padding:6px 12px">Print</button><h1>' +
       esc(title) + '</h1>' + html + '<p class="note">General information to go with your care team\'s advice. Ask your nurse or doctor if anything is unclear.</p></body></html>');
     w.document.close();
   }
@@ -194,5 +276,5 @@
 
   // Patient id of the current SMART session (shared by every toolkit tab), or '' when not launched
   function smartPatientId() { try { const k = JSON.parse(sessionStorage.getItem('SMART_KEY')); const st = JSON.parse(sessionStorage.getItem(k)); return (st && st.tokenResponse && st.tokenResponse.patient) || ''; } catch (e) { return ''; } }
-  root.Interact = { smartPatientId, showSource, vote, voteOf, voteButtons, stats, exportCsv, clearVotes, startTicker, enableAlerts, rel, chart, handout, shared, esc };
+  root.Interact = { smartPatientId, detectSections, WARN, showSource, vote, voteOf, voteButtons, stats, exportCsv, clearVotes, startTicker, enableAlerts, rel, chart, handout, shared, esc };
 })(typeof window !== 'undefined' ? window : globalThis);

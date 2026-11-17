@@ -1009,7 +1009,8 @@ function openDementiaHandout() {
     <h2>Tests that may be done</h2><ul><li>Memory and thinking tests (such as the MoCA).</li><li>Blood tests for treatable causes.</li><li>A CT or MRI scan of the brain.</li><li>Sometimes specialist tests later, in clinic.</li></ul>
     <h2>What helps now</h2><ul><li>Bring glasses and hearing aids; keep a clock and calendar in view.</li><li>Familiar faces and photos; calm, simple explanations.</li><li>Daytime activity and walking; a good sleep routine.</li><li>Review of medicines that can worsen memory.</li></ul>
     <h2>Planning ahead</h2><ul><li>Choose a substitute decision-maker and talk about wishes for future care while the person can take part.</li><li>Driving, money and safety at home may need to be reviewed.</li><li>Support: the Alzheimer Society of B.C. First Link® program and Dementia Helpline (1-800-936-6033).</li></ul>
-    <h2>Questions you may want to ask</h2><ul><li>Could anything be making it worse that can be treated?</li><li>Which tests are still pending?</li><li>Who will follow up after discharge?</li></ul>`);
+    <h2>Questions you may want to ask</h2><ul><li>Could anything be making it worse that can be treated?</li><li>Which tests are still pending?</li><li>Who will follow up after discharge?</li></ul>`,
+    { meds: (S.meds || []).map(m => m.name), conds: (S.conds || []).map(c => c.text), age: S.ageY, extra: ['falls'] });
 }
 
 /* ------------------------------------------------------------------ boot */

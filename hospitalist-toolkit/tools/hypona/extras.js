@@ -76,6 +76,7 @@
       <h2>Why it is corrected slowly</h2><p>Raising sodium too fast can injure the brain, so the team checks blood tests often and limits how fast it rises. That is why you may have frequent blood tests.</p>
       ${cause === "siad" ? `<h2>Fluid restriction</h2><p>Your team may ask you to limit all drinks (water, tea, coffee, soup, juice, milk) to the amount they give you — often about 1 to 1.5 litres a day. Use a marked bottle to keep track, sip slowly, and suck ice chips or sugar-free candy for thirst.</p>` : ""}
       <h2>Medicines</h2><p>Some medicines lower sodium (for example some water pills, antidepressants and seizure medicines). Do not stop a medicine on your own — ask your doctor or pharmacist.</p>
-      <h2>After you go home</h2><ul><li>Have the blood test your doctor orders, usually within a few days.</li><li>Avoid drinking large amounts of water or beer at once.</li><li>Get help right away for new confusion, severe headache, vomiting, a fall, or a seizure.</li></ul>`);
+      <h2>After you go home</h2><ul><li>Have the blood test your doctor orders, usually within a few days.</li><li>Avoid drinking large amounts of water or beer at once.</li><li>Low-sodium warning signs — go to emergency: new confusion, severe headache, repeated vomiting, a fall, or a seizure (call 911 for a seizure).</li></ul>`,
+      { meds: (state.f.meds || []).map((m) => m.name), conds: [].concat(...Object.values(state.f.prob || {})), age: state.f.age });
   }
 })();
