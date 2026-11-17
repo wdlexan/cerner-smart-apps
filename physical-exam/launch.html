@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Physical Exam – Launch</title>
+  <script src="https://cdn.jsdelivr.net/npm/fhirclient/build/fhir-client.js"></script>
+</head>
+<body>
+  <p style="font-family:system-ui;padding:20px">Launching Physical Exam…</p>
+  <script>
+    FHIR.oauth2.authorize({
+      clientId: "09c38f54-fb4d-4664-87b6-67b57983ac01",
+      scope: "launch openid fhirUser patient/Patient.read patient/Observation.read online_access",
+      redirectUri: "index.html"
+    });
+  </script>
+</body>
+</html>
