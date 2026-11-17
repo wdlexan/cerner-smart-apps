@@ -102,7 +102,7 @@
   /* ---------- 3. live countdowns + alerts ---------- */
   function rel(ms) {
     const a = Math.abs(ms);
-    if (a < HOUR) return Math.max(1, Math.round(a / MIN)) + ' min';
+    if (Math.round(a / MIN) < 60) return Math.max(1, Math.round(a / MIN)) + ' min';
     if (a < 2 * DAY) { const tm = Math.round(a / MIN), h = Math.floor(tm / 60), m = tm % 60; return h + ' h' + (m ? ' ' + m + ' min' : ''); }
     return Math.round(a / DAY * 10) / 10 + ' days';
   }
@@ -192,5 +192,7 @@
   };
   if (bc) bc.onmessage = e => listeners.forEach(fn => { try { fn(e.data.pid, e.data.key); } catch (err) { /* ignore */ } });
 
-  root.Interact = { showSource, vote, voteOf, voteButtons, stats, exportCsv, clearVotes, startTicker, enableAlerts, rel, chart, handout, shared, esc };
+  // Patient id of the current SMART session (shared by every toolkit tab), or '' when not launched
+  function smartPatientId() { try { const k = JSON.parse(sessionStorage.getItem('SMART_KEY')); const st = JSON.parse(sessionStorage.getItem(k)); return (st && st.tokenResponse && st.tokenResponse.patient) || ''; } catch (e) { return ''; } }
+  root.Interact = { smartPatientId, showSource, vote, voteOf, voteButtons, stats, exportCsv, clearVotes, startTicker, enableAlerts, rel, chart, handout, shared, esc };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -299,14 +299,14 @@ function preFill() {
   const notes = S.docs.filter(d => !S.imaging.includes(d));
   const condText = S.conds.filter(c => !/resolved|inactive|refuted|entered/i.test(c.status)).map(c => c.text).join("\n");
   for (const f of FEATURES) {
-    let snip = null, src = null;
-    if (f.where === "notes" || f.where === "both") for (const n of notes) { snip = findMatch(n.text, f.re); if (snip) { src = `${n.title} ${fmtDate(n.date)}`; break; } }
+    let snip = null, src = null, doc = null;
+    if (f.where === "notes" || f.where === "both") for (const n of notes) { snip = findMatch(n.text, f.re); if (snip) { src = `${n.title} ${fmtDate(n.date)}`; doc = n; break; } }
     if (!snip && (f.where === "cond" || f.where === "both")) { snip = findMatch(condText, f.re); if (snip) src = "Problem list"; }
-    if (!snip && f.where === "imaging") for (const im of S.imaging) { snip = findMatch(im.text, f.re); if (snip) { src = `${im.title} ${fmtDate(im.date)}`; break; } }
+    if (!snip && f.where === "imaging") for (const im of S.imaging) { snip = findMatch(im.text, f.re); if (snip) { src = `${im.title} ${fmtDate(im.date)}`; doc = im; break; } }
     if (f.where === "age" && S.patient?.birthDate) { const a = Math.floor((Date.now() - new Date(S.patient.birthDate)) / 31557600000); if (a >= 80) { snip = "age " + a; src = "Demographics"; } }
     if (f.where === "imgany" && S.imaging.length) { snip = S.imaging.map(i => `${i.title} ${fmtDate(i.date)}`).join("; "); src = "Imaging"; }
     if (f.id === "pdfirst" && snip) snip += " — confirm motor symptoms preceded cognitive change by ≥1 year";
-    S.feat[f.id] = { on: !!snip, src: snip ? "chart" : null, snip: snip ? `${src}: ${snip}` : "" };
+    S.feat[f.id] = { on: !!snip, src: snip ? "chart" : null, snip: snip ? `${src}: ${snip}` : "", doc: snip && doc ? { title: doc.title, date: fmtDate(doc.date), text: doc.text, re: f.re } : null };
   }
   // Amyloid / p-tau result mentioned in notes or reports
   const allTxt = S.docs.concat(S.imaging).map(n => n.text).join("\n");
@@ -639,7 +639,7 @@ function renderScreen() {
     <div class="grid grpgrid">
       ${groups.map(g => `<details class="card grp" data-g="${esc(g)}"><summary><span>${esc(g)}</span><span class="cnt" data-cnt="${esc(g)}"></span></summary>${FEATURES.filter(f => f.g === g).map(f => {
         const st = S.feat[f.id];
-        return `<label class="chk"><input type="checkbox" data-feat="${f.id}" ${st.on ? "checked" : ""}><span>${esc(f.label)}${st.src === "chart" ? '<span class="pill chart">from chart – confirm</span>' : ""}${f.where === "manual" ? '<span class="pill grey">bedside</span>' : ""}</span></label>${st.snip ? `<div class="snip">${esc(st.snip)}</div>` : ""}`;
+        return `<label class="chk"><input type="checkbox" data-feat="${f.id}" ${st.on ? "checked" : ""}><span>${esc(f.label)}${st.src === "chart" ? '<span class="pill chart">from chart – confirm</span>' : ""}${f.where === "manual" ? '<span class="pill grey">bedside</span>' : ""}</span></label>${st.snip ? `<div class="snip">${st.doc ? `<span class="ix-src" data-dsrc="${f.id}" title="Open the source">${esc(st.snip)}</span>` : esc(st.snip)}${st.src === "chart" && window.Interact ? Interact.voteButtons("dementia", f.id, st.snip) : ""}</div>` : ""}`;
       }).join("")}</details>`).join("")}
       <details class="card grp" data-g="bio"><summary><span>Biomarkers &amp; special tests</span><span class="cnt" data-cnt="bio"></span></summary>
         ${bioSel("amyloid", "Amyloid / p-tau217 (blood, CSF or PET)")}
@@ -754,7 +754,7 @@ function keepOpen(sel, fn) {
   fn();
   el.querySelectorAll("details[data-k]").forEach(d => { if (d.dataset.k in st) d.open = st[d.dataset.k]; });
 }
-function renderTreat() { keepOpen("#tab-treat", renderTreatInner); }
+function renderTreat() { keepOpen("#tab-treat", renderTreatInner); addHandoutButton(); }
 function renderTreatInner() {
   const R = evaluate();
   const fits = new Set(R.filter(r => r.lvl >= 2).map(r => r.id));
@@ -905,7 +905,7 @@ function pdfCard() {
     <span class="small muted">3 pages: Venn diagram of amyloid-β, tau, α-synuclein and TDP-43 overlap; mechanism of each dementia; neurotransmitters → why drugs help or harm.</span></div>`;
 }
 function renderRef() {
-  $("#tab-ref").innerHTML = `${pdfCard()}<div class="card"><h2>Types of dementia — symptoms, signs, tests, treatment</h2>
+  $("#tab-ref").innerHTML = `${feedbackCard()}${pdfCard()}<div class="card"><h2>Types of dementia — symptoms, signs, tests, treatment</h2>
     <table><tr><th>Type</th><th>Share</th><th>Symptoms</th><th>Signs</th><th>Imaging / biomarkers</th><th>Treatment</th></tr>
     ${REF.map(r => `<tr>${r.map((c, i) => `<td class="${i ? "small" : ""}">${i ? esc(c) : `<b>${esc(c)}</b>`}</td>`).join("")}</tr>`).join("")}</table></div>
     <div class="card"><h2>Delirium vs dementia vs depression</h2>
@@ -973,6 +973,44 @@ function renderNote() {
 }
 
 function renderDerived() { renderOverview(); renderSubtype(); renderWorkup(); renderTreat(); renderNote(); }
+
+
+/* ------------------------------------------------ interactive add-on (interact.js) */
+function feedbackCard() {
+  if (!window.Interact) return "";
+  const st = Interact.stats("dementia"), lab = id => (FEATURES.find(f => f.id === id) || {}).label || id;
+  return `<div class="card"><h2>Auto-tick feedback (this browser)</h2><div class="small muted">Use ✓/✗ beside each "from chart" snippet on the Screen tab. Votes stay in this browser (only the matched sentence is kept) and show which keyword rules need fixing.</div>
+    ${st.length ? `<table><tr><th>Feature</th><th>✓</th><th>✗</th><th>Accuracy</th><th>Marked wrong</th></tr>${st.map(r => `<tr><td>${esc(lab(r.rule))}</td><td>${r.ok}</td><td>${r.bad}</td><td>${Math.round(100 * r.ok / (r.ok + r.bad))}%</td><td class="small">${esc(r.wrong.slice(0, 2).join(" / "))}</td></tr>`).join("")}</table>
+    <div class="row"><button class="btn sec" id="fbCsv">Download CSV</button><button class="btn sec" id="fbClear">Clear</button></div>` : '<div class="muted">No votes yet.</div>'}</div>`;
+}
+document.addEventListener("click", e => {
+  const s = e.target.closest && e.target.closest("[data-dsrc]");
+  if (s && window.Interact) {
+    e.preventDefault();
+    const d = (S.feat[s.dataset.dsrc] || {}).doc; if (!d) return;
+    const m = new RegExp(d.re.source, d.re.flags.replace("g", "")).exec(String(d.text).replace(/\s+/g, " "));
+    Interact.showSource({ title: d.title, date: d.date, text: d.text, match: m ? m[0] : "" });
+  }
+  if (e.target.id === "fbCsv") Interact.exportCsv("dementia");
+  if (e.target.id === "fbClear") { Interact.clearVotes("dementia"); renderRef(); }
+  if (e.target.id === "dmHandout") openDementiaHandout();
+});
+document.addEventListener("ix-voted", () => renderRef());
+function addHandoutButton() {
+  if (!window.Interact || document.getElementById("dmHandout")) return;
+  const t = document.querySelector("#tab-treat"); if (!t) return;
+  t.insertAdjacentHTML("afterbegin", '<div class="row" style="margin-bottom:8px"><button class="btn sec" id="dmHandout">Family handout (printable)</button><span class="small muted">Plain-language page about memory loss, the tests, and support.</span></div>');
+}
+function openDementiaHandout() {
+  const R = evaluate().filter(r => r.lvl >= 2).map(r => r.name.replace(/\s*\(.*\)$/, ""));
+  Interact.handout("Memory and thinking problems: information for families", `
+    <h2>What we are looking at</h2><p>The care team is checking whether the memory and thinking changes are from <b>dementia</b>, from something treatable (such as medicines, low vitamin B12, thyroid problems, depression or an infection), or from <b>delirium</b> — a sudden confusion that often happens in hospital and usually improves.</p>
+    ${R.length ? `<p>From the information so far, the team is considering: <b>${R.map(Interact.esc).join(", ")}</b>. This is a working impression; it can change as tests come back and over time.</p>` : ""}
+    <h2>Tests that may be done</h2><ul><li>Memory and thinking tests (such as the MoCA).</li><li>Blood tests for treatable causes.</li><li>A CT or MRI scan of the brain.</li><li>Sometimes specialist tests later, in clinic.</li></ul>
+    <h2>What helps now</h2><ul><li>Bring glasses and hearing aids; keep a clock and calendar in view.</li><li>Familiar faces and photos; calm, simple explanations.</li><li>Daytime activity and walking; a good sleep routine.</li><li>Review of medicines that can worsen memory.</li></ul>
+    <h2>Planning ahead</h2><ul><li>Choose a substitute decision-maker and talk about wishes for future care while the person can take part.</li><li>Driving, money and safety at home may need to be reviewed.</li><li>Support: the Alzheimer Society of B.C. First Link® program and Dementia Helpline (1-800-936-6033).</li></ul>
+    <h2>Questions you may want to ask</h2><ul><li>Could anything be making it worse that can be treated?</li><li>Which tests are still pending?</li><li>Who will follow up after discharge?</li></ul>`);
+}
 
 /* ------------------------------------------------------------------ boot */
 function wireTabs() {
