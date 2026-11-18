@@ -4,7 +4,7 @@
    A tab is only loaded the first time you open it, and stays loaded when you switch away. */
 
 // To add a tool: put its files in tools/<folder>/ and add a line here.
-const TOOL_V = "20261118g"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
+const TOOL_V = "20261118h"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
 const TOOLS = [
   { key: "today", label: "Today (what changed)", tags: "what changed daily trends vitals overnight summary", path: "tools/today/index.html" },
   { key: "labs",  label: "Labs", tags: "lab results cbc lytes electrolytes chemistry blood work",                 path: "tools/labs/index.html" },
@@ -36,6 +36,7 @@ const TOOLS = [
   { key: "pd",    label: "Parkinson disease", tags: "parkinson pd levodopa",    path: "tools/pd/index.html" },
   { key: "dementia", label: "Dementia workup", tags: "dementia cognitive impairment memory delirium workup",  path: "tools/dementia/index.html" },
   { key: "aki",   label: "AKI", tags: "aki acute kidney injury creatinine renal",                  path: "tools/aki/index.html" },
+  { key: "chf",   label: "Heart failure (CHF)",  tags: "chf heart failure hf adhf congestion nt-probnp bnp diuretic furosemide lasix bumetanide torsemide metolazone acetazolamide gdmt entresto sglt2 amyloid amyloidosis edema handout dry weight", path: "tools/chf/index.html" },
   { key: "af",    label: "AF (acute illness)",   tags: "atrial fibrillation afib a fib rapid ventricular rvr rate control digoxin metoprolol beta blocker diltiazem amiodarone anticoagulation chads65 pneumonia sepsis", path: "tools/af/index.html" },
   { key: "acidbase", label: "Acid-base", tags: "acid base abg vbg blood gas anion gap ph co2 bicarbonate",         path: "tools/acidbase/index.html" },
   { key: "ktx",   label: "Kidney transplant", tags: "kidney transplant renal tacrolimus immunosuppression",    path: "tools/transplant/index.html" },
