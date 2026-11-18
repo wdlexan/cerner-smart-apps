@@ -133,12 +133,55 @@ const SYSTEMS = [
       a: ["gait normal", "dysmetria", "ataxic gait", "shuffling gait", "unable to assess gait",
           "asterixis", "rest tremor", "action tremor", "myoclonus"] },
   ]},
-  { id: "psych", name: "Psychiatric", els: [
-    { id: "mood", label: "Mood / affect", n: "calm and cooperative, affect appropriate",
-      a: ["anxious", "low mood", "flat affect", "labile affect", "irritable", "agitated"] },
-    { id: "tp", label: "Thought", n: "thought process linear, no perceptual disturbance",
-      a: ["tangential", "disorganized", "paranoid ideation", "responding to internal stimuli",
-          "poor insight"] },
+  { id: "psych", name: "Mental status (MSE)", labelled: true, els: [
+    { id: "appear", label: "Appearance", n: "appropriately groomed and dressed, appears stated age, normal posture",
+      a: ["dishevelled", "poor hygiene", "malodorous", "signs of self-neglect", "inappropriately dressed for setting",
+          "appears older than stated age", "appears younger than stated age", "slumped posture", "unusual or bizarre dress",
+          "visible self-inflicted injuries", "intoxicated appearance"] },
+    { id: "behav", label: "Behaviour / rapport", n: "good eye contact, calm and cooperative, good rapport",
+      a: ["poor eye contact", "intense or staring eye contact", "guarded", "suspicious", "hostile", "uncooperative",
+          "withdrawn", "disinhibited", "overly familiar", "tearful", "irritable", "fearful"] },
+    { id: "psychomotor", label: "Psychomotor", n: "no psychomotor agitation or retardation, no abnormal movements",
+      a: ["psychomotor agitation", "restless and pacing", "psychomotor retardation", "tremor", "tics",
+          "abnormal involuntary movements (tardive dyskinesia)", "akathisia", "catatonic features (posturing, waxy flexibility)",
+          "mannerisms or stereotypies"] },
+    { id: "speech", label: "Speech", n: "normal rate, rhythm, volume and tone; fluent and coherent",
+      a: ["pressured speech", "rapid speech", "slow speech", "hesitant speech", "increased response latency", "soft speech",
+          "loud speech", "monotonous speech", "slurred speech", "poverty of speech", "mute", "dysarthric"] },
+    { id: "mood", label: "Mood (reported)", n: "mood reported as good",
+      a: ["reports low mood", "reports feeling depressed", "reports anxious mood", "reports irritable mood",
+          "reports elevated mood", "reports feeling hopeless", "reports feeling numb", "reports feeling angry"] },
+    { id: "affect", label: "Affect (observed)", n: "affect euthymic, full range, reactive and congruent with mood",
+      a: ["depressed affect", "anxious affect", "irritable affect", "euphoric affect", "expansive affect", "labile affect",
+          "constricted affect", "blunted affect", "flat affect", "affect incongruent with mood", "affect inappropriate to content"] },
+    { id: "tproc", label: "Thought process", n: "thought process linear, logical and goal-directed",
+      a: ["circumstantial", "tangential", "flight of ideas", "loosening of associations", "thought blocking",
+          "perseveration", "concrete thinking", "disorganized", "word salad", "clang associations", "neologisms"] },
+    { id: "tcont", label: "Thought content", n: "no suicidal or homicidal ideation; no delusions, obsessions or phobias",
+      a: ["passive death wish", "suicidal ideation without plan or intent", "suicidal ideation with plan",
+          "suicidal ideation with intent", "homicidal ideation", "thoughts of harming others", "persecutory delusions",
+          "grandiose delusions", "delusions of reference", "somatic delusions", "nihilistic delusions", "delusional jealousy",
+          "thought insertion or broadcasting", "obsessions", "compulsions", "phobias", "preoccupations / ruminations",
+          "hopelessness", "excessive guilt", "overvalued ideas"] },
+    { id: "percep", label: "Perception", n: "no hallucinations or illusions, not responding to internal stimuli",
+      a: ["auditory hallucinations", "command auditory hallucinations", "visual hallucinations", "tactile hallucinations",
+          "olfactory hallucinations", "gustatory hallucinations", "illusions", "responding to internal stimuli",
+          "depersonalization", "derealization"] },
+    { id: "alert", label: "Alertness / attention", n: "alert, attention intact (months of year backwards correct)",
+      a: ["drowsy", "hypervigilant", "fluctuating level of consciousness", "inattentive (unable to do months backwards)",
+          "easily distracted", "CAM positive"] },
+    { id: "orient", label: "Orientation", n: "oriented to person, place and time",
+      a: ["disoriented to time", "disoriented to place", "disoriented to person", "disoriented to situation"] },
+    { id: "memory", label: "Memory", n: "recent and remote memory grossly intact, 3/3 recall at 5 minutes",
+      a: ["recall 2/3 at 5 minutes", "recall 1/3 at 5 minutes", "recall 0/3 at 5 minutes", "impaired remote memory",
+          "confabulation", "impaired immediate registration"] },
+    { id: "calc", label: "Calculation / abstraction", n: "serial 7s intact, abstraction intact",
+      a: ["errors on serial 7s", "unable to do serial 7s", "impaired abstraction (concrete proverbs)",
+          "impaired executive function (clock drawing abnormal)"] },
+    { id: "insight", label: "Insight", n: "insight good: aware of illness and need for treatment",
+      a: ["partial insight", "poor insight", "no insight: denies illness", "attributes symptoms to external causes"] },
+    { id: "judg", label: "Judgment", n: "judgment intact",
+      a: ["impaired judgment", "poor judgment: unsafe decisions", "impulsive", "unable to weigh risks and benefits"] },
   ]},
 ];
 
@@ -151,6 +194,7 @@ const TEMPLATES = {
   "Sepsis / fever":          ["gen","heent","cvs","resp","abdo","lines","skin","msk","neuro"],
   "Stroke / neuro":          ["gen","cvs","neuro"],
   "Delirium":                ["gen","abdo","lines","skin","neuro","psych"],
+  "Mental status (MSE)":     ["gen","psych"],
   "Hip fracture / ortho":    ["gen","cvs","resp","lines","skin","msk","neuro"],
   "GI bleed / liver":        ["gen","heent","cvs","abdo","skin","neuro"],
 };
@@ -298,12 +342,14 @@ function noteLines(abnOnly) {
     sys.els.forEach(e => {
       const v = state.el[key(sys.id, e.id)];
       if (!v) return;
-      if (v === "n") { if (!abnOnly) parts.push(cap(e.n)); }
-      else parts.push((flag ? "*" : "") + cap([...v].join(", ")));
+      const pre = sys.labelled ? e.label + ": " : "";
+      if (v === "n") { if (!abnOnly) parts.push(pre + (sys.labelled ? e.n : cap(e.n))); }
+      else parts.push((flag ? "*" : "") + pre + (sys.labelled ? [...v].join(", ") : cap([...v].join(", "))));
     });
     const fr = (state.free[sys.id] || "").trim();
     if (fr) parts.push(cap(fr.replace(/\.$/, "")));
-    if (parts.length) lines.push(`${sys.name}: ${parts.join(". ")}.`);
+    if (parts.length && sys.labelled && !$("#optPara").checked) lines.push(`${sys.name}:\n` + parts.map((p) => "  " + p.replace(/\.$/, "") + ".").join("\n"));
+    else if (parts.length) lines.push(`${sys.name}: ${parts.join(". ")}.`);
     else notDone.push(sys.name);
   });
   return { lines, notDone };
