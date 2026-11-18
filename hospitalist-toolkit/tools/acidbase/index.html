@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Acid-Base</title>
+  <style>
+    :root { --bg:#f5f7fa; --card:#fff; --ink:#1f2933; --muted:#5f6c7b; --accent:#0b6bcb; --line:#dde3ea;
+            --r-bg:#fde8e8; --r-ink:#9b1c1c; --a-bg:#fff1d6; --a-ink:#8a5200; --b-bg:#e3eefc; --b-ink:#0b4a99; --g-bg:#e4f4ea; --g-ink:#1d6b3a; --warn-bg:#fff4e5; --warn-line:#f0c27b; }
+    @media (prefers-color-scheme: dark) { :root { --bg:#111418; --card:#1a1f26; --ink:#e8edf2; --muted:#9aa7b5; --accent:#6aa9ff; --line:#2b333d;
+            --r-bg:#4a1d1d; --r-ink:#ffb3b3; --a-bg:#4a3511; --a-ink:#ffd38a; --b-bg:#14325c; --b-ink:#a9cdff; --g-bg:#16361f; --g-ink:#9be0b1; --warn-bg:#3a2e15; --warn-line:#6b5420; } }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); }
+    header { padding:14px 20px; border-bottom:1px solid var(--line); background:var(--card); }
+    header h1 { margin:0; font-size:19px; } header .sub { font-size:13px; color:var(--muted); margin-top:2px; }
+    main { max-width:980px; margin:16px auto 40px; padding:0 16px; display:grid; gap:14px; }
+    .banner { background:var(--warn-bg); border:1px solid var(--warn-line); border-radius:8px; padding:10px 14px; font-size:13px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:10px; font-size:13.5px; }
+    .card > summary { padding:10px 16px; font-weight:700; font-size:15px; cursor:pointer; display:flex; justify-content:space-between; gap:10px; }
+    .card > .body { padding:0 16px 14px; }
+    select, input, button { font:inherit; font-size:13px; padding:5px 8px; border:1px solid var(--line); border-radius:6px; background:var(--card); color:var(--ink); }
+    button { cursor:pointer; } button.primary { border-color:var(--accent); color:var(--accent); }
+    input[type=number] { width:80px; }
+    .row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:8px 0; }
+    .inl { display:inline-flex; gap:6px; align-items:center; }
+    .muted { color:var(--muted); } .err { color:var(--r-ink); }
+    .tiles { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px; }
+    .tile { border-radius:10px; padding:10px 14px; border:1px solid var(--line); background:var(--card); }
+    .tile .k { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; }
+    .tile .big { font-size:26px; font-weight:700; margin:2px 0; }
+    .tile .s { font-size:12.5px; }
+    .t0 { background:var(--g-bg); color:var(--g-ink); } .t1 { background:var(--b-bg); color:var(--b-ink); } .t2 { background:var(--a-bg); color:var(--a-ink); } .t3 { background:var(--r-bg); color:var(--r-ink); }
+    .t0 .k, .t1 .k, .t2 .k, .t3 .k { color:inherit; opacity:.8; }
+    .alert { border-left:4px solid; border-radius:6px; padding:8px 12px; margin:6px 0; }
+    .alert b { margin-right:6px; }
+    .alert.urgent { background:var(--r-bg); color:var(--r-ink); } .alert.action { background:var(--a-bg); color:var(--a-ink); } .alert.info { background:var(--b-bg); color:var(--b-ink); }
+    table { border-collapse:collapse; width:100%; font-size:13px; }
+    th, td { border-bottom:1px solid var(--line); padding:5px 8px; text-align:left; white-space:nowrap; }
+    th { color:var(--muted); font-weight:600; }
+    td.num { text-align:right; font-variant-numeric:tabular-nums; } td.wrap { white-space:normal; }
+    td.hi { color:var(--r-ink); font-weight:600; } td.old { color:var(--a-ink); }
+    .scroll { overflow-x:auto; }
+    .plan h3 { font-size:14px; margin:12px 0 4px; } .plan ul { margin:4px 0 8px 18px; padding:0; } .plan li { margin:3px 0; }
+    .plan .urgent h3 { color:var(--r-ink); } .plan .action h3 { color:var(--a-ink); }
+    .chip { display:inline-block; padding:1px 8px; border-radius:10px; font-size:12px; font-weight:600; }
+    .c-yes { background:var(--g-bg); color:var(--g-ink); } .c-no { background:var(--r-bg); color:var(--r-ink); } .c-unknown { background:var(--a-bg); color:var(--a-ink); }
+    .src { font-size:12px; color:var(--muted); margin-top:8px; }
+    svg text { fill:var(--muted); font-size:11px; }
+    .mgrid { display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:10px; margin:8px 0; }
+    .mgrid fieldset { border:1px solid var(--line); border-radius:8px; padding:6px 12px 8px; margin:0; display:grid; gap:6px; }
+    .mgrid legend { font-weight:600; font-size:13px; padding:0 4px; }
+    .mgrid label:not(.inl) { display:grid; grid-template-columns:118px 80px auto; align-items:center; gap:6px; }
+    .mgrid .u { font-size:12px; color:var(--muted); }
+    .mgrid label select { grid-column:span 2; justify-self:start; }
+    input.typed { border-color:var(--accent); font-weight:600; }
+    .verdict { border-radius:10px; padding:10px 14px; margin:10px 0 6px; }
+    .verdict .big { font-size:18px; font-weight:700; }
+    tr.match td { background:var(--b-bg); color:var(--b-ink); font-weight:600; }
+    td.lv-flag { color:var(--a-ink); font-weight:600; } td.lv-ok { color:var(--g-ink); font-weight:600; }
+    .steps { list-style:none; margin:6px 0; padding:0; } .steps li { border:1px solid var(--line); border-radius:8px; padding:8px 12px; margin:6px 0; }
+    .steps .mk { display:inline-block; width:22px; height:22px; line-height:22px; text-align:center; border-radius:50%; font-weight:700; margin-right:8px; }
+    .mk.ok { background:var(--g-bg); color:var(--g-ink); } .mk.no { background:var(--r-bg); color:var(--r-ink); } .mk.na { background:var(--b-bg); color:var(--b-ink); }
+    .teach { display:none; margin-top:6px; font-size:12.5px; color:var(--b-ink); background:var(--b-bg); border-radius:6px; padding:6px 10px; } body.teaching .teach { display:block; }
+    .dis { display:flex; flex-wrap:wrap; gap:6px; margin:6px 0 2px; } .dis span { background:var(--a-bg); color:var(--a-ink); border-radius:12px; padding:3px 10px; font-weight:600; }
+    .dis span.none { background:var(--g-bg); color:var(--g-ink); }
+    .ref details { border:1px solid var(--line); border-radius:8px; margin:6px 0; } .ref summary { padding:8px 12px; cursor:pointer; font-weight:600; }
+    .ref .in { padding:0 12px 10px; } .ref details.hit > summary { background:var(--a-bg); color:var(--a-ink); border-radius:8px 8px 0 0; }
+    .ref td:first-child { font-weight:600; white-space:normal; width:32%; }
+    .sparks { display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:10px; }
+    .sparks .sp { border:1px solid var(--line); border-radius:8px; padding:6px 10px; } .sparks .sp b { font-size:13px; }
+    @media print { .noprint { display:none; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Acid-base: stepwise blood gas interpretation</h1>
+    <div class="sub">Primary disorder, compensation, anion gap, delta-delta, osmolar gap, workup, causes and note. Read-only.</div>
+  </header>
+  <main>
+    <div class="banner"><b>Decision-support draft. It orders nothing.</b> Formulas, cut-offs and treatment notes were written by Claude and have <b>not been verified</b>: check them against references, the Island Health protocols and pharmacy before real use. Tests are found by code and <b>name</b>, so a result not shown may still be in the chart. Values you type stay in this page only. Use made-up or Cerner sandbox patients until Island Health approves real data.</div>
+
+    <details class="card" open>
+      <summary><span>Patient and blood gas</span><span class="muted" id="ptsum"></span></summary>
+      <div class="body">
+        <div id="pstatus" class="muted">Open from Cerner to read the chart, or pick a made-up patient:</div>
+        <div class="row"><select id="testsel"><option value="">Made-up patient…</option></select><button id="clear" hidden>Clear</button></div>
+        <div class="row"><label class="inl">Blood gas <select id="gassel"><option value="">No blood gas in the chart (14 days)</option></select></label>
+          <label class="inl"><input type="checkbox" id="teach"> Teaching mode (show the why for each step)</label></div>
+        <div id="pairing" class="muted"></div>
+        <div id="errs" class="err"></div>
+      </div>
+    </details>
+
+    <details class="card" open id="sec-manual">
+      <summary><span>Values used</span><span class="muted" id="msum"></span></summary>
+      <div class="body">
+        <div class="muted">Chart values are shown in grey (hover for time). Type a value to override it, or use this as a calculator with no patient loaded. SI units.</div>
+        <div class="mgrid">
+          <fieldset><legend>Blood gas</legend>
+            <label>Sample <select id="m-specimen"><option value="">From chart / unknown</option><option value="arterial">Arterial</option><option value="venous">Venous</option><option value="capillary">Capillary</option></select></label>
+            <label>pH <input type="number" id="m-pH" step="0.01" min="6.5" max="8"> <span class="u"></span></label>
+            <label>pCO2 <input type="number" id="m-pCO2" step="1" min="5" max="200"> <span class="u">mmHg</span></label>
+            <label>HCO3 <input type="number" id="m-HCO3" step="0.1" min="1" max="70"> <span class="u">mmol/L</span></label>
+            <label>pO2 <input type="number" id="m-pO2" step="1" min="5" max="700"> <span class="u">mmHg</span></label>
+          </fieldset>
+          <fieldset><legend>Chemistry</legend>
+            <label>Sodium <input type="number" id="m-Na" step="1"> <span class="u">mmol/L</span></label>
+            <label>Potassium <input type="number" id="m-K" step="0.1"> <span class="u">mmol/L</span></label>
+            <label>Chloride <input type="number" id="m-Cl" step="1"> <span class="u">mmol/L</span></label>
+            <label>Total CO2 <input type="number" id="m-tCO2" step="1"> <span class="u">mmol/L</span></label>
+            <label>Albumin <input type="number" id="m-albumin" step="1"> <span class="u">g/L</span></label>
+            <label>Glucose <input type="number" id="m-glucose" step="0.1"> <span class="u">mmol/L</span></label>
+            <label>Urea <input type="number" id="m-urea" step="0.1"> <span class="u">mmol/L</span></label>
+            <label>Creatinine <input type="number" id="m-creatinine" step="1"> <span class="u">umol/L</span></label>
+          </fieldset>
+          <fieldset><legend>If available</legend>
+            <label>Lactate <input type="number" id="m-lactate" step="0.1"> <span class="u">mmol/L</span></label>
+            <label>B-hydroxybutyrate <input type="number" id="m-bhb" step="0.1"> <span class="u">mmol/L</span></label>
+            <label>Osmolality <input type="number" id="m-osm" step="1"> <span class="u">mmol/kg</span></label>
+            <label>Ethanol <input type="number" id="m-ethanol" step="1"> <span class="u">mmol/L</span></label>
+            <label>Salicylate <input type="number" id="m-salicylate" step="0.1"> <span class="u">mmol/L</span></label>
+            <label>CK <input type="number" id="m-CK" step="1"> <span class="u">U/L</span></label>
+          </fieldset>
+          <fieldset><legend>Urine (spot)</legend>
+            <label>Sodium <input type="number" id="m-uNa" step="1"> <span class="u">mmol/L</span></label>
+            <label>Potassium <input type="number" id="m-uK" step="1"> <span class="u">mmol/L</span></label>
+            <label>Chloride <input type="number" id="m-uCl" step="1"> <span class="u">mmol/L</span></label>
+            <label>pH <input type="number" id="m-uPH" step="0.5"> <span class="u"></span></label>
+          </fieldset>
+        </div>
+        <div class="row"><button id="m-clear" hidden>Clear typed values</button><span class="muted" id="m-src"></span></div>
+      </div>
+    </details>
+
+    <div class="tiles" id="tiles"></div>
+    <details class="card" open><summary><span>Red flags</span><span class="muted" id="alertsum"></span></summary><div class="body" id="alerts"></div></details>
+
+    <details class="card" open>
+      <summary><span>Interpretation, step by step</span><span class="muted" id="intsum"></span></summary>
+      <div class="body"><div class="dis" id="dis"></div><ol class="steps" id="steps"></ol>
+        <div class="src">Winter's formula; Boston compensation rules (acute/chronic respiratory 1 &amp; 3.5–4 per 10 mmHg up, 2 &amp; 4–5 per 10 down; metabolic alkalosis 0.7 × HCO3 + 20); albumin-corrected anion gap (+0.25 per g/L below 40, Figge); delta ratio; osmolar gap in SI units. Unverified draft.</div></div>
+    </details>
+
+    <details class="card" open>
+      <summary><span>Trend (14 days)</span><span class="muted" id="trendsum"></span></summary>
+      <div class="body"><div class="sparks" id="sparks"></div><div class="scroll" id="gastable" style="margin-top:10px"></div></div>
+    </details>
+
+    <details class="card" open>
+      <summary><span>Relevant medications and problems</span><span class="muted" id="medsum"></span></summary>
+      <div class="body" id="meds"></div>
+    </details>
+
+    <details class="card">
+      <summary><span>Causes, tests and first steps</span><span class="muted">highlighted: disorders found above</span></summary>
+      <div class="body ref" id="ref"></div>
+    </details>
+
+    <details class="card noprint" open id="sec-note">
+      <summary><span>Note draft</span><span class="muted">check, edit, then paste into your PowerChart note</span></summary>
+      <div class="body" id="note"></div>
+    </details>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+  <script src="../../pdf-overlay.js?v=20261103a"></script>
+  <script src="rules.js?v=20261117a"></script>
+  <script src="chart.js?v=20261117a"></script>
+  <script src="samples.js?v=20261117a"></script>
+  <script src="reference.js?v=20261117a"></script>
+  <script src="../../notedraft.js?v=20261113a"></script>
+  <script src="app.js?v=20261117a"></script>
+</body>
+</html>
