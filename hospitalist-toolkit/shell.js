@@ -6,45 +6,45 @@
 // To add a tool: put its files in tools/<folder>/ and add a line here.
 const TOOL_V = "20261118b"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
 const TOOLS = [
-  { key: "today", label: "Today (what changed)", path: "tools/today/index.html" },
-  { key: "labs",  label: "Labs",                 path: "tools/labs/index.html" },
-  { key: "crit",  label: "Critical labs → MRP",  path: "tools/critical/index.html" },
-  { key: "notes", label: "Notes",                path: "tools/notes/index.html" },
-  { key: "exam",  label: "Physical exam",        path: "tools/exam/index.html", keepHeader: true }, // its header holds the template picker and All normal
-  { key: "meds",  label: "Meds review (Beers)",  path: "tools/meds/index.html" },
-  { key: "g6pd",  label: "G6PD check",           path: "tools/g6pd/index.html" },
-  { key: "risk",  label: "Risk screen",          path: "tools/risk/index.html" },
-  { key: "opioid", label: "Opioid safety",       path: "tools/opioid/index.html" },
-  { key: "pain",  label: "Pain management",      path: "tools/pain/index.html" },
-  { key: "abx",   label: "Antibiotics",          path: "tools/abx/index.html" },
-  { key: "inf",   label: "Infections by site",   path: "tools/infections/index.html" },
-  { key: "cw",    label: "Choosing Wisely",      path: "tools/cw/index.html", keepHeader: true }, // its header holds the Look back control
-  { key: "dx",    label: "Diagnosis check",      path: "tools/dx/index.html", keepHeader: true }, // its header holds the Look back control
-  { key: "ed",    label: "ED screen",            path: "tools/ed/index.html" },
-  { key: "hah",   label: "Hospital at Home",     path: "tools/hah/index.html" },
-  { key: "calc",  label: "Calculators",          path: "tools/calc/index.html" },
-  { key: "ai",    label: "AI summary",           path: "tools/ai/index.html" },
-  { key: "tox",   label: "Oncology toxicity",    path: "tools/tox/index.html", keepHeader: true }, // its header holds the draft/version note
-  { key: "watch", label: "Watch-ahead",          path: "tools/watch/index.html", keepHeader: true }, // its header holds the draft/version note
-  { key: "bsab",  label: "CRS/ICANS (bispecific)", path: "tools/bispecific/index.html" },
-  { key: "ibd",   label: "IBD flowsheet (Crohn/UC)", path: "tools/ibd/index.html" },
-  { key: "liver", label: "Liver (cirrhosis)", path: "tools/liver/index.html" },
-  { key: "hypona", label: "Hyponatremia", path: "tools/hypona/index.html" },
-  { key: "hip",   label: "Hip fracture",         path: "tools/hip/index.html" },
-  { key: "consult", label: "Consult summary",    path: "tools/consult/index.html" },
-  { key: "mobility", label: "Mobility & discharge", path: "tools/mobility/index.html" },
-  { key: "pd",    label: "Parkinson disease",    path: "tools/pd/index.html" },
-  { key: "dementia", label: "Dementia workup",  path: "tools/dementia/index.html" },
-  { key: "aki",   label: "AKI",                  path: "tools/aki/index.html" },
-  { key: "acidbase", label: "Acid-base",         path: "tools/acidbase/index.html" },
-  { key: "ktx",   label: "Kidney transplant",    path: "tools/transplant/index.html" },
-  { key: "dm",    label: "Diabetes (inpatient)", path: "tools/diabetes/index.html", keepHeader: true }, // its header holds the Look back control
-  { key: "stroke", label: "Stroke follow-up",    path: "tools/stroke/index.html", keepHeader: true }, // its header holds the Look back control
-  { key: "seizure", label: "Seizure",          path: "tools/seizure/index.html" },
-  { key: "neuro",  label: "Neuro (non-stroke)", path: "tools/neuro/index.html" },
-  { key: "edr",   label: "Eating disorder (ED)", path: "tools/edr/index.html", keepHeader: true }, // its header holds the Look back control
-  { key: "ae",    label: "Autoimmune encephalitis", path: "tools/ae/index.html", keepHeader: true }, // its header holds the tool's own tabs
-  { key: "forms", label: "Forms",                path: "tools/forms/index.html" }
+  { key: "today", label: "Today (what changed)", tags: "what changed daily trends vitals overnight summary", path: "tools/today/index.html" },
+  { key: "labs",  label: "Labs", tags: "lab results cbc lytes electrolytes chemistry blood work",                 path: "tools/labs/index.html" },
+  { key: "crit",  label: "Critical labs → MRP", tags: "critical lab alert mrp teams page message",  path: "tools/critical/index.html" },
+  { key: "notes", label: "Notes", tags: "notes documents progress note discharge summary compile",                path: "tools/notes/index.html" },
+  { key: "exam",  label: "Physical exam", tags: "physical exam template normal",        path: "tools/exam/index.html", keepHeader: true }, // its header holds the template picker and All normal
+  { key: "meds",  label: "Meds review (Beers)", tags: "medications beers criteria elderly geriatric polypharmacy deprescribing",  path: "tools/meds/index.html" },
+  { key: "g6pd",  label: "G6PD check", tags: "g6pd hemolysis drug safety rasburicase primaquine dapsone",           path: "tools/g6pd/index.html" },
+  { key: "risk",  label: "Risk screen", tags: "risk screen pressure injury ulcer nutrition sleep dysphagia falls",          path: "tools/risk/index.html" },
+  { key: "opioid", label: "Opioid safety", tags: "opioid safety narcotics naloxone morphine oxycodone hydromorphone",       path: "tools/opioid/index.html" },
+  { key: "pain",  label: "Pain management", tags: "pain management analgesia",      path: "tools/pain/index.html" },
+  { key: "abx",   label: "Antibiotics", tags: "antibiotics antimicrobial stewardship iv po switch duration",          path: "tools/abx/index.html" },
+  { key: "inf",   label: "Infections by site", tags: "infections sepsis pneumonia uti cellulitis source",   path: "tools/infections/index.html" },
+  { key: "cw",    label: "Choosing Wisely", tags: "choosing wisely low value tests overuse",      path: "tools/cw/index.html", keepHeader: true }, // its header holds the Look back control
+  { key: "dx",    label: "Diagnosis check", tags: "diagnosis check cognitive bias second look missed differential harm",      path: "tools/dx/index.html", keepHeader: true }, // its header holds the Look back control
+  { key: "ed",    label: "ED screen", tags: "ed er emergency screen admission",            path: "tools/ed/index.html" },
+  { key: "hah",   label: "Hospital at Home", tags: "hospital at home hah virtual ward",     path: "tools/hah/index.html" },
+  { key: "calc",  label: "Calculators", tags: "calculators scores egfr curb chads wells",          path: "tools/calc/index.html" },
+  { key: "ai",    label: "AI summary", tags: "ai summary draft llm",           path: "tools/ai/index.html" },
+  { key: "tox",   label: "Oncology toxicity", tags: "oncology toxicity chemotherapy immunotherapy cancer",    path: "tools/tox/index.html", keepHeader: true }, // its header holds the draft/version note
+  { key: "watch", label: "Watch-ahead", tags: "watch ahead deterioration early warning",          path: "tools/watch/index.html", keepHeader: true }, // its header holds the draft/version note
+  { key: "bsab",  label: "CRS/ICANS (bispecific)", tags: "crs icans bispecific teclistamab myeloma cytokine release", path: "tools/bispecific/index.html" },
+  { key: "ibd",   label: "IBD flowsheet (Crohn/UC)", tags: "ibd crohn colitis ulcerative asuc", path: "tools/ibd/index.html" },
+  { key: "liver", label: "Liver (cirrhosis)", tags: "liver cirrhosis hepatic encephalopathy ascites meld varices", path: "tools/liver/index.html" },
+  { key: "hypona", label: "Hyponatremia", tags: "hyponatremia sodium low na siadh", path: "tools/hypona/index.html" },
+  { key: "hip",   label: "Hip fracture", tags: "hip fracture fragility orthopedics ortho",         path: "tools/hip/index.html" },
+  { key: "consult", label: "Consult summary", tags: "consult summary",    path: "tools/consult/index.html" },
+  { key: "mobility", label: "Mobility & discharge", tags: "mobility discharge pt ot function planning", path: "tools/mobility/index.html" },
+  { key: "pd",    label: "Parkinson disease", tags: "parkinson pd levodopa",    path: "tools/pd/index.html" },
+  { key: "dementia", label: "Dementia workup", tags: "dementia cognitive impairment memory delirium workup",  path: "tools/dementia/index.html" },
+  { key: "aki",   label: "AKI", tags: "aki acute kidney injury creatinine renal",                  path: "tools/aki/index.html" },
+  { key: "acidbase", label: "Acid-base", tags: "acid base abg vbg blood gas anion gap ph co2 bicarbonate",         path: "tools/acidbase/index.html" },
+  { key: "ktx",   label: "Kidney transplant", tags: "kidney transplant renal tacrolimus immunosuppression",    path: "tools/transplant/index.html" },
+  { key: "dm",    label: "Diabetes (inpatient)", tags: "diabetes insulin glucose sugar hyperglycemia hypoglycemia", path: "tools/diabetes/index.html", keepHeader: true }, // its header holds the Look back control
+  { key: "stroke", label: "Stroke follow-up", tags: "stroke tia cva nihss neuro",    path: "tools/stroke/index.html", keepHeader: true }, // its header holds the Look back control
+  { key: "seizure", label: "Seizure", tags: "seizure epilepsy status antiseizure",          path: "tools/seizure/index.html" },
+  { key: "neuro",  label: "Neuro (non-stroke)", tags: "neuro neurology weakness headache non-stroke", path: "tools/neuro/index.html" },
+  { key: "edr",   label: "Eating disorder (ED)", tags: "eating disorder anorexia bulimia refeeding", path: "tools/edr/index.html", keepHeader: true }, // its header holds the Look back control
+  { key: "ae",    label: "Autoimmune encephalitis", tags: "autoimmune encephalitis nmda", path: "tools/ae/index.html", keepHeader: true }, // its header holds the tool's own tabs
+  { key: "forms", label: "Forms", tags: "forms referral requisition pdf form 4.1 bc cancer pulse gi",                path: "tools/forms/index.html" }
 ];
 
 const $ = (id) => document.getElementById(id);
@@ -84,12 +84,40 @@ async function start(client) {
 
   $("tabs").innerHTML = TOOLS.map((t) => `<button data-k="${t.key}">${esc(t.label)}</button>`).join("");
   document.querySelectorAll("#tabs button").forEach((b) => (b.onclick = () => show(b.dataset.k)));
+  setupSearch();
 
   // Open the tab named in the address (#labs), else the last one used, else Today
   let first = (target && target.tab) || location.hash.slice(1);
   if (!TOOLS.some((t) => t.key === first)) { try { first = localStorage.getItem("toolkit-tab"); } catch (e) {} }
   if (!TOOLS.some((t) => t.key === first)) first = TOOLS[0].key;
   show(first);
+}
+
+// ---- Find a tool: type to filter the tabs. Matches the tab name and clinical words (e.g. "sodium" finds Hyponatremia).
+// Enter opens the first match, Esc clears. Press "/" anywhere in the header to jump to the box.
+function setupSearch() {
+  const box = $("toolsearch"), none = $("nomatch");
+  box.hidden = false;
+  const norm = (x) => String(x || "").toLowerCase().replace(/[^a-z0-9]+/g, " ");
+  const hay = Object.fromEntries(TOOLS.map((t) => [t.key, " " + norm(t.label + " " + (t.tags || "")) + " "]));
+  const matches = () => {
+    const words = norm(box.value).split(" ").filter(Boolean);
+    return TOOLS.filter((t) => words.every((w) => hay[t.key].includes(" " + w))).map((t) => t.key);
+  };
+  const filter = () => {
+    const keys = box.value.trim() ? matches() : TOOLS.map((t) => t.key);
+    document.querySelectorAll("#tabs button").forEach((b) => (b.hidden = !keys.includes(b.dataset.k)));
+    none.hidden = keys.length > 0;
+    return keys;
+  };
+  box.oninput = filter;
+  box.onkeydown = (e) => {
+    if (e.key === "Enter") { const k = filter()[0]; if (k) { show(k); box.blur(); } }
+    else if (e.key === "Escape") { box.value = ""; filter(); box.blur(); }
+  };
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "/" && document.activeElement !== box && !/INPUT|TEXTAREA|SELECT/.test((document.activeElement || {}).tagName)) { e.preventDefault(); box.focus(); box.select(); }
+  });
 }
 
 function show(key) {
