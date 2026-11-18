@@ -42,7 +42,7 @@ function draw() {
   $("tiles").innerHTML = [
     tile("Heart rate", s.hr ?? "?", x.hr ? (x.hr.typed ? "typed" : ago(x.hr.t)) + (s.hr >= 110 ? " · target under 110" : "") : "no recent value", hrT),
     tile("Systolic BP", s.sbp ?? "?", x.sbp ? (x.sbp.typed ? "typed" : ago(x.sbp.t)) + (s.pressors ? " · ON VASOPRESSOR" : "") : "no recent value", s.pressors ? "t3" : bpT),
-    tile("CHADS-65", ac.chads65.rec === "oac" ? "OAC" : ac.chads65.rec === "antiplatelet" ? "ASA" : "None", esc(ac.chads65.why), ac.chads65.rec === "oac" ? "t2" : "t0"),
+    x.risk.age == null ? tile("CHADS-65", "?", "needs age", "t1") : tile("CHADS-65", ac.chads65.rec === "oac" ? "OAC" : ac.chads65.rec === "antiplatelet" ? "ASA" : "None", esc(ac.chads65.why), ac.chads65.rec === "oac" ? "t2" : "t0"),
     tile("CHA₂DS₂-VASc", x.risk.age != null ? ac.cv.score : "?", ac.cv.items.map((i) => i[0]).join(", ") || "none", "t1"),
     tile("CrCl (Cockcroft-Gault)", s.cl != null ? s.cl : "?", s.cl != null ? `creatinine ${Math.round(s.scr)}, ${s.kg} kg` : "needs age, weight, creatinine", s.cl != null && s.cl < 30 ? "t3" : s.cl != null && s.cl < 50 ? "t2" : "t1"),
     tile("K / Mg", `${s.k ?? "?"} / ${s.mg != null ? Math.round(s.mg * 100) / 100 : "?"}`, "aim K 4.0+, Mg 0.8-1.0+", kT)].join("");
