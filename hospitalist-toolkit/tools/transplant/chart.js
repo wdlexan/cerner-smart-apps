@@ -6,9 +6,10 @@
     const pid = client.patient.id, errors = [], tell = say || (() => {});
     const iso = (t) => new Date(t).toISOString().slice(0, 10);
     async function get(url, name, pages, optional) {
-      const timer = new Promise((_, rej) => setTimeout(() => rej(new Error("timed out after 60 s")), 60000));
+      const once = () => { let tm; return Promise.race([client.request(url, { pageLimit: pages || 1, flat: true }), new Promise((_, rej) => { tm = setTimeout(() => rej(new Error("timed out after 30 s")), 30000); })]).finally(() => clearTimeout(tm)); };
+      const fetchRetry = () => once().catch((e) => /timed out|\b50[234]\b|Gateway|Failed to fetch|NetworkError/i.test(String((e && e.message) || e)) ? new Promise((r) => setTimeout(r, 1500)).then(once) : Promise.reject(e));
       try {
-        const r = (await Promise.race([client.request(url, { pageLimit: pages || 1, flat: true }), timer])).filter((x) => x.resourceType && x.resourceType !== "OperationOutcome");
+        const r = (await fetchRetry()).filter((x) => x.resourceType && x.resourceType !== "OperationOutcome");
         tell(`Loaded ${name} (${r.length})…`); return r;
       } catch (e) { if (!optional) errors.push(`${name}: ${e.message || e}`); return []; }
     }
@@ -17,8 +18,8 @@
       (async () => { try { return await client.patient.read(); } catch (e) { errors.push("patient: " + (e.message || e)); return null; } })(),
       get(`Observation?patient=${pid}&category=laboratory&date=ge${since90}&_count=100`, "lab results incl. drug levels (90 days)", 10),
       get(`MedicationRequest?patient=${pid}&_count=100`, "medication orders", 4),
-      get(`MedicationAdministration?patient=${pid}&effective-time=ge${since14}&_count=100`, "medications given (14 days)", 4),
-      get(`Condition?patient=${pid}&_count=100`, "problem list", 2),
+      get(`MedicationAdministration?patient=${pid}&effective-time=ge${since14}T00:00:00Z&_count=100`, "medications given (14 days)", 4),
+      get(`Condition?patient=${pid}&category=problem-list-item&_count=50`, "problem list", 2),
       get(`NutritionOrder?patient=${pid}&_count=50`, "diet orders", 1, true),     // optional: many sites do not expose these
       get(`ServiceRequest?patient=${pid}&_count=100`, "orders", 1, true)]);
     return { raw: { patient, obs: labs, medreqs, admins, conditions, orders: diet.concat(svc) }, errors };

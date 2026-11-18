@@ -210,7 +210,7 @@ function load(raw, note, errors) {
   $("m-specimen").value = "";
   if (state.f) $("ptsum").textContent = [state.f.sex, state.f.age != null ? state.f.age + " y" : ""].filter(Boolean).join(", "); else $("ptsum").textContent = "";
   $("pstatus").textContent = note; $("clear").hidden = !raw;
-  $("errs").innerHTML = errors && errors.length ? "Could not read: " + errors.map(esc).join("; ") + ". Check the scopes in the Code Console." : "";
+  $("errs").innerHTML = errors && errors.length ? "Could not read: " + errors.map(esc).join("; ") + (errors.some((e) => /\b40[13]\b|Unauthorized|Forbidden/i.test(e)) ? ". Check the scopes in the Code Console." : ". Cerner's sandbox can be slow: reload the patient to try again.") : "";
   drawTrend(); draw(); NOTE.reset();
 }
 $("gassel").onchange = () => { state.gasIdx = parseInt($("gassel").value, 10); draw(); };

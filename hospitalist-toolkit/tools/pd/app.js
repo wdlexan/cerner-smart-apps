@@ -136,7 +136,7 @@ function load(raw, note, errors, sample) {
   $("npohint").textContent = f && f.npoHint ? `(${f.npoHint.title}: mentions NPO)` : "";
   $("ptsum").textContent = f ? [f.age != null ? f.age + " y" : "", f.sex, f.problems.slice(0, 2).map((p) => p.replace(/\s+[A-Z]\d.*$/, "")).join("; ")].filter(Boolean).join(", ") : "";
   $("pstatus").textContent = note; $("clear").hidden = !raw;
-  $("errs").innerHTML = errors && errors.length ? "Could not read: " + errors.map(esc).join("; ") + ". Check the scopes in the Code Console." : "";
+  $("errs").innerHTML = errors && errors.length ? "Could not read: " + errors.map(esc).join("; ") + (errors.some((e) => /\b40[13]\b|Unauthorized|Forbidden/i.test(e)) ? ". Check the scopes in the Code Console." : ". Cerner's sandbox can be slow: reload the patient to try again.") : "";
   draw(); PD_NOTE.reset();
 }
 $("npo").onchange = draw;

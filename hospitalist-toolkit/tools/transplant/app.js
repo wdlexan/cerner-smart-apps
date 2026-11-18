@@ -148,7 +148,7 @@ function load(raw, note, errors, preset) {
     const f = state.f; $("ptsum").textContent = [f.sex, f.age != null ? f.age + " y" : ""].filter(Boolean).join(", ");
   } else $("ptsum").textContent = "";
   $("pstatus").textContent = note; $("clear").hidden = !raw;
-  $("errs").innerHTML = errors && errors.length ? "Could not read: " + errors.map(esc).join("; ") + ". Check the scopes in the Code Console." : "";
+  $("errs").innerHTML = errors && errors.length ? "Could not read: " + errors.map(esc).join("; ") + (errors.some((e) => /\b40[13]\b|Unauthorized|Forbidden/i.test(e)) ? ". Check the scopes in the Code Console." : ". Cerner's sandbox can be slow: reload the patient to try again.") : "";
   draw();
 }
 

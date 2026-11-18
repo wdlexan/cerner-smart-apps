@@ -54,16 +54,17 @@
     const pid = client.patient.id, errors = [], tell = say || (() => {});
     const iso = (t) => new Date(t).toISOString().slice(0, 10);
     async function get(url, name, pages) {
-      const timer = new Promise((_, rej) => setTimeout(() => rej(new Error("timed out after 60 s")), 60000));
-      try { const r = (await Promise.race([client.request(url, { pageLimit: pages || 1, flat: true }), timer])).filter((x) => x.resourceType && x.resourceType !== "OperationOutcome"); tell(`Loaded ${name} (${r.length})…`); return r; }
+      const once = () => { let tm; return Promise.race([client.request(url, { pageLimit: pages || 1, flat: true }), new Promise((_, rej) => { tm = setTimeout(() => rej(new Error("timed out after 30 s")), 30000); })]).finally(() => clearTimeout(tm)); };
+      const fetchRetry = () => once().catch((e) => /timed out|\b50[234]\b|Gateway|Failed to fetch|NetworkError/i.test(String((e && e.message) || e)) ? new Promise((r) => setTimeout(r, 1500)).then(once) : Promise.reject(e));
+      try { const r = (await fetchRetry()).filter((x) => x.resourceType && x.resourceType !== "OperationOutcome"); tell(`Loaded ${name} (${r.length})…`); return r; }
       catch (e) { errors.push(`${name}: ${e.message || e}`); return []; }
     }
     const s4 = iso(Date.now() - 4 * DAY), s14 = iso(Date.now() - 14 * DAY);
     const [patient, medreqs, admins, conditions, labs, vit, wt, docs] = await Promise.all([
       (async () => { try { return await client.patient.read(); } catch (e) { errors.push("patient: " + (e.message || e)); return null; } })(),
       get(`MedicationRequest?patient=${pid}&_count=100`, "medication orders", 3),
-      get(`MedicationAdministration?patient=${pid}&effective-time=ge${s4}&_count=100`, "medications given (4 days)", 4),
-      get(`Condition?patient=${pid}&_count=100`, "problem list", 2),
+      get(`MedicationAdministration?patient=${pid}&effective-time=ge${s4}T00:00:00Z&_count=100`, "medications given (4 days)", 4),
+      get(`Condition?patient=${pid}&category=problem-list-item&_count=50`, "problem list", 2),
       get(`Observation?patient=${pid}&code=http://loinc.org|2160-0,http://loinc.org|38483-4&date=ge${s14}&_count=50`, "creatinine", 1),
       get(`Observation?patient=${pid}&category=vital-signs&date=ge${s4}&_count=100`, "vital signs (4 days)", 4),
       get(`Observation?patient=${pid}&code=http://loinc.org|29463-7,http://loinc.org|3141-9&_count=20`, "weight", 1),

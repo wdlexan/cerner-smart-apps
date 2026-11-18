@@ -254,7 +254,7 @@ function load(raw, note, errors, preset) {
   } else { $("wt").value = ""; $("ptsum").textContent = ""; $("m-diur").checked = false; $("m-ckd").checked = false; }
   $("m-volume").value = $("volume").value;
   $("pstatus").textContent = note; $("clear").hidden = !raw;
-  $("errs").innerHTML = errors && errors.length ? "Could not read: " + errors.map(esc).join("; ") + ". Check the scopes in the Code Console." : "";
+  $("errs").innerHTML = errors && errors.length ? "Could not read: " + errors.map(esc).join("; ") + (errors.some((e) => /\b40[13]\b|Unauthorized|Forbidden/i.test(e)) ? ". Check the scopes in the Code Console." : ". Cerner's sandbox can be slow: reload the patient to try again.") : "";
   draw(); HYPO_NOTE.reset();
 }
 ["symptoms", "onset", "volume", "usegas", "c-fluid"].forEach((id) => ($(id).onchange = draw));

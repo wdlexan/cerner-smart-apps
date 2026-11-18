@@ -236,7 +236,7 @@ function load(raw, note, errors, preset) {
   const p = raw && raw.patient, nm = p && p.name && p.name[0];
   $("ptsum").textContent = nm ? `${(nm.given || []).join(" ")} ${nm.family || ""}${state.f.ageYears != null ? " · " + state.f.ageYears + " y" : ""}` : "";
   $("pstatus").textContent = note; $("clear").hidden = !raw;
-  $("errs").innerHTML = errors && errors.length ? "Could not read: " + errors.map(esc).join("; ") + ". Check the scopes in the Code Console." : "";
+  $("errs").innerHTML = errors && errors.length ? "Could not read: " + errors.map(esc).join("; ") + (errors.some((e) => /\b40[13]\b|Unauthorized|Forbidden/i.test(e)) ? ". Check the scopes in the Code Console." : ". Cerner's sandbox can be slow: reload the patient to try again.") : "";
   drawTicks(); draw(); NOTE.reset();
 }
 $("clear").onclick = () => { $("testsel").value = ""; load(null, "Open from Cerner to read the chart, or pick a made-up patient:"); };

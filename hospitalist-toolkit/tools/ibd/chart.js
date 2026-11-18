@@ -149,8 +149,9 @@
   async function gather(client, setStatus) {
     const pid = client.patient.id, errors = [], say = setStatus || (() => {});
     async function get(url, name, pages) {
-      const t = new Promise((_, rej) => setTimeout(() => rej(new Error("timed out after 60 s")), 60000));
-      try { const r = (await Promise.race([client.request(url, { pageLimit: pages || 1, flat: true }), t])).filter((x) => x.resourceType && x.resourceType !== "OperationOutcome"); say(`Loaded ${name} (${r.length})…`); return r; }
+      const once = () => { let tm; return Promise.race([client.request(url, { pageLimit: pages || 1, flat: true }), new Promise((_, rej) => { tm = setTimeout(() => rej(new Error("timed out after 30 s")), 30000); })]).finally(() => clearTimeout(tm)); };
+      const fetchRetry = () => once().catch((e) => /timed out|\b50[234]\b|Gateway|Failed to fetch|NetworkError/i.test(String((e && e.message) || e)) ? new Promise((r) => setTimeout(r, 1500)).then(once) : Promise.reject(e));
+      try { const r = (await fetchRetry()).filter((x) => x.resourceType && x.resourceType !== "OperationOutcome"); say(`Loaded ${name} (${r.length})…`); return r; }
       catch (e) { errors.push(`${name}: ${e.message || e}`); return []; }
     }
     const since3y = iso(Date.now() - 3 * 365.25 * 864e5), since1y = iso(Date.now() - 365.25 * 864e5), since120 = iso(Date.now() - 120 * 864e5);
@@ -160,7 +161,7 @@
     const codeReq = chunks.map((ch, i) => get(`Observation?patient=${pid}&code=${L(ch)}&date=ge${since3y}&_count=100`, "lab codes " + (i + 1), 3));
     const [patient, conditions, labsAll, vitals, weight, admins, medreqs, procs, reports, docs, ...codeSets] = await Promise.all([
       (async () => { try { return await client.patient.read(); } catch (e) { errors.push("patient: " + (e.message || e)); return null; } })(),
-      get(`Condition?patient=${pid}&_count=100`, "problem list", 2),
+      get(`Condition?patient=${pid}&category=problem-list-item&_count=50`, "problem list", 2),
       get(`Observation?patient=${pid}&category=laboratory&date=ge${since3y}&_count=100`, "laboratory results (3 years)", 8),
       get(`Observation?patient=${pid}&category=vital-signs&date=ge${since120}&_count=100`, "vital signs (120 days)", 4),
       get(`Observation?patient=${pid}&code=${L(["29463-7", "3141-9"])}&date=ge${since1y}&_count=40`, "weight"),

@@ -145,8 +145,9 @@
   async function gather(client, setStatus) {
     const pid = client.patient.id, errors = [], say = setStatus || (() => {});
     async function get(url, name, pages) {
-      const t = new Promise((_, rej) => setTimeout(() => rej(new Error("timed out after 60 s")), 60000));
-      try { const r = (await Promise.race([client.request(url, { pageLimit: pages || 1, flat: true }), t])).filter((x) => x.resourceType && x.resourceType !== "OperationOutcome"); say(`Loaded ${name} (${r.length})…`); return r; }
+      const once = () => { let tm; return Promise.race([client.request(url, { pageLimit: pages || 1, flat: true }), new Promise((_, rej) => { tm = setTimeout(() => rej(new Error("timed out after 30 s")), 30000); })]).finally(() => clearTimeout(tm)); };
+      const fetchRetry = () => once().catch((e) => /timed out|\b50[234]\b|Gateway|Failed to fetch|NetworkError/i.test(String((e && e.message) || e)) ? new Promise((r) => setTimeout(r, 1500)).then(once) : Promise.reject(e));
+      try { const r = (await fetchRetry()).filter((x) => x.resourceType && x.resourceType !== "OperationOutcome"); say(`Loaded ${name} (${r.length})…`); return r; }
       catch (e) { errors.push(`${name}: ${e.message || e}`); return []; }
     }
     const since = iso(Date.now() - 21 * 864e5), L = (arr) => arr.map((c) => "http://loinc.org|" + c).join(",");

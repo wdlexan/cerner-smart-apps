@@ -146,7 +146,7 @@ function load(raw, note, errors, preset) {
   $("cholestatic").checked = $("cholestatic").checked || !!(state.f && state.f.problems.some((p) => /biliary cholangitis|biliary cirrhosis|sclerosing cholangitis|K74\.3|K74\.4|K74\.5|K83\.01/i.test(p)));
   $("pstatus").textContent = note; $("clear").hidden = !raw;
   $("ptsum").textContent = state.f ? [state.f.sex, state.f.age != null ? state.f.age + " y" : ""].filter(Boolean).join(", ") : "";
-  $("errs").innerHTML = errors && errors.length ? "Could not read: " + errors.map(esc).join("; ") + ". Check the scopes in the Code Console." : "";
+  $("errs").innerHTML = errors && errors.length ? "Could not read: " + errors.map(esc).join("; ") + (errors.some((e) => /\b40[13]\b|Unauthorized|Forbidden/i.test(e)) ? ". Check the scopes in the Code Console." : ". Cerner's sandbox can be slow: reload the patient to try again.") : "";
   draw(); LIVER_NOTE.reset();
 }
 ["ascites", "he", "sex", "dialysis", "cholestatic", "basecr", "lvp", "bleeding", "edema", "drylevel"].forEach((id) => ($(id).onchange = draw)); $("lvp").oninput = draw;

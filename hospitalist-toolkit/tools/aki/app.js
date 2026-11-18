@@ -334,7 +334,7 @@ function load(raw, note, errors, preset) {
   MF.forEach((k) => ($("m-" + k).value = ""));
   const w = state.f && state.f.weights[state.f.weights.length - 1]; $("wt").value = w ? r1(w.v) : "";
   $("pstatus").textContent = note; $("clear").hidden = !raw;
-  $("errs").innerHTML = errors && errors.length ? "Could not read: " + errors.map(esc).join("; ") + ". Check the scopes in the Code Console." : "";
+  $("errs").innerHTML = errors && errors.length ? "Could not read: " + errors.map(esc).join("; ") + (errors.some((e) => /\b40[13]\b|Unauthorized|Forbidden/i.test(e)) ? ". Check the scopes in the Code Console." : ". Cerner's sandbox can be slow: reload the patient to try again.") : "";
   draw(); AKI_NOTE.reset();
 }
 ["base", "wt"].forEach((id) => ($(id).oninput = draw));

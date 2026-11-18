@@ -208,8 +208,9 @@
     const pid = client.patient.id, errors = [], tell = say || (() => {});
     const iso = (t) => new Date(t).toISOString().slice(0, 10);
     async function get(url, name, pages) {
-      const timer = new Promise((_, rej) => setTimeout(() => rej(new Error("timed out after 60 s")), 60000));
-      try { const r = (await Promise.race([client.request(url, { pageLimit: pages || 1, flat: true }), timer])).filter((x) => x.resourceType && x.resourceType !== "OperationOutcome"); tell(`Loaded ${name} (${r.length})…`); return r; }
+      const once = () => { let tm; return Promise.race([client.request(url, { pageLimit: pages || 1, flat: true }), new Promise((_, rej) => { tm = setTimeout(() => rej(new Error("timed out after 30 s")), 30000); })]).finally(() => clearTimeout(tm)); };
+      const fetchRetry = () => once().catch((e) => /timed out|\b50[234]\b|Gateway|Failed to fetch|NetworkError/i.test(String((e && e.message) || e)) ? new Promise((r) => setTimeout(r, 1500)).then(once) : Promise.reject(e));
+      try { const r = (await fetchRetry()).filter((x) => x.resourceType && x.resourceType !== "OperationOutcome"); tell(`Loaded ${name} (${r.length})…`); return r; }
       catch (e) { errors.push(`${name}: ${e.message || e}`); return []; }
     }
     const since = iso(Date.now() - 365 * DAY), since30 = iso(Date.now() - 30 * DAY), since7 = iso(Date.now() - 7 * DAY);
@@ -220,9 +221,9 @@
       get(`Observation?patient=${pid}&category=laboratory&date=ge${since}&_count=100`, "all lab results (1 year)", 10),
       get(`Observation?patient=${pid}&category=vital-signs&date=ge${since7}&_count=100`, "vital signs (7 days)", 6),
       get(`MedicationRequest?patient=${pid}&_count=100`, "medication orders", 3),
-      get(`MedicationAdministration?patient=${pid}&effective-time=ge${since30}&_count=100`, "medications given (30 days)", 4),
+      get(`MedicationAdministration?patient=${pid}&effective-time=ge${since30}T00:00:00Z&_count=100`, "medications given (30 days)", 4),
       get(`Procedure?patient=${pid}&date=ge${since30}&_count=100`, "procedures (30 days)", 2),
-      get(`Condition?patient=${pid}&_count=100`, "problem list", 2)
+      get(`Condition?patient=${pid}&category=problem-list-item&_count=50`, "problem list", 2)
     ]);
     // weight and height can be older than 7 days
     const wh = await get(`Observation?patient=${pid}&code=http://loinc.org|29463-7,http://loinc.org|3141-9,http://loinc.org|8302-2,http://loinc.org|8306-3&_count=50`, "weight and height", 1);

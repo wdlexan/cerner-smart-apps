@@ -212,7 +212,7 @@ function load(raw, note, errors, preset) {
   if (f && f.prob.dementia) h.push("Dementia on the problem list: abbreviated mental test box ticked; untick if the test was above 6.");
   $("hints").innerHTML = h.length ? "<b>From the chart (check):</b><br>" + h.map(esc).join("<br>") : "";
   $("pstatus").textContent = note; $("clear").hidden = !raw;
-  $("errs").innerHTML = errors && errors.length ? "Could not read: " + errors.map(esc).join("; ") + ". Check the scopes in the Code Console." : "";
+  $("errs").innerHTML = errors && errors.length ? "Could not read: " + errors.map(esc).join("; ") + (errors.some((e) => /\b40[13]\b|Unauthorized|Forbidden/i.test(e)) ? ". Check the scopes in the Code Console." : ". Cerner's sandbox can be slow: reload the patient to try again.") : "";
   draw(); HIP_NOTE.reset();
 }
 ["arrival", "surgery", "amts", "inst", "comorb", "cam", "mobil", "cath", "bm", "bleed"].forEach((id) => ($(id).onchange = draw)); $("wt").oninput = draw;

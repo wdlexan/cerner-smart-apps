@@ -106,7 +106,7 @@ function load(raw, note, errors) {
   $("dest").value = "auto"; $("goal").value = "auto";
   $("ptsum").textContent = state.f ? [state.f.age != null ? state.f.age + " y" : "", state.f.sex, state.f.problems.slice(0, 2).join("; ")].filter(Boolean).join(", ") : "";
   $("pstatus").textContent = note; $("clear").hidden = !raw;
-  $("errs").innerHTML = errors && errors.length ? "Could not read: " + errors.map(esc).join("; ") + ". Check the scopes in the Code Console." : "";
+  $("errs").innerHTML = errors && errors.length ? "Could not read: " + errors.map(esc).join("; ") + (errors.some((e) => /\b40[13]\b|Unauthorized|Forbidden/i.test(e)) ? ". Check the scopes in the Code Console." : ". Cerner's sandbox can be slow: reload the patient to try again.") : "";
   draw(); MOB_NOTE.reset();
 }
 ["dest", "goal"].forEach((id) => ($(id).onchange = draw)); $("dpl").oninput = draw;

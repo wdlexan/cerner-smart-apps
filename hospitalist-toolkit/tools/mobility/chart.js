@@ -96,8 +96,9 @@
     const pid = client.patient.id, errors = [], tell = say || (() => {});
     const iso = (t) => new Date(t).toISOString().slice(0, 10);
     async function get(url, name, pages) {
-      const timer = new Promise((_, rej) => setTimeout(() => rej(new Error("timed out after 60 s")), 60000));
-      try { const r = (await Promise.race([client.request(url, { pageLimit: pages || 1, flat: true }), timer])).filter((x) => x.resourceType && x.resourceType !== "OperationOutcome"); tell(`Loaded ${name} (${r.length})…`); return r; }
+      const once = () => { let tm; return Promise.race([client.request(url, { pageLimit: pages || 1, flat: true }), new Promise((_, rej) => { tm = setTimeout(() => rej(new Error("timed out after 30 s")), 30000); })]).finally(() => clearTimeout(tm)); };
+      const fetchRetry = () => once().catch((e) => /timed out|\b50[234]\b|Gateway|Failed to fetch|NetworkError/i.test(String((e && e.message) || e)) ? new Promise((r) => setTimeout(r, 1500)).then(once) : Promise.reject(e));
+      try { const r = (await fetchRetry()).filter((x) => x.resourceType && x.resourceType !== "OperationOutcome"); tell(`Loaded ${name} (${r.length})…`); return r; }
       catch (e) { errors.push(`${name}: ${e.message || e}`); return []; }
     }
     const s30 = iso(Date.now() - 30 * DAY), s14 = iso(Date.now() - 14 * DAY);
@@ -106,7 +107,7 @@
       get(`DocumentReference?patient=${pid}&date=ge${s30}&_count=100`, "notes (30 days)", 4),
       get(`Observation?patient=${pid}&date=ge${s14}&_count=100`, "observations (14 days)", 8),
       get(`ServiceRequest?patient=${pid}&_count=100`, "orders", 2),
-      get(`Condition?patient=${pid}&_count=100`, "problem list", 2),
+      get(`Condition?patient=${pid}&category=problem-list-item&_count=50`, "problem list", 2),
       get(`Encounter?patient=${pid}&date=ge${s30}&_count=50`, "encounters", 1)]);
     // read only the notes likely to talk about mobility, newest first
     const wanted = docRefs.filter((d) => d.status !== "entered-in-error").filter((d) => /physio|physical therap|\bpt\b|occupational|\bot\b|nurs|mobility|rehab|discharge|social work|case manag|transition|progress|interdisciplinary/i.test(label(d.type) + " " + (d.description || "")))
