@@ -59,7 +59,7 @@
     let maint = low ? 0.0625 : cl != null && cl < 50 || old ? 0.0625 : 0.125;
     const mText = (low ? "0.0625 mg PO daily or every other day" : maint === 0.0625 ? "0.0625 mg PO daily" : "0.125 mg PO daily") + (onAmio ? ", then HALVE it because of amiodarone" : "");
     return { total, load, maint: mText, why: [old && "age 75+", small && "weight under 60 kg", low ? "CrCl under 30" : cl != null && cl < 50 && "CrCl under 50"].filter(Boolean),
-      level: "Trough level (6+ h after a dose) after about 5-7 days (longer if CrCl low): aim about 0.6-1.2 nmol/L (0.5-0.9 ng/mL). Keep K 4.0 or more and Mg 0.8 or more." };
+      level: "Trough level (6+ h after a dose) after about 5-7 days (longer if CrCl low): keep it under 1.2 ng/mL (1.5 nmol/L) (ESC 2024), aiming for the low end, 0.5-0.9 ng/mL (0.6-1.2 nmol/L), in older patients and heart failure. Check which unit your lab reports. Keep K 4.0 or more and Mg 0.8 or more." };
   }
 
   /* metoprolol / diltiazem doses, gentler in the elderly or borderline BP */
