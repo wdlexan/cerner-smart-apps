@@ -118,7 +118,7 @@ const SYSTEMS = [
       a: ["GCS 13–14", "GCS 9–12", "GCS ≤ 8"] },
     { id: "spch", label: "Speech", n: "speech fluent, no dysarthria or aphasia",
       a: ["dysarthria", "expressive aphasia", "receptive aphasia", "word-finding difficulty"] },
-    { id: "cn", label: "Cranial nerves", n: "cranial nerves II–XII grossly intact",
+    { id: "cn", label: "Cranial nerves", hideIf: "cn", n: "cranial nerves II–XII grossly intact",
       a: ["left facial droop", "right facial droop", "gaze deviation", "visual field defect",
           "nystagmus", "diplopia", "tongue deviation"] },
     { id: "mot", label: "Motor", n: "power 5/5 in all limbs, normal tone",
@@ -129,9 +129,70 @@ const SYSTEMS = [
           "stocking distribution sensory loss", "sensory level"] },
     { id: "refl", label: "Reflexes", n: "reflexes symmetric, plantars downgoing",
       a: ["hyperreflexia", "hyporeflexia", "upgoing plantar left", "upgoing plantar right", "clonus"] },
-    { id: "coord", label: "Coordination / gait", n: "no dysmetria, gait not assessed",
+    { id: "coord", label: "Coordination / gait", hideIf: "cereb", n: "no dysmetria, gait not assessed",
       a: ["gait normal", "dysmetria", "ataxic gait", "shuffling gait", "unable to assess gait",
           "asterixis", "rest tremor", "action tremor", "myoclonus"] },
+  ]},
+  { id: "cn", name: "Cranial nerves", labelled: true, els: [
+    { id: "cn1", label: "CN I (smell)", n: "not tested",
+      a: ["smell intact", "anosmia", "reduced smell"] },
+    { id: "cn2a", label: "CN II acuity", n: "visual acuity grossly normal",
+      a: ["reduced acuity left eye", "reduced acuity right eye", "blind left eye", "blind right eye"] },
+    { id: "cn2f", label: "CN II fields", n: "visual fields full to confrontation",
+      a: ["left homonymous hemianopia", "right homonymous hemianopia", "left upper quadrantanopia", "right upper quadrantanopia",
+          "left lower quadrantanopia", "right lower quadrantanopia", "bitemporal hemianopia", "monocular field loss", "visual neglect"] },
+    { id: "cn2p", label: "CN II/III pupils", n: "pupils equal, round and reactive to light, no RAPD",
+      a: ["left pupil larger", "right pupil larger", "left pupil unreactive", "right pupil unreactive", "left RAPD", "right RAPD",
+          "pinpoint pupils", "Horner syndrome left (ptosis, miosis)", "Horner syndrome right (ptosis, miosis)"] },
+    { id: "fundi", label: "Fundi", n: "not examined",
+      a: ["fundi normal, discs sharp", "papilledema", "optic disc pallor", "retinal hemorrhages", "unable to visualize"] },
+    { id: "cn346", label: "CN III, IV, VI (eye movements)", n: "extraocular movements full, no diplopia, no ptosis",
+      a: ["left ptosis", "right ptosis", "left CN III palsy (down and out)", "right CN III palsy (down and out)",
+          "left CN IV palsy", "right CN IV palsy", "left CN VI palsy (cannot abduct)", "right CN VI palsy (cannot abduct)",
+          "left INO", "right INO", "horizontal gaze palsy to left", "horizontal gaze palsy to right", "vertical gaze palsy",
+          "gaze deviation to left", "gaze deviation to right", "diplopia on lateral gaze", "fatigable ptosis"] },
+    { id: "nys", label: "Nystagmus", n: "no nystagmus",
+      a: ["horizontal nystagmus beating left", "horizontal nystagmus beating right", "direction-changing nystagmus",
+          "gaze-evoked nystagmus", "vertical nystagmus", "torsional nystagmus", "end-gaze nystagmus (physiological)"] },
+    { id: "cn5", label: "CN V (trigeminal)", n: "facial sensation intact V1–V3 bilaterally, jaw strength normal",
+      a: ["reduced sensation left V1", "reduced sensation left V2", "reduced sensation left V3", "reduced sensation right V1",
+          "reduced sensation right V2", "reduced sensation right V3", "reduced sensation whole left face", "reduced sensation whole right face",
+          "absent left corneal reflex", "absent right corneal reflex", "jaw deviates on opening", "brisk jaw jerk"] },
+    { id: "cn7", label: "CN VII (facial)", n: "face symmetric, normal forehead and lower face strength",
+      a: ["left lower facial weakness, forehead spared (UMN)", "right lower facial weakness, forehead spared (UMN)",
+          "left facial weakness including forehead (LMN)", "right facial weakness including forehead (LMN)",
+          "bilateral facial weakness", "unable to close left eye", "unable to close right eye"] },
+    { id: "cn8", label: "CN VIII (hearing)", n: "hearing grossly intact to finger rub bilaterally",
+      a: ["reduced hearing left", "reduced hearing right", "Weber lateralizes left", "Weber lateralizes right",
+          "Rinne bone > air left", "Rinne bone > air right"] },
+    { id: "cn910", label: "CN IX, X (palate, swallow)", n: "palate elevates symmetrically, uvula midline",
+      a: ["uvula deviates to left", "uvula deviates to right", "reduced palatal elevation", "absent gag reflex",
+          "hoarse voice", "nasal speech", "wet voice / cough with water swallow", "bovine cough"] },
+    { id: "cn11", label: "CN XI (accessory)", n: "shoulder shrug and head turn strength normal",
+      a: ["weak shoulder shrug left", "weak shoulder shrug right", "weak head turn to left", "weak head turn to right", "weak neck flexion"] },
+    { id: "cn12", label: "CN XII (hypoglossal)", n: "tongue midline, no atrophy or fasciculations",
+      a: ["tongue deviates to left", "tongue deviates to right", "tongue fasciculations", "tongue atrophy", "slow tongue movements"] },
+  ]},
+  { id: "cereb", name: "Cerebellar", labelled: true, els: [
+    { id: "fn", label: "Finger-nose", n: "no dysmetria or intention tremor",
+      a: ["dysmetria left", "dysmetria right", "dysmetria bilateral", "intention tremor left", "intention tremor right",
+          "past-pointing", "limited by weakness"] },
+    { id: "hs", label: "Heel-shin", n: "smooth and accurate bilaterally",
+      a: ["ataxic left", "ataxic right", "ataxic bilateral", "limited by weakness", "unable to perform"] },
+    { id: "rapid", label: "Rapid alternating movements", n: "normal bilaterally",
+      a: ["dysdiadochokinesia left", "dysdiadochokinesia right", "dysdiadochokinesia bilateral", "slowed by weakness or rigidity"] },
+    { id: "rebound", label: "Rebound / tone", n: "no rebound, tone normal",
+      a: ["rebound left arm", "rebound right arm", "hypotonia left", "hypotonia right", "pendular reflexes"] },
+    { id: "cspeech", label: "Speech", n: "no scanning or ataxic dysarthria",
+      a: ["scanning speech", "ataxic dysarthria", "slurred speech"] },
+    { id: "trunk", label: "Sitting / trunk", n: "sits unsupported without truncal ataxia",
+      a: ["mild truncal ataxia", "unable to sit unsupported", "titubation"] },
+    { id: "romberg", label: "Stance / Romberg", n: "stands with feet together; Romberg negative",
+      a: ["Romberg positive (sensory ataxia)", "unsteady with feet together, eyes open (cerebellar)", "falls to left", "falls to right",
+          "unable to stand"] },
+    { id: "gaitc", label: "Gait", n: "normal gait, able to tandem walk",
+      a: ["wide-based ataxic gait", "unable to tandem walk", "veers to left", "veers to right", "needs assistance to walk",
+          "not assessed (bed-bound)"] },
   ]},
   { id: "psych", name: "Mental status (MSE)", labelled: true, els: [
     { id: "appear", label: "Appearance", n: "appropriately groomed and dressed, appears stated age, normal posture",
@@ -210,6 +271,7 @@ const TEMPLATES = {
   "Pneumonia / COPD":        ["gen","heent","cvs","resp"],
   "Sepsis / fever":          ["gen","heent","cvs","resp","abdo","lines","skin","msk","neuro"],
   "Stroke / neuro":          ["gen","cvs","neuro"],
+  "Neuro – detailed (CN, cerebellar)": ["gen","neuro","cn","cereb"],
   "Delirium":                ["gen","abdo","lines","skin","neuro","psych"],
   "Mental status (MSE)":     ["gen","psych"],
   "Hip fracture / ortho":    ["gen","cvs","resp","lines","skin","msk","neuro"],
@@ -271,7 +333,7 @@ function renderVitals() {
 
 function sysStatus(sys) {
   let any = false, ab = false, all = true;
-  sys.els.forEach(e => {
+  visEls(sys).forEach(e => {
     const v = state.el[key(sys.id, e.id)];
     if (!v) { all = false; return; }
     any = true;
@@ -296,7 +358,7 @@ function renderSystems() {
         ${state.shown.has(sys.id) ? `<button class="norm" data-alln>All normal</button><button data-clr>Clear</button>` : ""}
       </h2>
       <div class="els">
-        ${sys.els.map(e => {
+        ${visEls(sys).map(e => {
           const v = state.el[key(sys.id, e.id)];
           return `<div class="el"><div class="lab">${e.label}</div><div class="chips">
             <button class="chip n ${v === "n" ? "on" : ""}" data-e="${e.id}" data-n>✓ ${e.n}</button>
@@ -320,6 +382,7 @@ function renderSystems() {
   });
 }
 
+const visEls = (sys) => sys.els.filter(e => !(e.hideIf && state.shown.has(e.hideIf)));
 function isAbn(sys, e) { const v = state.el[key(sys.id, e.id)]; return v instanceof Set && v.size; }
 
 function clickChip(sys, b) {
@@ -410,7 +473,7 @@ function noteLines(abnOnly) {
   SYSTEMS.forEach(sys => {
     if (!state.shown.has(sys.id)) return;
     const parts = [];
-    sys.els.forEach(e => {
+    visEls(sys).forEach(e => {
       const v = state.el[key(sys.id, e.id)];
       if (!v) return;
       const pre = sys.labelled ? e.label + ": " : "";

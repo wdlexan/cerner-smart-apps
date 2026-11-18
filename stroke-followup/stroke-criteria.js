@@ -248,7 +248,40 @@
     noneText: 'No note found. CSBPR: all stroke patients should be assessed by PT, OT and SLP as early as possible after admission.'
   };
 
-  const api = { DRUGS, BRANDS, POST_TREATMENT, ELAN, DAPT, POSTERIOR, HINTS, PROGNOSIS, WORKUP, ESUS_TESTS, ROPE, ESUS_TREATMENT, TEXT, BP_TARGETS, LIPIDS, REHAB };
+
+  // NIH Stroke Scale: 11 items (15 scored parts, total 0-42). Wording follows the standard NIHSS scoring sheet.
+  // UN = untestable (amputation, joint fusion, intubation): scored as 0 in the total and listed in the note.
+  const NIHSS = [
+    { key: '1a', short: 'LOC', label: '1a. Level of consciousness', opts: [[0, 'Alert, keenly responsive'], [1, 'Not alert; arousable by minor stimulation'], [2, 'Not alert; needs repeated or strong/painful stimulation'], [3, 'Reflex responses only, or unresponsive']] },
+    { key: '1b', short: 'LOC questions', label: '1b. LOC questions (month, age)', opts: [[0, 'Both correct'], [1, 'One correct (or intubated, dysarthric, language barrier)'], [2, 'Neither correct (aphasic or stuporous)']] },
+    { key: '1c', short: 'LOC commands', label: '1c. LOC commands (open/close eyes, grip/release)', opts: [[0, 'Both done correctly'], [1, 'One done correctly'], [2, 'Neither done correctly']] },
+    { key: '2', short: 'gaze', label: '2. Best gaze (horizontal)', opts: [[0, 'Normal'], [1, 'Partial gaze palsy'], [2, 'Forced deviation or total gaze paresis']] },
+    { key: '3', short: 'visual fields', label: '3. Visual fields', opts: [[0, 'No visual loss'], [1, 'Partial hemianopia'], [2, 'Complete hemianopia'], [3, 'Bilateral hemianopia (blind, incl. cortical)']] },
+    { key: '4', short: 'face', label: '4. Facial palsy', opts: [[0, 'Normal symmetric movement'], [1, 'Minor (flattened nasolabial fold, asymmetric smile)'], [2, 'Partial (near-total lower face)'], [3, 'Complete (upper and lower face, one or both sides)']] },
+    { key: '5a', short: 'L arm', label: '5a. Motor: left arm (90° or 45°, 10 s)', opts: [[0, 'No drift for 10 s'], [1, 'Drift, does not hit bed'], [2, 'Some effort against gravity'], [3, 'No effort against gravity, falls'], [4, 'No movement'], ['UN', 'UN: amputation or joint fusion']] },
+    { key: '5b', short: 'R arm', label: '5b. Motor: right arm (90° or 45°, 10 s)', opts: [[0, 'No drift for 10 s'], [1, 'Drift, does not hit bed'], [2, 'Some effort against gravity'], [3, 'No effort against gravity, falls'], [4, 'No movement'], ['UN', 'UN: amputation or joint fusion']] },
+    { key: '6a', short: 'L leg', label: '6a. Motor: left leg (30°, 5 s)', opts: [[0, 'No drift for 5 s'], [1, 'Drift, does not hit bed'], [2, 'Some effort against gravity'], [3, 'No effort against gravity, falls'], [4, 'No movement'], ['UN', 'UN: amputation or joint fusion']] },
+    { key: '6b', short: 'R leg', label: '6b. Motor: right leg (30°, 5 s)', opts: [[0, 'No drift for 5 s'], [1, 'Drift, does not hit bed'], [2, 'Some effort against gravity'], [3, 'No effort against gravity, falls'], [4, 'No movement'], ['UN', 'UN: amputation or joint fusion']] },
+    { key: '7', short: 'ataxia', label: '7. Limb ataxia (finger-nose, heel-shin)', opts: [[0, 'Absent (or weakness explains it, or can\'t understand)'], [1, 'Present in one limb'], [2, 'Present in two limbs'], ['UN', 'UN: amputation or joint fusion']] },
+    { key: '8', short: 'sensory', label: '8. Sensory (pinprick)', opts: [[0, 'Normal'], [1, 'Mild to moderate loss'], [2, 'Severe to total loss (or coma, bilateral)']] },
+    { key: '9', short: 'language', label: '9. Best language', opts: [[0, 'No aphasia'], [1, 'Mild to moderate aphasia'], [2, 'Severe aphasia'], [3, 'Mute, global aphasia, or coma']] },
+    { key: '10', short: 'dysarthria', label: '10. Dysarthria', opts: [[0, 'Normal'], [1, 'Mild to moderate, understood with some difficulty'], [2, 'Severe, unintelligible or mute'], ['UN', 'UN: intubated or other physical barrier']] },
+    { key: '11', short: 'neglect', label: '11. Extinction and inattention (neglect)', opts: [[0, 'No abnormality'], [1, 'Inattention or extinction in one modality'], [2, 'Profound hemi-inattention or in more than one modality']] }
+  ];
+  function nihssScore(ans) {
+    let total = 0, scored = 0; const parts = [], un = [];
+    NIHSS.forEach(it => {
+      const v = ans['nih_' + it.key];
+      if (v === undefined || v === '') return;
+      scored++;
+      if (v === 'UN') { un.push(it.key); parts.push([it.key, 'UN', it.short]); return; }
+      total += +v; parts.push([it.key, +v, it.short]);
+    });
+    const sev = total === 0 ? 'no stroke symptoms' : total <= 4 ? 'minor' : total <= 15 ? 'moderate' : total <= 20 ? 'moderate to severe' : 'severe';
+    return { total, scored, of: NIHSS.length, complete: scored === NIHSS.length, parts, un, severity: sev };
+  }
+
+  const api = { NIHSS, nihssScore, DRUGS, BRANDS, POST_TREATMENT, ELAN, DAPT, POSTERIOR, HINTS, PROGNOSIS, WORKUP, ESUS_TESTS, ROPE, ESUS_TREATMENT, TEXT, BP_TARGETS, LIPIDS, REHAB };
   root.StrokeCriteria = api;
   if (typeof module === 'object' && module.exports) module.exports = api;
 })(typeof self !== 'undefined' ? self : this);

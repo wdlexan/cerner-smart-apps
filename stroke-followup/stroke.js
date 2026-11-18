@@ -263,8 +263,13 @@
     const onset = ans.onset ? toTime(ans.onset) : null;
     const nihssObs = ctx.obs.filter(o => o.kind === 'nihss');
     const nihssNotes = findIn(ctx.notes.slice().reverse(), T.nihss, { allowNegated: true }).map(h => ({ time: h.time, value: +h.m[1], src: 'note' }));
-    const nihssSeries = nihssObs.map(o => ({ time: o.time, value: o.value, src: 'chart' })).concat(nihssNotes).sort((a, b) => a.time - b.time);
-    const nihssAdmit = ans.nihss !== undefined && ans.nihss !== '' ? +ans.nihss : (nihssSeries.length ? nihssSeries[0].value : null);
+    const nihssCalc = C.nihssScore(ans);
+    const nihssSeries = nihssObs.map(o => ({ time: o.time, value: o.value, src: 'chart' })).concat(nihssNotes);
+    // a complete bedside NIHSS is either today's exam (added to the trend) or, if chosen, the admission score
+    const calcAdmit = nihssCalc.complete && ans.nih_use === 'admit';
+    if (nihssCalc.complete && !calcAdmit) nihssSeries.push({ time: ctx.now, value: nihssCalc.total, src: 'bedside' });
+    nihssSeries.sort((a, b) => a.time - b.time);
+    const nihssAdmit = ans.nihss !== undefined && ans.nihss !== '' ? +ans.nihss : calcAdmit ? nihssCalc.total : (nihssSeries.length ? nihssSeries[0].value : null);
     const nihssLatest = nihssSeries.length ? nihssSeries[nihssSeries.length - 1] : null;
     const nihssBest = nihssSeries.length ? Math.min(...nihssSeries.map(n => n.value)) : null;
 
@@ -292,7 +297,7 @@
       (a.time < lytic.time + C.POST_TREATMENT.antithromboticHoldH * HOUR || (!followUpScan || a.time < followUpScan.time))) : [];
 
     return { lytic, evt, anchor, imaging, cts, ctas, mris, lastCta, ctaResult, lastMri, mriResult, mriOrdered, followUpScan, fuHem, anyHem,
-      pathway, onset, nihssSeries, nihssAdmit, nihssLatest, nihssBest, af, afNew, afCond, htn, dm, cancer, priorStroke, smoker,
+      pathway, onset, nihssSeries, nihssCalc, nihssAdmit, nihssLatest, nihssBest, af, afNew, afCond, htn, dm, cancer, priorStroke, smoker,
       echos, pfo, pfoHit, lvThrombus, onAntiplatelet, onAnticoag, onProphylaxis, onStatin, earlyAntithrombotic, allText };
   }
 
@@ -630,6 +635,7 @@
     treated: 'Treated (lytic and/or EVT)', mriPending: 'CTA negative — MRI pending', confirmed: 'Stroke confirmed on MRI (no lytic/EVT)',
     mriNegative: 'MRI negative (TIA or mimic?)', esus: 'ESUS — embolic stroke of undetermined source'
   };
+  const ans_use = ex => (ex && ex.ans && ex.ans.nih_use) || '';
   function summaryText(ctx, A, al, tl, post, prog, wk, ex) {
     ex = ex || {};
     const L = [];
@@ -639,6 +645,9 @@
     L.push('CTA: ' + (A.lastCta ? ({ positive: 'occlusion/thrombus reported', negative: 'no occlusion reported', unclear: 'see report' }[A.ctaResult]) + ' (' + fmtDate(A.lastCta.time) + ')' : 'none found') +
       '. MRI: ' + (A.lastMri ? ({ positive: 'acute infarct', negative: 'no acute infarct', unclear: 'see report' }[A.mriResult]) + ' (' + fmtDate(A.lastMri.time) + ')' : (A.mriOrdered ? 'ordered, pending' : 'not done')) + '.');
     if (A.nihssAdmit != null) L.push('NIHSS: ' + A.nihssAdmit + (A.nihssLatest && A.nihssLatest.value !== A.nihssAdmit ? ' → ' + A.nihssLatest.value : '') + '.');
+    const nc = A.nihssCalc;
+    if (nc && nc.complete) L.push('NIHSS ' + (ans_use(ex) === 'admit' ? 'on admission' : 'today') + ' (bedside): ' + nc.total + '/42, ' + nc.severity + '. ' +
+      (nc.parts.filter(p => p[1] !== 0).map(p => p[0] + ' ' + p[2] + ' ' + p[1]).join(', ') || 'all items 0') + '.');
     if (al.length) L.push('Alerts: ' + al.map(a => a.text).join('; ') + '.');
     if (post.suspect) L.push('Posterior circulation features: ' + post.present.map(f => f.label).join(', ') + (post.hints.result !== 'notdone' ? '. HINTS: ' + post.hints.result : '') + '.');
     tl.filter(r => r.status !== 'info').forEach(r => L.push(r.label + ': ' + r.detail.replace(/\s+/g, ' ')));
@@ -767,6 +776,19 @@
       '<label>Admission NIHSS' + (A.nihssSeries.length ? ' <span class="sf-muted">chart: ' + A.nihssSeries[0].value + '</span>' : '') + '<input type="number" min="0" max="42" data-k="nihss" value="' + esc(ans.nihss || '') + '"></label></div></div></section>';
   }
 
+function nihssHtml(A, ans) {
+    const c = A.nihssCalc;
+    const rows = C.NIHSS.map(it => '<tr><td class="sf-small"><b>' + esc(it.label) + '</b></td><td>' +
+      sel('nih_' + it.key, [['', '—']].concat(it.opts.map(o => [String(o[0]), (o[0] === 'UN' ? '' : o[0] + ' · ') + o[1]])), ans['nih_' + it.key]) + '</td></tr>').join('');
+    return '<p class="sf-small">Score what the patient does on the first attempt, not what you think they could do. Record every item; don\'t go back and change scores. UN items count as 0 and are listed.</p>' +
+      '<div class="sf-table-wrap"><table class="sf-table"><tbody>' + rows + '</tbody></table></div>' +
+      '<p><b>Total: ' + c.total + ' / 42</b> · ' + c.scored + ' of ' + c.of + ' items scored' + (c.complete ? ' · ' + esc(c.severity) : ' · finish all items to use it') + (c.un.length ? ' · UN: ' + esc(c.un.join(', ')) : '') + '</p>' +
+      '<div class="sf-nums"><label>This score is' + sel('nih_use', [['', 'Today\'s exam (adds to the NIHSS trend)'], ['admit', 'The admission NIHSS']], ans.nih_use) + '</label></div>' +
+      '<p><button type="button" class="sf-btn sf-nih-normal">All 0 (normal)</button> <button type="button" class="sf-btn sf-nih-clear">Clear</button></p>' +
+      (A.nihssSeries.length ? '<p class="sf-small">Trend: ' + A.nihssSeries.map(n => n.value + ' (' + esc(n.src) + ', ' + esc(fmtTime(n.time)) + ')').join(' → ') + '</p>' : '') +
+      '<p class="sf-small">Severity bands (common use): 0 none · 1–4 minor · 5–15 moderate · 16–20 moderate to severe · 21–42 severe. A rise of 4 or more from the best score is neurological worsening.</p>';
+  }
+
   function alertsHtml(al) {
     if (!al.length) return '<section class="sf-card sf-ok"><strong>No alerts.</strong> Nothing out of range or overdue in the data checked.</section>';
     return '<section class="sf-alerts">' + al.map(a => '<div class="sf-alert sf-a-' + a.level + '"><strong>' + esc(a.text) + '</strong>' + (a.detail ? '<div class="sf-small">' + esc(a.detail) + '</div>' : '') + '</div>').join('') + '</section>';
@@ -884,6 +906,7 @@
     const tlNow = tl.filter(r => r.status === 'overdue').length;
     const wkMissing = wk.items.filter(i => i.status === 'missing').length;
     H.push('<div class="sf-toolbar"><button type="button" class="sf-btn sf-all" data-all="open">Expand all</button> <button type="button" class="sf-btn sf-all" data-all="close">Collapse all</button></div>');
+    H.push(sec('nihss', 'NIHSS (11 items)', A.nihssCalc.scored ? A.nihssCalc.total + ' / 42' + (A.nihssCalc.complete ? '' : ' · ' + A.nihssCalc.scored + ' of ' + A.nihssCalc.of + ' scored') : 'Not scored', A.nihssCalc.complete ? '' : (A.nihssCalc.scored ? 'sf-hs-amber' : ''), nihssHtml(A, ans)));
     H.push(sec('alerts', 'Alerts', al.length ? [reds ? reds + ' red' : '', ambers ? ambers + ' amber' : ''].filter(Boolean).join(', ') || plural(al.length, 'alert') : 'None', reds ? 'sf-hs-red' : ambers ? 'sf-hs-amber' : 'sf-hs-ok', alertsHtml(al)));
     H.push(sec('timeline', 'Timeline and BP', tlNow ? tlNow + ' overdue' : (A.anchor ? 'Post-treatment' : 'No lytic/EVT'), tlNow ? 'sf-hs-red' : '', timelineHtml(tl) + '<div class="sf-card">' + (IX() ? '<div class="sf-ixchart"></div>' : bpChart(ctx, A)) + '</div>'));
     const bp = parts.bp, lp = parts.lp, rehab = parts.rehab;
@@ -897,7 +920,7 @@
       post.needMri ? 'sf-hs-red' : post.repeatMri ? 'sf-hs-amber' : '', posteriorHtml(post, ans, A)));
     H.push(sec('prognosis', 'Prognosis', prog.thrive != null ? 'THRIVE ' + prog.thrive + ' · ASTRAL ' + prog.astral : 'Needs NIHSS', '', prognosisHtml(prog, ans, A)));
     H.push(sec('workup', 'Workup and secondary prevention', (wkMissing ? wkMissing + ' missing' : 'Nothing missing') + (wk.esus ? ' · ESUS' : ''), wkMissing ? 'sf-hs-amber' : 'sf-hs-ok', workupHtml(wk, A, ans, ctx)));
-    H.push(sec('summary', 'Summary for the note / discharge handoff', '', '', '<textarea class="sf-summary" rows="12" readonly>' + esc(summaryText(ctx, A, al, tl, post, prog, wk, parts)) +
+    H.push(sec('summary', 'Summary for the note / discharge handoff', '', '', '<textarea class="sf-summary" rows="12" readonly>' + esc(summaryText(ctx, A, al, tl, post, prog, wk, Object.assign({ ans }, parts))) +
       '</textarea><button type="button" class="sf-btn sf-copy">Copy summary</button> <span class="sf-copied" aria-live="polite"></span>' +
       (IX() ? ' <button type="button" class="sf-btn sf-handout">Patient handout (printable)</button>' : '')));
     if (IX()) { const st = IX().stats('stroke'), bad = st.reduce((n, r) => n + r.bad, 0);
@@ -1016,6 +1039,10 @@
           draw();
         });
       });
+      const nn = container.querySelector('.sf-nih-normal');
+      if (nn) nn.addEventListener('click', () => { C.NIHSS.forEach(it => { if (ans['nih_' + it.key] === undefined || ans['nih_' + it.key] === '') ans['nih_' + it.key] = '0'; }); draw(); });
+      const nc = container.querySelector('.sf-nih-clear');
+      if (nc) nc.addEventListener('click', () => { C.NIHSS.forEach(it => delete ans['nih_' + it.key]); draw(); });
       const cb = container.querySelector('.sf-copy');
       if (cb) cb.addEventListener('click', async () => {
         const ta = container.querySelector('.sf-summary'), done = container.querySelector('.sf-copied');
