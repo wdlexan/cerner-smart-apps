@@ -73,6 +73,8 @@
   <main>
     <div class="banner"><b>Decision-support draft. It orders nothing.</b> Doses and rules were written by Claude from the CCS 2020 AF guideline, BC GPAC AF guideline 2023 and ACC/AHA 2023 AF guideline and have <b>not been verified</b>: check against Island Health pharmacy monographs and local policy (which drugs can be given on the ward). Tests and drugs are found by code and <b>name</b>, so something not shown may still be in the chart. Your entries stay in this page. Use made-up or Cerner sandbox patients until Island Health approves real data.</div>
 
+    <div class="row noprint" style="margin:0"><a href="af-medications-summary.pdf?v=20261118a" target="_blank" rel="noopener" style="text-decoration:none;border:1px solid var(--accent);color:var(--accent);border-radius:6px;padding:5px 10px;background:var(--card)">AF medications: one-page summary (PDF)</a></div>
+
     <details class="card" open>
       <summary><span>Patient and situation</span><span class="muted" id="ptsum"></span></summary>
       <div class="body">
@@ -110,7 +112,7 @@
 
     <details class="card" open><summary><span>Plan now</span><span class="muted" id="plansum"></span></summary><div class="body plan" id="plan"></div></details>
     <details class="card" open><summary><span>Heart rate and BP (3 days)</span><span class="muted">rate drugs given are marked</span></summary><div class="body" id="trend"></div></details>
-    <details class="card" open><summary><span>Which rate drug for this patient</span></summary><div class="body scroll" id="agents"></div></details>
+    <details class="card" open><summary><span>Which rate drug for this patient</span><a href="af-medications-summary.pdf?v=20261118a" target="_blank" rel="noopener" style="font-weight:400;font-size:13px">One-page AF medications summary (PDF)</a></summary><div class="body scroll" id="agents"></div></details>
     <details class="card" open><summary><span>Treat the trigger</span></summary><div class="body plan" id="trigger"></div></details>
     <details class="card" open><summary><span>Tests</span></summary><div class="body" id="tests"></div></details>
     <details class="card" open><summary><span>Chart alerts: interactions and QT</span><span class="muted" id="alertsum"></span></summary><div class="body" id="alerts"></div></details>
