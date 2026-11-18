@@ -46,13 +46,16 @@
     .c-yes { background:var(--g-bg); color:var(--g-ink); } .c-no { background:var(--r-bg); color:var(--r-ink); } .c-unknown { background:var(--a-bg); color:var(--a-ink); }
     .src { font-size:12px; color:var(--muted); margin-top:8px; }
     svg text { fill:var(--muted); font-size:11px; }
-    .mgrid { display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:10px; margin:8px 0; }
+    .mgrid { display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:10px; margin:8px 0; }
     .mgrid fieldset { border:1px solid var(--line); border-radius:8px; padding:6px 12px 8px; margin:0; display:grid; gap:6px; }
     .mgrid legend { font-weight:600; font-size:13px; padding:0 4px; }
-    .mgrid label:not(.inl) { display:grid; grid-template-columns:118px 80px auto; align-items:center; gap:6px; }
+    .mgrid label:not(.inl) { display:grid; grid-template-columns:118px 72px minmax(0,1fr); align-items:center; gap:6px; }
     .mgrid .u { font-size:12px; color:var(--muted); }
     .mgrid label select { grid-column:span 2; justify-self:start; }
     input.typed { border-color:var(--accent); font-weight:600; }
+    .mgrid .rng { color:var(--muted); } .mgrid label.outrow .rng { color:var(--r-ink); font-weight:600; }
+    input.out, input.out::placeholder { color:var(--r-ink); font-weight:600; opacity:1; } input.out { border-color:var(--r-ink); }
+    .mgrid .u { line-height:1.2; padding-left:4px; } .mgrid input[type=number] { width:70px; }
     .verdict { border-radius:10px; padding:10px 14px; margin:10px 0 6px; }
     .verdict .big { font-size:18px; font-weight:700; }
     tr.match td { background:var(--b-bg); color:var(--b-ink); font-weight:600; }
@@ -94,7 +97,7 @@
     <details class="card" open id="sec-manual">
       <summary><span>Values used</span><span class="muted" id="msum"></span></summary>
       <div class="body">
-        <div class="muted">Chart values are shown in grey (hover for time). Type a value to override it, or use this as a calculator with no patient loaded. SI units.</div>
+        <div class="muted">Chart values are shown in grey (hover for time). Type a value to override it, or use this as a calculator with no patient loaded. SI units. Normal adult ranges are beside each box (venous ranges when the gas is venous); values outside them turn red. Ranges are typical: check the lab range.</div>
         <div class="mgrid">
           <fieldset><legend>Blood gas</legend>
             <label>Sample <select id="m-specimen"><option value="">From chart / unknown</option><option value="arterial">Arterial</option><option value="venous">Venous</option><option value="capillary">Capillary</option></select></label>
@@ -169,6 +172,6 @@
   <script src="samples.js?v=20261117a"></script>
   <script src="reference.js?v=20261117b"></script>
   <script src="../../notedraft.js?v=20261113a"></script>
-  <script src="app.js?v=20261117a"></script>
+  <script src="app.js?v=20261117c"></script>
 </body>
 </html>

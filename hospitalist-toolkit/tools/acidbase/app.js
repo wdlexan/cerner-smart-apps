@@ -16,6 +16,28 @@ const MF = GASF.concat(CHEMF, URF);
 const WIN = { Na: 6, K: 6, Cl: 6, tCO2: 6, glucose: 6, lactate: 3, albumin: 72, urea: 24, creatinine: 24, bhb: 12, osm: 12, ethanol: 12, salicylate: 12, CK: 48 };
 const state = { f: null, gasIdx: -1 };
 
+/* Adult reference ranges shown beside each box (typical Canadian SI ranges; check the Island Health lab's own range).
+   lo/hi colour the box when a value is outside; ven: venous range used when the gas is venous. */
+const RANGES = {
+  pH: { lo: 7.35, hi: 7.45, t: "7.35–7.45", ven: { lo: 7.31, hi: 7.41, t: "venous 7.31–7.41" } },
+  pCO2: { lo: 35, hi: 45, t: "35–45", ven: { lo: 41, hi: 51, t: "venous 41–51" } },
+  HCO3: { lo: 22, hi: 26, t: "22–26" },
+  pO2: { lo: 80, hi: 100, t: "80–100 arterial", ven: { lo: null, hi: null, t: "venous 30–50 (not for oxygenation)" } },
+  Na: { lo: 135, hi: 145, t: "135–145" }, K: { lo: 3.5, hi: 5.0, t: "3.5–5.0" }, Cl: { lo: 98, hi: 107, t: "98–107" },
+  tCO2: { lo: 22, hi: 29, t: "22–29" }, albumin: { lo: 35, hi: 50, t: "35–50" },
+  glucose: { lo: 4.0, hi: 7.8, t: "4.0–7.8 random" }, urea: { lo: 2.5, hi: 8.0, t: "2.5–8.0" },
+  creatinine: { lo: 45, hi: 110, t: "45–90 F, 60–110 M" }, lactate: { lo: 0.5, hi: 2.0, t: "0.5–2.0" },
+  bhb: { hi: 0.6, t: "< 0.6 (≥ 3 ketoacidosis)" }, osm: { lo: 275, hi: 295, t: "275–295" },
+  ethanol: { hi: 2, t: "none (< 2)" }, salicylate: { hi: 2.2, t: "therapeutic ≤ 2.2; toxic > 2.2" }, CK: { hi: 200, t: "< 200 (approx.)" },
+  uNa: { t: "< 20 = kidney holding Na" }, uK: { t: "> 20 with low K = kidney loss" }, uCl: { t: "< 20 = Cl-responsive" }, uPH: { lo: 4.5, hi: 8, t: "4.5–8 (< 5.5 = acidifies)" }
+};
+const UNITS = {};
+function rangeFor(k, spec) {
+  const r = RANGES[k]; if (!r) return null;
+  if (k === "creatinine" && state.f && /^(male|female)$/.test(state.f.sex)) return state.f.sex === "male" ? { lo: 60, hi: 110, t: "60–110 (male)" } : { lo: 45, hi: 90, t: "45–90 (female)" };
+  return spec === "venous" && r.ven ? Object.assign({}, r, r.ven) : r;
+}
+
 /* ---- chart values for the selected gas ---- */
 function chartVals() {
   const out = {}, f = state.f; if (!f) return out;
@@ -50,6 +72,13 @@ function draw() {
   // inputs: chart values as placeholders
   const t = typed();
   MF.forEach((k) => { const el = $("m-" + k), c = m.chart[k]; el.placeholder = c ? fmt(k, c.v) : ""; el.title = c ? "Chart: " + fmt(k, c.v) + " (" + fmtDT(c.t) + (c.shown && c.shown.trim() !== fmt(k, c.v) ? ", reported " + c.shown : "") + ")" : ""; el.classList.toggle("typed", t[k] != null); });
+  MF.forEach((k) => {
+    const el = $("m-" + k), span = el.parentNode.querySelector(".u"), r = rangeFor(k, v.specimen);
+    if (!(k in UNITS)) UNITS[k] = span ? span.textContent.trim() : "";
+    if (span && r) span.innerHTML = (UNITS[k] ? esc(UNITS[k]) + " · " : "") + '<span class="rng">' + esc(r.t) + "</span>";
+    const val = v[k], out = r && val != null && ((r.lo != null && val < r.lo) || (r.hi != null && val > r.hi));
+    el.classList.toggle("out", !!out); el.parentNode.classList.toggle("outrow", !!out);
+  });
   const nT = MF.filter((k) => t[k] != null).length, nC = MF.filter((k) => m.src[k] === "chart").length;
   $("m-src").textContent = (nT ? nT + " typed" : "") + (nT && nC ? ", " : "") + (nC ? nC + " from the chart (grey)" : "");
   $("m-clear").hidden = !nT;
