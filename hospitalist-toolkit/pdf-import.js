@@ -62,6 +62,7 @@
       <div class="muted">For labs, clinic letters or procedure reports that are not in Cerner. The PDF is read here in your browser: nothing is uploaded or sent to an AI. Use made-up or Cerner sandbox documents only until Island Health approves real data.</div>
       ${msg ? `<div class="warn">${msg}</div>` : ""}
       <div id="pdfdrop"><div style="font-size:15px">Drop PDF files here</div><div class="muted">or</div><input type="file" id="pdffile" accept="application/pdf,.pdf" multiple></div>
+      ${sampleBlock()}
       <div class="muted">Works for PDFs that contain real text. Scanned pages or faxes (pictures of text) cannot be read yet. Everything found is shown to you to tick and correct before it is used.</div>
       <p><button id="pdfx">Close</button></p>`;
     modal.classList.add("on");
@@ -70,7 +71,27 @@
     ["dragleave", "drop"].forEach((ev) => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.remove("hot"); }));
     dz.addEventListener("drop", (e) => run(Array.from(e.dataTransfer.files)));
     fi.onchange = () => run(Array.from(fi.files));
+    const ss = document.getElementById("pdfsample");
+    if (ss) ss.onchange = () => { if (ss.value !== "") loadSample(+ss.value); };
     document.getElementById("pdfx").onclick = close;
+  }
+
+  /* ---------- made-up test patients (sample-pdfs/<condition>/…, listed in sample-pdfs/index.js) ---------- */
+  function sampleBlock() {
+    const list = window.SAMPLE_PDFS || []; if (!list.length) return "";
+    const groups = [...new Set(list.map((x) => x.folder))];
+    return `<div style="margin:4px 0 12px"><label for="pdfsample" style="font-weight:600">Or load a made-up test patient: </label>
+      <select id="pdfsample" style="padding:5px;max-width:100%"><option value="">Choose a sample patient…</option>
+      ${groups.map((g) => `<optgroup label="${esc(g)}">${list.map((x, i) => x.folder === g ? `<option value="${i}">${esc(x.label)}</option>` : "").join("")}</optgroup>`).join("")}
+      </select></div>`;
+  }
+  async function loadSample(i) {
+    const x = (window.SAMPLE_PDFS || [])[i]; if (!x) return;
+    try {
+      const url = "sample-pdfs/" + x.file.split("/").map(encodeURIComponent).join("/");
+      const r = await fetch(url); if (!r.ok) throw new Error(r.status + " " + r.statusText);
+      run([new File([await r.blob()], x.label + ".pdf", { type: "application/pdf" })]);
+    } catch (e) { drop("Could not load the sample " + esc(x.label) + ": " + esc(e.message || e)); }
   }
 
   let libP = null;
