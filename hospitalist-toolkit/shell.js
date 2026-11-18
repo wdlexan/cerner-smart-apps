@@ -51,11 +51,23 @@ const TOOLS = [
 
 const $ = (id) => document.getElementById(id);
 
-FHIR.oauth2.ready().then(start).catch((e) => {
-  $("patient").textContent = "Not connected";
-  $("msg").innerHTML = `<b class="err">Not signed in:</b> ${esc(e.message || e)}<br><br>
-    Launch the toolkit from the Cerner sandbox (it opens launch.html), rather than opening this page directly.`;
-});
+// index.html?test=1 (optionally &patient=…&tab=…) opens TEST MODE directly: Cerner's open sandbox, no login.
+const _q = new URLSearchParams(location.search);
+if (_q.get("test") === "1") {
+  const p = new URLSearchParams();
+  if (_q.get("patient")) p.set("patient", _q.get("patient"));
+  const tab = _q.get("tab") || location.hash.slice(1);
+  if (tab) p.set("tab", tab);
+  location.replace("launch-test.html" + (p.toString() ? "?" + p : ""));
+} else {
+  FHIR.oauth2.ready().then(start).catch((e) => {
+    $("patient").textContent = "Not connected";
+    const tab = location.hash.slice(1);
+    $("msg").innerHTML = `<b class="err">Not signed in:</b> ${esc(e.message || e)}<br><br>
+      Launch the toolkit from the Cerner sandbox (it opens launch.html), or open it without logging in, using Cerner's public test patients:<br><br>
+      <a href="launch-test.html${tab ? "?tab=" + encodeURIComponent(tab) : ""}" style="display:inline-block;background:#0b6bcb;color:#fff;text-decoration:none;border-radius:6px;padding:8px 14px;font-weight:600">Open in test mode (no login)</a>`;
+  });
+}
 
 async function start(client) {
   // Opened from a link (launch-standalone.html) instead of PowerChart: there is no patient yet,
