@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Acid-base: stepwise interpretation infosheet</title>
+<!-- Source for infosheet.pdf. Rebuild: google-chrome --headless --no-pdf-header-footer --print-to-pdf=infosheet.pdf infosheet.html -->
+<style>
+  @page { size: letter; margin: 8mm 9mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif; color: #1f2933; font-size: 8.2pt; line-height: 1.2; margin: 0; }
+  h1 { font-size: 14pt; margin: 0 0 1mm; color: #0b4a99; }
+  .sub { color: #5f6c7b; font-size: 9pt; margin-bottom: 3mm; }
+  .key { display: flex; gap: 6mm; font-size: 9pt; margin: 0 0 3mm; padding: 2mm 3mm; background: #f5f7fa; border-radius: 2mm; }
+  .ok, .no { display: inline-block; width: 5mm; height: 5mm; line-height: 5mm; border-radius: 50%; text-align: center; font-weight: 700; font-size: 9pt; }
+  .ok { background: #e4f4ea; color: #1d6b3a; } .no { background: #fde8e8; color: #9b1c1c; }
+  .step { border: 0.3mm solid #dde3ea; border-radius: 2mm; margin: 0 0 2mm; break-inside: avoid; }
+  .step > h2 { margin: 0; font-size: 9.6pt; background: #0b6bcb; color: #fff; padding: 1mm 3mm; border-radius: 2mm 2mm 0 0; }
+  .step .f { padding: 0.8mm 3mm 0; font-size: 8.2pt; }
+  .f code, td code { font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 9pt; background: #eef2f7; padding: 0 1mm; border-radius: 1mm; }
+  table { border-collapse: collapse; width: 100%; }
+  td, th { padding: 0.5mm 2.5mm; vertical-align: top; text-align: left; border-top: 0.25mm solid #eef1f5; }
+  th { font-size: 7.8pt; color: #5f6c7b; font-weight: 600; }
+  td.r { width: 30%; font-weight: 600; }
+  td.m { width: 7mm; padding-right: 0; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm; }
+  .box { border: 0.3mm solid #dde3ea; border-radius: 2mm; padding: 2mm 3mm; break-inside: avoid; }
+  .box h3 { margin: 0 0 1.2mm; font-size: 10pt; color: #0b4a99; }
+  .box ul { margin: 0; padding-left: 4.5mm; } .box li { margin: 0.4mm 0; }
+  .warn { background: #fff4e5; border: 0.3mm solid #f0c27b; border-radius: 2mm; padding: 1.6mm 3mm; font-size: 7.8pt; margin-top: 3mm; }
+  .big { font-size: 12pt; font-weight: 700; letter-spacing: .5mm; color: #9b1c1c; }
+  .pb { break-before: page; }
+  .small { font-size: 7.8pt; color: #5f6c7b; }
+</style>
+</head>
+<body>
+  <h1>Acid-base: stepwise interpretation</h1>
+  <div class="sub">Hospitalist Toolkit · Acid-base tab · SI units (mmol/L, g/L, mmHg) · normal: pH 7.35–7.45, pCO2 35–45, HCO3 22–26, anion gap 10 ± 2</div>
+  <div class="key"><span><span class="ok">✓</span> rule met: expected / single process, move to the next step</span><span><span class="no">✗</span> rule not met: a second process or a problem; do what the row says</span></div>
+
+  <div class="step"><h2>1. Primary disorder: pH, pCO2, HCO3</h2>
+    <div class="f">Which way is the pH? The value that moved the same way as the pH is the primary process. Normal pH with abnormal values: lean on the side of 7.40 the pH sits.</div>
+    <table>
+      <tr><th></th><th>Finding</th><th>Meaning</th></tr>
+      <tr><td class="m"><span class="no">✗</span></td><td class="r">pH &lt; 7.35, HCO3 low</td><td>Primary metabolic acidosis → step 2 (Winter's)</td></tr>
+      <tr><td class="m"><span class="no">✗</span></td><td class="r">pH &lt; 7.35, pCO2 high</td><td>Primary respiratory acidosis → step 2</td></tr>
+      <tr><td class="m"><span class="no">✗</span></td><td class="r">pH &gt; 7.45, HCO3 high</td><td>Primary metabolic alkalosis → step 2</td></tr>
+      <tr><td class="m"><span class="no">✗</span></td><td class="r">pH &gt; 7.45, pCO2 low</td><td>Primary respiratory alkalosis → step 2</td></tr>
+      <tr><td class="m"><span class="no">✗</span></td><td class="r">HCO3 low AND pCO2 high (or HCO3 high AND pCO2 low)</td><td>Mixed: two primary processes pushing pH the same way</td></tr>
+      <tr><td class="m"><span class="ok">✓</span></td><td class="r">All three normal</td><td>No simple disorder, but still do step 3: a high anion gap can hide behind a normal pH</td></tr>
+    </table>
+    <div class="f small" style="padding-bottom:1.6mm">Consistency check: pH ≈ 6.1 + log(HCO3 ÷ (0.03 × pCO2)). Off by more than 0.05 → typo or values from different samples. Venous gas: pH about 0.03 lower, pCO2 about 4–5 higher; unreliable for pCO2 in shock.</div>
+  </div>
+
+  <div class="step"><h2>2. Expected compensation</h2>
+    <table>
+      <tr><th></th><th>Rule</th><th><span class="ok">✓</span> within range</th><th><span class="no">✗</span> outside range → second disorder</th></tr>
+      <tr><td class="m"></td><td class="r">Metabolic acidosis<br><code>pCO2 = 1.5 × HCO3 + 8 ± 2</code> (Winter's)</td><td>Appropriate respiratory compensation (quick check: pCO2 ≈ last 2 digits of pH)</td><td>pCO2 higher → + respiratory acidosis (tiring, sedation, weakness: get help early)<br>pCO2 lower → + respiratory alkalosis (sepsis, salicylate, liver)</td></tr>
+      <tr><td class="m"></td><td class="r">Metabolic alkalosis<br><code>pCO2 ≈ 0.7 × HCO3 + 20 ± 5</code></td><td>Appropriate (rarely above 55)</td><td>Higher → + respiratory acidosis<br>Lower → + respiratory alkalosis</td></tr>
+      <tr><td class="m"></td><td class="r">Respiratory acidosis<br>HCO3 ↑ <code>1</code> per 10 mmHg pCO2 acute, <code>3.5–4</code> chronic</td><td>Fits acute or chronic (between = acute-on-chronic)</td><td>HCO3 below acute → + metabolic acidosis<br>HCO3 above chronic → + metabolic alkalosis (diuretics, steroids)</td></tr>
+      <tr><td class="m"></td><td class="r">Respiratory alkalosis<br>HCO3 ↓ <code>2</code> per 10 mmHg pCO2 acute, <code>4–5</code> chronic</td><td>Fits acute or chronic (chronic can normalise pH)</td><td>HCO3 above acute → + metabolic alkalosis<br>HCO3 below chronic → + metabolic acidosis</td></tr>
+    </table>
+    <div class="f small" style="padding-bottom:1.6mm">Compensation never overshoots: if pH is on the "wrong" side of 7.40 for the primary process, there are two disorders. Renal compensation takes 3–5 days.</div>
+  </div>
+
+  <div class="step"><h2>3. Anion gap (always, even with a normal pH)</h2>
+    <div class="f"><code>AG = Na − (Cl + HCO3)</code> &nbsp; corrected <code>AG + 0.25 × (40 − albumin g/L)</code> &nbsp; (each 10 g/L fall in albumin hides about 2.5)</div>
+    <table>
+      <tr><td class="m"><span class="ok">✓</span></td><td class="r">Corrected AG ≤ 12</td><td>Normal gap. If HCO3 is low → normal-gap (hyperchloraemic) acidosis → step 6a</td></tr>
+      <tr><td class="m"><span class="no">✗</span></td><td class="r">Corrected AG &gt; 12</td><td>High anion gap metabolic acidosis present, whatever the pH → step 4 and 5, work through GOLDMARK</td></tr>
+      <tr><td class="m"><span class="no">✗</span></td><td class="r">AG &lt; 4</td><td>Lab error, very low albumin, paraprotein (myeloma), lithium, bromide</td></tr>
+    </table>
+  </div>
+
+  <div class="step"><h2>4. Delta-delta (only when the gap is high)</h2>
+    <div class="f"><code>Δ ratio = (corrected AG − 10) ÷ (24 − HCO3)</code></div>
+    <table>
+      <tr><td class="m"><span class="no">✗</span></td><td class="r">&lt; 1</td><td>High-gap acidosis + concurrent normal-gap acidosis (diarrhoea, saline, DKA recovery, CKD). &lt; 0.4: mostly normal-gap</td></tr>
+      <tr><td class="m"><span class="ok">✓</span></td><td class="r">1 – 2</td><td>Pure high-gap acidosis (DKA near 1, lactic acidosis near 1.6)</td></tr>
+      <tr><td class="m"><span class="no">✗</span></td><td class="r">&gt; 2, or high gap with HCO3 ≥ 24</td><td>High-gap acidosis + concurrent metabolic alkalosis (vomiting, NG, diuretics) or baseline high HCO3 from chronic CO2 retention</td></tr>
+    </table>
+  </div>
+
+  <div class="step"><h2>5. Osmolar gap (high gap without a clear cause)</h2>
+    <div class="f"><code>Osm gap = measured osmolality − (2 × Na + glucose + urea [+ ethanol])</code> &nbsp; all mmol/L, same sample</div>
+    <table>
+      <tr><td class="m"><span class="ok">✓</span></td><td class="r">≤ 10</td><td>Normal. Does NOT exclude a late toxic alcohol (parent alcohol already metabolised)</td></tr>
+      <tr><td class="m"><span class="no">✗</span></td><td class="r">&gt; 10 with high AG</td><td><b>Toxic alcohol until proven otherwise</b> (methanol, ethylene glycol): fomepizole now, nephrology for dialysis, Poison Centre 1-800-567-8911</td></tr>
+      <tr><td class="m"><span class="no">✗</span></td><td class="r">&gt; 10 without high AG</td><td>Isopropanol, ethanol not entered, mannitol, glycine, propylene glycol, severe lipids or protein</td></tr>
+    </table>
+  </div>
+
+  <div class="step"><h2>6a. Normal-gap acidosis workup: GI or kidney?</h2>
+    <div class="f"><code>Urine AG = UNa + UK − UCl</code> (spot urine; approximates urine NH4+)</div>
+    <table>
+      <tr><td class="m"><span class="ok">✓</span></td><td class="r">Urine AG negative</td><td>Kidneys excreting acid appropriately → <b>GI loss of HCO3</b> (diarrhoea most common, ileostomy, pancreatic or biliary fistula) or saline load</td></tr>
+      <tr><td class="m"><span class="no">✗</span></td><td class="r">Urine AG positive</td><td><b>Renal</b>: renal tubular acidosis or CKD. Unreliable if urine Na &lt; 20 or ketones / other unmeasured anions in urine</td></tr>
+      <tr><td class="m"></td><td class="r">Low K + urine pH &gt; 5.5</td><td>Distal (type 1) RTA: ↓ acid excretion; Sjögren, lupus, amphotericin, lithium, stones</td></tr>
+      <tr><td class="m"></td><td class="r">Low K + urine pH &lt; 5.5</td><td>Proximal (type 2) RTA: ↓ HCO3 reabsorption (myeloma, tenofovir, Fanconi), GI loss, carbonic anhydrase inhibitors (acetazolamide, topiramate)</td></tr>
+      <tr><td class="m"></td><td class="r">High K</td><td>Type 4 RTA (low aldosterone effect): diabetes, ACEi/ARB, spironolactone, trimethoprim, heparin, calcineurin inhibitors</td></tr>
+    </table>
+  </div>
+
+  <div class="step"><h2>6b. Metabolic alkalosis workup: urine chloride</h2>
+    <table>
+      <tr><td class="m"><span class="ok">✓</span></td><td class="r">Urine Cl &lt; 20</td><td><b>Chloride-responsive</b>: vomiting, NG suction, past diuretics, post-hypercapnia, contraction → 0.9% saline + KCl, antiemetic</td></tr>
+      <tr><td class="m"><span class="no">✗</span></td><td class="r">Urine Cl &gt; 20</td><td><b>Chloride-resistant</b>: current diuretic, mineralocorticoid excess (check BP; renin/aldosterone), liquorice, severe low K, Bartter/Gitelman → treat cause, replace K and Mg</td></tr>
+    </table>
+    <div class="f small" style="padding-bottom:1.6mm">Use urine Cl rather than urine Na: bicarbonate in the urine drags Na with it even when volume-depleted.</div>
+  </div>
+
+  <div class="two">
+    <div class="box"><h3>High-gap causes: <span class="big">GOLDMARK</span> (preferred)</h3>
+      <ul>
+        <li><b>G</b>lycols: ethylene, propylene (IV lorazepam, phenobarbital)</li>
+        <li><b>O</b>xoproline: chronic acetaminophen + malnutrition/sepsis</li>
+        <li><b>L</b>-lactate: shock, sepsis, ischaemia; metformin, liver failure, salbutamol, thiamine deficiency, isoniazid, iron, seizures</li>
+        <li><b>D</b>-lactate: short bowel / bypass</li>
+        <li><b>M</b>ethanol</li>
+        <li><b>A</b>spirin (salicylate)</li>
+        <li><b>R</b>enal failure (uraemia)</li>
+        <li><b>K</b>etoacidosis: diabetic (incl. euglycaemic on SGLT2i), alcoholic, starvation</li>
+      </ul>
+      <div class="small" style="margin-top:1mm">First tests: lactate, beta-hydroxybutyrate, glucose, creatinine/urea, osmolality + ethanol (osmolar gap), salicylate, acetaminophen.</div>
+    </div>
+    <div class="box"><h3>Older mnemonic: MUDPILES</h3>
+      <ul>
+        <li><b>M</b>ethanol · <b>U</b>raemia · <b>D</b>KA</li>
+        <li><b>P</b>ropylene glycol (originally paraldehyde, now obsolete)</li>
+        <li><b>I</b>soniazid &amp; iron (act through lactic acidosis)</li>
+        <li><b>L</b>actic acidosis · <b>E</b>thylene glycol · <b>S</b>alicylate</li>
+      </ul>
+      <h3 style="margin-top:2.5mm">Why GOLDMARK</h3>
+      <ul>
+        <li>Adds <b>5-oxoproline</b> and <b>D-lactate</b>, which MUDPILES misses and which cause "unexplained" high gaps</li>
+        <li>Covers <b>alcoholic and starvation ketoacidosis</b>, not just DKA</li>
+        <li>Drops rare or indirect items (paraldehyde, isoniazid, iron) that are really lactic acidosis</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="two" style="margin-top:3mm">
+    <div class="box"><h3>Red flags: act now</h3>
+      <ul>
+        <li>pH &lt; 7.1 or &gt; 7.6; HCO3 &lt; 10</li>
+        <li>Metabolic acidosis with pCO2 above Winter's range (tiring)</li>
+        <li>pCO2 &gt; 60 with pH &lt; 7.3: NIV / ICU, review opioids, O2 88–92%</li>
+        <li>SGLT2 inhibitor + metabolic acidosis: euglycaemic DKA (check BHB)</li>
+        <li>Lactate ≥ 4 or rising; metformin + high lactate + AKI</li>
+        <li>Osmolar gap &gt; 10 + high anion gap</li>
+        <li>Respiratory alkalosis + high gap: send salicylate</li>
+        <li>K &lt; 3 (replace before insulin or bicarbonate) or ≥ 6</li>
+      </ul>
+    </div>
+    <div class="box"><h3>Worked example (made-up patient A)</h3>
+      <div>Venous pH 7.22, pCO2 22, HCO3 9; Na 137, Cl 102, albumin 38; on empagliflozin; glucose 11.2; BHB 5.8</div>
+      <ol style="margin:1mm 0 0;padding-left:4.5mm">
+        <li><span class="no">✗</span> acidaemia, low HCO3 → metabolic acidosis</li>
+        <li><span class="ok">✓</span> Winter's 1.5 × 9 + 8 = 21.5 (19.5–23.5); pCO2 22 fits</li>
+        <li><span class="no">✗</span> AG 137 − 111 = 26; corrected 26.5 → high gap</li>
+        <li><span class="ok">✓</span> Δ ratio 16.5 ÷ 15 = 1.1 → pure high gap</li>
+        <li>GOLDMARK: K → euglycaemic DKA (SGLT2i); stop it, DKA protocol with dextrose</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="warn"><b>Unverified decision-support draft</b> written by Claude for the Hospitalist Toolkit (Nov 2026). Formulas from standard references (Winter's formula; Boston compensation rules; Figge albumin correction; Berend, NEJM 2014; Mehta et al., Lancet 2008 for GOLDMARK). Check against Island Health protocols and pharmacy before clinical use; interpret with the whole clinical picture.</div>
+</body>
+</html>
