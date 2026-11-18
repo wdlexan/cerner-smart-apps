@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Electrolytes (K, PO4, Ca)</title>
+  <style>
+    :root { --bg:#f5f7fa; --card:#fff; --ink:#1f2933; --muted:#5f6c7b; --accent:#0b6bcb; --line:#dde3ea;
+            --r-bg:#fde8e8; --r-ink:#9b1c1c; --a-bg:#fff1d6; --a-ink:#8a5200; --b-bg:#e3eefc; --b-ink:#0b4a99; --g-bg:#e4f4ea; --g-ink:#1d6b3a; --warn-bg:#fff4e5; --warn-line:#f0c27b; }
+    @media (prefers-color-scheme: dark) { :root { --bg:#111418; --card:#1a1f26; --ink:#e8edf2; --muted:#9aa7b5; --accent:#6aa9ff; --line:#2b333d;
+            --r-bg:#4a1d1d; --r-ink:#ffb3b3; --a-bg:#4a3511; --a-ink:#ffd38a; --b-bg:#14325c; --b-ink:#a9cdff; --g-bg:#16361f; --g-ink:#9be0b1; --warn-bg:#3a2e15; --warn-line:#6b5420; } }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); }
+    header { padding:14px 20px; border-bottom:1px solid var(--line); background:var(--card); }
+    header h1 { margin:0; font-size:19px; } header .sub { font-size:13px; color:var(--muted); margin-top:2px; }
+    main { max-width:980px; margin:16px auto 40px; padding:0 16px; display:grid; gap:14px; }
+    .banner { background:var(--warn-bg); border:1px solid var(--warn-line); border-radius:8px; padding:10px 14px; font-size:13px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:10px; font-size:13.5px; }
+    .card > summary { padding:10px 16px; font-weight:700; font-size:15px; cursor:pointer; display:flex; justify-content:space-between; gap:10px; }
+    .card > .body { padding:0 16px 14px; }
+    select, input, button { font:inherit; font-size:13px; padding:5px 8px; border:1px solid var(--line); border-radius:6px; background:var(--card); color:var(--ink); }
+    button { cursor:pointer; } button.primary { border-color:var(--accent); color:var(--accent); }
+    .row { display:flex; flex-wrap:wrap; gap:10px 16px; align-items:center; margin:8px 0; }
+    .inl { display:inline-flex; gap:6px; align-items:center; }
+    .muted { color:var(--muted); } .err { color:var(--r-ink); }
+    .tiles { display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:10px; }
+    .tile { border-radius:10px; padding:10px 14px; border:1px solid var(--line); background:var(--card); }
+    .tile .k { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; }
+    .tile .big { font-size:26px; font-weight:700; margin:2px 0; }
+    .tile .s { font-size:12.5px; }
+    .t0 { background:var(--g-bg); color:var(--g-ink); } .t1 { background:var(--b-bg); color:var(--b-ink); } .t2 { background:var(--a-bg); color:var(--a-ink); } .t3 { background:var(--r-bg); color:var(--r-ink); }
+    .t0 .k, .t1 .k, .t2 .k, .t3 .k { color:inherit; opacity:.8; }
+    .alert { border-left:4px solid; border-radius:6px; padding:8px 12px; margin:6px 0; }
+    .alert.urgent { background:var(--r-bg); color:var(--r-ink); } .alert.action { background:var(--a-bg); color:var(--a-ink); } .alert.info { background:var(--b-bg); color:var(--b-ink); }
+    table { border-collapse:collapse; width:100%; font-size:13px; }
+    th, td { border-bottom:1px solid var(--line); padding:5px 8px; text-align:left; vertical-align:top; }
+    th { color:var(--muted); font-weight:600; }
+    .chip { display:inline-block; padding:1px 9px; border-radius:10px; font-size:12px; font-weight:700; }
+    .plan h3 { font-size:14px; margin:12px 0 4px; } .plan ul { margin:4px 0 8px 18px; padding:0; } .plan li { margin:4px 0; }
+    .tier { display:inline-block; min-width:44px; font-size:11px; font-weight:700; text-transform:uppercase; border-radius:4px; padding:0 5px; margin-right:6px; text-align:center; }
+    .tier.now { background:var(--r-bg); color:var(--r-ink); } .tier.next { background:var(--a-bg); color:var(--a-ink); } .tier.also { background:var(--b-bg); color:var(--b-ink); }
+    .why { color:var(--muted); font-size:12.5px; }
+    .src { font-size:12px; color:var(--muted); margin-top:8px; }
+    .mgrid { display:grid; grid-template-columns:repeat(auto-fit, minmax(290px, 1fr)); gap:10px; margin:8px 0; }
+    .mgrid fieldset { border:1px solid var(--line); border-radius:8px; padding:6px 12px 8px; margin:0; display:grid; gap:6px; }
+    .mgrid legend { font-weight:600; font-size:13px; padding:0 4px; }
+    .mgrid label { display:grid; grid-template-columns:112px 72px minmax(0,1fr); align-items:center; gap:6px; }
+    .mgrid input[type=number] { width:70px; }
+    .mgrid .u { font-size:12px; color:var(--muted); line-height:1.2; padding-left:4px; }
+    .mgrid .rng { color:var(--muted); } .mgrid label.outrow .rng { color:var(--r-ink); font-weight:600; }
+    input.typed { border-color:var(--accent); font-weight:600; }
+    input.out, input.out::placeholder { color:var(--r-ink); font-weight:600; opacity:1; } input.out { border-color:var(--r-ink); }
+    .checks label { display:inline-flex; gap:6px; align-items:center; }
+    .ref details { border:1px solid var(--line); border-radius:8px; margin:6px 0; } .ref summary { padding:8px 12px; cursor:pointer; font-weight:600; }
+    .ref .in { padding:0 12px 10px; } .ref details.hit > summary { background:var(--a-bg); color:var(--a-ink); border-radius:8px 8px 0 0; }
+    .ref td:first-child { font-weight:600; width:26%; }
+    .sparks { display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:10px; }
+    .sparks .sp { border:1px solid var(--line); border-radius:8px; padding:6px 10px; } .sparks .sp b { font-size:13px; }
+    svg text { fill:var(--muted); font-size:11px; }
+    .linkbtn { background:none; border:0; color:var(--accent); padding:0; text-decoration:underline; cursor:pointer; }
+    @media print { .noprint { display:none; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Electrolytes: potassium, phosphate, calcium</h1>
+    <div class="sub">Low and high K, PO4 and Ca: severity, likely causes in this patient, tests, treatment with doses, and a note. Read-only.</div>
+  </header>
+  <main>
+    <div class="banner"><b>Decision-support draft. It orders nothing.</b> Grading, causes and doses were written by Claude and have <b>not been verified</b>: check them against references, Island Health protocols and pharmacy before real use. Tests are found by code and <b>name</b>, so a result not shown may still be in the chart. ECG changes and symptoms are not read from the chart: tick them yourself. Values you type stay in this page only. Use made-up or Cerner sandbox patients until Island Health approves real data.</div>
+
+    <details class="card" open>
+      <summary><span>Patient</span><span class="muted" id="ptsum"></span></summary>
+      <div class="body">
+        <div id="pstatus" class="muted">Open from Cerner to read the chart, or pick a made-up patient:</div>
+        <div class="row"><select id="testsel"><option value="">Made-up patient…</option></select><button id="clear" hidden>Clear</button></div>
+        <div class="row checks"><b>At the bedside:</b>
+          <label><input type="checkbox" id="x-ecg"> ECG changes from K or Ca</label>
+          <label><input type="checkbox" id="x-symptoms"> Symptoms (weakness, tetany, tingling, confusion, arrhythmia)</label>
+          <label><input type="checkbox" id="x-npo"> NPO / cannot take pills</label>
+          <label><input type="checkbox" id="x-dialysis"> On dialysis</label></div>
+        <div id="errs" class="err"></div>
+      </div>
+    </details>
+
+    <details class="card" id="sec-manual">
+      <summary><span>Values used</span><span class="muted" id="msum"></span></summary>
+      <div class="body">
+        <div class="muted">Chart values are shown in grey (hover for the time). Type a value to override it, or use this as a calculator with no patient loaded. SI units; typical adult ranges are beside each box and values outside them turn red. Check the lab's own range.</div>
+        <div class="mgrid">
+          <fieldset><legend>Electrolytes</legend>
+            <label>Potassium <input type="number" id="m-K" step="0.1"> <span class="u">mmol/L</span></label>
+            <label>Phosphate <input type="number" id="m-phos" step="0.01"> <span class="u">mmol/L</span></label>
+            <label>Calcium (total) <input type="number" id="m-Ca" step="0.01"> <span class="u">mmol/L</span></label>
+            <label>Calcium (ionized) <input type="number" id="m-iCa" step="0.01"> <span class="u">mmol/L</span></label>
+            <label>Magnesium <input type="number" id="m-Mg" step="0.01"> <span class="u">mmol/L</span></label>
+            <label>Albumin <input type="number" id="m-albumin" step="1"> <span class="u">g/L</span></label>
+          </fieldset>
+          <fieldset><legend>Kidney and other</legend>
+            <label>Creatinine <input type="number" id="m-creatinine" step="1"> <span class="u">umol/L</span></label>
+            <label>Glucose <input type="number" id="m-glucose" step="0.1"> <span class="u">mmol/L</span></label>
+            <label>Total CO2 <input type="number" id="m-tCO2" step="1"> <span class="u">mmol/L</span></label>
+            <label>Sodium <input type="number" id="m-Na" step="1"> <span class="u">mmol/L</span></label>
+            <label>Weight <input type="number" id="m-weight" step="0.1"> <span class="u">kg</span></label>
+            <label>QTc <input type="number" id="m-QTc" step="1"> <span class="u">ms</span></label>
+          </fieldset>
+          <fieldset><legend>Cause clues</legend>
+            <label>CK <input type="number" id="m-CK" step="1"> <span class="u">U/L</span></label>
+            <label>Uric acid <input type="number" id="m-urate" step="1"> <span class="u">umol/L</span></label>
+            <label>LDH <input type="number" id="m-LDH" step="1"> <span class="u">U/L</span></label>
+            <label>Platelets <input type="number" id="m-plt" step="1"> <span class="u">×10⁹/L</span></label>
+            <label>WBC <input type="number" id="m-wbc" step="0.1"> <span class="u">×10⁹/L</span></label>
+          </fieldset>
+          <fieldset><legend>Hormones and urine</legend>
+            <label>PTH <input type="number" id="m-PTH" step="0.1"> <span class="u">pmol/L</span></label>
+            <label>25-OH vitamin D <input type="number" id="m-vitD" step="1"> <span class="u">nmol/L</span></label>
+            <label>Urine K (spot) <input type="number" id="m-uK" step="1"> <span class="u">mmol/L</span></label>
+            <label>Urine creatinine <input type="number" id="m-uCr" step="0.1"> <span class="u">mmol/L</span></label>
+          </fieldset>
+        </div>
+        <div class="row"><button id="m-clear" hidden>Clear typed values</button><span class="muted" id="m-src"></span></div>
+      </div>
+    </details>
+
+    <div class="tiles" id="tiles"></div>
+    <details class="card" open><summary><span>Red flags</span><span class="muted" id="alertsum"></span></summary><div class="body" id="alerts"></div></details>
+
+    <details class="card plan" open id="plan-K"><summary><span>Potassium</span><span id="sum-K"></span></summary><div class="body" id="body-K"></div></details>
+    <details class="card plan" open id="plan-phos"><summary><span>Phosphate</span><span id="sum-phos"></span></summary><div class="body" id="body-phos"></div></details>
+    <details class="card plan" open id="plan-Ca"><summary><span>Calcium</span><span id="sum-Ca"></span></summary><div class="body" id="body-Ca"></div></details>
+
+    <details class="card" open>
+      <summary><span>Trend (14 days)</span><span class="muted" id="trendsum"></span></summary>
+      <div class="body"><div class="sparks" id="sparks"></div></div>
+    </details>
+
+    <details class="card">
+      <summary><span>Relevant medications and problems</span><span class="muted" id="medsum"></span></summary>
+      <div class="body" id="meds"></div>
+    </details>
+
+    <details class="card" id="sec-ref">
+      <summary><span>Reference: causes, tests and treatment</span><span class="muted">highlighted: abnormal now</span></summary>
+      <div class="body ref" id="ref"></div>
+    </details>
+
+    <details class="card noprint" open id="sec-note">
+      <summary><span>Note draft</span><span class="muted">check, edit, then paste into your PowerChart note</span></summary>
+      <div class="body" id="note"></div>
+    </details>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+  <script src="rules.js?v=20261118a"></script>
+  <script src="chart.js?v=20261118a"></script>
+  <script src="samples.js?v=20261118a"></script>
+  <script src="reference.js?v=20261118a"></script>
+  <script src="../../notedraft.js?v=20261113a"></script>
+  <script src="app.js?v=20261118a"></script>
+</body>
+</html>
