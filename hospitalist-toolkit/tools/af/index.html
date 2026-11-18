@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AF in acute illness</title>
+  <style>
+    :root { --bg:#f5f7fa; --card:#fff; --ink:#1f2933; --muted:#5f6c7b; --accent:#0b6bcb; --line:#dde3ea;
+            --r-bg:#fde8e8; --r-ink:#9b1c1c; --a-bg:#fff1d6; --a-ink:#8a5200; --b-bg:#e3eefc; --b-ink:#0b4a99; --g-bg:#e4f4ea; --g-ink:#1d6b3a; --warn-bg:#fff4e5; --warn-line:#f0c27b; }
+    @media (prefers-color-scheme: dark) { :root { --bg:#111418; --card:#1a1f26; --ink:#e8edf2; --muted:#9aa7b5; --accent:#6aa9ff; --line:#2b333d;
+            --r-bg:#4a1d1d; --r-ink:#ffb3b3; --a-bg:#4a3511; --a-ink:#ffd38a; --b-bg:#14325c; --b-ink:#a9cdff; --g-bg:#16361f; --g-ink:#9be0b1; --warn-bg:#3a2e15; --warn-line:#6b5420; } }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); }
+    header { padding:14px 20px; border-bottom:1px solid var(--line); background:var(--card); }
+    header h1 { margin:0; font-size:19px; } header .sub { font-size:13px; color:var(--muted); margin-top:2px; }
+    main { max-width:980px; margin:16px auto 40px; padding:0 16px; display:grid; gap:14px; }
+    .banner { background:var(--warn-bg); border:1px solid var(--warn-line); border-radius:8px; padding:10px 14px; font-size:13px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:10px; font-size:13.5px; }
+    .card > summary { padding:10px 16px; font-weight:700; font-size:15px; cursor:pointer; display:flex; justify-content:space-between; gap:10px; }
+    .card > .body { padding:0 16px 14px; }
+    select, input, button { font:inherit; font-size:13px; padding:5px 8px; border:1px solid var(--line); border-radius:6px; background:var(--card); color:var(--ink); }
+    button { cursor:pointer; } button.primary { border-color:var(--accent); color:var(--accent); }
+    input[type=number] { width:80px; }
+    .row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:8px 0; }
+    .inl { display:inline-flex; gap:6px; align-items:center; }
+    .muted { color:var(--muted); } .err { color:var(--r-ink); }
+    .tiles { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px; }
+    .tile { border-radius:10px; padding:10px 14px; border:1px solid var(--line); background:var(--card); }
+    .tile .k { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; }
+    .tile .big { font-size:26px; font-weight:700; margin:2px 0; }
+    .tile .s { font-size:12.5px; }
+    .t0 { background:var(--g-bg); color:var(--g-ink); } .t1 { background:var(--b-bg); color:var(--b-ink); } .t2 { background:var(--a-bg); color:var(--a-ink); } .t3 { background:var(--r-bg); color:var(--r-ink); }
+    .t0 .k, .t1 .k, .t2 .k, .t3 .k { color:inherit; opacity:.8; }
+    .alert { border-left:4px solid; border-radius:6px; padding:8px 12px; margin:6px 0; }
+    .alert b { margin-right:6px; }
+    .alert.urgent { background:var(--r-bg); color:var(--r-ink); } .alert.action { background:var(--a-bg); color:var(--a-ink); } .alert.info { background:var(--b-bg); color:var(--b-ink); }
+    table { border-collapse:collapse; width:100%; font-size:13px; }
+    th, td { border-bottom:1px solid var(--line); padding:5px 8px; text-align:left; white-space:nowrap; }
+    th { color:var(--muted); font-weight:600; }
+    td.num { text-align:right; font-variant-numeric:tabular-nums; } td.wrap { white-space:normal; }
+    td.hi { color:var(--r-ink); font-weight:600; } td.old { color:var(--a-ink); }
+    .scroll { overflow-x:auto; }
+    .plan h3 { font-size:14px; margin:12px 0 4px; } .plan ul { margin:4px 0 8px 18px; padding:0; } .plan li { margin:3px 0; }
+    .plan .urgent h3 { color:var(--r-ink); } .plan .action h3 { color:var(--a-ink); }
+    .chip { display:inline-block; padding:1px 8px; border-radius:10px; font-size:12px; font-weight:600; }
+    .c-yes { background:var(--g-bg); color:var(--g-ink); } .c-no { background:var(--r-bg); color:var(--r-ink); } .c-unknown { background:var(--a-bg); color:var(--a-ink); }
+    .src { font-size:12px; color:var(--muted); margin-top:8px; }
+    svg text { fill:var(--muted); font-size:11px; }
+    .mgrid { display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:10px; margin:8px 0; }
+    .mgrid fieldset { border:1px solid var(--line); border-radius:8px; padding:6px 12px 8px; margin:0; display:grid; gap:6px; }
+    .mgrid legend { font-weight:600; font-size:13px; padding:0 4px; }
+    .mgrid label:not(.inl) { display:grid; grid-template-columns:90px 80px auto; align-items:center; gap:6px; }
+    .mgrid .u { font-size:12px; color:var(--muted); }
+    .mgrid label select { grid-column:span 2; justify-self:start; }
+    input.typed { border-color:var(--accent); font-weight:600; }
+    .verdict { border-radius:10px; padding:10px 14px; margin:10px 0 6px; }
+    .verdict .big { font-size:18px; font-weight:700; }
+    tr.match td { background:var(--b-bg); color:var(--b-ink); font-weight:600; }
+    td.lv-flag { color:var(--a-ink); font-weight:600; } td.lv-ok { color:var(--g-ink); font-weight:600; }
+    .agent td { white-space:normal; vertical-align:top; } .st-ok { color:var(--g-ink); font-weight:700; } .st-caution { color:var(--a-ink); font-weight:700; } .st-avoid { color:var(--r-ink); font-weight:700; }
+    .esc-now { background:var(--r-bg); color:var(--r-ink); } .esc-today { background:var(--a-bg); color:var(--a-ink); } .esc-later { background:var(--b-bg); color:var(--b-ink); }
+    .esc { border-radius:6px; padding:6px 10px; margin:5px 0; } .esc b { margin-right:6px; }
+    textarea { width:100%; min-height:220px; font:12.5px ui-monospace,Consolas,monospace; padding:8px; border:1px solid var(--line); border-radius:6px; background:var(--card); color:var(--ink); }
+    .check li.have { color:var(--g-ink); } .check li.miss { color:var(--ink); } .check .why { color:var(--muted); font-size:12px; }
+    @media print { .noprint { display:none; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>New AF in acute illness (pneumonia, sepsis)</h1>
+    <div class="sub">Stable or not, treat the trigger, which rate drug for this patient (beta-blocker, diltiazem, digoxin, amiodarone; oral or IV), tests, anticoagulation and when to call for help. Read-only.</div>
+  </header>
+  <main>
+    <div class="banner"><b>Decision-support draft. It orders nothing.</b> Doses and rules were written by Claude from the CCS 2020 AF guideline, BC GPAC AF guideline 2023 and ACC/AHA 2023 AF guideline and have <b>not been verified</b>: check against Island Health pharmacy monographs and local policy (which drugs can be given on the ward). Tests and drugs are found by code and <b>name</b>, so something not shown may still be in the chart. Your entries stay in this page. Use made-up or Cerner sandbox patients until Island Health approves real data.</div>
+
+    <details class="card" open>
+      <summary><span>Patient and situation</span><span class="muted" id="ptsum"></span></summary>
+      <div class="body">
+        <div id="pstatus" class="muted">Open from Cerner to read the chart, or pick a made-up patient:</div>
+        <div class="row"><select id="testsel"><option value="">Made-up patient…</option></select><button id="clear" hidden>Clear</button></div>
+        <div id="errs" class="err" style="font-size:12.5px"></div>
+        <div class="row">
+          <label class="inl">ECG rhythm <select id="rhythm"><option value="af">AF (irregularly irregular)</option><option value="flutter">Atrial flutter</option><option value="mat">Multifocal atrial tachycardia</option><option value="preexc">Pre-excited AF (wide, irregular, very fast)</option></select></label>
+          <label class="inl"><input type="checkbox" id="ecg"> 12-lead ECG done</label>
+          <label class="inl">QTc <input type="number" id="qtc" placeholder="ms"></label>
+        </div>
+        <div class="row">
+          <label class="inl">AF started <select id="onset"><option value="lt48">Under 48 h ago</option><option value="ge48">48 h or more</option><option value="unknown">Unknown</option></select></label>
+          <label class="inl">Still in AF? <select id="ongoing"><option value="yes">Yes</option><option value="no">No, back in sinus</option></select></label>
+          <label class="inl">LVEF <select id="lvef"><option value="unknown">Unknown</option><option value="ok">Over 40%</option><option value="low">40% or less</option></select></label>
+          <label class="inl"><input type="checkbox" id="echo"> Echo done</label>
+        </div>
+        <div class="row">
+          <label class="inl"><input type="checkbox" id="decomp"> Decompensated heart failure now</label>
+          <label class="inl"><input type="checkbox" id="bronch"> Active bronchospasm (wheeze)</label>
+          <label class="inl"><input type="checkbox" id="npo"> Nil by mouth / not absorbing</label>
+          <label class="inl"><input type="checkbox" id="dry"> Looks dry / fluid-responsive</label>
+        </div>
+        <div class="row"><b>Unstable because of the AF?</b>
+          <label class="inl"><input type="checkbox" id="u-hypo"> Hypotension / shock</label>
+          <label class="inl"><input type="checkbox" id="u-isch"> Ischemic chest pain</label>
+          <label class="inl"><input type="checkbox" id="u-edema"> Pulmonary edema</label>
+          <label class="inl"><input type="checkbox" id="u-ment"> Reduced level of consciousness</label>
+        </div>
+        <div class="row muted">Override chart values: <label class="inl">HR <input type="number" id="o-hr"></label> <label class="inl">SBP <input type="number" id="o-sbp"></label> <label class="inl">Weight <input type="number" id="o-kg"> kg</label></div>
+      </div>
+    </details>
+
+    <div class="tiles" id="tiles"></div>
+
+    <details class="card" open><summary><span>Plan now</span><span class="muted" id="plansum"></span></summary><div class="body plan" id="plan"></div></details>
+    <details class="card" open><summary><span>Heart rate and BP (3 days)</span><span class="muted">rate drugs given are marked</span></summary><div class="body" id="trend"></div></details>
+    <details class="card" open><summary><span>Which rate drug for this patient</span></summary><div class="body scroll" id="agents"></div></details>
+    <details class="card" open><summary><span>Treat the trigger</span></summary><div class="body plan" id="trigger"></div></details>
+    <details class="card" open><summary><span>Tests</span></summary><div class="body" id="tests"></div></details>
+    <details class="card" open><summary><span>Chart alerts: interactions and QT</span><span class="muted" id="alertsum"></span></summary><div class="body" id="alerts"></div></details>
+    <details class="card" open><summary><span>Anticoagulation</span><span class="muted" id="acsum"></span></summary><div class="body plan" id="ac"></div></details>
+    <details class="card" open><summary><span>When to call for help (IM, ICU, cardiology)</span></summary><div class="body" id="escalate"></div></details>
+    <details class="card"><summary><span>Note draft</span></summary><div class="body"><textarea id="note"></textarea><div class="row"><button id="copy" class="primary">Copy</button><span class="muted">Edit before pasting. Nothing is saved.</span></div></div></details>
+    <div class="src">Sources: CCS 2020 Comprehensive Guidelines for AF (ch. 9 acute management, recs 70-76; CHADS-65); BC GPAC Atrial Fibrillation guideline (2023); 2023 ACC/AHA/ACCP/HRS AF guideline (10.10 AF in acute medical illness); AHA Scientific Statement on AF during acute hospitalization (2023); CAEP 2021 acute AF checklist; RACE II (lenient rate control).</div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+  <script src="../../pdf-overlay.js?v=20261103a"></script>
+  <script src="rules.js?v=20261118a"></script>
+  <script src="chart.js?v=20261118a"></script>
+  <script src="samples.js?v=20261118a"></script>
+  <script src="app.js?v=20261118a"></script>
+</body>
+</html>
