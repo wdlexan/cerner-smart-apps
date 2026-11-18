@@ -7,7 +7,7 @@
 <style>
   @page { size: letter; margin: 8mm 9mm; }
   * { box-sizing: border-box; }
-  body { font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif; color: #1f2933; font-size: 8.2pt; line-height: 1.2; margin: 0; }
+  body { font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif; color: #1f2933; font-size: 8pt; line-height: 1.17; margin: 0; }
   h1 { font-size: 14pt; margin: 0 0 1mm; color: #0b4a99; }
   .sub { color: #5f6c7b; font-size: 9pt; margin-bottom: 3mm; }
   .key { display: flex; gap: 6mm; font-size: 9pt; margin: 0 0 3mm; padding: 2mm 3mm; background: #f5f7fa; border-radius: 2mm; }
@@ -15,7 +15,7 @@
   .ok { background: #e4f4ea; color: #1d6b3a; } .no { background: #fde8e8; color: #9b1c1c; }
   .step { border: 0.3mm solid #dde3ea; border-radius: 2mm; margin: 0 0 2mm; break-inside: avoid; }
   .step > h2 { margin: 0; font-size: 9.6pt; background: #0b6bcb; color: #fff; padding: 1mm 3mm; border-radius: 2mm 2mm 0 0; }
-  .step .f { padding: 0.8mm 3mm 0; font-size: 8.2pt; }
+  .step .f { padding: 0.7mm 3mm 0; font-size: 8pt; }
   .f code, td code { font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 9pt; background: #eef2f7; padding: 0 1mm; border-radius: 1mm; }
   table { border-collapse: collapse; width: 100%; }
   td, th { padding: 0.5mm 2.5mm; vertical-align: top; text-align: left; border-top: 0.25mm solid #eef1f5; }
@@ -26,7 +26,7 @@
   .box { border: 0.3mm solid #dde3ea; border-radius: 2mm; padding: 2mm 3mm; break-inside: avoid; }
   .box h3 { margin: 0 0 1.2mm; font-size: 10pt; color: #0b4a99; }
   .box ul { margin: 0; padding-left: 4.5mm; } .box li { margin: 0.4mm 0; }
-  .warn { background: #fff4e5; border: 0.3mm solid #f0c27b; border-radius: 2mm; padding: 1.6mm 3mm; font-size: 7.8pt; margin-top: 3mm; }
+  .warn { background: #fff4e5; border: 0.3mm solid #f0c27b; border-radius: 2mm; padding: 1mm 3mm; font-size: 7.4pt; margin-top: 2mm; }
   .big { font-size: 12pt; font-weight: 700; letter-spacing: .5mm; color: #9b1c1c; }
   .pb { break-before: page; }
   .small { font-size: 7.8pt; color: #5f6c7b; }
@@ -81,7 +81,7 @@
   </div>
 
   <div class="step"><h2>5. Osmolar gap (high gap without a clear cause)</h2>
-    <div class="f"><code>Osm gap = measured osmolality − (2 × Na + glucose + urea [+ ethanol])</code> &nbsp; all mmol/L, same sample</div>
+    <div class="f"><code>Osm gap = measured osmolality − (2 × Na + glucose + urea [+ 1.25 × ethanol])</code> &nbsp; all mmol/L, same sample; ethanol mg/dL ÷ 4.6 = mmol/L</div>
     <table>
       <tr><td class="m"><span class="ok">✓</span></td><td class="r">≤ 10</td><td>Normal. Does NOT exclude a late toxic alcohol (parent alcohol already metabolised)</td></tr>
       <tr><td class="m"><span class="no">✗</span></td><td class="r">&gt; 10 with high AG</td><td><b>Toxic alcohol until proven otherwise</b> (methanol, ethylene glycol): fomepizole now, nephrology for dialysis, Poison Centre 1-800-567-8911</td></tr>
@@ -90,7 +90,7 @@
   </div>
 
   <div class="step"><h2>6a. Normal-gap acidosis workup: GI or kidney?</h2>
-    <div class="f"><code>Urine AG = UNa + UK − UCl</code> (spot urine; approximates urine NH4+)</div>
+    <div class="f">Causes: <b>USED CRAP</b>: <b>U</b>reteric diversion · <b>S</b>mall bowel fistula · <b>E</b>xtra chloride (saline) · <b>D</b>iarrhoea · <b>C</b>arbonic anhydrase inhibitors · <b>R</b>TA · <b>A</b>ddison · <b>P</b>ancreatic fistula; <b>plus</b> DKA recovery phase (most common on the ward), early CKD, toluene (normal gap, not high).<br><code>Urine AG = UNa + UK − UCl</code> (spot urine; approximates urine NH4+)</div>
     <table>
       <tr><td class="m"><span class="ok">✓</span></td><td class="r">Urine AG negative</td><td>Kidneys excreting acid appropriately → <b>GI loss of HCO3</b> (diarrhoea most common, ileostomy, pancreatic or biliary fistula) or saline load</td></tr>
       <tr><td class="m"><span class="no">✗</span></td><td class="r">Urine AG positive</td><td><b>Renal</b>: renal tubular acidosis or CKD. Unreliable if urine Na &lt; 20 or ketones / other unmeasured anions in urine</td></tr>
@@ -100,16 +100,19 @@
     </table>
   </div>
 
-  <div class="step"><h2>6b. Metabolic alkalosis workup: urine chloride</h2>
+  <div class="step"><h2>6b. Metabolic alkalosis workup: CLEVER PD, sorted by urine chloride then BP</h2>
     <table>
-      <tr><td class="m"><span class="ok">✓</span></td><td class="r">Urine Cl &lt; 20</td><td><b>Chloride-responsive</b>: vomiting, NG suction, past diuretics, post-hypercapnia, contraction → 0.9% saline + KCl, antiemetic</td></tr>
-      <tr><td class="m"><span class="no">✗</span></td><td class="r">Urine Cl &gt; 20</td><td><b>Chloride-resistant</b>: current diuretic, mineralocorticoid excess (check BP; renin/aldosterone), liquorice, severe low K, Bartter/Gitelman → treat cause, replace K and Mg</td></tr>
+      <tr><td class="m"><span class="ok">✓</span></td><td class="r">Urine Cl &lt; 20<br>chloride-responsive</td><td><b>C</b>ontraction · <b>V</b>omiting / NG / GI loss · <b>P</b>ost-hypercapnia · past <b>D</b>iuretics → 0.9% saline + KCl, antiemetic</td></tr>
+      <tr><td class="m"><span class="no">✗</span></td><td class="r">Urine Cl &gt; 20, BP high</td><td><b>E</b>ndocrine (Conn's, Cushing's, renal artery stenosis) · <b>L</b>iquorice → renin and aldosterone</td></tr>
+      <tr><td class="m"><span class="no">✗</span></td><td class="r">Urine Cl &gt; 20, BP normal</td><td>current <b>D</b>iuretic · <b>R</b>enal (Bartter / Gitelman) · <b>E</b>xcess alkali (antacids, bicarbonate, citrate with transfusion) → treat cause</td></tr>
+      <tr><td class="m"></td><td class="r">Any type</td><td>Low K and low Mg keep the alkalosis going: replace both (K ≥ 4)</td></tr>
     </table>
-    <div class="f small" style="padding-bottom:1.6mm">Use urine Cl rather than urine Na: bicarbonate in the urine drags Na with it even when volume-depleted.</div>
+    <div class="f small" style="padding-bottom:1.2mm">Use urine Cl rather than urine Na: bicarbonate in the urine drags Na with it even when volume-depleted.</div>
   </div>
 
   <div class="two">
-    <div class="box"><h3>High-gap causes: <span class="big">GOLDMARK</span> (preferred)</h3>
+    <div class="box"><h3>High-gap causes: first pass <b>LTKR</b>, then <span class="big">GOLDMARK</span></h3>
+      <div style="margin-bottom:1mm"><b>L</b>actate · <b>T</b>oxins · <b>K</b>etones · <b>R</b>enal ("Left Total Knee Replacement"): four buckets, each with a first test.</div>
       <ul>
         <li><b>G</b>lycols: ethylene, propylene (IV lorazepam, phenobarbital)</li>
         <li><b>O</b>xoproline: chronic acetaminophen + malnutrition/sepsis</li>
@@ -122,23 +125,18 @@
       </ul>
       <div class="small" style="margin-top:1mm">First tests: lactate, beta-hydroxybutyrate, glucose, creatinine/urea, osmolality + ethanol (osmolar gap), salicylate, acetaminophen.</div>
     </div>
-    <div class="box"><h3>Older mnemonic: MUDPILES</h3>
+    <div class="box"><h3>Other mnemonics</h3>
       <ul>
-        <li><b>M</b>ethanol · <b>U</b>raemia · <b>D</b>KA</li>
-        <li><b>P</b>ropylene glycol (originally paraldehyde, now obsolete)</li>
-        <li><b>I</b>soniazid &amp; iron (act through lactic acidosis)</li>
-        <li><b>L</b>actic acidosis · <b>E</b>thylene glycol · <b>S</b>alicylate</li>
+        <li><b>MUDPILES</b> (Methanol, Uraemia, DKA, Propylene glycol/Paraldehyde, Isoniazid &amp; iron, Lactate, Ethylene glycol, Salicylate): misses 5-oxoproline, D-lactate, alcoholic/starvation ketoacidosis; paraldehyde obsolete.</li>
+        <li><b>CAT MUD PILES</b> (adds CO/cyanide, Alcoholic ketoacidosis, Toluene, metformin, pyroglutamic acid): complete but long; CO, cyanide, iron, isoniazid, metformin act through lactate; <b>toluene usually gives a normal gap</b>.</li>
+        <li><b>Why GOLDMARK</b>: 8 letters, adds 5-oxoproline and D-lactate, all ketoacidoses, drops obsolete items.</li>
       </ul>
-      <h3 style="margin-top:2.5mm">Why GOLDMARK</h3>
-      <ul>
-        <li>Adds <b>5-oxoproline</b> and <b>D-lactate</b>, which MUDPILES misses and which cause "unexplained" high gaps</li>
-        <li>Covers <b>alcoholic and starvation ketoacidosis</b>, not just DKA</li>
-        <li>Drops rare or indirect items (paraldehyde, isoniazid, iron) that are really lactic acidosis</li>
-      </ul>
+      <h3 style="margin-top:2mm">Respiratory alkalosis: <b>CHAMPS + H</b></h3>
+      <div><b>C</b>NS (stroke, bleed, psychogenic) · <b>H</b>ypoxia (pneumonia, PE, asthma, altitude) · <b>A</b>nxiety, pain · <b>M</b>echanical over-ventilation · <b>P</b>rogesterone, pregnancy · <b>S</b>alicylate, sepsis · <b>+ H</b>epatic failure (chronic, common in cirrhosis)</div>
     </div>
   </div>
 
-  <div class="two" style="margin-top:3mm">
+  <div class="two" style="margin-top:2mm">
     <div class="box"><h3>Red flags: act now</h3>
       <ul>
         <li>pH &lt; 7.1 or &gt; 7.6; HCO3 &lt; 10</li>
@@ -158,11 +156,11 @@
         <li><span class="ok">✓</span> Winter's 1.5 × 9 + 8 = 21.5 (19.5–23.5); pCO2 22 fits</li>
         <li><span class="no">✗</span> AG 137 − 111 = 26; corrected 26.5 → high gap</li>
         <li><span class="ok">✓</span> Δ ratio 16.5 ÷ 15 = 1.1 → pure high gap</li>
-        <li>GOLDMARK: K → euglycaemic DKA (SGLT2i); stop it, DKA protocol with dextrose</li>
+        <li>LTKR → Ketones; GOLDMARK: K → euglycaemic DKA (SGLT2i); stop it, DKA protocol with dextrose</li>
       </ol>
     </div>
   </div>
 
-  <div class="warn"><b>Unverified decision-support draft</b> written by Claude for the Hospitalist Toolkit (Nov 2026). Formulas from standard references (Winter's formula; Boston compensation rules; Figge albumin correction; Berend, NEJM 2014; Mehta et al., Lancet 2008 for GOLDMARK). Check against Island Health protocols and pharmacy before clinical use; interpret with the whole clinical picture.</div>
+  <div class="warn"><b>Unverified decision-support draft</b> written by Claude for the Hospitalist Toolkit (Nov 2026). Sources: Winter's; Boston rules; Figge; Berend NEJM 2014; Mehta Lancet 2008 (GOLDMARK); Purssell 2001 (ethanol × 1.25). Check against Island Health protocols before clinical use.</div>
 </body>
 </html>

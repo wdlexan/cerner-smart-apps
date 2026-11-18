@@ -169,16 +169,16 @@
 
     // ---------- Step 5: osmolar gap ----------
     if (v.osm !== null && Na !== null && v.glucose !== null && v.urea !== null) {
-      var calcOsm = 2 * Na + v.glucose + v.urea + (v.ethanol !== null ? v.ethanol : 0);
+      var calcOsm = 2 * Na + v.glucose + v.urea + (v.ethanol !== null ? 1.25 * v.ethanol : 0);
       var og = v.osm - calcOsm; d.calcOsm = r(calcOsm, 0); d.osmGap = r(og, 0);
-      var t7 = 'Calculated osm = 2 × Na + glucose + urea' + (v.ethanol !== null ? ' + ethanol' : '') + ' = ' + d.calcOsm + '. Measured ' + v.osm + '. Gap = ' + d.osmGap + '. ';
+      var t7 = 'Calculated osm = 2 × Na + glucose + urea' + (v.ethanol !== null ? ' + 1.25 × ethanol' : '') + ' = ' + d.calcOsm + '. Measured ' + v.osm + '. Gap = ' + d.osmGap + '. ';
       var hi7 = og > 10;
       if (hi7) {
         t7 += '> 10 → unmeasured osmoles.';
         if (d.highAG) { flag('high', 'Osmolar gap ' + d.osmGap + ' with a high anion gap — consider methanol / ethylene glycol. Do not wait for levels: fomepizole, nephrology (dialysis) and BC Drug & Poison Information Centre 1-800-567-8911.'); addDisorder('Possible toxic alcohol', 'toxalc'); }
-        else t7 += ' Without a high AG consider isopropanol, ethanol, mannitol, glycine, propylene glycol, severe hyperlipidaemia/hyperproteinaemia.';
+        else t7 += ' Without a high AG consider isopropanol, ethanol not entered, mannitol, glycine, propylene glycol, severe hyperlipidaemia/hyperproteinaemia.';
       } else t7 += 'Normal (≤ 10). A normal gap does NOT exclude late toxic alcohol ingestion (parent compound already metabolised).';
-      step('5. Osmolar gap', !hi7, t7, 'Units mmol/L, so no conversion divisors. Ethanol in mmol/L adds 1:1 (mg/dL ÷ 4.6).');
+      step('5. Osmolar gap', !hi7, t7, 'Units mmol/L, so no conversion divisors. Ethanol raises measured osmolality by about 1.25 × its molar concentration (Purssell 2001); mg/dL ÷ 4.6 = mmol/L.');
     } else if (d.highAG) {
       step('5. Osmolar gap', null, 'High anion gap without a measured osmolality — send serum osmolality (with glucose, urea, Na, ethanol on the same sample) if the cause is not obvious.');
     }

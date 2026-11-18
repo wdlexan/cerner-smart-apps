@@ -47,6 +47,9 @@ o = R.interpret({ pH: 7.14, pCO2: 18, HCO3: 6, tCO2: 6, Na: 140, Cl: 104, albumi
 eq("F osm gap", o.derived.osmGap, 31); has("F toxic alcohol flag", o.flags, "methanol / ethylene glycol"); has("F toxic alcohol disorder", o.disorders, "toxic alcohol");
 eq("F Winter's ok", stepOk(o, "2."), true); has("F HCO3 < 10 flag", o.flags, "very little buffer");
 
+// F2: ethanol 40 mmol/L counts x 1.25: calc 2*140+5+5+50 = 340, measured 345 -> gap 5
+o = R.interpret({ Na: 140, glucose: 5, urea: 5, ethanol: 40, osm: 345 }, {}); eq("F2 ethanol x1.25", o.derived.calcOsm, 340); eq("F2 gap", o.derived.osmGap, 5);
+
 // G: salicylate; pH 7.46, pCO2 20, HCO3 14; AG 141-(104+14) = 23
 o = R.interpret({ pH: 7.46, pCO2: 20, HCO3: 14, tCO2: 14, Na: 141, Cl: 104, salicylate: 3.6 }, {});
 has("G resp alk", o.disorders, "Respiratory alkalosis"); has("G HAGMA", o.disorders, "High anion gap"); has("G salicylate toxic", o.flags, "Salicylate 3.6");

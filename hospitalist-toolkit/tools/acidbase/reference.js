@@ -3,7 +3,7 @@
    Nat Rev Nephrol 2010 metabolic acidosis; Emmett 2020 metabolic alkalosis; KDIGO/BICAR-ICU for bicarbonate). Verify before clinical use. */
 (function () {
   window.ACIDBASE_REF = {
-    hagma: { h: "High anion gap metabolic acidosis", mn: "GOLDMARK",
+    hagma: { h: "High anion gap metabolic acidosis", mn: "first pass LTKR (Lactate, Toxins, Ketones, Renal), then GOLDMARK",
       causes: [
         ["Glycols (ethylene, propylene)", "Osmolar gap early; oxalate crystals, AKI; propylene glycol from IV lorazepam/phenobarbital infusions."],
         ["5-Oxoproline (pyroglutamic acid)", "Chronic acetaminophen with malnutrition, sepsis, CKD, female; often unexplained HAGMA with normal lactate and ketones."],
@@ -18,7 +18,7 @@
         "Toxic alcohol suspected: fomepizole without waiting for levels, nephrology for haemodialysis, BC Drug & Poison Information Centre 1-800-567-8911.",
         "IV sodium bicarbonate: not routine for lactic or ketoacidosis; reasonable if pH < 7.2 with AKI (BICAR-ICU), severe hyperkalaemia, or for salicylate/toxic alcohol per Poison Centre. Watch K, Na, volume and CO2 clearance.",
         "Hold metformin and SGLT2 inhibitors while acidotic."] },
-    nagma: { h: "Normal anion gap (hyperchloraemic) metabolic acidosis", mn: "HARDASS / GI vs kidney",
+    nagma: { h: "Normal anion gap (hyperchloraemic) metabolic acidosis", mn: "USED CRAP + DKA recovery; sort GI vs kidney with the urine AG",
       causes: [
         ["GI bicarbonate loss", "Diarrhoea, ileostomy, pancreatic/biliary fistula or drain; urine AG negative."],
         ["Chloride load", "Large volumes of 0.9% saline; switch to a balanced crystalloid (Ringer's lactate, Plasma-Lyte)."],
@@ -27,12 +27,14 @@
         ["Type 4 RTA (hypoaldosteronism)", "High K; diabetic kidney disease, ACEi/ARB, spironolactone, trimethoprim, heparin, tacrolimus/cyclosporine, NSAIDs."],
         ["Carbonic anhydrase inhibitors", "Acetazolamide, topiramate, zonisamide."],
         ["Recovery phase of DKA", "Ketones lost in urine replaced by chloride; expected — not a reason to stop insulin."],
-        ["Early CKD, ureteral diversion", "Ileal conduit, ureterosigmoidostomy."]],
+        ["Ureteric diversion, early CKD", "Ileal conduit, ureterosigmoidostomy; CKD before the gap rises."],
+        ["Addison disease / hypoaldosteronism", "High K; see type 4 RTA."],
+        ["Toluene (glue/paint sniffing)", "Hippurate is cleared fast by the kidney, so usually a NORMAL gap with low K (often listed wrongly under high gap)."]],
       tests: ["Urine Na, K, Cl → urine anion gap", "Urine pH (fresh sample)", "Serum K; glucose and phosphate in urine if proximal RTA suspected", "Review fluids given (saline volume) and drains/stoma output"],
       steps: ["Stop or reduce saline; use balanced crystalloid.", "Replace K before or with bicarbonate in hypokalaemic RTA/diarrhoea.",
         "Oral sodium bicarbonate (or citrate) for chronic RTA/CKD with HCO3 < 18–22; IV bicarbonate if severe (pH < 7.2) — NAGMA responds better than organic acidoses.",
         "Type 4: treat hyperkalaemia, review culprit drugs, loop diuretic if volume allows; fludrocortisone rarely."] },
-    metalk: { h: "Metabolic alkalosis", mn: "Chloride-responsive vs resistant",
+    metalk: { h: "Metabolic alkalosis", mn: "CLEVER PD, sorted by urine Cl then BP",
       causes: [
         ["Vomiting / NG suction", "Urine Cl < 20; often low K."],
         ["Diuretics (loop, thiazide)", "Urine Cl > 20 while acting, < 20 after stopping."],
@@ -58,7 +60,7 @@
       steps: ["Correct the cause; naloxone if opioid toxicity suspected.", "Titrate O2 to 88–92% if chronic retainer.",
         "NIV (BiPAP) for acute hypercapnic acidosis with pH < 7.35 in COPD; ICU/intubation if drowsy, failing NIV or unable to protect airway.",
         "Do not give bicarbonate for respiratory acidosis (raises CO2)."] },
-    respalk: { h: "Respiratory alkalosis", mn: "Hyperventilation",
+    respalk: { h: "Respiratory alkalosis", mn: "CHAMPS + H (hepatic)",
       causes: [
         ["Hypoxaemia", "PE, pneumonia, pulmonary oedema, altitude."],
         ["Sepsis (early)", "Often first sign; check lactate."],
