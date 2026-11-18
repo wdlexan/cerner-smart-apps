@@ -21,6 +21,16 @@
 /* Sections */
 .edr-section { margin-bottom: 18px; }
 .edr-h { background: #dbe9f7; color: #0b3d6e; padding: 6px 12px; border-radius: 8px; border: 1px solid #b5d4f4; }
+details.edr-section > summary.edr-h { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px; user-select: none; }
+details.edr-section > summary.edr-h::-webkit-details-marker { display: none; }
+details.edr-section > summary.edr-h::before { content: "▸"; font-size: 13px; width: 12px; transition: transform .15s; }
+details.edr-section[open] > summary.edr-h::before { transform: rotate(90deg); }
+details.edr-section > summary.edr-h h3 { margin: 0; font-size: 15px; }
+details.edr-section > summary.edr-h:hover { background: #cfe2f5; }
+details.edr-section > summary.edr-h:focus-visible { outline: 2px solid #0b4f8a; outline-offset: 2px; }
+.edr-toggle-all { display: flex; justify-content: flex-end; gap: 6px; margin: 4px 0 8px; }
+.edr-toggle-all button { font: inherit; font-size: 12.5px; padding: 3px 10px; border-radius: 6px; border: 1px solid #b0b0b0; background: #fff; color: #0b3d6e; cursor: pointer; }
+@media print { details.edr-section > .edr-sec-body { display: block !important; } .edr-toggle-all { display: none; } }
 .edr-card { border: 1px solid #d0d0d0; border-radius: 10px; padding: 10px 14px; margin: 8px 0; background: #fff; }
 .edr-card-red { border-color: #f09595; background: #fffafa; }
 .edr-card-placeholder { border-style: dashed; background: #fafafa; }

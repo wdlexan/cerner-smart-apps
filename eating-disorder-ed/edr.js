@@ -995,14 +995,18 @@
     if (ctx.age != null && ctx.age < 18) H.push('<div class="edr-incomplete" role="alert"><strong>This patient is under 18.</strong> These are adult criteria; use the paediatric (MEED / SAHM) thresholds instead.</div>');
     H.push(serviceHtml(rt));
     H.push(verdictHtml(a, rt.admitted));
-    H.push('<section class="edr-section"><h3 class="edr-h">1. Today</h3>' + measuresHtml(a) + '</section>');
-    H.push('<section class="edr-section"><h3 class="edr-h">2. Bedside assessment</h3>' + bedsideHtml(a, state.answers) + '</section>');
-    H.push('<section class="edr-section"><h3 class="edr-h">3. Decision</h3>' + refeedingHtml(a.refeeding) + decisionHtml(a, state.checks) +
+    // Collapsible sections; open/closed state is kept in state.closed so it survives redraws.
+    const closed = state.closed || {};
+    const sec = (id, title, body) => '<details class="edr-section" data-sec="' + id + '"' + (closed[id] ? '' : ' open') + '><summary class="edr-h"><h3>' + title + '</h3></summary><div class="edr-sec-body">' + body + '</div></details>';
+    H.push('<div class="edr-toggle-all"><button type="button" class="edr-collapse-all">Collapse all</button> <button type="button" class="edr-expand-all">Expand all</button></div>');
+    H.push(sec('today', '1. Today', measuresHtml(a)));
+    H.push(sec('bedside', '2. Bedside assessment', bedsideHtml(a, state.answers)));
+    H.push(sec('decision', '3. Decision', refeedingHtml(a.refeeding) + decisionHtml(a, state.checks) +
       '<section class="edr-card"><h3>Summary for the note</h3><textarea class="edr-summary" rows="9" readonly>' + esc(summaryText(ctx, a, hist,
         (a.verdict === 'red' ? ADMIT_CHECKS : DISCHARGE_CHECKS).map((label, i) => ({ label, checked: !!state.checks[i] })), rt)) + '</textarea>' +
-      '<button type="button" class="edr-copy">Copy summary</button> <span class="edr-copied" aria-live="polite"></span></section></section>');
-    H.push('<section class="edr-section"><h3 class="edr-h">4. Care plan</h3>' + carePlanHtml(cp) + '</section>');
-    H.push('<section class="edr-section"><h3 class="edr-h">5. Past visits (' + ctx.historyMonths + ' months)</h3>' + historyHtml(ctx, hist) + '</section>');
+      '<button type="button" class="edr-copy">Copy summary</button> <span class="edr-copied" aria-live="polite"></span></section>'));
+    H.push(sec('careplan', '4. Care plan', carePlanHtml(cp)));
+    H.push(sec('history', '5. Past visits (' + ctx.historyMonths + ' months)', historyHtml(ctx, hist)));
     H.push('<p class="edr-disclaimer">Decision support only, from data available through FHIR and what you enter here. Adult criteria: ' +
       '<a href="' + LINKS.meed + '" target="_blank" rel="noopener">MEED 2022 (RCPsych CR233)</a>, ' +
       '<a href="' + LINKS.apa + '" target="_blank" rel="noopener">APA 2023 guideline</a>, refeeding risk <a href="' + LINKS.nice + '" target="_blank" rel="noopener">NICE CG32</a>. ' +
@@ -1049,12 +1053,21 @@
     const hist = historySummary(ctx);
     const cp = findCarePlan(ctx);
     let scrollY = 0, last = null;
+    state.closed = state.closed || {};
+    const wireSections = () => {
+      container.querySelectorAll('details.edr-section').forEach(d => d.addEventListener('toggle', () => { state.closed[d.dataset.sec] = !d.open; }));
+      const all = (open) => container.querySelectorAll('details.edr-section').forEach(d => { d.open = open; state.closed[d.dataset.sec] = !open; });
+      const c = container.querySelector('.edr-collapse-all'), e = container.querySelector('.edr-expand-all');
+      if (c) c.onclick = () => all(false);
+      if (e) e.onclick = () => all(true);
+    };
     const draw = (focusKey) => {
       const a = assess(ctx, state.answers);
       const rt = routing(ctx, state.answers, a, state.site);
       container.innerHTML = render(ctx, a, hist, cp, state, rt);
       last = { a, rt };
       wire();
+      wireSections();
       if (focusKey) {
         const el = container.querySelector('[data-k="' + focusKey + '"]');
         if (el) { el.focus(); if (el.setSelectionRange && el.type === 'text') el.setSelectionRange(el.value.length, el.value.length); }
