@@ -185,6 +185,23 @@ const SYSTEMS = [
   ]},
 ];
 
+// Review of systems: each symptom is + reports, − denies, or untouched
+const ROS = [
+  { id: "const", name: "Constitutional", s: ["fever", "chills", "rigors", "night sweats", "weight loss", "fatigue", "reduced appetite", "falls"] },
+  { id: "eyes", name: "Eyes", s: ["vision change", "double vision", "eye pain", "red eye"] },
+  { id: "ent", name: "ENT", s: ["sore throat", "ear pain", "hearing loss", "nasal congestion", "dental pain", "mouth sores", "difficulty swallowing"] },
+  { id: "cvs", name: "Cardiovascular", s: ["chest pain", "palpitations", "syncope", "presyncope", "orthopnea", "PND", "leg swelling", "claudication"] },
+  { id: "resp", name: "Respiratory", s: ["shortness of breath", "cough", "sputum", "hemoptysis", "wheeze", "pleuritic chest pain"] },
+  { id: "gi", name: "Gastrointestinal", s: ["nausea", "vomiting", "abdominal pain", "diarrhea", "constipation", "melena", "hematochezia", "hematemesis", "heartburn", "jaundice", "change in bowel habit"] },
+  { id: "gu", name: "Genitourinary", s: ["dysuria", "frequency", "urgency", "hematuria", "urinary retention", "incontinence", "flank pain", "reduced urine output", "genital discharge or bleeding"] },
+  { id: "msk", name: "Musculoskeletal", s: ["joint pain", "joint swelling", "back pain", "neck pain", "myalgia", "stiffness"] },
+  { id: "skin", name: "Skin", s: ["rash", "itch", "wounds or ulcers", "easy bruising", "new skin lesions"] },
+  { id: "neuro", name: "Neurological", s: ["headache", "dizziness or vertigo", "focal weakness", "numbness or tingling", "speech change", "confusion", "seizure", "gait change", "tremor", "memory problems"] },
+  { id: "psych", name: "Psychiatric", s: ["low mood", "anxiety", "sleep problems", "suicidal thoughts", "hallucinations", "alcohol or substance use"] },
+  { id: "endo", name: "Endocrine", s: ["polyuria", "polydipsia", "heat intolerance", "cold intolerance", "hypoglycemia symptoms"] },
+  { id: "heme", name: "Hematologic / lymphatic", s: ["easy bleeding", "swollen glands", "previous blood clots"] },
+];
+
 // Exam templates: which systems are shown (and filled by "All normal")
 const TEMPLATES = {
   "Admission – full":        ["gen","heent","cvs","resp","abdo","lines","skin","msk","neuro","psych"],
@@ -218,6 +235,9 @@ const state = {
   free: {},    // sys -> free text
   vit: {},     // vital id -> value
   vitTime: "",
+  ros: {},     // "sys.i" -> "p" | "n"
+  rosFree: {}, // sys -> free text
+  view: "exam",
   edited: false,
 };
 const $ = (s) => document.querySelector(s);
@@ -318,6 +338,57 @@ function clickChip(sys, b) {
   renderSystems(); build();
 }
 
+// ---------------------------------------------------------------- ROS
+function renderRos() {
+  const box = $("#ros"); box.innerHTML = "";
+  ROS.forEach(sys => {
+    const vals = sys.s.map((_, i) => state.ros[sys.id + "." + i]);
+    const nP = vals.filter(v => v === "p").length, nN = vals.filter(v => v === "n").length;
+    const card = document.createElement("div"); card.className = "card";
+    card.innerHTML = `<h2>${sys.name} <span class="st ${nP ? "ab" : nN ? "ok" : ""}">${nP ? nP + " positive" : nN ? "negative" : "not asked"}</span><span class="sp"></span>
+        <button class="norm" data-neg>All negative</button><button data-clr>Clear</button></h2>
+      <div class="rchips">${sys.s.map((x, i) => `<button class="rc ${vals[i] || ""}" data-i="${i}">${x}</button>`).join("")}</div>
+      <div class="free"><input placeholder="Details (onset, severity…)" value="${(state.rosFree[sys.id] || "").replace(/"/g, "&quot;")}" data-free></div>`;
+    card.querySelectorAll(".rc").forEach(b => b.onclick = () => {
+      const k = sys.id + "." + b.dataset.i, v = state.ros[k];
+      if (!v) state.ros[k] = "p"; else if (v === "p") state.ros[k] = "n"; else delete state.ros[k];
+      renderRos(); build();
+    });
+    card.querySelector("[data-neg]").onclick = () => { sys.s.forEach((_, i) => { const k = sys.id + "." + i; if (state.ros[k] !== "p") state.ros[k] = "n"; }); renderRos(); build(); };
+    card.querySelector("[data-clr]").onclick = () => { sys.s.forEach((_, i) => delete state.ros[sys.id + "." + i]); state.rosFree[sys.id] = ""; renderRos(); build(); };
+    card.querySelector("[data-free]").oninput = (e) => { state.rosFree[sys.id] = e.target.value; build(); };
+    box.appendChild(card);
+  });
+}
+
+function rosLines(abnOnly) {
+  const flag = $("#optFlag").checked, lines = [];
+  let anyAsked = false;
+  ROS.forEach(sys => {
+    const pos = [], neg = [];
+    sys.s.forEach((x, i) => { const v = state.ros[sys.id + "." + i]; if (v === "p") pos.push(x); else if (v === "n") neg.push(x); });
+    const fr = (state.rosFree[sys.id] || "").trim();
+    if (!pos.length && !neg.length && !fr) return;
+    anyAsked = true;
+    const parts = [];
+    if (pos.length) parts.push((flag ? "*" : "") + "Reports " + pos.join(", "));
+    if (fr) parts.push(cap(fr.replace(/\.$/, "")));
+    if (neg.length && !abnOnly) parts.push("Denies " + neg.join(", "));
+    if (parts.length) lines.push(`${sys.name}: ${parts.join(". ")}.`);
+  });
+  if (anyAsked && $("#optRosRest").checked && !abnOnly) lines.push("All other systems reviewed and negative.");
+  return lines;
+}
+
+function setView(v) {
+  state.view = v;
+  $("#rosView").style.display = v === "ros" ? "" : "none";
+  $("#examView").style.display = v === "exam" ? "" : "none";
+  $("#tplWrap").style.display = v === "exam" ? "" : "none";
+  $("#vExam").classList.toggle("on", v === "exam"); $("#vRos").classList.toggle("on", v === "ros");
+  $("#allNormal").textContent = v === "ros" ? "All negative" : "All normal";
+}
+
 // ---------------------------------------------------------------- note
 const cap = s => s ? s[0].toUpperCase() + s.slice(1) : s;
 
@@ -357,11 +428,16 @@ function noteLines(abnOnly) {
 
 function buildText(abnOnly = false) {
   const { lines, notDone } = noteLines(abnOnly);
-  const out = [];
-  if ($("#optHdr").checked) {
-    const d = new Date();
-    out.push(`PHYSICAL EXAMINATION (${d.toLocaleDateString("en-CA")} ${d.toTimeString().slice(0,5)})`);
+  const out = [], d = new Date(), stamp = `${d.toLocaleDateString("en-CA")} ${d.toTimeString().slice(0,5)}`;
+  const rl = rosLines(abnOnly);
+  if (rl.length) {
+    out.push($("#optHdr").checked ? `REVIEW OF SYSTEMS (${stamp})` : "REVIEW OF SYSTEMS");
+    out.push(...($("#optPara").checked ? [rl.join(" ")] : rl), "");
   }
+  const examAny = lines.length || ($("#incVit").checked && vitalsLine());
+  if (!examAny && rl.length) return out.join("\n").trim();
+  if ($("#optHdr").checked) out.push(`PHYSICAL EXAMINATION (${stamp})`);
+  else if (rl.length) out.push("PHYSICAL EXAMINATION");
   if ($("#incVit").checked && !abnOnly) { const vl = vitalsLine(); if (vl) out.push(vl); }
   const body = $("#optPara").checked ? [lines.join(" ")] : lines;
   out.push(...body.filter(Boolean));
@@ -450,12 +526,19 @@ async function init() {
 
   renderVitals(); renderSystems(); build();
 
+  $("#vExam").onclick = () => setView("exam");
+  $("#vRos").onclick = () => setView("ros");
+  renderRos();
   $("#allNormal").onclick = () => {
+    if (state.view === "ros") {
+      ROS.forEach(sys => sys.s.forEach((_, i) => { const k = sys.id + "." + i; if (state.ros[k] !== "p") state.ros[k] = "n"; }));
+      renderRos(); build(); return;
+    }
     SYSTEMS.forEach(s => { if (state.shown.has(s.id)) s.els.forEach(e => { if (!isAbn(s, e)) state.el[key(s.id, e.id)] = "n"; }); });
     renderSystems(); build();
   };
-  $("#clearAll").onclick = () => { state.el = {}; state.free = {}; state.edited = false; $("#edited").style.display = "none"; renderSystems(); build(); };
-  ["#optFlag","#optPara","#optNE","#optHdr","#incVit"].forEach(s => $(s).onchange = build);
+  $("#clearAll").onclick = () => { if (state.view === "ros") { state.ros = {}; state.rosFree = {}; renderRos(); build(); return; } state.el = {}; state.free = {}; state.edited = false; $("#edited").style.display = "none"; renderSystems(); build(); };
+  ["#optFlag","#optPara","#optNE","#optHdr","#incVit","#optRosRest"].forEach(s => $(s).onchange = build);
   $("#out").oninput = () => { state.edited = true; $("#edited").style.display = "block"; };
   $("#rebuild").onclick = (e) => { e.preventDefault(); state.edited = false; $("#edited").style.display = "none"; build(); };
   $("#copy").onclick = () => copyText($("#out").value);

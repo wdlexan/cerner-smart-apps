@@ -57,6 +57,13 @@
   .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1d2433;color:#fff;padding:8px 16px;border-radius:8px;opacity:0;transition:opacity .2s}
   .toast.show{opacity:1}
   .tip{font-size:12px;color:var(--muted);padding:0 2px 10px}
+  .viewsw button{border-radius:0;margin:0}.viewsw button:first-child{border-radius:6px 0 0 6px}.viewsw button:last-child{border-radius:0 6px 6px 0;margin-left:-1px}
+  .viewsw button.on{background:#f0b429;color:#1d2433;border-color:#f0b429;font-weight:700}
+  .rchips{display:flex;flex-wrap:wrap;gap:5px;padding:9px 12px}
+  .rc{font:inherit;font-size:12.5px;padding:3px 9px;border-radius:14px;border:1px solid var(--line);background:#fff;cursor:pointer;color:var(--ink)}
+  .rc.p{background:var(--ab);border-color:var(--ab);color:#fff}
+  .rc.p::before{content:"+ "} .rc.n::before{content:"− "}
+  .rc.n{background:var(--okbg);border-color:var(--ok);color:var(--ok)}
 </style>
 </head>
 <body>
@@ -65,7 +72,8 @@
   <span class="pt" id="pt">Loading patient…</span>
   <span class="badge" id="demo" style="display:none">DEMO PATIENT</span>
   <span style="flex:1"></span>
-  <label style="font-size:12.5px">Exam template
+  <span class="viewsw"><button id="vExam" class="on">Physical exam</button><button id="vRos">Review of systems</button></span>
+  <label style="font-size:12.5px" id="tplWrap">Exam template
     <select id="tpl"></select>
   </label>
   <button id="allNormal" title="Mark every element in the shown systems normal">All normal</button>
@@ -74,6 +82,11 @@
 
 <main>
   <section>
+    <div id="rosView" style="display:none">
+      <div class="tip">Click a symptom once for <b style="color:var(--ab)">+ reports</b>, twice for <b style="color:var(--ok)">− denies</b>, three times to clear. "All negative" marks every untouched symptom in that system as denied. Untouched symptoms are left out of the note.</div>
+      <div id="ros"></div>
+    </div>
+    <div id="examView">
     <div class="tip">Click <b style="color:var(--ok)">normal</b> or an <b style="color:var(--ab)">abnormal</b> finding for each item. Abnormal replaces normal for that item. Untouched items are left out of the note. Click a system name to hide it from this exam.</div>
     <div class="card" id="vitCard">
       <h2>Vitals <span class="sp"></span><label style="font-size:12px;font-weight:400"><input type="checkbox" id="incVit" checked> include in note</label></h2>
@@ -81,6 +94,7 @@
       <div class="vsrc" id="vsrc"></div>
     </div>
     <div id="systems"></div>
+    </div>
   </section>
 
   <aside>
@@ -91,6 +105,7 @@
         <label><input type="checkbox" id="optPara"> Single paragraph</label>
         <label><input type="checkbox" id="optNE"> List systems not examined</label>
         <label><input type="checkbox" id="optHdr" checked> Header with date/time</label>
+        <label><input type="checkbox" id="optRosRest"> ROS: "all other systems reviewed and negative"</label>
       </div>
       <div class="edited" id="edited">You edited the note by hand. Clicking findings will not overwrite it — <a href="#" id="rebuild">rebuild from clicks</a>.</div>
       <div style="padding:0 12px 10px"><textarea id="out" spellcheck="false"></textarea></div>
@@ -102,6 +117,6 @@
   </aside>
 </main>
 <div class="toast" id="toast"></div>
-<script src="app.js?v=20261117b"></script>
+<script src="app.js?v=20261117c"></script>
 </body>
 </html>
