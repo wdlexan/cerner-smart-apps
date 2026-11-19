@@ -11,7 +11,14 @@ const fmt = (k, v) => (v == null ? "" : String(rd(v, DEC[k] != null ? DEC[k] : 0
 const MF = ["K", "phos", "Ca", "iCa", "Mg", "albumin", "creatinine", "glucose", "tCO2", "Na", "weight", "QTc", "CK", "urate", "LDH", "plt", "wbc", "PTH", "vitD", "uK", "uCr"];
 /* how old a chart value may be (hours) to be used */
 const AGE = { K: 72, phos: 72, Ca: 72, iCa: 72, Mg: 72, albumin: 168, creatinine: 72, glucose: 24, tCO2: 72, Na: 72, weight: 336, QTc: 168, CK: 168, urate: 168, LDH: 168, plt: 168, wbc: 168, PTH: 8760, vitD: 8760, uK: 168, uCr: 168 };
-const NAMES = { K: "Potassium", phos: "Phosphate", Ca: "Calcium" };
+const NAMES = { K: "Potassium", phos: "Phosphate", Ca: "Calcium", Mg: "Magnesium" };
+/* printable infosheets (sources: tools/lytes/<name>.html) and the guideline behind each, if there is one */
+const PDFS = {
+  K: { file: "potassium.pdf", label: "Potassium infosheet (PDF): low and high K, mild / moderate / severe, treatment, when to repeat labs", src: ["UKKA"] },
+  phos: { file: "phosphate.pdf", label: "Phosphate infosheet (PDF): low and high PO4, mild / moderate / severe, treatment, when to repeat labs", src: [] },
+  Ca: { file: "hypercalcemia.pdf", label: "Hypercalcemia infosheet (PDF): mild, moderate, severe — treatment and when to repeat labs", src: ["SFE_HYPER", "ES2023"] },
+  Mg: { file: "magnesium.pdf", label: "Magnesium infosheet (PDF): low and high Mg, mild / moderate / severe, treatment, when to repeat labs", src: [] } };
+const PDF_V = "20261118c";
 const state = { f: null, x: {} };
 
 /* ---- values ---- */
@@ -70,16 +77,16 @@ function draw() {
   $("alerts").innerHTML = fl.length ? fl.map((f) => `<div class="alert ${f.lvl}">${esc(f.text)}</div>`).join("") : `<div class="muted">${state.f || nt ? "None found." : "Load a patient or type values."}</div>`;
   $("alertsum").textContent = fl.length ? fl.filter((f) => f.lvl === "urgent").length + " urgent, " + fl.length + " total" : "";
 
-  ["K", "phos", "Ca"].forEach((e) => drawPlan(e, a, m));
+  ["K", "phos", "Ca", "Mg"].forEach((e) => drawPlan(e, a, m));
   drawMeds(a); drawRef(a); NOTE.update();
 }
 
 function drawPlan(e, a, m) {
   const gr = a.g[e], p = a.plans[e], body = $("body-" + e), sum = $("sum-" + e);
-  if (!gr) { sum.innerHTML = '<span class="muted">no value</span>'; body.innerHTML = `<div class="muted">No ${NAMES[e].toLowerCase()} in the chart (3 days). Type a value above, or open the reference: ${refLinks(e)}</div>${e === "Ca" ? caPdf() : ""}`; return; }
+  if (!gr) { sum.innerHTML = '<span class="muted">no value</span>'; body.innerHTML = `<div class="muted">No ${NAMES[e].toLowerCase()} in the chart (3 days). Type a value above, or open the reference: ${refLinks(e)}</div>${pdfRow(e)}`; return; }
   const chipCls = SEVCLS[gr.sev];
   sum.innerHTML = `<span class="chip ${chipCls}">${esc(sevWord(gr))}</span>`;
-  if (!p) { body.innerHTML = `<div class="muted">${esc(NAMES[e])} is in the normal range${e === "Ca" ? " (" + esc(gr.basis) + " " + esc(gr.val) + ")" : ""}. Reference: ${refLinks(e)}</div>${e === "Ca" ? caPdf() : ""}`; return; }
+  if (!p) { body.innerHTML = `<div class="muted">${esc(NAMES[e])} is in the normal range${e === "Ca" ? " (" + esc(gr.basis) + " " + esc(gr.val) + ")" : ""}. Reference: ${refLinks(e)}</div>${pdfRow(e)}`; return; }
   const ref = REF[p.key];
   const causes = p.causes.length ? "<ul>" + p.causes.map((c) => `<li>${esc(c.text)}${c.why ? ` <span class="why">(${esc(c.why)})</span>` : ""}</li>`).join("") + "</ul>" : '<div class="muted">No cause found in the medications, problem list or labs read. See the full list in the reference below.</div>';
   const tiers = { now: "Now", next: "Next", also: "Also" };
@@ -87,7 +94,7 @@ function drawPlan(e, a, m) {
   const SRC = R.SOURCES;
   const rc = (p.recheck || []).length ? `<table class="recheck"><tr><th>When</th><th>What</th><th>Basis</th></tr>${p.recheck.map((r) => { const s0 = SRC[r.src] || SRC.practice;
     return `<tr><td><b>${esc(r.when)}</b></td><td>${esc(r.what)}</td><td class="why">${s0.url ? `<a href="${esc(s0.url)}" target="_blank" rel="noopener">${esc(s0.label)}</a>` : esc(s0.label)}</td></tr>`; }).join("")}</table>` : "";
-  body.innerHTML = `<div class="muted">${esc(ref.grade)}</div>${e === "Ca" ? caPdf() : ""}
+  body.innerHTML = `<div class="muted">${esc(ref.grade)}</div>${pdfRow(e)}
     <h3>Possible causes in this patient</h3>${causes}
     <h3>Treatment</h3>${treat}
     <h3>When to repeat labs</h3>${rc}
@@ -96,12 +103,13 @@ function drawPlan(e, a, m) {
   body.querySelectorAll("[data-ref]").forEach((b) => (b.onclick = () => openRef(b.dataset.ref)));
 }
 /* printable infosheet and the source guidelines for high calcium */
-function caPdf() {
-  return `<div class="row noprint"><a class="pdfbtn" href="hypercalcemia.pdf?v=20261118b" target="_blank" rel="noopener">Hypercalcemia infosheet (PDF): mild, moderate, severe — treatment and when to repeat labs</a>
-    <a href="${esc(R.SOURCES.SFE_HYPER.url)}" target="_blank" rel="noopener">SfE emergency guidance (PDF)</a> · <a href="${esc(R.SOURCES.ES2023.url)}" target="_blank" rel="noopener">Endocrine Society 2023</a></div>`;
+function pdfRow(e) {
+  const d = PDFS[e]; if (!d) return "";
+  const src = d.src.map((k) => `<a href="${esc(R.SOURCES[k].url)}" target="_blank" rel="noopener">${esc(R.SOURCES[k].label)}</a>`).join(" · ");
+  return `<div class="row noprint"><a class="pdfbtn" href="${d.file}?v=${PDF_V}" target="_blank" rel="noopener">${esc(d.label)}</a>${src ? `<span class="why">Source: ${src}</span>` : '<span class="why">No single guideline: common practice, see the sheet</span>'}</div>`;
 }
 function refLinks(e) {
-  const keys = ORDER.filter((k) => REF[k].el === ({ K: "K", phos: "PO4", Ca: "Ca" })[e]);
+  const keys = ORDER.filter((k) => REF[k].el === ({ K: "K", phos: "PO4", Ca: "Ca", Mg: "Mg" })[e]);
   setTimeout(() => document.querySelectorAll("[data-ref]").forEach((b) => (b.onclick = () => openRef(b.dataset.ref))));
   return keys.map((k) => `<button class="linkbtn" data-ref="${k}">${esc(REF[k].title)}</button>`).join(" · ");
 }
@@ -118,7 +126,7 @@ function drawRef(a) {
         ${r.treat.map((c) => `<tr><td>Treat: ${esc(c[0])}</td><td>${esc(c[1])}</td></tr>`).join("")}
         <tr><td>When to repeat labs</td><td>${esc(r.repeat)}</td></tr>
         <tr><td>Pearls</td><td><ul style="margin:0;padding-left:18px">${r.pearls.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></td></tr></table>
-        ${k === "hyperCa" ? caPdf() : ""}<div class="src">Unverified draft from general knowledge: check before use.</div></div></details>`; }).join("");
+        ${pdfRow(({ K: "K", PO4: "phos", Ca: "Ca", Mg: "Mg" })[r.el])}<div class="src">Unverified draft from general knowledge: check before use.</div></div></details>`; }).join("");
     $("ref").dataset.built = "1";
   }
   ORDER.forEach((k) => $("ref-" + k).classList.toggle("hit", hit.indexOf(k) > -1));
@@ -166,18 +174,18 @@ function drawTrend() {
 function lytesNote(full) {
   const L = state.last; if (!L) return null;
   const { a, m, x } = L, v = a.v, g = a.g;
-  if (!g.K && !g.phos && !g.Ca) return null;
+  if (!g.K && !g.phos && !g.Ca && !g.Mg) return null;
   const assess = [], vals = [], causes = [], plan = [];
-  ["K", "phos", "Ca"].forEach((e) => {
+  ["K", "phos", "Ca", "Mg"].forEach((e) => {
     const gr = g[e]; if (!gr) return;
     const p = a.plans[e];
-    if (p) assess.push(R.SEV[p.sev].charAt(0).toUpperCase() + R.SEV[p.sev].slice(1) + " " + REF[p.key].title.replace(/^(Low|High) (\w+) \((\w+)\)$/, "$3") + (e === "Ca" ? " (" + gr.basis + " Ca " + gr.val + ")" : " (" + (e === "K" ? "K " + fmt("K", v.K) : "PO4 " + fmt("phos", v.phos)) + ")"));
+    if (p) assess.push(R.SEV[p.sev].charAt(0).toUpperCase() + R.SEV[p.sev].slice(1) + " " + REF[p.key].title.replace(/^(Low|High) (\w+) \((\w+)\)$/, "$3") + (e === "Ca" ? " (" + gr.basis + " Ca " + gr.val + ")" : " (" + ({ K: "K " + fmt("K", v.K), phos: "PO4 " + fmt("phos", v.phos), Mg: "Mg " + fmt("Mg", v.Mg) })[e] + ")"));
     if (p) { p.causes.forEach((c) => causes.push(c.text + (c.why ? " (" + c.why + ")" : ""))); p.treat.filter((t) => full || t.tier === "now").forEach((t) => plan.push(t.text));
       (p.recheck || []).slice(0, full ? 99 : 2).forEach((r) => plan.push("Repeat labs: " + r.when + ": " + r.what)); }
   });
   if (x.ecg) assess.push("ECG changes present.");
   if (x.symptoms) assess.push("Symptomatic.");
-  if (!assess.length) assess.push("K, PO4 and Ca within normal range.");
+  if (!assess.length) assess.push("K, PO4, Ca and Mg within normal range.");
   [["K", "K"], ["phos", "PO4"], ["Ca", "Ca"], ["iCa", "iCa"], ["Mg", "Mg"], ["albumin", "albumin"], ["creatinine", "creatinine"]].forEach(([k, n]) => { if (v[k] != null) vals.push(n + " " + fmt(k, v[k])); });
   const data = [vals.join(", ") + (v.corrCa != null ? "; corrected Ca " + v.corrCa : "") + (v.eGFR != null ? "; eGFR " + v.eGFR : "")];
   if (v.crRise) data.push(v.crRise);

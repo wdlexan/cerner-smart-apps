@@ -17,7 +17,7 @@
         ["Mild", "KCl 20–40 mmol PO BID–TID (40–80 mmol/day). Each 10 mmol raises K about 0.1 mmol/L (less when K is very low or losses continue)."],
         ["Moderate", "KCl 40 mmol PO 2–3 times in a day, or IV KCl 10 mmol/h peripherally. Recheck after 40–80 mmol."],
         ["Severe or ECG changes", "Cardiac monitor. IV KCl up to 10 mmol/h peripheral, up to 20 mmol/h central with monitoring (local policy), plus PO if able. Give in saline, not dextrose. Recheck every 1–2 h after each 40 mmol."],
-        ["Always", "Correct Mg (magnesium sulfate 2 g IV, 4 g if < 0.5). Treat the cause; for ongoing diuretic loss add spironolactone or amiloride rather than more KCl. Halve doses and recheck sooner with eGFR < 30."],
+        ["Always", "Correct Mg (magnesium sulfate 2 g IV, or 5 g IV over 5 h if < 0.6). Treat the cause; for ongoing diuretic loss add spironolactone or amiloride rather than more KCl. Halve doses and recheck sooner with eGFR < 30."],
         ["Targets", "≥ 3.5; ≥ 4.0 with AF, ischemia, heart failure or digoxin. In DKA hold insulin until K ≥ 3.3."]],
       repeat: "Severe: K 1–2 h after each 40 mmol IV, then every 4–6 h until > 3.0. Moderate: 4–6 h after doses, then next morning. Mild: next morning, then daily on KCl or diuretic. Sooner with eGFR < 30. (Common practice.)",
       pearls: ["Low K that will not correct = low Mg until proven otherwise.", "Hypertension + low K + metabolic alkalosis: think aldosterone excess.", "Periodic paralysis: give small doses; rebound high K is common after the shift reverses."]
@@ -54,9 +54,9 @@
       tests: ["K, Mg, Ca, creatinine, glucose, CK (if weak)", "If cause unclear: urine phosphate and creatinine (fractional excretion of PO4 > 5% with low serum = kidney loss), PTH, 25-OH D, glucose/protein/urate in urine (Fanconi)"],
       treat: [
         ["Mild", "Dietary phosphate; PO phosphate (Phosphate Novartis 500 mg ≈ 16 mmol) 1 tab BID–TID if refeeding risk, ventilated or weak."],
-        ["Moderate", "PO phosphate 16 mmol TID (diarrhea limits dose), or IV 0.16–0.32 mmol/kg over 4–6 h if not eating / ventilated."],
-        ["Severe or symptomatic", "IV 0.32–0.64 mmol/kg (max ~50 mmol per dose) over 6–12 h. Recheck after each dose."],
-        ["Choosing the salt", "Potassium phosphate if K < 4.0 and kidneys normal (≈ 1.5 mmol K per mmol PO4); sodium phosphate if K ≥ 4.0 or eGFR low. Halve doses with eGFR < 30. Never in the same line as calcium; caution with high calcium."],
+        ["Moderate", "PO phosphate 16 mmol TID (diarrhea limits dose), or if not eating / ventilated: potassium phosphate 15 mmol IV peripherally, recheck, repeat once if needed."],
+        ["Severe or symptomatic", "Potassium phosphate 15 mmol IV peripherally; recheck 2–4 h after; repeat 15 mmol while < 0.32 (usually 30–45 mmol in 24 h; ceiling about 0.64 mmol/kg, max 50 mmol)."],
+        ["Choosing the salt", "Standard: potassium phosphate 15 mmol IV via peripheral line (≈ 22 mmol K: counts toward the peripheral K limit of 10 mmol/h; rate and dilution per local protocol). Sodium phosphate 15 mmol instead if K ≥ 5.0, or with eGFR < 30 / dialysis and K ≥ 4.5. With eGFR < 30 give one dose and recheck before repeating. Never in the same line as calcium; caution with high calcium."],
         ["Refeeding", "Thiamine 100 mg before feeding; start feeds at 10–20 kcal/kg/day; daily PO4, K, Mg for 3–5 days; dietitian."]],
       repeat: "2–4 h after each IV dose; every 6–12 h while < 0.32; daily PO4, K, Mg for the first 3–5 days of feeding when refeeding risk. (Common practice.)",
       pearls: ["Low PO4 after ferric carboxymaltose can last weeks and cause osteomalacia with repeat doses.", "In DKA routine phosphate is not needed unless < 0.32 or there is heart failure, respiratory weakness or anemia.", "Low PO4 with low K and low Mg in a thin patient on day 2–4 of feeding: refeeding syndrome."]
@@ -91,7 +91,7 @@
         ["Alkalosis", "Hyperventilation lowers ionized Ca without changing total."]],
       tests: ["Ionized Ca (or albumin), Mg, PO4, creatinine", "PTH and 25-OH vitamin D", "ECG (QTc)", "Lipase if abdominal pain; CK and urate if lysis / rhabdo"],
       treat: [
-        ["First", "Correct Mg if low (magnesium sulfate 2 g IV): Ca will not correct otherwise."],
+        ["First", "Correct Mg if low (magnesium sulfate 2 g IV, or 5 g over 5 h if < 0.6): Ca will not correct otherwise."],
         ["Severe or symptomatic", "Calcium gluconate 10% 10–20 mL (1–2 g) IV in 50–100 mL D5W over 10–20 min (can repeat), then infusion: 10 g calcium gluconate in 1 L D5W or saline at 50 mL/h (0.5–1.5 mg elemental Ca/kg/h), titrated to ionized Ca every 4–6 h. Cardiac monitor. Not with bicarbonate or phosphate in the same line; calcium chloride only by central line."],
         ["Mild / chronic", "Calcium carbonate 500–1000 mg elemental PO BID–TID with meals (citrate if on PPI or achlorhydria); vitamin D3 1000–2000 IU daily (more to replete deficiency)."],
         ["Hypoparathyroidism", "Calcitriol 0.25–0.5 mcg BID plus calcium; aim for low-normal calcium (2.0–2.1) to limit hypercalciuria; endocrinology."],
@@ -119,9 +119,46 @@
         ["Last resort", "Dialysis with low-calcium bath for Ca > 4.0–4.5 with neurologic symptoms or kidney / heart failure preventing fluids. Furosemide only for fluid overload after volume repletion."]],
       repeat: "Ca ≥ 3.5 or symptoms: 6 h after starting saline, then every 6–12 h until falling. 3.0–3.5: every 12–24 h. < 3.0 without symptoms: 24–48 h. Mg, PO4, K daily on IV fluid; Ca on day 2–4 after a bisphosphonate (nadir). No guideline sets fixed intervals: the Society for Endocrinology guidance gives severity bands and the 2–4 day nadir.",
       pearls: ["Hypercalcemia of malignancy usually means advanced disease: a good time for a goals-of-care conversation.", "After a bisphosphonate check Ca, PO4 and Mg: low levels follow in days.", "Calcium-containing antacids plus a PPI/alkali and AKI: milk-alkali syndrome."]
+    },
+    hypoMg: {
+      title: "Low magnesium (hypomagnesemia)", el: "Mg",
+      grade: "Mild 0.60–0.69 · Moderate 0.50–0.59 · Severe < 0.50 mmol/L, or any level with tetany, seizure or arrhythmia. Serum Mg is < 1% of body Mg: a normal level does not rule out depletion.",
+      symptoms: "Tremor, muscle cramps, weakness, tetany, Chvostek and Trousseau signs, nystagmus, confusion, seizures. ECG: long QT, wide QRS, peaked then flat T; AF, VT, torsades de pointes; more digoxin toxicity. Causes low K (kidney loss) and low Ca (PTH blocked) that will not correct until Mg is replaced.",
+      causes: [
+        ["GI loss / low intake", "Diarrhea, laxatives, high-output stoma or fistula, malabsorption, short bowel, pancreatitis, alcohol, malnutrition, long-term PPI."],
+        ["Kidney loss", "Loop and thiazide diuretics, alcohol, osmotic diuresis (glucose, DKA), aminoglycosides, amphotericin, cisplatin, tacrolimus/cyclosporine, foscarnet, pentamidine, cetuximab/panitumumab, Gitelman/Bartter, recovery from AKI or obstruction."],
+        ["Shift into cells", "Refeeding, insulin / DKA treatment, hungry bone after parathyroidectomy, catecholamines."],
+        ["Other", "Massive transfusion (citrate), burns, pregnancy and lactation, critical illness."]],
+      tests: ["K, Ca (ionized), PO4, creatinine, glucose", "ECG (QTc)", "If cause unclear: urine Mg and creatinine. Fractional excretion of Mg > 2–4% with low serum Mg = kidney loss; < 2% = GI loss or intake"],
+      treat: [
+        ["Torsades / seizure / severe symptoms", "Magnesium sulfate 2 g IV over 10–15 min (over 1–2 min in pulseless torsades), cardiac monitor, then the severe dose."],
+        ["Severe (< 0.50) or symptomatic", "Magnesium sulfate 5 g IV over 5 h (about 1 g/h); often a second 5 g over the next 12–24 h."],
+        ["Moderate (0.50–0.59)", "Magnesium sulfate 5 g IV over 5 h, or 2 g IV over 1–2 h if close to 0.60."],
+        ["Mild (0.60–0.69)", "PO magnesium (magnesium oxide 400–800 mg daily–BID, or magnesium glucoheptonate; diarrhea limits dose), or magnesium sulfate 2 g IV over 1–2 h if low K or Ca, arrhythmia or long QT."],
+        ["Kidney function", "eGFR < 30 or dialysis: 2 g at a time and recheck before more (risk of high Mg)."],
+        ["Stop the cause", "Stop or reduce a PPI if possible; amiloride or spironolactone for ongoing diuretic loss; thiamine and slow feeds with alcohol or malnutrition."]],
+      repeat: "Severe: 6–12 h after the IV dose ends, then daily (an earlier level reads falsely high). Others: next morning, then daily while replacing. eGFR < 30: before every repeat dose. (Common practice.)",
+      pearls: ["Slow infusions keep more Mg: fast boluses are largely lost in the urine.", "Check Mg ≥ 6 h after an infusion: an early level is falsely high.", "Low K or low Ca that will not correct: replace Mg."]
+    },
+    hyperMg: {
+      title: "High magnesium (hypermagnesemia)", el: "Mg",
+      grade: "Mild 1.01–1.99 · Moderate 2.0–2.99 · Severe ≥ 3.0 mmol/L, or symptoms (lost reflexes, hypotension, drowsiness, slow breathing). Almost always kidney failure plus a magnesium load.",
+      symptoms: "2–3 mmol/L: nausea, flushing, headache, drowsiness, reduced reflexes. 3–5: loss of patellar reflexes, hypotension, bradycardia, long PR and QRS, urinary retention, ileus. > 5: respiratory depression and paralysis, complete heart block, cardiac arrest. Also lowers calcium (PTH suppressed).",
+      causes: [
+        ["Magnesium load", "Magnesium hydroxide (milk of magnesia), magnesium citrate and other bowel preps (Pico-Salax, Citro-Mag), Mg antacids and enemas, supplements, IV magnesium sulfate (preeclampsia, asthma, torsades)."],
+        ["Low excretion", "AKI or CKD (eGFR < 30), lithium, hypothyroidism, adrenal insufficiency, FHH (mild)."],
+        ["Shift out of cells", "Tumour lysis, rhabdomyolysis, hemolysis, DKA before insulin."]],
+      tests: ["Creatinine, K, Ca (ionized), PO4", "ECG", "Patellar reflexes, respiratory rate, BP, level of consciousness"],
+      treat: [
+        ["All", "Stop all magnesium (laxatives, antacids, enemas, bowel prep, supplements, IV Mg)."],
+        ["Mild, no symptoms", "Stop intake; falls on its own if the kidneys work."],
+        ["Moderate", "IV 0.9% saline plus furosemide 20–40 mg IV if kidneys work and volume allows; check reflexes each shift."],
+        ["Severe or symptomatic", "Calcium gluconate 10% 10–20 mL (1–2 g) IV over 10 min as an antagonist (repeat as needed), cardiac monitor, support breathing (be ready to ventilate). Dialysis with nephrology if eGFR low or Mg stays ≥ 3 with symptoms."]],
+      repeat: "Severe: Mg, Ca, K, creatinine every 4–6 h until < 2.0, with hourly reflexes, respiratory rate and BP. Moderate: every 12–24 h. Mild: next routine bloods. (Common practice.)",
+      pearls: ["Loss of patellar reflexes comes before respiratory depression: check them.", "Milk of magnesia or Mg-containing bowel prep in an older patient with CKD is the classic ward cause.", "Magnesium is cleared by dialysis; calcium only buys time."]
     }
   };
-  const ORDER = ["hypoK", "hyperK", "hypoPhos", "hyperPhos", "hypoCa", "hyperCa"];
+  const ORDER = ["hypoK", "hyperK", "hypoPhos", "hyperPhos", "hypoCa", "hyperCa", "hypoMg", "hyperMg"];
   const api = { REF, ORDER };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else { window.LYTES_REF = REF; window.LYTES_ORDER = ORDER; }
 })();

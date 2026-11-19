@@ -63,11 +63,13 @@
     if (out.dir === "high") { out.key = "hyperCa"; if (x.symptoms && out.sev < 2) out.sev = 2; }
     return out;
   }
-  function gradeMg(m) {
+  /* magnesium: low mild 0.60–0.69, moderate 0.50–0.59, severe < 0.50; high mild 1.01–1.99, moderate 2.0–2.99, severe ≥ 3.0. Symptoms or ECG raise the grade. */
+  function gradeMg(m, x) {
+    x = x || {};
     if (m == null) return null;
-    if (m < 0.70) return { dir: "low", sev: m < 0.5 ? 3 : m < 0.6 ? 2 : 1 };
-    if (m > 1.00) return { dir: "high", sev: m > 2.5 ? 3 : m > 1.5 ? 2 : 1 };
-    return { dir: "normal", sev: 0 };
+    if (m < 0.70) { let s = m < 0.5 ? 3 : m < 0.6 ? 2 : 1; if ((x.ecg || x.symptoms) && s < 3) s = Math.max(s, 2); return { dir: "low", sev: s, key: "hypoMg", basis: "Mg " + m }; }
+    if (m > 1.00) { let s = m >= 3.0 ? 3 : m >= 2.0 ? 2 : 1; if (x.symptoms && m >= 2.0) s = 3; return { dir: "high", sev: s, key: "hyperMg", basis: "Mg " + m }; }
+    return { dir: "normal", sev: 0, key: "", basis: "Mg " + m };
   }
 
   /* ---- medications and problems that matter (name patterns UNVERIFIED; generic and common Canadian brand names) ---- */
@@ -108,6 +110,9 @@
     aminoglyc: /gentamicin|tobramycin|amikacin/i,
     antiepileptic: /phenytoin|phenobarbital|carbamazepine|dilantin/i,
     tenofovir: /tenofovir|truvada|descovy|biktarvy|genvoya|stribild/i,
+    mgLoad: /magnesium (hydroxide|citrate|sulfate|sulphate|oxide|glucoheptonate|gluconate|chloride|lactate)|milk of magnesia|citro-?mag|pico-?salax|rougier|\bmgso4\b/i,
+    egfrInh: /cetuximab|panitumumab|erbitux|vectibix/i,
+    pentamidine: /pentamidine/i,
     sglt2: /empagliflozin|dapagliflozin|canagliflozin|jardiance|forxiga|invokana|synjardy|xigduo/i
   };
   function classifyMeds(names) {
@@ -228,6 +233,29 @@
       add(p.sepsis, "Sepsis / critical illness", p.sepsis);
       add(p.tls.length || p.rhabdo.length ? ["x"] : [], "Tumour lysis / early rhabdomyolysis", p.tls.concat(p.rhabdo));
     }
+    if (key === "hypoMg") {
+      add(m.ppi, "PPI (long-term use lowers gut Mg absorption)", m.ppi);
+      add(m.loop.concat(m.thiazide), "Loop or thiazide diuretic", m.loop.concat(m.thiazide));
+      add(p.alcohol, "Alcohol (intake, kidney loss, diarrhea)", p.alcohol);
+      add(p.vomiting, "GI loss (diarrhea, high-output stoma, malabsorption)", p.vomiting);
+      add(m.laxative.filter((n) => !MEDS.mgLoad.test(n)), "Laxatives", m.laxative.filter((n) => !MEDS.mgLoad.test(n)));
+      add(m.aminoglyc.concat(m.ampho, m.cisplatin, m.cni, m.foscarnet, m.pentamidine, m.egfrInh), "Kidney-wasting drug (aminoglycoside, amphotericin, cisplatin, calcineurin inhibitor, foscarnet, pentamidine, cetuximab/panitumumab)", m.aminoglyc.concat(m.ampho, m.cisplatin, m.cni, m.foscarnet, m.pentamidine, m.egfrInh));
+      add(p.malnutrition, "Refeeding / malnutrition", p.malnutrition);
+      add(p.dka.length || m.insulin.some((n) => /infusion|drip/i.test(n)) ? ["x"] : [], "DKA treatment / insulin (shift into cells, osmotic loss)", p.dka);
+      add(p.pancreatitis, "Pancreatitis", p.pancreatitis);
+      add(p.hyperpara.length && v.phos != null && v.phos < 0.8 ? ["x"] : [], "Hungry bone after parathyroidectomy", p.hyperpara);
+      add(p.diabetes, "Diabetes (glycosuria increases Mg loss)", p.diabetes);
+    }
+    if (key === "hyperMg") {
+      add(eg != null && eg < 30, "Low kidney function (eGFR " + eg + "): cannot excrete Mg", "");
+      add(v.crRise, "Creatinine rising (AKI)", v.crRise);
+      add(m.mgLoad, "Magnesium intake (laxative, antacid, bowel prep, supplement or IV magnesium sulfate)", m.mgLoad);
+      add(m.lithium, "Lithium", m.lithium);
+      add(p.tls.length || p.rhabdo.length ? ["x"] : [], "Cell breakdown (tumour lysis, rhabdomyolysis)", p.tls.concat(p.rhabdo));
+      add(p.dka, "DKA before insulin (shift out of cells)", p.dka);
+      add(p.hypothyroid.concat(p.adrenal), "Hypothyroidism / adrenal insufficiency", p.hypothyroid.concat(p.adrenal));
+      add(v.Ca != null && v.Ca > 2.55 && v.PTH != null && v.PTH >= 2.5 ? ["x"] : [], "Mild high Mg with high Ca and PTH: FHH or hyperparathyroidism", "Ca " + v.Ca);
+    }
     if (key === "hyperCa") {
       add(v.PTH != null && v.PTH >= 2.5, "PTH not suppressed: PTH-mediated (primary or tertiary hyperparathyroidism, lithium, FHH)", "PTH " + v.PTH);
       add(v.PTH != null && v.PTH < 2.5, "PTH suppressed: look for malignancy, vitamin D, granuloma, milk-alkali", "PTH " + v.PTH);
@@ -254,7 +282,7 @@
     const t = [], add = (tier, text) => t.push({ tier, text });
     const w = v.weight, eg = v.eGFR, renal = (eg != null && eg < 30) || x.dialysis || p.dialysis.length > 0;
     const lowMg = v.Mg != null && v.Mg < 0.7, po = !x.npo;
-    const mgLine = () => add(sev >= 2 || (v.Mg != null && v.Mg < 0.6) ? "now" : "next", "Magnesium " + v.Mg + ": give magnesium sulfate " + (v.Mg < 0.5 ? "4 g IV over 4 h" : "2 g IV over 1–2 h") + (renal ? " (eGFR low or dialysis: give 1–2 g and recheck)" : "") + ", or PO magnesium if mild and eating. Low Mg must be fixed for K and Ca to correct.");
+    const mgLine = () => add(sev >= 2 || (v.Mg != null && v.Mg < 0.6) ? "now" : "next", "Magnesium " + v.Mg + ": give magnesium sulfate " + (v.Mg < 0.6 && !renal ? "5 g IV over 5 h" : "2 g IV over 1–2 h") + (renal ? " (eGFR low or dialysis: 2 g only, then recheck)" : "") + ", or PO magnesium if mild and eating. Low Mg must be fixed for K and Ca to correct.");
 
     if (key === "hypoK") {
       if (lowMg) mgLine();
@@ -300,18 +328,23 @@
     }
 
     if (key === "hypoPhos") {
-      const kForSalt = v.K != null ? v.K : null;
-      const salt = kForSalt != null && kForSalt < 4.0 && !renal ? "potassium phosphate" : "sodium phosphate";
-      const saltWhy = kForSalt != null && kForSalt < 4.0 && !renal ? " (K " + kForSalt + " < 4.0)" : renal ? " (eGFR low: avoid K load)" : kForSalt != null ? " (K " + kForSalt + " ≥ 4.0)" : " (K unknown: check before choosing)";
-      const ivDose = (lo, hi) => { if (w == null) return lo + "–" + hi + " mmol/kg (enter weight to calculate)"; let a = Math.round(lo * w), b = Math.min(Math.round(hi * w), 50); if (renal) { a = Math.round(a / 2); b = Math.round(b / 2); } return lo + "–" + hi + " mmol/kg = " + a + "–" + b + " mmol" + (renal ? " (halved for eGFR < 30)" : "") + " (max 50 mmol per dose)"; };
+      /* Standard IV dose (local practice): potassium phosphate 15 mmol IV via a peripheral line, one dose at a time with a recheck.
+         Canadian K phosphate injection is about 3 mmol PO4 + 4.4 mmol K per mL, so 15 mmol PO4 ≈ 22 mmol K (check the product). */
+      const k = v.K, useNa = (k != null && k >= 5.0) || (renal && (k == null || k >= 4.5));
+      const unit = useNa ? "Sodium phosphate 15 mmol IV (instead of potassium phosphate: " + (k != null && k >= 5.0 ? "K " + k + " ≥ 5.0" : "eGFR < 30 or dialysis" + (k != null ? " with K " + k : ", K unknown")) + ")"
+        : "Potassium phosphate 15 mmol IV via peripheral line (≈ 22 mmol K" + (k != null ? "; K " + k : "; check K first") + ")";
+      const ceil = w != null ? " Weight-based ceiling: 0.64 mmol/kg = " + Math.min(Math.round(0.64 * w), 50) + " mmol in 24 h for " + w + " kg." : "";
+      const kNote = useNa ? "" : " The 22 mmol K counts toward the K limits (peripheral max 10 mmol K/h): give over at least 2–3 h, dilution and rate per Island Health / pharmacy protocol.";
+      const once = renal ? " eGFR < 30 or dialysis: one dose, then recheck before any repeat." : "";
       if (sev === 3 || x.symptoms) {
-        add("now", "IV " + salt + saltWhy + ": " + ivDose(0.32, 0.64) + " over 6–12 h (no faster than ~7.5 mmol/h). Do not run in the same line as calcium.");
+        add("now", unit + ". Recheck PO4 2–4 h after it ends; if still < 0.32 give another 15 mmol (usual total 30–45 mmol in 24 h)." + ceil + once + kNote + " Not in the same line as calcium.");
         add("now", "Severe low phosphate can cause respiratory muscle weakness, failure to wean, rhabdomyolysis, hemolysis and heart failure: check CK and look for weakness.");
+        if (po) add("next", "Once above 0.32 and eating: PO phosphate (Phosphate Novartis 500 mg ≈ 16 mmol) 1 tab BID–TID.");
       } else if (sev === 2) {
-        add("now", po ? "PO phosphate (Phosphate Novartis 500 mg tab ≈ 16 mmol): 1 tab TID (≈ 48 mmol/day); diarrhea is common. If not eating, ventilated or < 0.5: IV instead." : "IV " + salt + saltWhy + ": " + ivDose(0.16, 0.32) + " over 4–6 h.");
-        if (po) add("next", "IV alternative: " + salt + saltWhy + " " + ivDose(0.16, 0.32) + " over 4–6 h.");
+        add("now", po ? "PO phosphate (Phosphate Novartis 500 mg tab ≈ 16 mmol): 1 tab TID (≈ 48 mmol/day); diarrhea is common. If not eating, ventilated or < 0.5: IV instead." : unit + " once, recheck, repeat 15 mmol once if still < 0.65." + once + kNote);
+        if (po) add("next", "IV alternative: " + unit + " once, recheck, repeat once if still < 0.65." + once + kNote);
       } else {
-        add("now", po ? "Encourage dietary phosphate (milk, protein); PO phosphate 16 mmol BID if refeeding risk, ventilated or weak." : "IV " + salt + saltWhy + ": " + ivDose(0.08, 0.16) + " over 4–6 h if refeeding risk or symptoms.");
+        add("now", po ? "Encourage dietary phosphate (milk, protein); PO phosphate 16 mmol BID if refeeding risk, ventilated or weak." : unit + " once if refeeding risk or symptoms." + kNote);
       }
       if (v.Ca != null && (v.corrCa || v.Ca) > 2.55) add("now", "Calcium is high: IV phosphate can precipitate calcium phosphate. Discuss before giving IV.");
       if (lowMg) mgLine();
@@ -348,6 +381,33 @@
       if (eg != null && eg < 30) add("next", "CKD: calcitriol and binder choice with nephrology; correct only if symptomatic or severe (vascular calcification risk).");
       if (m.antiresorptive.some((n) => /denosumab|prolia|xgeva|zoledron|zometa|aclasta/i.test(n))) add("also", "After denosumab or zoledronic acid low calcium can last weeks: calcium + vitamin D, and check before the next dose.");
       add("next", "Send if not done: Mg, PO4, PTH, 25-OH D, creatinine, ionized Ca. Low PTH = hypoparathyroid or low Mg; high PTH = vitamin D deficiency, CKD, or PO4 load.");
+    }
+
+    if (key === "hypoMg") {
+      const torsades = x.ecg || (v.QTc != null && v.QTc >= 500);
+      if (sev === 3 && (torsades || x.symptoms)) add("now", "Torsades, seizure, tetany or arrhythmia: magnesium sulfate 2 g IV over 10–15 min (over 1–2 min in arrest / pulseless torsades), then continue as below. Cardiac monitor.");
+      /* stocked sizes: magnesium sulfate 2 g or 5 g IV */
+      if (sev === 3) add("now", renal ? "Magnesium sulfate 2 g IV over 1–2 h (eGFR < 30 or dialysis: 2 g only), recheck Mg before any more." : "Magnesium sulfate 5 g IV over 5 h (about 1 g/h); a second 5 g over the next 12–24 h is often needed: tissue stores refill slowly and about half of IV Mg is lost in the urine.");
+      else if (sev === 2) add("now", renal ? "Magnesium sulfate 2 g IV over 1–2 h (eGFR < 30 or dialysis), then recheck." : "Magnesium sulfate 5 g IV over 5 h (or 2 g IV over 1–2 h if close to 0.6); oral alone is slow at this level.");
+      else add("now", po ? "PO magnesium: magnesium oxide 400–800 mg (≈ 10–20 mmol) daily–BID, or magnesium glucoheptonate per product; diarrhea limits dose. Or magnesium sulfate 2 g IV over 1–2 h if needed quickly (low K or Ca, arrhythmia, QT)." : "Magnesium sulfate 2 g IV over 1–2 h.");
+      if (v.K != null && v.K < 3.5) add("now", "K " + v.K + " is low too: replace Mg with K, or K will not correct.");
+      if ((v.corrCa != null ? v.corrCa : v.Ca) != null && (v.corrCa != null ? v.corrCa : v.Ca) < 2.10) add("now", "Calcium is low too: replace Mg first (low Mg blocks PTH).");
+      if (m.ppi.length) add("next", "On a PPI (" + m.ppi[0] + "): stop or step down if no firm indication; Mg often stays low until it is stopped.");
+      if (m.loop.length || m.thiazide.length) add("also", "Ongoing diuretic loss: amiloride or spironolactone reduces kidney Mg loss.");
+      if (p.alcohol.length || p.malnutrition.length) add("now", "Alcohol / malnutrition: thiamine 100 mg before glucose or feeding; check PO4 and K (refeeding).");
+      add("also", "If the cause is unclear: urine Mg and creatinine (fractional excretion of Mg > 2–4% with low serum Mg = kidney loss; < 2% = GI loss or intake).");
+    }
+
+    if (key === "hyperMg") {
+      add(sev >= 2 ? "now" : "next", "Stop all magnesium: " + (m.mgLoad.length ? m.mgLoad.join("; ") : "laxatives, antacids, enemas, supplements, IV magnesium") + ".");
+      if (sev === 3) {
+        add("now", "Calcium gluconate 10% 10–20 mL (1–2 g) IV over 10 min: antagonizes Mg at the heart and nerves (repeat if hypotension, arrhythmia or breathing problems return). Cardiac monitor.");
+        add("now", "Check airway and breathing (respiratory depression and paralysis above ~5 mmol/L): be ready to ventilate. Check reflexes: loss of patellar reflexes is the early warning.");
+      }
+      if (sev >= 2) {
+        if (renal || v.crRise) add("now", "Kidneys cannot clear Mg (eGFR " + (v.eGFR != null ? v.eGFR : "low") + (v.crRise ? ", AKI" : "") + "): nephrology for dialysis if Mg ≥ 3 with symptoms, or rising.");
+        else add("now", "Kidneys working: IV 0.9% saline plus furosemide 20–40 mg IV increases Mg excretion (if volume allows).");
+      } else add("now", "Mild and no symptoms: stop intake; it falls on its own if kidneys work.");
     }
 
     if (key === "hyperCa") {
@@ -417,6 +477,17 @@
       if (p.hypopara.length) add("Every 12 h for 24–48 h after neck surgery", "Calcium; then daily.");
       add("After discharge", "Weekly calcium until stable on oral calcium / vitamin D, then every 3–6 months.");
     }
+    if (key === "hypoMg") {
+      if (sev === 3) add("6–12 h after the IV dose ends, then daily", "Mg (a level right after an infusion reads falsely high while Mg moves into cells), with K and Ca.");
+      else add("Next morning, then daily while on replacement", "Mg, K, Ca.");
+      if (renal) add("Before every repeat dose", "Mg (eGFR < 30 or dialysis: risk of high Mg).");
+      if (x.ecg || (v.QTc != null && v.QTc >= 500)) add("Continuous; repeat ECG after Mg", "Cardiac monitor until QT shortens and no torsades.");
+    }
+    if (key === "hyperMg") {
+      if (sev === 3) { add("Every 4–6 h", "Mg, Ca, K, creatinine until below 2.0."); add("Every hour", "Patellar reflexes, respiratory rate, BP and level of consciousness (as in obstetric magnesium protocols)."); }
+      else if (sev === 2) add("Every 12–24 h", "Mg and creatinine; check reflexes each shift.");
+      else add("Next routine bloods", "Mg and creatinine after stopping intake.");
+    }
     if (key === "hyperCa") {
       const hi = sev === 3 || x.symptoms || (val != null && (v.iCa != null ? val >= 1.8 : val >= 3.5));
       if (hi) {
@@ -453,6 +524,8 @@
     if (v.crRise && k && k.dir === "high") add("action", "Creatinine rising (" + v.crRise + ") with high K: AKI. Stop K-raising drugs, look for obstruction and volume status.");
     if (v.Mg != null && v.Mg < 0.7 && ((k && k.dir === "low") || (ca && ca.dir === "low"))) add("action", "Mg " + v.Mg + ": low magnesium keeps K and Ca low. Replace Mg first or at the same time.");
     if (v.Mg != null && v.Mg < 0.5) add("action", "Mg " + v.Mg + " (< 0.5): severe; arrhythmia and seizure risk.");
+    if (g.Mg && g.Mg.key === "hyperMg" && g.Mg.sev === 3) add("urgent", "Mg " + v.Mg + (x.symptoms ? " with symptoms" : "") + ": severe hypermagnesemia. Stop all Mg, calcium gluconate, check reflexes and breathing.");
+    if (g.Mg && g.Mg.key === "hyperMg" && m.mgLoad.length && ((v.eGFR != null && v.eGFR < 30) || v.crRise)) add("action", "Magnesium-containing drug with low or falling kidney function (" + m.mgLoad[0] + "): stop it.");
     if ((v.plt != null && v.plt > 500 || v.wbc != null && v.wbc > 50) && k && k.dir === "high" && !x.ecg) add("info", "Platelets or WBC very high: K may be falsely high. Repeat as plasma K before treating aggressively.");
     if (ca && ca.basis === "corrected" && v.albumin != null && v.albumin < 25) add("info", "Albumin " + v.albumin + " g/L: corrected calcium is unreliable this low. Use ionized calcium.");
     if (ca && ca.basis === "total (no albumin)" && ca.dir !== "normal") add("info", "No albumin in the chart: calcium is uncorrected. Check albumin or ionized calcium.");
@@ -473,9 +546,9 @@
     if (x.dialysis && !p.dialysis.length) p.dialysis.push("dialysis (ticked)");
     v.corrCa = correctedCa(v.Ca, v.albumin);
     if (v.eGFR == null) v.eGFR = egfr(v.creatinine, v.age, v.sex);
-    const g = { K: gradeK(v.K, x), phos: gradePhos(v.phos, x), Ca: gradeCa(v, x), Mg: gradeMg(v.Mg) };
+    const g = { K: gradeK(v.K, x), phos: gradePhos(v.phos, x), Ca: gradeCa(v, x), Mg: gradeMg(v.Mg, x) };
     const plans = {};
-    ["K", "phos", "Ca"].forEach((e) => {
+    ["K", "phos", "Ca", "Mg"].forEach((e) => {
       const gr = g[e]; if (!gr || !gr.key) return;
       plans[e] = { key: gr.key, sev: gr.sev, sevText: SEV[gr.sev], causes: causesFor(gr.key, v, m, p), treat: treatment(gr.key, gr.sev, v, x, m, p), recheck: recheck(gr.key, gr.sev, v, x, m, p, gr.val) };
     });

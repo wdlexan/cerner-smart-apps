@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Electrolytes (K, PO4, Ca)</title>
+  <title>Electrolytes (K, PO4, Ca, Mg)</title>
   <style>
     :root { --bg:#f5f7fa; --card:#fff; --ink:#1f2933; --muted:#5f6c7b; --accent:#0b6bcb; --line:#dde3ea;
             --r-bg:#fde8e8; --r-ink:#9b1c1c; --a-bg:#fff1d6; --a-ink:#8a5200; --b-bg:#e3eefc; --b-ink:#0b4a99; --g-bg:#e4f4ea; --g-ink:#1d6b3a; --warn-bg:#fff4e5; --warn-line:#f0c27b; }
@@ -65,8 +65,8 @@
 </head>
 <body>
   <header>
-    <h1>Electrolytes: potassium, phosphate, calcium</h1>
-    <div class="sub">Low and high K, PO4 and Ca: severity, likely causes in this patient, tests, treatment with doses, and a note. Read-only.</div>
+    <h1>Electrolytes: potassium, phosphate, calcium, magnesium</h1>
+    <div class="sub">Low and high K, PO4, Ca and Mg: severity, likely causes in this patient, tests, treatment with doses, and a note. Read-only.</div>
   </header>
   <main>
     <div class="banner"><b>Decision-support draft. It orders nothing.</b> Grading, causes and doses were written by Claude and have <b>not been verified</b>: check them against references, Island Health protocols and pharmacy before real use. Tests are found by code and <b>name</b>, so a result not shown may still be in the chart. ECG changes and symptoms are not read from the chart: tick them yourself. Values you type stay in this page only. Use made-up or Cerner sandbox patients until Island Health approves real data.</div>
@@ -130,6 +130,7 @@
     <details class="card plan" open id="plan-K"><summary><span>Potassium</span><span id="sum-K"></span></summary><div class="body" id="body-K"></div></details>
     <details class="card plan" open id="plan-phos"><summary><span>Phosphate</span><span id="sum-phos"></span></summary><div class="body" id="body-phos"></div></details>
     <details class="card plan" open id="plan-Ca"><summary><span>Calcium</span><span id="sum-Ca"></span></summary><div class="body" id="body-Ca"></div></details>
+    <details class="card plan" open id="plan-Mg"><summary><span>Magnesium</span><span id="sum-Mg"></span></summary><div class="body" id="body-Mg"></div></details>
 
     <details class="card" open>
       <summary><span>Trend (14 days)</span><span class="muted" id="trendsum"></span></summary>
@@ -153,11 +154,11 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
-  <script src="rules.js?v=20261118c"></script>
-  <script src="chart.js?v=20261118c"></script>
-  <script src="samples.js?v=20261118c"></script>
-  <script src="reference.js?v=20261118c"></script>
+  <script src="rules.js?v=20261118d"></script>
+  <script src="chart.js?v=20261118d"></script>
+  <script src="samples.js?v=20261118d"></script>
+  <script src="reference.js?v=20261118d"></script>
   <script src="../../notedraft.js?v=20261113a"></script>
-  <script src="app.js?v=20261118c"></script>
+  <script src="app.js?v=20261118d"></script>
 </body>
 </html>

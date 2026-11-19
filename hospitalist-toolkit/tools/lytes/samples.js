@@ -63,7 +63,12 @@
     { label: "8: K 6.4 but platelets 1100 (essential thrombocythemia), no ECG change", x: {}, build: (now) => ({
       patient: pt(66, "female"), conditions: [cond("Essential thrombocythemia", "D47.3")],
       obs: [].concat(set(now, 2, { K: 6.4, plt: 1100, wbc: 9.2, creatinine: 70, Ca: 2.30, albumin: 39, phos: 1.1, Mg: 0.85, glucose: 5.6, tCO2: 25 }), [wt(now, 60)]),
-      medreqs: ["Hydroxyurea 500 mg PO daily", "ASA 81 mg PO daily"].map((n) => req(now, n)) }) }];
+      medreqs: ["Hydroxyurea 500 mg PO daily", "ASA 81 mg PO daily"].map((n) => req(now, n)) }) },
+
+    { label: "9: Mg 3.4, drowsy, no reflexes: CKD 4 on milk of magnesia + Pico-Salax", x: { symptoms: true }, build: (now) => ({
+      patient: pt(86, "female"), conditions: [cond("Chronic kidney disease stage 4", "N18.4"), cond("Constipation", "K59.0")],
+      obs: [].concat(set(now, 2, { Mg: 3.4, creatinine: 210, K: 5.2, Ca: 2.05, albumin: 34, phos: 1.6, Na: 138, tCO2: 21, glucose: 6.0 }), set(now, 50, { Mg: 2.1, creatinine: 180 }), [wt(now, 52)]),
+      medreqs: ["Magnesium hydroxide (Milk of Magnesia) 30 mL PO BID", "Pico-Salax 1 sachet PO", "Amlodipine 5 mg PO daily"].map((n) => req(now, n)) }) }];
 
   if (typeof module !== "undefined" && module.exports) module.exports = SAMPLES; else window.LYTES_SAMPLES = SAMPLES;
 })();
