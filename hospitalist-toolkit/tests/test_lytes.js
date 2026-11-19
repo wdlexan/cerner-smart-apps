@@ -98,6 +98,19 @@ a = run(7);
 has("8 pseudo flag", a.flags, "falsely high"); has("8 pseudo plan line", all(a.plans.K), "pseudohyperkalemia");
 has("8 pseudo cause", a.plans.K.causes, "pseudohyperkalemia");
 
+// repeat-lab schedules
+const rc = (p) => p.recheck.map((r) => ({ text: r.when + " | " + r.what + " | " + r.src }));
+a = run(0); has("1 UKKA K times", rc(a.plans.K), "1, 2, 4, 6 and 24 h"); has("1 UKKA glucose", rc(a.plans.K), "360 min");
+a = run(3); has("4 Ca recheck 6 h", rc(a.plans.Ca), "6 h after starting IV saline"); has("4 nadir day 2-4 SfE", rc(a.plans.Ca), "Day 2–4 after bisphosphonate");
+has("4 saline 1 L/h", all(a.plans.Ca), "1 L/h for the first 2–3 h"); not("4 no 2 L", all(a.plans.Ca), "1–2 L over");
+let o2 = R.assess({ Ca: 3.5, albumin: 40, creatinine: 80, age: 60, sex: "male" }, {}, [], []);
+has("Ca exactly 3.5 → 6 h", rc(o2.plans.Ca), "6 h after starting IV saline");
+o2 = R.assess({ Ca: 3.2, albumin: 40, creatinine: 80, age: 60, sex: "male" }, {}, [], []);
+has("Ca 3.2 → 12-24 h", rc(o2.plans.Ca), "Every 12–24 h"); not("Ca 3.2 not 6 h", rc(o2.plans.Ca), "6 h after starting");
+o2 = R.assess({ Ca: 2.7, albumin: 40 }, {}, [], []); has("Ca 2.7 → 24-48 h", rc(o2.plans.Ca), "24–48 h");
+a = run(2); has("3 refeeding daily labs", rc(a.plans.phos), "first 3–5 days of feeding");
+a = run(4); has("5 infusion q4-6h", rc(a.plans.Ca), "Every 4–6 h on infusion");
+
 // unit conversion: mg/dL calcium and phosphate
 const conv = C.parse({ patient: null, obs: [
   { resourceType: "Observation", status: "final", code: { text: "Calcium" }, effectiveDateTime: new Date(NOW - 36e5).toISOString(), valueQuantity: { value: 10.0, unit: "mg/dL" } },

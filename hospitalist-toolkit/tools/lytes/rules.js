@@ -57,7 +57,7 @@
       else if (val > 1.32) { out.dir = "high"; out.sev = val >= 1.8 ? 3 : val >= 1.5 ? 2 : 1; }
     } else {
       if (val < 2.10) { out.dir = "low"; out.sev = val < 1.90 ? 3 : val < 2.0 ? 2 : 1; }
-      else if (val > 2.55) { out.dir = "high"; out.sev = val > 3.5 ? 3 : val >= 3.0 ? 2 : 1; }
+      else if (val > 2.55) { out.dir = "high"; out.sev = val >= 3.5 ? 3 : val >= 3.0 ? 2 : 1; }
     }
     if (out.dir === "low") { out.key = "hypoCa"; if ((x.ecg || x.symptoms) && out.sev < 3) out.sev = 3; }
     if (out.dir === "high") { out.key = "hyperCa"; if (x.symptoms && out.sev < 2) out.sev = 2; }
@@ -262,13 +262,11 @@
         add("now", "Cardiac monitor and 12-lead ECG (U waves, ST depression, QT/QU prolongation, ectopy).");
         add("now", "IV KCl: peripheral line max 10 mmol/h; central line up to 20 mmol/h on a cardiac monitor (per local policy). Example: 40 mmol over 4 h peripherally, then recheck." + (po ? " Add KCl 40 mmol PO at the same time if able to swallow." : ""));
         add("now", "Run IV KCl in saline, not dextrose (dextrose → insulin → K falls further).");
-        add("next", "Recheck K 1–2 h after each 40 mmol IV, then every 4–6 h until > 3.0.");
-      } else if (sev === 2) {
+        } else if (sev === 2) {
+        add("now", "ECG if K < 2.8, heart disease or digoxin.");
         add("now", po ? "KCl 40 mmol PO two or three times today (KCl SR tablets or liquid); about 10 mmol raises K by ~0.1 mmol/L, less when losses continue." : "IV KCl 40 mmol over 4 h (peripheral max 10 mmol/h), repeat after recheck.");
-        add("next", "Recheck K in 4–6 h after the doses and in the morning. ECG if K < 2.8, cardiac disease or digoxin.");
       } else {
         add("now", po ? "KCl 20–40 mmol PO BID (40–80 mmol/day) until ≥ 3.5 (≥ 4.0 if AF, ischemia, heart failure or digoxin)." : "Add KCl 20 mmol/L to maintenance IV fluid, or KCl 20–40 mmol IV over 2–4 h.");
-        add("next", "Recheck K the next morning.");
       }
       if (renal) add("now", "eGFR < 30 or dialysis: use half doses and recheck sooner (rebound hyperkalemia risk).");
       if (m.loop.length || m.thiazide.length) add("also", "On a diuretic: if it continues, add a K-sparing agent (spironolactone 12.5–25 mg) or reduce the diuretic, rather than escalating KCl alone.");
@@ -298,7 +296,7 @@
       const culprits = [].concat(m.ksupp, m.acei, m.arb, m.mra, m.ksparing, m.tmp, m.nsaid, m.heparin);
       if (culprits.length) add("now", "Hold or review: " + culprits.join("; ") + ".");
       if (m.digoxin.length) add("now", "On digoxin: check a digoxin level; if toxic with high K or arrhythmia, digoxin immune Fab (DigiFab) via poison centre / pharmacy.");
-      add("next", sev >= 2 ? "Recheck K 1–2 h after shifting, then every 4–6 h (K rebounds when insulin wears off)." : "Low-K diet, recheck K in 24 h (sooner if rising or AKI).");
+      if (sev < 2) add("next", "Low-K diet (dietitian); review the cause.");
     }
 
     if (key === "hypoPhos") {
@@ -319,7 +317,6 @@
       if (lowMg) mgLine();
       if (p.malnutrition.length || p.alcohol.length) add("now", "Refeeding risk: thiamine 100 mg IV/PO before and during feeding, start feeds slowly (10–20 kcal/kg/day), daily PO4, K and Mg for 3–5 days; dietitian.");
       if (m.ivIron.length) add("also", "Recent IV iron (ferric carboxymaltose): low PO4 can last weeks; consider iron sucrose or ferric derisomaltose next time.");
-      add("next", "Recheck PO4 2–4 h after an IV dose ends, or next morning for PO; also K, Mg and Ca.");
     }
 
     if (key === "hyperPhos") {
@@ -330,7 +327,6 @@
       if (m.phosLaxative.length || m.phosSupp.length) add("now", "Stop: " + m.phosLaxative.concat(m.phosSupp).join("; ") + ".");
       if (eg != null && eg < 60) add("next", "CKD: phosphate binder with meals: " + (v.corrCa != null && v.corrCa > 2.5 ? "sevelamer 800 mg TID (calcium already high-normal)" : "calcium carbonate 500 mg elemental TID with meals, or sevelamer 800 mg TID") + "; renal dietitian (low phosphate diet).");
       else add("next", "Find the source: intake (enema, supplements), cell breakdown (CK, urate, LDH), vitamin D, low PTH.");
-      add("next", "Recheck PO4 with Ca and creatinine in 12–24 h (every 6–8 h if tumour lysis).");
     }
 
     if (key === "hypoCa") {
@@ -352,15 +348,14 @@
       if (eg != null && eg < 30) add("next", "CKD: calcitriol and binder choice with nephrology; correct only if symptomatic or severe (vascular calcification risk).");
       if (m.antiresorptive.some((n) => /denosumab|prolia|xgeva|zoledron|zometa|aclasta/i.test(n))) add("also", "After denosumab or zoledronic acid low calcium can last weeks: calcium + vitamin D, and check before the next dose.");
       add("next", "Send if not done: Mg, PO4, PTH, 25-OH D, creatinine, ionized Ca. Low PTH = hypoparathyroid or low Mg; high PTH = vitamin D deficiency, CKD, or PO4 load.");
-      add("next", sev === 3 ? "Recheck ionized Ca every 4–6 h on infusion." : "Recheck Ca (ionized if albumin low) daily.");
     }
 
     if (key === "hyperCa") {
       const ca = v.corrCa != null ? v.corrCa : v.Ca, hf = p.hf.length > 0;
       if (sev >= 2) {
-        add("now", "IV 0.9% saline: " + (hf || renal ? "careful boluses of 250–500 mL with reassessment (heart failure or low eGFR)" : "1–2 L over the first hours, then 200–300 mL/h") + ", aiming for urine output 100–150 mL/h. Most patients are dry.");
-        add("now", "Calcitonin 4 units/kg SC or IM every 12 h" + (w != null ? " (≈ " + Math.round(4 * w / 10) * 10 + " units for " + w + " kg)" : "") + " for 24–48 h: works in hours, tachyphylaxis after 48 h. Bridge until the bisphosphonate works.");
-        if (eg == null || eg >= 30) add("now", "Zoledronic acid 4 mg IV over at least 15 min (effect 2–4 days, lasts weeks). Alternative: pamidronate 60–90 mg IV over 2–4 h. Check vitamin D first if possible; watch for low Ca and PO4 afterwards.");
+        add("now", "IV 0.9% saline: " + (hf || renal ? "careful boluses of 250–500 mL with reassessment (heart failure or low eGFR)" : "1 L/h for the first 2–3 h, then 200–300 mL/h (about 4–6 L in 24 h)") + ", aiming for urine output 100–150 mL/h. Most patients are dry.");
+        add("now", "Calcitonin 4 units/kg SC or IM every 12 h" + (w != null ? " (≈ " + Math.round(4 * w / 10) * 10 + " units for " + w + " kg)" : "") + " for 48–72 h at most: works in hours, then tachyphylaxis. Bridge until the bisphosphonate works.");
+        if (eg == null || eg >= 30) add("now", "Zoledronic acid 4 mg IV over at least 15 min (effect 2–4 days, lasts weeks), or for cancer-related hypercalcemia denosumab 120 mg SC (Endocrine Society 2023 suggests denosumab over a bisphosphonate). Alternative: pamidronate 60–90 mg IV over 2–4 h. Check vitamin D first if possible; watch for low Ca and PO4 afterwards.");
         else add("now", "eGFR " + eg + " (< 30): bisphosphonates need dose reduction or are avoided; denosumab 120 mg SC (lower doses used in severe CKD: discuss) does not need renal adjustment but causes more low calcium. Discuss with nephrology/oncology.");
         if (p.granuloma.length || p.lymphoma.length || m.vitD.length) add("now", "Granuloma, lymphoma or vitamin D excess: prednisone 40–60 mg PO daily lowers calcitriol.");
         if (sev === 3 || (renal && ca > 3.5)) add("now", "Calcium > 3.5–4.0 with confusion, AKI or unable to take fluids: dialysis (low-calcium bath) with nephrology.");
@@ -371,9 +366,71 @@
       const stop = [].concat(m.thiazide, m.caSupp, m.vitD, m.lithium, m.pth);
       if (stop.length) add("now", "Stop or hold: " + stop.join("; ") + ".");
       add("next", "First test: PTH (with Ca). High or normal PTH → PTH-mediated (primary HPT; urine Ca/Cr clearance ratio < 0.01 suggests FHH). Low PTH → PTHrP, 25-OH D, 1,25-(OH)2 D, SPEP + serum free light chains, ALP, TSH, CXR / CT for cancer.");
-      add("next", sev >= 2 ? "Recheck Ca (corrected or ionized) every 12 h, plus creatinine, K, Mg and PO4 daily during treatment." : "Recheck Ca in 24–48 h.");
     }
     return t;
+  }
+
+  /* ---- when to repeat labs: rows { when, what, src } ; src "UKKA 2023", "SfE 2016" etc. or "practice" (common practice, no guideline interval) ---- */
+  const SOURCES = {
+    UKKA: { label: "UK Kidney Association hyperkalaemia guideline 2023", url: "https://ukkidney.org/wp-content/uploads/drupal-archive/FINAL%20VERSION%20-%20UKKA%20CLINICAL%20PRACTICE%20GUIDELINE%20-%20MANAGEMENT%20OF%20HYPERKALAEMIA%20IN%20ADULTS%20-%20191223.pdf" },
+    SFE_HYPER: { label: "Society for Endocrinology emergency guidance: acute hypercalcaemia (2016)", url: "https://www.endocrinology.org/media/4277/emergency-guidance_acute-hypercalcaemia-in-adults.pdf" },
+    ES2023: { label: "Endocrine Society guideline: hypercalcemia of malignancy (JCEM 2023)", url: "https://doi.org/10.1210/clinem/dgac621" },
+    SFE_HYPO: { label: "Society for Endocrinology emergency guidance: acute hypocalcaemia (2016)", url: "https://doi.org/10.1530/EC-16-0056" },
+    practice: { label: "Common practice: no guideline sets this interval", url: "" } };
+  function recheck(key, sev, v, x, m, p, val) {
+    const r = [], add = (when, what, src) => r.push({ when, what, src: src || "practice" });
+    const renal = (v.eGFR != null && v.eGFR < 30) || x.dialysis || p.dialysis.length > 0;
+    if (key === "hyperK") {
+      const pseudo = (v.plt != null && v.plt > 500) || (v.wbc != null && v.wbc > 50);
+      if (pseudo) add("Now", "Repeat K as plasma (heparin tube) or on a blood gas before more treatment, unless ECG changes.");
+      if (sev >= 2 || x.ecg) {
+        add("1, 2, 4, 6 and 24 h after treatment", "Serum K (rebound when insulin wears off at 4–6 h; aim K < 6.0 at 2 h).", "UKKA");
+        add("0, 15, 30, 60, 90, 120, 180, 240, 300, 360 min", "Capillary glucose for at least 6 h after insulin-glucose" + (renal ? " (higher hypoglycemia risk with low eGFR)" : "") + ".", "UKKA");
+        add("Continuous", "Cardiac monitor while K ≥ 6.5, with ECG changes, or K 6.0–6.4 and unwell or rising; repeat 12-lead ECG after calcium.", "UKKA");
+        add("Daily until stable", "Creatinine and urine output, plus K after any binder or drug change.");
+      } else {
+        add(v.crRise || renal ? "Within 6–12 h" : "Within 24 h (24–72 h if stable and cause clear)", "Serum K, creatinine; sooner if rising, AKI or new K-raising drug.");
+      }
+    }
+    if (key === "hypoK") {
+      if (sev === 3) { add("1–2 h after each 40 mmol IV", "Serum K (and Mg if replacing).", "practice"); add("Every 4–6 h until K > 3.0", "Serum K; then daily."); add("Continuous", "Cardiac monitor during IV replacement at > 10 mmol/h or with ECG changes."); }
+      else if (sev === 2) { add("4–6 h after the doses", "Serum K (with Mg)."); add("Next morning, then daily", "K, Mg, creatinine while on replacement or diuretic."); }
+      else add("Next morning, then daily while on KCl or diuretic", "K and Mg.");
+      if (renal) add("Sooner (2–4 h after each dose)", "eGFR < 30 or dialysis: rebound high K risk.");
+    }
+    if (key === "hypoPhos") {
+      if (sev >= 2 || x.symptoms) add("2–4 h after each IV dose ends", "PO4 (plus K if potassium phosphate, Ca if high-dose).");
+      if (sev === 3) add("Every 6–12 h until PO4 > 0.65", "PO4, K, Mg, Ca; CK if weak.");
+      add(sev === 1 ? "Next morning" : "Then daily", "PO4, K, Mg until normal and stable.");
+      if (p.malnutrition.length || p.alcohol.length) add("Daily for the first 3–5 days of feeding", "PO4, K, Mg (refeeding).");
+    }
+    if (key === "hyperPhos") {
+      if (p.tls.length || (p.malignancy.length && v.urate != null && v.urate > 476)) add("Every 6–8 h", "PO4, K, Ca, urate, creatinine, LDH (tumour lysis).");
+      else if (v.crRise || sev >= 2) add("Every 12–24 h", "PO4, Ca, creatinine, K.");
+      else add("Next routine bloods (days to weeks if chronic CKD)", "PO4 and Ca with creatinine.");
+    }
+    if (key === "hypoCa") {
+      if (sev === 3) {
+        add("1–2 h after an IV bolus", "Ionized or corrected Ca; repeat the bolus if still symptomatic.", "practice");
+        add("Every 4–6 h on infusion", "Ionized Ca to titrate the infusion; continuous ECG while symptomatic or on digoxin. (SfE: titrate to normocalcemia; interval not set.)", "SFE_HYPO");
+      } else add("Daily", "Calcium (ionized if albumin low), Mg, PO4.");
+      if (p.hypopara.length) add("Every 12 h for 24–48 h after neck surgery", "Calcium; then daily.");
+      add("After discharge", "Weekly calcium until stable on oral calcium / vitamin D, then every 3–6 months.");
+    }
+    if (key === "hyperCa") {
+      const hi = sev === 3 || x.symptoms || (val != null && (v.iCa != null ? val >= 1.8 : val >= 3.5));
+      if (hi) {
+        add("6 h after starting IV saline, then every 6–12 h until falling and symptoms improve", "Corrected (or ionized) Ca, creatinine, K, Na.");
+        add("Every shift", "Fluid balance, weight, chest exam (4–6 L saline in 24 h: watch for overload, especially elderly or low eGFR).", "SFE_HYPER");
+      } else if (sev === 2) add("Every 12–24 h while on IV fluid", "Corrected Ca, creatinine, K.");
+      else add("24–48 h (1 week if outpatient, no symptoms)", "Corrected Ca, creatinine; PTH if not done.");
+      if (sev >= 2) {
+        add("Daily during treatment", "Mg, PO4 and K (saline diuresis lowers K and Mg).");
+        add("Day 2–4 after bisphosphonate or denosumab", "Calcium nadir is at 2–4 days: check for low Ca, PO4 and Mg; after denosumab keep checking through the first 1–2 weeks.", "SFE_HYPER");
+        add("Stop calcitonin after 48–72 h", "Tachyphylaxis; it is only a bridge.", "ES2023");
+      }
+    }
+    return r;
   }
 
   /* ---- red flags across all three (and Mg) ---- */
@@ -420,11 +477,11 @@
     const plans = {};
     ["K", "phos", "Ca"].forEach((e) => {
       const gr = g[e]; if (!gr || !gr.key) return;
-      plans[e] = { key: gr.key, sev: gr.sev, sevText: SEV[gr.sev], causes: causesFor(gr.key, v, m, p), treat: treatment(gr.key, gr.sev, v, x, m, p) };
+      plans[e] = { key: gr.key, sev: gr.sev, sevText: SEV[gr.sev], causes: causesFor(gr.key, v, m, p), treat: treatment(gr.key, gr.sev, v, x, m, p), recheck: recheck(gr.key, gr.sev, v, x, m, p, gr.val) };
     });
     return { v, g, plans, flags: flags(v, x, m, p, g), meds: m, prob: p, doseNote: DOSE_NOTE };
   }
 
-  const api = { RANGES, SEV, correctedCa, egfr, gradeK, gradePhos, gradeCa, gradeMg, classifyMeds, classifyProblems, causesFor, treatment, flags, assess, MEDS, PROB };
+  const api = { RANGES, SEV, SOURCES, recheck, correctedCa, egfr, gradeK, gradePhos, gradeCa, gradeMg, classifyMeds, classifyProblems, causesFor, treatment, flags, assess, MEDS, PROB };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else window.LytesRules = api;
 })();

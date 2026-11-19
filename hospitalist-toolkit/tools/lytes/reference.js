@@ -19,6 +19,7 @@
         ["Severe or ECG changes", "Cardiac monitor. IV KCl up to 10 mmol/h peripheral, up to 20 mmol/h central with monitoring (local policy), plus PO if able. Give in saline, not dextrose. Recheck every 1–2 h after each 40 mmol."],
         ["Always", "Correct Mg (magnesium sulfate 2 g IV, 4 g if < 0.5). Treat the cause; for ongoing diuretic loss add spironolactone or amiloride rather than more KCl. Halve doses and recheck sooner with eGFR < 30."],
         ["Targets", "≥ 3.5; ≥ 4.0 with AF, ischemia, heart failure or digoxin. In DKA hold insulin until K ≥ 3.3."]],
+      repeat: "Severe: K 1–2 h after each 40 mmol IV, then every 4–6 h until > 3.0. Moderate: 4–6 h after doses, then next morning. Mild: next morning, then daily on KCl or diuretic. Sooner with eGFR < 30. (Common practice.)",
       pearls: ["Low K that will not correct = low Mg until proven otherwise.", "Hypertension + low K + metabolic alkalosis: think aldosterone excess.", "Periodic paralysis: give small doses; rebound high K is common after the shift reverses."]
     },
     hyperK: {
@@ -38,6 +39,7 @@
         ["3. Remove K", "Sodium zirconium cyclosilicate (Lokelma) 10 g PO TID up to 48 h, then 5–10 g daily; patiromer (Veltassa) 8.4 g daily (slow). Furosemide 40–80 mg IV if euvolemic or overloaded and making urine; IV fluid if dry. Dialysis for refractory K, oliguric AKI or ESRD."],
         ["4. Stop the cause", "Hold K supplements, ACEi/ARB/ARNI, MRA, amiloride, trimethoprim, NSAIDs, heparin where possible. Low-K diet (dietitian)."],
         ["Monitoring", "K 1–2 h after shifting, then every 4–6 h: K rebounds as insulin wears off (2–4 h). Cardiac monitor while ≥ 6.0 or ECG changes."]],
+      repeat: "After treatment: K at 1, 2, 4, 6 and 24 h; glucose at 0, 15, 30, 60, 90, 120, 180, 240, 300 and 360 min after insulin-glucose; cardiac monitor while K ≥ 6.5 or ECG changes (UK Kidney Association 2023). Mild and stable: within 24–72 h.",
       pearls: ["Insulin + dextrose is the most reliable shift; hypoglycemia occurs in up to 1 in 5, mostly with low eGFR.", "Digoxin toxicity with high K: digoxin immune Fab.", "Restarting RAAS blockers after the episode: often at a lower dose with a binder (benefit in HF and CKD)."]
     },
     hypoPhos: {
@@ -56,6 +58,7 @@
         ["Severe or symptomatic", "IV 0.32–0.64 mmol/kg (max ~50 mmol per dose) over 6–12 h. Recheck after each dose."],
         ["Choosing the salt", "Potassium phosphate if K < 4.0 and kidneys normal (≈ 1.5 mmol K per mmol PO4); sodium phosphate if K ≥ 4.0 or eGFR low. Halve doses with eGFR < 30. Never in the same line as calcium; caution with high calcium."],
         ["Refeeding", "Thiamine 100 mg before feeding; start feeds at 10–20 kcal/kg/day; daily PO4, K, Mg for 3–5 days; dietitian."]],
+      repeat: "2–4 h after each IV dose; every 6–12 h while < 0.32; daily PO4, K, Mg for the first 3–5 days of feeding when refeeding risk. (Common practice.)",
       pearls: ["Low PO4 after ferric carboxymaltose can last weeks and cause osteomalacia with repeat doses.", "In DKA routine phosphate is not needed unless < 0.32 or there is heart failure, respiratory weakness or anemia.", "Low PO4 with low K and low Mg in a thin patient on day 2–4 of feeding: refeeding syndrome."]
     },
     hyperPhos: {
@@ -73,6 +76,7 @@
         ["Acute with AKI / tumour lysis", "IV fluid, rasburicase or allopurinol per oncology, nephrology early; dialysis for rising PO4 with symptomatic low Ca or other indications."],
         ["Symptomatic low calcium", "IV calcium for symptoms only: if Ca × PO4 > 4.4 mmol²/L² calcium phosphate may precipitate."],
         ["Chronic (CKD)", "Low-phosphate diet (renal dietitian); binders with meals: calcium carbonate 500–1000 mg elemental TID (avoid if Ca high), sevelamer 800–1600 mg TID, lanthanum 500–1000 mg TID; dialysis adequacy."]],
+      repeat: "Tumour lysis: every 6–8 h. AKI: every 12–24 h. Chronic CKD: routine bloods. (Common practice.)",
       pearls: ["Never give a phosphate enema to a patient with low eGFR, ileus or dehydration.", "High PO4 + low Ca + high K + high urate in a cancer patient = tumour lysis until proven otherwise."]
     },
     hypoCa: {
@@ -92,11 +96,12 @@
         ["Mild / chronic", "Calcium carbonate 500–1000 mg elemental PO BID–TID with meals (citrate if on PPI or achlorhydria); vitamin D3 1000–2000 IU daily (more to replete deficiency)."],
         ["Hypoparathyroidism", "Calcitriol 0.25–0.5 mcg BID plus calcium; aim for low-normal calcium (2.0–2.1) to limit hypercalciuria; endocrinology."],
         ["CKD", "Treat only if symptomatic or severe; calcitriol and phosphate control with nephrology."]],
+      repeat: "1–2 h after an IV bolus; every 4–6 h on infusion (Society for Endocrinology: titrate to normal calcium); every 12 h for 24–48 h after neck surgery; weekly after discharge until stable.",
       pearls: ["Post-thyroidectomy: PTH on POD 0–1 predicts who needs calcitriol.", "Hungry bone after parathyroidectomy: large calcium needs for days to weeks.", "Before zoledronic acid or denosumab: check Ca and 25-OH D, and replete."]
     },
     hyperCa: {
       title: "High calcium (hypercalcemia)", el: "Ca",
-      grade: "Albumin-corrected total Ca: mild 2.56–2.99 · moderate 3.0–3.5 · severe > 3.5 mmol/L (ionized: > 1.32 / ≥ 1.5 / ≥ 1.8). Symptoms raise the urgency at any level.",
+      grade: "Albumin-corrected total Ca: mild 2.56–2.99 · moderate 3.0–3.49 · severe ≥ 3.5 mmol/L (ionized: > 1.32 / ≥ 1.5 / ≥ 1.8). Symptoms raise the urgency at any level.",
       symptoms: "\"Stones, bones, groans, thrones and psychiatric overtones\": thirst, polyuria (nephrogenic DI), dehydration, AKI, constipation, nausea, pancreatitis, ulcer, confusion, drowsiness, coma, short QT, bradycardia.",
       causes: [
         ["PTH-mediated (PTH high or not suppressed)", "Primary hyperparathyroidism (most common outpatient cause), tertiary hyperparathyroidism (CKD, after transplant), lithium, familial hypocalciuric hypercalcemia (FHH: low urine calcium)."],
@@ -107,11 +112,12 @@
       tests: ["Repeat Ca with albumin or ionized Ca; creatinine, PO4, Mg, ALP", "PTH first", "If PTH low: PTHrP, 25-OH D, 1,25-(OH)2 D, SPEP + serum free light chains, TSH, CXR (then CT if needed)", "If PTH high/normal: 24-h urine Ca or Ca/Cr clearance ratio (< 0.01 suggests FHH), stop lithium/thiazide and repeat", "ECG"],
       treat: [
         ["Mild, no symptoms", "Oral hydration, mobilize, stop thiazides, calcium and vitamin D supplements, lithium if possible; outpatient workup."],
-        ["Moderate–severe or symptomatic", "IV 0.9% saline: 1–2 L over the first hours then 200–300 mL/h to urine output 100–150 mL/h (smaller boluses with heart failure or CKD)."],
-        ["Fast bridge", "Calcitonin 4 units/kg SC/IM every 12 h for 24–48 h (tachyphylaxis)."],
-        ["Main treatment", "Zoledronic acid 4 mg IV over ≥ 15 min (or pamidronate 60–90 mg IV over 2–4 h); effect in 2–4 days. With eGFR < 30: dose reduction / avoid, or denosumab (no renal adjustment, more hypocalcemia)."],
+        ["Moderate–severe or symptomatic", "IV 0.9% saline 1 L/h for the first 2–3 h, then 200–300 mL/h (about 4–6 L in 24 h) to urine output 100–150 mL/h; smaller boluses with heart failure, CKD or the elderly."],
+        ["Fast bridge", "Calcitonin 4 units/kg SC/IM every 12 h, limited to 48–72 h (tachyphylaxis)."],
+        ["Main treatment", "Zoledronic acid 4 mg IV over ≥ 15 min (or pamidronate 60–90 mg IV over 2–4 h); effect in 2–4 days. In cancer-related hypercalcemia the Endocrine Society (2023) suggests denosumab 120 mg SC over a bisphosphonate, and calcitonin plus a bisphosphonate or denosumab first when severe. With eGFR < 30: dose reduction / avoid, or denosumab (no renal adjustment, more hypocalcemia)."],
         ["Cause-specific", "Prednisone 40–60 mg daily for granulomatous disease, lymphoma or vitamin D excess. Cinacalcet for parathyroid carcinoma or when surgery is not possible. Parathyroidectomy for primary HPT that meets criteria."],
         ["Last resort", "Dialysis with low-calcium bath for Ca > 4.0–4.5 with neurologic symptoms or kidney / heart failure preventing fluids. Furosemide only for fluid overload after volume repletion."]],
+      repeat: "Ca ≥ 3.5 or symptoms: 6 h after starting saline, then every 6–12 h until falling. 3.0–3.5: every 12–24 h. < 3.0 without symptoms: 24–48 h. Mg, PO4, K daily on IV fluid; Ca on day 2–4 after a bisphosphonate (nadir). No guideline sets fixed intervals: the Society for Endocrinology guidance gives severity bands and the 2–4 day nadir.",
       pearls: ["Hypercalcemia of malignancy usually means advanced disease: a good time for a goals-of-care conversation.", "After a bisphosphonate check Ca, PO4 and Mg: low levels follow in days.", "Calcium-containing antacids plus a PPI/alkali and AKI: milk-alkali syndrome."]
     }
   };

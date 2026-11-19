@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Hypercalcemia: mild, moderate, severe — infosheet</title>
+<!-- Source for hypercalcemia.pdf. Rebuild: google-chrome --headless --no-pdf-header-footer --print-to-pdf=hypercalcemia.pdf hypercalcemia.html -->
+<style>
+  @page { size: letter; margin: 9mm 10mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif; color: #1f2933; font-size: 8.4pt; line-height: 1.22; margin: 0; }
+  h1 { font-size: 15pt; margin: 0 0 1mm; color: #0b4a99; }
+  h2 { font-size: 10.5pt; margin: 3mm 0 1.2mm; color: #0b4a99; }
+  .sub { color: #5f6c7b; font-size: 9pt; margin-bottom: 3mm; }
+  table { border-collapse: collapse; width: 100%; break-inside: avoid; }
+  td, th { padding: 1.2mm 2mm; vertical-align: top; text-align: left; border: 0.25mm solid #dde3ea; }
+  th { background: #f5f7fa; font-size: 8.4pt; }
+  th.mild { background: #e3eefc; color: #0b4a99; } th.mod { background: #fff1d6; color: #8a5200; } th.sev { background: #fde8e8; color: #9b1c1c; }
+  td.r { font-weight: 600; width: 17%; background: #fafbfc; }
+  ul { margin: 0; padding-left: 4mm; } li { margin: 0.4mm 0; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm; }
+  .box { border: 0.3mm solid #dde3ea; border-radius: 2mm; padding: 2mm 3mm; break-inside: avoid; }
+  .box h3 { margin: 0 0 1.2mm; font-size: 9.6pt; color: #0b4a99; }
+  .warn { background: #fff4e5; border: 0.3mm solid #f0c27b; border-radius: 2mm; padding: 1.5mm 3mm; font-size: 7.8pt; margin: 2mm 0; }
+  .src { font-size: 7.6pt; color: #5f6c7b; } .src a { color: #0b6bcb; }
+  .tag { display: inline-block; font-size: 7pt; font-weight: 700; border-radius: 1mm; padding: 0 1.2mm; background: #e4f4ea; color: #1d6b3a; }
+  .tag.p { background: #eef1f5; color: #5f6c7b; }
+  .pb { break-before: page; }
+</style>
+</head>
+<body>
+  <h1>Hypercalcemia: mild, moderate, severe</h1>
+  <div class="sub">Hospitalist Toolkit · Electrolytes tab · adults · SI units · normal total Ca 2.10–2.55 mmol/L, ionized 1.12–1.32 · corrected Ca = total Ca + 0.02 × (40 − albumin g/L)</div>
+
+  <div class="warn"><b>Decision-support draft, not verified.</b> Written by Claude from the sources at the end; doses are typical adult doses. Check against Island Health protocols and pharmacy. Use ionized calcium when albumin is &lt; 25 g/L, in critical illness or in CKD. <span class="tag">Guideline</span> = stated in a guideline; <span class="tag p">Practice</span> = common practice (no guideline sets this).</div>
+
+  <table>
+    <tr><th></th><th class="mild">Mild</th><th class="mod">Moderate</th><th class="sev">Severe</th></tr>
+    <tr><td class="r">Corrected Ca</td><td>2.56–2.99 mmol/L</td><td>3.00–3.49 mmol/L</td><td>≥ 3.50 mmol/L, <b>or any level with symptoms</b> (confusion, drowsiness, AKI, arrhythmia)</td></tr>
+    <tr><td class="r">Ionized Ca</td><td>1.33–1.49</td><td>1.50–1.79</td><td>≥ 1.80</td></tr>
+    <tr><td class="r">What it means</td><td>Often no symptoms; usually not corrected urgently <span class="tag">SfE</span></td><td>May be tolerated if it rose slowly, but often causes symptoms: treat promptly <span class="tag">SfE</span></td><td>Urgent: risk of arrhythmia and coma <span class="tag">SfE</span></td></tr>
+    <tr><td class="r">Where</td><td>Ward or outpatient</td><td>Admit; IV fluid</td><td>Admit; cardiac monitor if ECG changes; HDU / ICU if coma, arrhythmia or oliguric AKI</td></tr>
+    <tr><td class="r">Fluids</td><td>Oral fluids 2–3 L/day if able; mobilize</td><td>0.9% saline 1 L/h for 2–3 h, then 200–300 mL/h</td><td>0.9% saline <b>1 L/h for the first 2–3 h</b>, then 200–300 mL/h (about 4–6 L in 24 h <span class="tag">SfE</span>), aim urine 100–150 mL/h. Heart failure, low eGFR or elderly: 250–500 mL boluses and reassess</td></tr>
+    <tr><td class="r">Drugs</td><td>Stop thiazide, calcium and vitamin D supplements, lithium if possible. No IV drug needed if no symptoms</td><td>Same stops. Zoledronic acid 4 mg IV over ≥ 15 min, or denosumab 120 mg SC in cancer (preferred <span class="tag">ES 2023</span>), if symptomatic or rising</td><td>Same stops. <b>Calcitonin</b> 4 units/kg SC/IM q12h as a bridge, <b>max 48–72 h</b> <span class="tag">ES 2023</span> + <b>zoledronic acid</b> 4 mg IV, or <b>denosumab</b> 120 mg SC (cancer; also if eGFR &lt; 30). Prednisone 40–60 mg/day if granuloma, lymphoma or vitamin D excess</td></tr>
+    <tr><td class="r">Dialysis</td><td>–</td><td>–</td><td>Ca &gt; 4.0–4.5 with neurologic symptoms, or kidney / heart failure that prevents fluids: nephrology, low-calcium bath</td></tr>
+    <tr><td class="r">Repeat labs</td><td>Ca + creatinine in 24–48 h (about 1 week if outpatient and well) <span class="tag p">Practice</span></td><td>Ca, creatinine, K every 12–24 h on IV fluid; Mg, PO4 daily <span class="tag p">Practice</span></td><td><b>Ca 6 h after starting saline</b>, then every 6–12 h until falling and symptoms improve; creatinine, K, Na with each; Mg, PO4 daily <span class="tag p">Practice</span></td></tr>
+  </table>
+
+  <h2>Repeat labs after treatment (all severities)</h2>
+  <table>
+    <tr><th style="width:30%">When</th><th>What and why</th></tr>
+    <tr><td>Every shift on IV saline</td><td>Fluid balance, weight, chest exam: 4–6 L/day can overload the elderly and those with heart or kidney disease <span class="tag">SfE</span></td></tr>
+    <tr><td>Daily on IV saline</td><td>K, Mg, PO4, Na, creatinine: saline diuresis lowers K and Mg <span class="tag p">Practice</span></td></tr>
+    <tr><td>Day 2–4 after zoledronic acid / pamidronate</td><td>Calcium reaches its lowest point at 2–4 days: look for low Ca, PO4 and Mg, especially with low vitamin D or suppressed PTH <span class="tag">SfE</span></td></tr>
+    <tr><td>Through 1–2 weeks after denosumab</td><td>Low calcium is more common than with bisphosphonates and can come later <span class="tag p">Practice</span></td></tr>
+    <tr><td>Before discharge, then 1 week</td><td>Ca and creatinine; earlier if symptoms return. Cancer-related hypercalcemia often recurs: plan the next antiresorptive dose with oncology <span class="tag p">Practice</span></td></tr>
+  </table>
+
+  <div class="two" style="margin-top:3mm">
+    <div class="box"><h3>Symptoms and signs</h3>
+      <ul><li>Thirst, polyuria (nephrogenic DI), dehydration, AKI, stones</li>
+        <li>Nausea, vomiting, constipation, pancreatitis, peptic ulcer</li>
+        <li>Fatigue, weakness, confusion, depression, drowsiness, coma</li>
+        <li>ECG: short QT, bradycardia, AV block; arrhythmia when severe</li></ul></div>
+    <div class="box"><h3>Do not</h3>
+      <ul><li>Give furosemide to lower calcium: only for fluid overload after volume is restored <span class="tag">SfE</span></li>
+        <li>Continue calcitonin past 48–72 h <span class="tag">ES 2023</span></li>
+        <li>Give zoledronic acid with eGFR &lt; 30 without discussion (dose reduce / avoid; slower infusion)</li>
+        <li>Forget vitamin D: replete deficiency before or after antiresorptives to avoid low Ca</li></ul></div>
+  </div>
+
+  <h2 class="pb">Find the cause: PTH first</h2>
+  <table>
+    <tr><th style="width:24%">PTH result</th><th>Think</th><th style="width:32%">Next tests</th></tr>
+    <tr><td><b>High or normal</b> (not suppressed, about ≥ 2.5 pmol/L)</td><td>Primary hyperparathyroidism (most common outpatient cause); tertiary (CKD, after kidney transplant); lithium; familial hypocalciuric hypercalcemia (FHH)</td><td>24-h urine Ca or Ca/Cr clearance ratio (&lt; 0.01 suggests FHH); 25-OH D; stop lithium/thiazide and repeat; endocrinology</td></tr>
+    <tr><td><b>Low</b> (suppressed)</td><td>Malignancy (most common inpatient cause): PTHrP (squamous, kidney, bladder, breast, ovary), bone metastases, myeloma, lymphoma (calcitriol). Vitamin D or calcitriol excess; sarcoid, TB; milk-alkali (calcium carbonate + alkali + AKI); thyrotoxicosis; adrenal insufficiency; immobilization; vitamin A</td><td>PTHrP, 25-OH D, 1,25-(OH)2 D, SPEP + serum free light chains, ALP, PO4, TSH, CXR then CT; consider cortisol</td></tr>
+  </table>
+
+  <div class="two" style="margin-top:3mm">
+    <div class="box"><h3>Drugs to stop or review</h3>
+      <ul><li>Thiazides (hydrochlorothiazide, chlorthalidone, indapamide)</li>
+        <li>Calcium supplements, calcium-containing antacids</li>
+        <li>Vitamin D, calcitriol, alfacalcidol</li>
+        <li>Lithium (discuss with psychiatry)</li>
+        <li>Teriparatide, abaloparatide; vitamin A / retinoids</li>
+        <li>Recently stopped denosumab: rebound hypercalcemia can follow</li></ul></div>
+    <div class="box"><h3>Antiresorptive notes</h3>
+      <ul><li>Zoledronic acid 4 mg IV over ≥ 15 min; pamidronate 60–90 mg IV over 2–4 h (30–90 mg by severity, at ≤ 20 mg/h <span class="tag">SfE</span>). Slow the infusion and reduce the dose with low eGFR <span class="tag">SfE</span></li>
+        <li>Denosumab 120 mg SC: no renal adjustment, more hypocalcemia; suggested over a bisphosphonate for cancer-related hypercalcemia <span class="tag">ES 2023</span></li>
+        <li>Severe cancer-related hypercalcemia: calcitonin plus a bisphosphonate or denosumab first <span class="tag">ES 2023</span></li>
+        <li>Acute-phase reaction (fever, myalgia) after a first bisphosphonate dose is common</li></ul></div>
+  </div>
+
+  <div class="box" style="margin-top:3mm"><h3>Worked example</h3>
+    Total Ca 3.40, albumin 22 g/L → corrected 3.40 + 0.02 × 18 = <b>3.76 (severe)</b>; confused; squamous cell lung cancer; on hydrochlorothiazide and calcium carbonate; eGFR 35.
+    <ul><li>Stop hydrochlorothiazide and calcium carbonate. Saline 1 L/h for 2–3 h, then 200–300 mL/h with fluid balance every shift.</li>
+      <li>Calcitonin 4 units/kg (≈ 280 units for 70 kg) q12h for up to 48–72 h + denosumab 120 mg SC (or zoledronic acid 4 mg if eGFR allows).</li>
+      <li>Ca, creatinine, K at 6 h, then every 6–12 h; Mg and PO4 daily; Ca on day 2–4 for the nadir. Albumin is low: ionized calcium is better.</li>
+      <li>PTH (expect suppressed), PTHrP; goals-of-care conversation (hypercalcemia of malignancy usually means advanced disease).</li></ul></div>
+
+  <h2>Sources</h2>
+  <div class="src">
+    Walsh J, Gittoes N, Selby P; Society for Endocrinology Clinical Committee. Emergency management of acute hypercalcaemia in adult patients. Endocr Connect 2016;5:G9–G11 — <a href="https://www.endocrinology.org/media/4277/emergency-guidance_acute-hypercalcaemia-in-adults.pdf">endocrinology.org PDF</a>. Severity bands (&lt; 3.0, 3.0–3.5, &gt; 3.5), saline 4–6 L/24 h, bisphosphonate doses, calcium nadir at 2–4 days. It does not give fixed recheck intervals.<br>
+    El-Hajj Fuleihan G, et al. Treatment of hypercalcemia of malignancy in adults: an Endocrine Society clinical practice guideline. J Clin Endocrinol Metab 2023;108:507–528 — <a href="https://doi.org/10.1210/clinem/dgac621">doi.org/10.1210/clinem/dgac621</a>. Denosumab suggested over an IV bisphosphonate; calcitonin plus bisphosphonate or denosumab first in severe cases; calcitonin limited to 48–72 h.<br>
+    Recheck intervals marked <i>Practice</i> and the mild / moderate / severe ionized calcium cut-offs are common practice, not from these guidelines.
+  </div>
+</body>
+</html>

@@ -76,20 +76,29 @@ function draw() {
 
 function drawPlan(e, a, m) {
   const gr = a.g[e], p = a.plans[e], body = $("body-" + e), sum = $("sum-" + e);
-  if (!gr) { sum.innerHTML = '<span class="muted">no value</span>'; body.innerHTML = `<div class="muted">No ${NAMES[e].toLowerCase()} in the chart (3 days). Type a value above, or open the reference: ${refLinks(e)}</div>`; return; }
+  if (!gr) { sum.innerHTML = '<span class="muted">no value</span>'; body.innerHTML = `<div class="muted">No ${NAMES[e].toLowerCase()} in the chart (3 days). Type a value above, or open the reference: ${refLinks(e)}</div>${e === "Ca" ? caPdf() : ""}`; return; }
   const chipCls = SEVCLS[gr.sev];
   sum.innerHTML = `<span class="chip ${chipCls}">${esc(sevWord(gr))}</span>`;
-  if (!p) { body.innerHTML = `<div class="muted">${esc(NAMES[e])} is in the normal range${e === "Ca" ? " (" + esc(gr.basis) + " " + esc(gr.val) + ")" : ""}. Reference: ${refLinks(e)}</div>`; return; }
+  if (!p) { body.innerHTML = `<div class="muted">${esc(NAMES[e])} is in the normal range${e === "Ca" ? " (" + esc(gr.basis) + " " + esc(gr.val) + ")" : ""}. Reference: ${refLinks(e)}</div>${e === "Ca" ? caPdf() : ""}`; return; }
   const ref = REF[p.key];
   const causes = p.causes.length ? "<ul>" + p.causes.map((c) => `<li>${esc(c.text)}${c.why ? ` <span class="why">(${esc(c.why)})</span>` : ""}</li>`).join("") + "</ul>" : '<div class="muted">No cause found in the medications, problem list or labs read. See the full list in the reference below.</div>';
   const tiers = { now: "Now", next: "Next", also: "Also" };
   const treat = "<ul>" + p.treat.map((t) => `<li><span class="tier ${t.tier}">${tiers[t.tier]}</span>${esc(t.text)}</li>`).join("") + "</ul>";
-  body.innerHTML = `<div class="muted">${esc(ref.grade)}</div>
+  const SRC = R.SOURCES;
+  const rc = (p.recheck || []).length ? `<table class="recheck"><tr><th>When</th><th>What</th><th>Basis</th></tr>${p.recheck.map((r) => { const s0 = SRC[r.src] || SRC.practice;
+    return `<tr><td><b>${esc(r.when)}</b></td><td>${esc(r.what)}</td><td class="why">${s0.url ? `<a href="${esc(s0.url)}" target="_blank" rel="noopener">${esc(s0.label)}</a>` : esc(s0.label)}</td></tr>`; }).join("")}</table>` : "";
+  body.innerHTML = `<div class="muted">${esc(ref.grade)}</div>${e === "Ca" ? caPdf() : ""}
     <h3>Possible causes in this patient</h3>${causes}
-    <h3>Treatment and monitoring</h3>${treat}
+    <h3>Treatment</h3>${treat}
+    <h3>When to repeat labs</h3>${rc}
     <div class="src">${esc(a.doseNote)} Symptoms: ${esc(ref.symptoms)}</div>
     <div class="row noprint"><button class="linkbtn" data-ref="${p.key}">Full reference: ${esc(ref.title)}</button></div>`;
   body.querySelectorAll("[data-ref]").forEach((b) => (b.onclick = () => openRef(b.dataset.ref)));
+}
+/* printable infosheet and the source guidelines for high calcium */
+function caPdf() {
+  return `<div class="row noprint"><a class="pdfbtn" href="hypercalcemia.pdf?v=20261118b" target="_blank" rel="noopener">Hypercalcemia infosheet (PDF): mild, moderate, severe — treatment and when to repeat labs</a>
+    <a href="${esc(R.SOURCES.SFE_HYPER.url)}" target="_blank" rel="noopener">SfE emergency guidance (PDF)</a> · <a href="${esc(R.SOURCES.ES2023.url)}" target="_blank" rel="noopener">Endocrine Society 2023</a></div>`;
 }
 function refLinks(e) {
   const keys = ORDER.filter((k) => REF[k].el === ({ K: "K", phos: "PO4", Ca: "Ca" })[e]);
@@ -107,8 +116,9 @@ function drawRef(a) {
         ${r.causes.map((c) => `<tr><td>Cause: ${esc(c[0])}</td><td>${esc(c[1])}</td></tr>`).join("")}
         <tr><td>Tests</td><td><ul style="margin:0;padding-left:18px">${r.tests.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></td></tr>
         ${r.treat.map((c) => `<tr><td>Treat: ${esc(c[0])}</td><td>${esc(c[1])}</td></tr>`).join("")}
+        <tr><td>When to repeat labs</td><td>${esc(r.repeat)}</td></tr>
         <tr><td>Pearls</td><td><ul style="margin:0;padding-left:18px">${r.pearls.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></td></tr></table>
-        <div class="src">Unverified draft from general knowledge: check before use.</div></div></details>`; }).join("");
+        ${k === "hyperCa" ? caPdf() : ""}<div class="src">Unverified draft from general knowledge: check before use.</div></div></details>`; }).join("");
     $("ref").dataset.built = "1";
   }
   ORDER.forEach((k) => $("ref-" + k).classList.toggle("hit", hit.indexOf(k) > -1));
@@ -162,7 +172,8 @@ function lytesNote(full) {
     const gr = g[e]; if (!gr) return;
     const p = a.plans[e];
     if (p) assess.push(R.SEV[p.sev].charAt(0).toUpperCase() + R.SEV[p.sev].slice(1) + " " + REF[p.key].title.replace(/^(Low|High) (\w+) \((\w+)\)$/, "$3") + (e === "Ca" ? " (" + gr.basis + " Ca " + gr.val + ")" : " (" + (e === "K" ? "K " + fmt("K", v.K) : "PO4 " + fmt("phos", v.phos)) + ")"));
-    if (p) { p.causes.forEach((c) => causes.push(c.text + (c.why ? " (" + c.why + ")" : ""))); p.treat.filter((t) => full || t.tier === "now").forEach((t) => plan.push(t.text)); }
+    if (p) { p.causes.forEach((c) => causes.push(c.text + (c.why ? " (" + c.why + ")" : ""))); p.treat.filter((t) => full || t.tier === "now").forEach((t) => plan.push(t.text));
+      (p.recheck || []).slice(0, full ? 99 : 2).forEach((r) => plan.push("Repeat labs: " + r.when + ": " + r.what)); }
   });
   if (x.ecg) assess.push("ECG changes present.");
   if (x.symptoms) assess.push("Symptomatic.");
