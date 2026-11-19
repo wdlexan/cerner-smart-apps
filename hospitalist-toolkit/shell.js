@@ -4,7 +4,7 @@
    A tab is only loaded the first time you open it, and stays loaded when you switch away. */
 
 // To add a tool: put its files in tools/<folder>/ and add a line here.
-const TOOL_V = "20261118n"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
+const TOOL_V = "20261118o"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
 const TOOLS = [
   { key: "today", label: "Today (what changed)", tags: "what changed daily trends vitals overnight summary", path: "tools/today/index.html" },
   { key: "labs",  label: "Labs", tags: "lab results cbc lytes electrolytes chemistry blood work",                 path: "tools/labs/index.html" },
@@ -29,7 +29,7 @@ const TOOLS = [
   { key: "bsab",  label: "CRS/ICANS (bispecific)", tags: "crs icans bispecific teclistamab myeloma cytokine release", path: "tools/bispecific/index.html" },
   { key: "ibd",   label: "IBD flowsheet (Crohn/UC)", tags: "ibd crohn colitis ulcerative asuc", path: "tools/ibd/index.html" },
   { key: "liver", label: "Liver (cirrhosis)", tags: "liver cirrhosis hepatic encephalopathy ascites meld varices", path: "tools/liver/index.html" },
-  { key: "hypona", label: "Hyponatremia", tags: "hyponatremia sodium low na siadh", path: "tools/hypona/index.html" },
+  { key: "hypona", label: "Sodium (hypo / hyper)", tags: "hyponatremia hypernatremia sodium low high na siadh diabetes insipidus free water deficit", path: "tools/hypona/index.html" },
   { key: "hip",   label: "Hip fracture", tags: "hip fracture fragility orthopedics ortho",         path: "tools/hip/index.html" },
   { key: "consult", label: "Consult summary", tags: "consult summary",    path: "tools/consult/index.html" },
   { key: "mobility", label: "Mobility & discharge", tags: "mobility discharge pt ot function planning", path: "tools/mobility/index.html" },

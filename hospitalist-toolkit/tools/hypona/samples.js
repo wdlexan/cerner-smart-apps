@@ -52,6 +52,18 @@
       patient: pt(58, "male"), conditions: [cond("Alcohol dependence", "F10.20"), cond("Moderate protein-calorie malnutrition", "E44.0")],
       obs: [].concat([na(now, 106, 4), na(now, 107, 0.5)], wh(now, 60, 175), [
         lab(now, "2345-7", "Glucose", 5.0, "mmol/L", 4), lab(now, "3091-6", "Urea", 1.4, "mmol/L", 4), lab(now, "2823-3", "Potassium", 2.9, "mmol/L", 4), lab(now, "2777-1", "Phosphate", 0.5, "mmol/L", 4), lab(now, "19123-9", "Magnesium", 0.6, "mmol/L", 4),
-        lab(now, "2692-1", "Osmolality, Serum", 222, "mOsm/kg", 4), lab(now, "2695-4", "Osmolality, Urine Random", 68, "mOsm/kg", 3.5), lab(now, "2955-3", "Sodium, Urine Random", 10, "mmol/L", 3.5)]) }) }
+        lab(now, "2692-1", "Osmolality, Serum", 222, "mOsm/kg", 4), lab(now, "2695-4", "Osmolality, Urine Random", 68, "mOsm/kg", 3.5), lab(now, "2955-3", "Sodium, Urine Random", 10, "mmol/L", 3.5)]) }) },
+    { label: "G: Sodium 162, dementia, pneumonia, not drinking, on lactulose", symptoms: "moderate", volume: "hypo", build: (now) => ({
+      patient: pt(88, "female"), conditions: [cond("Alzheimer disease", "G30.9"), cond("Pneumonia", "J18.9")],
+      obs: [na(now, 162, 2), na(now, 158, 26), na(now, 151, 60), lab(now, "15074-8", "Glucose Random", 7.2, "mmol/L", 2), lab(now, "22664-7", "Urea", 18.4, "mmol/L", 2),
+        lab(now, "14682-9", "Creatinine", 142, "umol/L", 2), lab(now, "2823-3", "Potassium", 3.9, "mmol/L", 2), lab(now, "2695-4", "Osmolality Urine", 812, "mOsm/kg", 3), lab(now, "2955-3", "Sodium Urine Random", 14, "mmol/L", 3)].concat(wh(now, 52, 155)),
+      medreqs: [req(now, "Lactulose 30 mL PO TID", 72), req(now, "Ceftriaxone 1 g IV q24h", 30), req(now, "Furosemide 20 mg PO daily", 400)] }) },
+
+    { label: "H: Sodium 155, polyuria 6 L/day, lithium (nephrogenic DI)", symptoms: "none", volume: "eu", build: (now) => ({
+      patient: pt(54, "male"), conditions: [cond("Bipolar disorder", "F31.9")],
+      obs: [na(now, 155, 2), na(now, 150, 26), lab(now, "15074-8", "Glucose Random", 5.8, "mmol/L", 2), lab(now, "2823-3", "Potassium", 3.8, "mmol/L", 2),
+        lab(now, "14682-9", "Creatinine", 118, "umol/L", 2), lab(now, "2695-4", "Osmolality Urine", 140, "mOsm/kg", 3), lab(now, "2955-3", "Sodium Urine Random", 22, "mmol/L", 3),
+        uo(now, 1000, 20), uo(now, 1100, 16), uo(now, 1000, 12), uo(now, 1050, 8), uo(now, 1000, 4), uo(now, 1000, 1)].concat(wh(now, 80, 178)),
+      medreqs: [req(now, "Lithium carbonate 600 mg PO BID", 2000), req(now, "Quetiapine 100 mg PO QHS", 2000)] }) }
   ];
 })();

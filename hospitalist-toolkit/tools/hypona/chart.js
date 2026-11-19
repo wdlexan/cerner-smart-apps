@@ -48,7 +48,9 @@
     ["amio", /amiodarone/i, "Amiodarone"], ["sulfonylurea", /chlorpropamide/i, "Chlorpropamide"],
     ["oxytocin", /oxytocin/i, "Oxytocin"], ["desmo", /desmopressin|ddavp/i, ""],
     ["tolvaptan", /tolvaptan|jinarc|samsca/i, ""], ["urea", /\burea\b|ure-?na/i, ""], ["steroid", /hydrocortisone|prednisone|prednisolone|methylprednisolone|dexamethasone|fludrocortisone/i, ""],
-    ["levo", /levothyroxine|synthroid|eltroxin/i, ""], ["kcl", /potassium chloride|\bkcl\b|k-?dur|slow-?k/i, ""], ["thiamine", /thiamine/i, ""]];
+    ["levo", /levothyroxine|synthroid|eltroxin/i, ""],
+    /* kept for the hypernatremia card (hyper.js names the exact drug) */
+    ["hyperna", /lithium|carbolith|lithane|mannitol|lactulose|polyethylene glycol|peg ?3350|sodium bicarbonate|bicarbonate|demeclocycline|foscarnet|amphotericin|cidofovir|ifosfamide|enteral|tube feed|jevity|isosource|peptamen|nepro|glucerna|osmolite|empagliflozin|dapagliflozin|canagliflozin|jardiance|forxiga|invokana|free water|water flush/i, ""], ["kcl", /potassium chloride|\bkcl\b|k-?dur|slow-?k/i, ""], ["thiamine", /thiamine/i, ""]];
   /* fluids: decide by strength */
   function fluidKind(n) {
     if (!/saline|sodium chloride|nacl|dextrose|d5|d10|ringer|plasma-?lyte|plasmalyte|\bns\b|water for injection/i.test(n)) return "";

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Hyponatremia</title>
+  <title>Sodium (hypo / hyper)</title>
   <style>
     :root { --bg:#f5f7fa; --card:#fff; --ink:#1f2933; --muted:#5f6c7b; --accent:#0b6bcb; --line:#dde3ea;
             --r-bg:#fde8e8; --r-ink:#9b1c1c; --a-bg:#fff1d6; --a-ink:#8a5200; --b-bg:#e3eefc; --b-ink:#0b4a99; --g-bg:#e4f4ea; --g-ink:#1d6b3a; --warn-bg:#fff4e5; --warn-line:#f0c27b; }
@@ -62,8 +62,8 @@
 </head>
 <body>
   <header>
-    <h1>Hyponatremia: correction rate, cause and plan</h1>
-    <div class="sub">Sodium trend with a safe-ceiling check, workup, likely cause and treatment. Read-only.</div>
+    <h1>Sodium: hyponatremia and hypernatremia</h1>
+    <div class="sub">Low sodium: trend with a safe-ceiling check, workup, cause and treatment. High sodium: free water deficit, correction rate, cause and treatment. Read-only.</div>
   </header>
   <main>
     <div class="banner"><b>Decision-support draft. It orders nothing.</b> Limits, doses and the cause algorithm were written by Claude and have <b>not been verified</b>: check them against the Island Health hyponatremia protocol and pharmacy before real use. Tests are found by code and <b>name</b>, so a result not shown may still be in the chart. Symptoms, volume status and anything you change stay in this page only. Use made-up or Cerner sandbox patients until Island Health approves real data.</div>
@@ -167,12 +167,14 @@
   <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
 <script src="../../pdf-overlay.js?v=20261103a"></script>
   <script src="rules.js?v=20261113a"></script>
-  <script src="chart.js?v=20261113a"></script>
+  <script src="chart.js?v=20261118a"></script>
   <script src="samples.js?v=20261113a"></script>
   <script src="../../notedraft.js?v=20261113a"></script>
   <script src="note.js?v=20261113a"></script>
   <script src="interact.js?v=20261117g"></script>
   <script src="app.js?v=20261113a"></script>
   <script src="extras.js?v=20261117g"></script>
+  <script src="hyper.js?v=20261118a"></script>
+  <script src="hyperui.js?v=20261118b"></script>
 </body>
 </html>
