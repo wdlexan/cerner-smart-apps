@@ -24,7 +24,12 @@
     { id: "cea", name: "CEA", marker: true, loinc: ["2039-6"], re: /\bcea\b|carcinoembryonic/i },
     { id: "ca125", name: "CA-125", marker: true, loinc: ["10334-1", "83084-4"], re: /ca[\s-]?125|cancer antigen 125/i },
     { id: "ca199", name: "CA 19-9", marker: true, loinc: ["24108-3"], re: /ca[\s-]?19[\s-]?9|cancer antigen 19/i },
-    { id: "ca724", name: "CA 72-4", marker: true, loinc: ["17842-6"], re: /ca[\s-]?72[\s-]?4/i }];
+    { id: "ca724", name: "CA 72-4", marker: true, loinc: ["17842-6"], re: /ca[\s-]?72[\s-]?4/i },
+    { id: "he4", name: "HE4", marker: true, loinc: ["55180-3"], re: /\bhe4\b|human epididymis/i },
+    { id: "ca153", name: "CA 15-3", marker: true, loinc: ["6875-9"], re: /ca[\s-]?15[\s-]?3|cancer antigen 15/i },
+    { id: "afp", name: "AFP", marker: true, loinc: ["1834-1"], re: /\bafp\b|alpha.?fetoprotein/i, not: /amniotic|l3/i },
+    { id: "hcg", name: "β-hCG", marker: true, loinc: ["21198-7", "2106-3", "19080-1"], re: /\bhcg\b|chorionic gonadotropin/i, not: /urine/i },
+    { id: "ldh", name: "LDH", loinc: ["2532-0", "14804-9"], re: /lactate dehydrogenase|\bldh?\b/i, not: /fluid|ascit|pleural|csf/i }];
 
   const MEDCLASS = {
     octreo: /octreotide|sandostatin/i,
@@ -111,7 +116,7 @@
     const [patient, labs, markers, medreqs, conditions, reports] = await Promise.all([
       (async () => { try { return await client.patient.read(); } catch (e) { errors.push("patient: " + (e.message || e)); return null; } })(),
       get(`Observation?patient=${pid}&category=laboratory&date=ge${s30}&_count=200`, "lab results (30 days)", 8),
-      get(`Observation?patient=${pid}&code=http://loinc.org|2039-6,http://loinc.org|10334-1,http://loinc.org|24108-3,http://loinc.org|17842-6&date=ge${s365}&_count=100`, "tumour markers (1 year)", 2),
+      get(`Observation?patient=${pid}&code=${["2039-6","10334-1","83084-4","24108-3","17842-6","55180-3","6875-9","1834-1","21198-7","2106-3","19080-1"].map((c) => "http://loinc.org|" + c).join(",")}&date=ge${s365}&_count=100`, "tumour markers (1 year)", 2),
       get(`MedicationRequest?patient=${pid}&_count=100`, "medication orders", 3),
       get(`Condition?patient=${pid}&_count=100`, "problems/diagnoses", 2),
       get(`DiagnosticReport?patient=${pid}&date=ge${s90}&_count=100`, "reports (90 days)", 2)]);

@@ -96,6 +96,33 @@
     return out;
   }
 
+  /* Which tumour markers to send, by primary (or unknown primary), and how to read what is there.
+     have = { cea: latest value, ca125: …, … } in the lab's units. Cut-offs are typical upper limits; labs differ. */
+  const MARKER_SETS = {
+    colorectal: ["cea", "ca199"], gastric: ["cea", "ca199", "ca724"], ovarian: ["ca125", "cea", "ca199"],
+    pmp: ["cea", "ca199", "ca125"], other: ["cea", "ca199", "ca125"],
+    unknown: ["cea", "ca199", "ca125"] };
+  const MARKER_NAME = { cea: "CEA", ca125: "CA-125", ca199: "CA 19-9", ca724: "CA 72-4", he4: "HE4", ca153: "CA 15-3", afp: "AFP", hcg: "β-hCG" };
+  const ULN = { cea: 5, ca125: 35, ca199: 37, ca724: 6.9, ca153: 30, afp: 10 };
+  function markerAdvice(primary, sex, age, have) {
+    const set = MARKER_SETS[primary || "unknown"].slice();
+    if (!primary || primary === "other") {
+      if (sex === "female") set.push("he4", "ca153");
+      if (age != null && age < 50) set.push("afp", "hcg");
+    }
+    if (primary === "ovarian") set.push("he4");
+    const send = set.filter((k) => have[k] == null), notes = [];
+    if (have.cea != null && have.ca125 != null && have.cea > 0) {
+      const r = +(have.ca125 / have.cea).toFixed(1);
+      notes.push({ level: r > 25 ? "info" : "amber", text: `CA-125 : CEA ratio ${r} – ${r > 25 ? "over 25 favours an ovarian/Müllerian primary" : "25 or less favours a GI primary (colorectal, gastric, appendiceal) – make sure the GI tract has been looked at"}.` });
+    }
+    if (have.ca125 != null && have.ca125 > 35 && primary && primary !== "ovarian") notes.push({ level: "info", text: "CA-125 is raised by any ascites or peritoneal irritation (and by heart failure, cirrhosis, pleural effusion) – not specific for ovarian cancer here." });
+    if (have.ca199 != null && have.bili != null && have.bili > 50) notes.push({ level: "info", text: "CA 19-9 is falsely high with biliary obstruction/cholangitis – recheck once bilirubin falls." });
+    if (have.cea != null && have.cea > 5 && have.cea <= 10) notes.push({ level: "info", text: "Mildly raised CEA can come from smoking, IBD, liver disease, pancreatitis or hypothyroidism." });
+    Object.keys(ULN).forEach((k) => { if (have[k] != null && have[k] > ULN[k] * 10) notes.push({ level: "amber", text: `${MARKER_NAME[k]} ${have[k]} is over 10× the usual upper limit – supports bulky malignancy, but tissue is still needed for diagnosis.` }); });
+    return { set, send, notes };
+  }
+
   function corrCa(ca, alb) { if (ca == null || alb == null) return null; return +(ca + 0.02 * (40 - alb)).toFixed(2); }
 
   function note(o) {
@@ -122,6 +149,6 @@
     return L.join("\n");
   }
 
-  const api = { REGIONS, pciTotal, pciInterp, mboAdvice, prognosis, detectPrimary, flags, corrCa, note };
+  const api = { REGIONS, pciTotal, pciInterp, mboAdvice, prognosis, detectPrimary, flags, corrCa, note, markerAdvice, MARKER_NAME, ULN };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else window.PCRules = api;
 })();

@@ -149,8 +149,28 @@
   </details>
   <details open><summary>Labs</summary><ul>
     <li><b>Baseline:</b> CBC, lytes, creatinine, Ca (corrected), Mg, PO4, albumin, LFTs, INR, lactate if obstruction/ischemia concern.</li>
-    <li><b>Tumour markers</b> (support, never diagnose): CEA (colorectal, gastric, appendiceal), CA 19-9 (pancreaticobiliary, gastric, colorectal), CA-125 (ovarian – but also raised by <i>any</i> ascites/peritoneal irritation), CA 72-4 (gastric, if available). CEA:CA-125 ratio &gt;25 favours GI over ovarian origin.</li>
+    <li><b>Tumour markers:</b> see the table below – send a baseline set before any treatment.</li>
   </ul></details>
+  <details open><summary>Tumour markers (CEA, CA-125, CA 19-9, etc.)</summary>
+    <p class="muted" style="margin-top:0">Markers <b>support</b> the diagnosis and track response; they never replace tissue. Normal is usually the lab's upper limit (ULN) shown; Island Health lab ranges may differ. Trend in the same lab.</p>
+    <div style="overflow-x:auto"><table>
+      <tr><th>Marker</th><th>Typical ULN</th><th>Mainly raised in</th><th>Also raised by (false positives)</th><th>Use in carcinomatosis</th></tr>
+      <tr><td><b>CEA</b></td><td>~5 µg/L (smokers to ~10)</td><td>Colorectal, appendiceal/PMP, gastric, pancreatic, lung, breast</td><td>Smoking, IBD, cirrhosis/hepatitis, pancreatitis, COPD, hypothyroidism, renal failure</td><td>Baseline for any GI primary; best marker to follow colorectal and PMP; rising CEA after CRS = recurrence work-up</td></tr>
+      <tr><td><b>CA-125</b></td><td>~35 kU/mL</td><td>Ovarian/tubal/primary peritoneal (high-grade serous), endometrial</td><td><b>Any ascites or peritoneal/pleural irritation</b>, heart failure, cirrhosis, endometriosis, menstruation, pregnancy, PID, recent surgery</td><td>Follow ovarian disease (GCIG response = ≥50% fall); a high CA-125 with carcinomatosis does <i>not</i> prove ovarian origin</td></tr>
+      <tr><td><b>CA 19-9</b></td><td>~37 kU/mL</td><td>Pancreatic, biliary, gastric, colorectal, mucinous ovarian</td><td><b>Biliary obstruction/cholangitis</b>, pancreatitis, cirrhosis, diabetes; <b>undetectable in Lewis-antigen-negative people (~5–10%)</b></td><td>Add for GI or unknown primary; recheck after biliary drainage</td></tr>
+      <tr><td>CA 72-4</td><td>~6.9 kU/mL</td><td>Gastric, mucinous ovarian</td><td>Gout/NSAIDs, benign GI disease</td><td>Optional extra for gastric (if the lab offers it)</td></tr>
+      <tr><td>HE4</td><td>Age/menopause dependent (~70–140 pmol/L)</td><td>Ovarian (serous, endometrioid), endometrial</td><td><b>Kidney dysfunction</b>, smoking, older age</td><td>With CA-125 (ROMA) in a woman with a pelvic mass; less raised by benign ascites than CA-125</td></tr>
+      <tr><td>CA 15-3</td><td>~30 kU/mL</td><td>Breast (incl. lobular – can mimic GI/peritoneal primary)</td><td>Liver disease, benign breast disease</td><td>Woman with unknown primary, esp. history of breast cancer</td></tr>
+      <tr><td>AFP</td><td>~10 µg/L</td><td>Hepatocellular, yolk-sac/germ cell</td><td>Hepatitis, cirrhosis, pregnancy</td><td>Young patient or liver lesion with unknown primary</td></tr>
+      <tr><td>β-hCG, LDH</td><td>hCG &lt;5 IU/L</td><td>Germ cell tumours, choriocarcinoma; LDH also lymphoma</td><td>Pregnancy; LDH: hemolysis, tissue injury</td><td>Patient &lt;50 with unknown primary – germ cell and lymphoma are treatable/curable; don't miss them</td></tr>
+    </table></div>
+    <ul>
+      <li><b>CA-125 : CEA ratio</b>: &gt;25 favours ovarian/Müllerian; ≤25 favours GI – make sure the GI tract is examined.</li>
+      <li><b>What to send:</b> colorectal → CEA, CA 19-9 · gastric → CEA, CA 19-9 (± CA 72-4) · ovarian → CA-125 (+ CEA/CA 19-9 to exclude GI, ± HE4) · unknown primary → CEA, CA 19-9, CA-125 (+ CA 15-3/HE4 in women; AFP, β-hCG, LDH if under 50).</li>
+      <li><b>Timing:</b> baseline before chemo/surgery; then every cycle or every ~3 months; a rise in two consecutive values (same lab) is more meaningful than one.</li>
+      <li>Not useful for screening or for diagnosis without tissue; a normal marker does not exclude carcinomatosis (esp. mucinous or signet-ring tumours).</li>
+    </ul>
+  </details>
   <details open><summary>Ascitic fluid</summary><ul>
     <li>Cell count + diff, albumin (SAAG), total protein, glucose, LDH, Gram stain/culture, <b>cytology</b> (send a large volume – ≥50–100 mL, more improves yield).</li>
     <li>Peritoneal carcinomatosis pattern: SAAG &lt;11 g/L, protein &gt;25 g/L, high LDH, low glucose. Cytology is positive in most true carcinomatosis; negative cytology with SAAG ≥11 suggests liver metastases / portal hypertension instead.</li>
@@ -453,9 +473,9 @@
 
 </main>
 <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
-<script src="../hospitalist-toolkit/tools/pc/rules.js?v=20261119a"></script>
-<script src="../hospitalist-toolkit/tools/pc/chart.js?v=20261119a"></script>
-<script src="../hospitalist-toolkit/tools/pc/samples.js?v=20261119a"></script>
-<script src="../hospitalist-toolkit/tools/pc/app.js?v=20261119a"></script>
+<script src="../hospitalist-toolkit/tools/pc/rules.js?v=20261119b"></script>
+<script src="../hospitalist-toolkit/tools/pc/chart.js?v=20261119b"></script>
+<script src="../hospitalist-toolkit/tools/pc/samples.js?v=20261119b"></script>
+<script src="../hospitalist-toolkit/tools/pc/app.js?v=20261119b"></script>
 </body>
 </html>

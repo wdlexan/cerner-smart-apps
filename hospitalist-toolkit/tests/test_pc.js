@@ -72,5 +72,20 @@ eq("Ca mg/dL -> mmol/L", f.latest.ca.v, 2.5);
 const n = R.note({ primary: "ovarian", primaryLabel: "Ovarian", mbo: true, asc: true, decision: "Conservative" });
 ok("note has MBO + ascites + decision + gyne-onc", /Malignant bowel obstruction/.test(n) && /Ascites/.test(n) && /Decision: Conservative/.test(n) && /gyne-oncology/.test(n));
 
+// tumour markers
+let ma = R.markerAdvice("colorectal", "male", 68, { cea: 96 });
+eq("colorectal: send CA 19-9", ma.send.join(","), "ca199");
+ok("CEA >10x ULN noted", ma.notes.some((x) => /over 10/.test(x.text)));
+ma = R.markerAdvice(null, "female", 45, {});
+ok("unknown primary young woman: CEA, CA19-9, CA-125, HE4, CA15-3, AFP, hCG", ["cea", "ca199", "ca125", "he4", "ca153", "afp", "hcg"].every((k) => ma.send.includes(k)));
+ma = R.markerAdvice(null, "female", 70, { ca125: 800, cea: 2 });
+ok("ratio 400 -> Mullerian", ma.notes.some((x) => /ratio 400.*ovarian/.test(x.text)));
+ma = R.markerAdvice("gastric", "male", 74, { ca125: 300, cea: 30 });
+ok("ratio 10 -> GI", ma.notes.some((x) => /ratio 10 .*GI/.test(x.text)));
+ok("CA-125 non-specific note when not ovarian", ma.notes.some((x) => /any ascites/.test(x.text)));
+ok("CA19-9 with high bili note", R.markerAdvice("gastric", "male", 74, { ca199: 500, bili: 80 }).notes.some((x) => /biliary/.test(x.text)));
+f = C.parse({ obs: [{ resourceType: "Observation", status: "final", code: { coding: [{ system: "http://loinc.org", code: "55180-3" }], text: "HE4" }, effectiveDateTime: new Date().toISOString(), valueQuantity: { value: 120, unit: "pmol/L" } }] });
+eq("HE4 parsed", f.latest.he4 && f.latest.he4.v, 120);
+
 console.log(fail ? `\n${fail} FAILED` : "\nall passed");
 process.exit(fail ? 1 : 0);

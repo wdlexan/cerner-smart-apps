@@ -79,12 +79,19 @@
     $("chartPrimary").innerHTML = prim
       ? `<b>${esc(PRIMARY_LABEL[prim])}</b><div class="muted">from: ${esc(hits[0].t.replace(/\s+[A-Z]\d\d(\.\d+)?$/, ""))}</div><p><a href="#" data-goto="primary">Approach</a> · <a href="#" data-goto="chemo">Chemo</a></p>`
       : '<span class="muted">No primary cancer found on the problem list. Unknown primary → core biopsy with IHC (see Tests).</span>';
-    const LAB_ORDER = ["na", "k", "mg", "po4", "ca", "alb", "cr", "lactate", "wbc", "hb", "bili", "alp"];
+    const LAB_ORDER = ["na", "k", "mg", "po4", "ca", "alb", "cr", "lactate", "wbc", "hb", "bili", "alp", "ldh"];
     const rows = LAB_ORDER.filter((k) => f.latest[k]).map((k) => { const x = f.latest[k], d = C.LABS.find((l) => l.id === k); return `<tr><td>${esc(d.name)}</td><td>${esc(x.v)} ${esc(x.u)}</td><td class="muted">${fmtD(x.t)}</td></tr>`; });
     if (f.corrCa != null) rows.push(`<tr><td>Corrected Ca</td><td>${f.corrCa} mmol/L</td><td class="muted">calc</td></tr>`);
     $("chartLabs").innerHTML = rows.length ? `<table>${rows.join("")}</table>` : '<span class="muted">No recent labs found.</span>';
-    const mk = ["cea", "ca125", "ca199", "ca724"].filter((k) => f.l[k]).map((k) => { const d = C.LABS.find((l) => l.id === k); return `<tr><td>${esc(d.name)}</td><td>${f.l[k].slice(-3).map((x) => `${esc(x.v)} <span class="muted">(${fmtD(x.t)})</span>`).join(" → ")}</td></tr>`; });
-    $("chartMarkers").innerHTML = mk.length ? `<table>${mk.join("")}</table><p class="muted">CA-125 rises with any ascites; use the trend, not one value.</p>` : '<span class="muted">No tumour markers in the past year.</span>';
+    const MK = ["cea", "ca125", "ca199", "ca724", "he4", "ca153", "afp", "hcg"];
+    const mk = MK.filter((k) => f.l[k]).map((k) => { const d = C.LABS.find((l) => l.id === k), uln = R.ULN[k];
+      return `<tr><td>${esc(d.name)}${uln ? ` <span class="muted">(ULN ~${uln})</span>` : ""}</td><td>${f.l[k].slice(-3).map((x) => `<span${uln && x.v > uln ? ' style="color:var(--red);font-weight:600"' : ""}>${esc(x.v)}</span> <span class="muted">(${fmtD(x.t)})</span>`).join(" → ")}</td></tr>`; });
+    const have = {}; MK.concat(["bili"]).forEach((k) => { if (f.latest[k]) have[k] = f.latest[k].v; });
+    const ma = R.markerAdvice(prim, f.sex, f.age, have);
+    $("chartMarkers").innerHTML = (mk.length ? `<table>${mk.join("")}</table>` : '<p class="muted">No tumour markers in the past year.</p>') +
+      ma.notes.map((x) => `<div class="flag ${x.level}">${esc(x.text)}</div>`).join("") +
+      (ma.send.length ? `<div class="flag info"><b>Consider sending</b> (${prim ? esc(PRIMARY_LABEL[prim]) : "unknown primary"}): ${ma.send.map((k) => esc(R.MARKER_NAME[k])).join(", ")}. Baseline before treatment; then trend every cycle/3 months.</div>` : "") +
+      `<p class="muted">Markers support, never make, the diagnosis. Use the trend, same lab. <a href="#" data-goto="tests">Marker reference</a></p>`;
     const MC = [["octreo", "Octreotide"], ["anticholin", "Antisecretory anticholinergic"], ["dex", "Dexamethasone"], ["antiemetic", "Antiemetics"], ["opioid", "Opioids"], ["anyLax", "Bowel regimen"], ["chemo", "Anticancer"], ["anticoag", "Anticoagulant"], ["diuretic", "Diuretic"]];
     const mr = MC.filter(([k]) => f.cls[k] && f.cls[k].length).map(([k, n]) => `<tr><td>${n}${k === "dex" && f.dexDays != null ? ` <span class="pill">day ~${f.dexDays}</span>` : ""}</td><td>${f.cls[k].map(esc).join("<br>")}</td></tr>`);
     $("chartMeds").innerHTML = mr.length ? `<table>${mr.join("")}</table>` : '<span class="muted">None of the relevant drug classes found.</span>';
@@ -109,7 +116,7 @@
       primary: state.primary, primaryLabel: state.primary ? PRIMARY_LABEL[state.primary] : "",
       probs: f ? [].concat(f.prob.pc || [], f.prob.mbo || [], f.prob.ascites || []) : [],
       labs: f ? ["na", "k", "mg", "cr", "alb", "lactate"].map(L).filter(Boolean).concat(f.corrCa != null ? ["corr Ca " + f.corrCa] : []).join(", ") : "",
-      markers: f ? ["cea", "ca125", "ca199"].filter((k) => f.l[k]).map((k) => `${C.LABS.find((l) => l.id === k).name} ${f.l[k].slice(-3).map((x) => x.v).join("→")}`).join("; ") : "",
+      markers: f ? ["cea", "ca125", "ca199", "ca724", "he4"].filter((k) => f.l[k]).map((k) => `${C.LABS.find((l) => l.id === k).name} ${f.l[k].slice(-3).map((x) => x.v).join("→")}`).join("; ") : "",
       pci: tot, pciText: tot ? R.pciInterp(tot, $("pciPrimary").value).text.replace(/^PCI \d+: /, "") : "",
       mbo: $("pgMbo").checked, asc: $("pgAsc").checked,
       mboText: mboWeights().length ? R.mboAdvice(mboWeights()).text : "",
