@@ -275,6 +275,19 @@
     return c;
   }
 
+  /* ---- how much K and for how long. Deficit: 100–200 mEq per 1 mmol/L (acute), up to 400 (chronic) (local replacement sheet).
+     Daily replacement rate assumed: 80–120 mEq/day (K-Dur 40 mEq BID–TID); half (40–60) with eGFR < 30. A guide only: K is rechecked daily and doses adjusted. ---- */
+  function kEstimate(k, tgt, renal, losses) {
+    const d = Math.max(0, tgt - k), acute = [Math.round(d * 100), Math.round(d * 200)], chronic = Math.round(d * 400);
+    const lo = renal ? 40 : 80, hi = renal ? 60 : 120, days = (mEq, rate) => Math.max(1, Math.ceil(mEq / rate));
+    const aD = [days(acute[0] * (renal ? 0.5 : 1), hi), days(acute[1] * (renal ? 0.5 : 1), lo)], cD = [days(chronic * 0.5 * (renal ? 0.5 : 1), hi), days(chronic * (renal ? 0.5 : 1), lo)];
+    const rng = (a) => (a[0] === a[1] ? a[0] + " day" + (a[0] > 1 ? "s" : "") : a[0] + "–" + a[1] + " days");
+    const text = "How long: at " + lo + "–" + hi + " mEq/day" + (renal ? " (halved for eGFR < 30)" : " (e.g. K-Dur 40 mEq BID–TID)") + ", about " + rng(aD) + " if the loss was acute, " + rng(cD) + " if chronic." +
+      (losses ? " While the diuretic or GI losses continue, keep a maintenance dose (often 20–40 mEq/day) or add spironolactone/amiloride after repletion." : " Stop when K is at target on the next check without new losses.") +
+      " Recheck daily and adjust by how much each 40 mEq actually raised K.";
+    return { acute, chronic, days: { acute: aD, chronic: cD }, text };
+  }
+
   /* ---- patient-specific treatment lines: { text, tier: "now"|"next"|"also", calc } ---- */
   const DOSE_NOTE = "Doses are typical adult starting doses: confirm with Island Health protocol and pharmacy.";
   function treatment(key, sev, v, x, m, p) {
@@ -290,7 +303,9 @@
          PO: K-Dur 20 mEq SR, Slow-K 8 mEq SR (level ≥ 4 h after), KCl elixir 1.33 mEq/mL (dilute; level 1–2 h after), K citrate 25 mEq (40% as effective). */
       if (lowMg) mgLine();
       const tgt = m.digoxin.length || p.af.length || p.hf.length || p.cad.length ? 4.0 : 3.5;
-      if (v.K != null && v.K < tgt) { const d = tgt - v.K; add("also", "Rough need to reach " + tgt.toFixed(1) + ": " + Math.round(d * 100) + "–" + Math.round(d * 200) + " mEq if acute loss (100–200 mEq per 1 mmol/L), up to " + Math.round(d * 400) + " mEq if chronic; ongoing losses add to this." + (renal ? " Halve with eGFR < 30." : "")); }
+      if (v.K != null && v.K < tgt) { const e = kEstimate(v.K, tgt, renal, m.loop.length + m.thiazide.length > 0 || p.vomiting.length > 0);
+        add("also", "Rough need to reach " + tgt.toFixed(1) + ": " + e.acute[0] + "–" + e.acute[1] + " mEq if acute loss (100–200 mEq per 1 mmol/L), up to " + e.chronic + " mEq if chronic; ongoing losses add to this." + (renal ? " Halve with eGFR < 30." : ""));
+        add("also", e.text); }
       if (sev === 3) {
         add("now", "Cardiac monitor and 12-lead ECG (U waves, ST depression, QT/QU prolongation, ectopy).");
         add("now", "IV KCl: peripheral = KCl 10 mEq/100 mL bags, each over at least 30 min (e.g. 4 bags = 40 mEq, then recheck); central line = KCl 20 mEq/50 mL or 40 mEq/100 mL, rate per the IV manual, on a cardiac monitor." + (po ? " Add K-Dur 20 mEq × 2 tabs (40 mEq) PO at the same time if able to swallow." : ""));
@@ -564,6 +579,6 @@
     return { v, g, plans, flags: flags(v, x, m, p, g), meds: m, prob: p, doseNote: DOSE_NOTE };
   }
 
-  const api = { RANGES, SEV, SOURCES, recheck, correctedCa, egfr, gradeK, gradePhos, gradeCa, gradeMg, classifyMeds, classifyProblems, causesFor, treatment, flags, assess, MEDS, PROB };
+  const api = { RANGES, SEV, SOURCES, recheck, kEstimate, correctedCa, egfr, gradeK, gradePhos, gradeCa, gradeMg, classifyMeds, classifyProblems, causesFor, treatment, flags, assess, MEDS, PROB };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else window.LytesRules = api;
 })();

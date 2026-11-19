@@ -138,6 +138,13 @@ let kk = R.assess({ K: 3.2, weight: 70 }, {}, ["Digoxin 0.125 mg"], []); has("K 
 kk = R.assess({ K: 2.3 }, { npo: true }, [], []); has("severe K peripheral bags", all(kk.plans.K), "KCl 10 mEq/100 mL bags, each over at least 30 min");
 has("SR level ≥ 4 h", rc(R.assess({ K: 2.8 }, {}, [], []).plans.K), "At least 4 h after K-Dur");
 
+// K amount and duration: 3.0 → 4.0 acute 100–200 mEq at 80–120/day = 1–3 days; chronic 200–400 = 2–5 days
+let ke = R.kEstimate(3.0, 4.0, false, false);
+eq("K est acute", ke.acute.join("-"), "100-200"); eq("K est chronic", ke.chronic, 400); eq("K days acute", ke.days.acute.join("-"), "1-3"); eq("K days chronic", ke.days.chronic.join("-"), "2-5");
+ke = R.kEstimate(3.0, 3.5, false, true); eq("K 3.0→3.5 acute days", ke.days.acute.join("-"), "1-2"); ok("maintenance with losses", /maintenance/.test(ke.text));
+ke = R.kEstimate(3.0, 4.0, true, false); ok("renal rate halved", /40–60 mEq\/day/.test(ke.text), ke.text);
+has("K card shows how long", all(R.assess({ K: 3.0 }, {}, ["Furosemide 40 mg"], []).plans.K), "How long: at 80–120 mEq/day");
+
 // unit conversion: mg/dL calcium and phosphate
 const conv = C.parse({ patient: null, obs: [
   { resourceType: "Observation", status: "final", code: { text: "Calcium" }, effectiveDateTime: new Date(NOW - 36e5).toISOString(), valueQuantity: { value: 10.0, unit: "mg/dL" } },
