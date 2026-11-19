@@ -1,0 +1,78 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, FLORENCE                  DOB: 1950-05-29     Sex: F
+MRN: TESTPC06                            Age: 76
+
+ALLERGIES
+No known drug allergies
+
+ED PHYSICIAN NOTE
+Date of service: 2026-11-15 08:00
+76 year old with metastatic pancreatic adenocarcinoma (peritoneum, liver), progressed on
+gemcitabine and nab-paclitaxel; oncology says no further chemotherapy. Five days of feculent
+vomiting, no stool or flatus. CT: multilevel small bowel obstruction. Mostly in bed for the
+last 2 weeks.
+
+HOSPITALIST NOTE
+Date of service: 2026-11-19 10:00
+PPS 30%. NG output 1.8 L/day. Patient wants to be comfortable and go home if possible.
+Considering venting gastrostomy versus hospice. Recurrent ascites tapped twice this month.
+
+VITAL SIGNS
+2026-11-15 08:00 BP: 104/60 HR: 108 RR: 20 Temp: 37.0 C SpO2: 95%
+2026-11-17 12:00 BP: 98/56 HR: 112 RR: 20 Temp: 37.2 C SpO2: 94%
+2026-11-19 10:00 BP: 92/52 HR: 118 RR: 22 Temp: 37.4 C SpO2: 93%
+
+LABORATORY RESULTS
+Collected: 2026-10-30 12:00
+Test                      Result           Units           
+
+CA 19-9                   8400             kU/L            
+
+CEA                       41               ug/L            
+
+LABORATORY RESULTS
+Collected: 2026-11-19 06:00
+Test                      Result           Units           
+
+Sodium                    131              mmol/L          
+
+Potassium                 3.3              mmol/L          
+
+Creatinine                112              umol/L          
+
+Albumin                   21               g/L             
+
+Total bilirubin           64               umol/L          
+
+Alkaline phosphatase      410              U/L             
+
+
+ACTIVE MEDICATION ORDERS (2026-11-19)
+Octreotide 100 mcg subcut q8h
+Haloperidol 0.5 mg subcut q8h PRN
+Hydromorphone 1 mg subcut q1h PRN
+Dexamethasone 8 mg subcut daily
+
+ACTIVE PROBLEM LIST
+Malignant neoplasm of pancreas
+Secondary malignant neoplasm of peritoneum
+Malignant bowel obstruction
+Malignant ascites
+Liver metastases
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, FLORENCE MRN TESTPC06         Page 1
+
+RADIOLOGY AND PATHOLOGY REPORTS
+
+CT ABDOMEN AND PELVIS WITH CONTRAST
+Date of exam: 2026-11-15 10:00
+IMPRESSION:
+Multiple transition points in the small bowel with dilated loops, consistent with malignant
+bowel obstruction from diffuse peritoneal carcinomatosis. Moderate ascites. Multiple liver
+metastases, enlarged since prior. Biliary dilatation.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, FLORENCE MRN TESTPC06         Page 2

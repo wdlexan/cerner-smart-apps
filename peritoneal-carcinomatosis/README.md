@@ -8,3 +8,4 @@ Covers: chart flags (labs, MBO medication rules, tumour markers, reports), signs
 - Demo without a launch: `peritoneal-carcinomatosis/index.html?demo=1` to `3` (colorectal SBO, ovarian ascites, gastric outlet obstruction).
 - Code Console: add `https://wdlexan.github.io/cerner-smart-apps/peritoneal-carcinomatosis/launch.html` as a launch URI and `https://wdlexan.github.io/cerner-smart-apps/peritoneal-carcinomatosis/index.html` as a redirect URI.
 - Tests: `node hospitalist-toolkit/tests/test_pc.js`. UNVERIFIED draft.
+- Sample PDFs for the toolkit's Import PDF (6 made-up patients: colorectal SBO, ovarian ascites, gastric outlet obstruction, unknown primary, appendiceal PMP, pancreatic inoperable MBO): `python3 make-test-pdfs.py` writes `test-pdfs/`; copies are in `hospitalist-toolkit/sample-pdfs/Peritoneal carcinomatosis/`.

@@ -1,0 +1,98 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, BEATRICE                  DOB: 1967-02-03     Sex: F
+MRN: TESTPC02                            Age: 59
+
+ALLERGIES
+No known drug allergies
+
+ED PHYSICIAN NOTE
+Date of service: 2026-11-18 06:00
+59 year old with high-grade serous ovarian cancer, germline BRCA1, stage IIIC, interval
+debulking 2 years ago, on olaparib maintenance. Three weeks of increasing abdominal girth,
+early satiety and dyspnea on exertion. Tense ascites on exam. No vomiting, passing stool and
+flatus. Admitted for therapeutic paracentesis and work-up of recurrence.
+
+HOSPITALIST NOTE
+Date of service: 2026-11-19 09:00
+IR drained 4.8 L, dyspnea improved. Second tap in 3 weeks. Discussing tunnelled peritoneal
+catheter. Gyne-oncology aware, likely platinum-sensitive recurrence (last platinum 26 months
+ago).
+
+VITAL SIGNS
+2026-11-18 06:00 BP: 118/72 HR: 98 RR: 22 Temp: 36.8 C SpO2: 94%
+2026-11-19 00:00 BP: 112/70 HR: 92 RR: 20 Temp: 36.9 C SpO2: 95%
+2026-11-19 09:00 BP: 108/68 HR: 88 RR: 16 Temp: 36.7 C SpO2: 98%
+
+LABORATORY RESULTS
+Collected: 2026-08-19 12:00
+Test                      Result           Units           
+
+CA-125                    410              kU/L            
+
+LABORATORY RESULTS
+Collected: 2026-09-30 12:00
+Test                      Result           Units           
+
+CA-125                    95               kU/L            
+
+LABORATORY RESULTS
+Collected: 2026-11-18 12:00
+Test                      Result           Units           
+
+CA-125                    780              kU/L            
+
+CEA                       2.1              ug/L            
+
+HE4                       640              pmol/L          
+
+LABORATORY RESULTS
+Collected: 2026-11-19 06:00
+Test                      Result           Units           
+
+Sodium                    136              mmol/L          
+
+Potassium                 4.0              mmol/L          
+
+Magnesium                 0.8              mmol/L          
+
+Creatinine                64               umol/L          
+
+Albumin                   31               g/L             
+
+Calcium                   2.3              mmol/L          
+
+
+ACTIVE MEDICATION ORDERS (2026-11-19)
+Olaparib 300 mg PO BID
+Hydromorphone 1 mg PO q4h PRN
+Polyethylene glycol 3350 17 g PO daily
+Ondansetron 4 mg PO q8h PRN
+
+ACTIVE PROBLEM LIST
+High grade serous carcinoma of ovary
+Malignant ascites
+Peritoneal carcinomatosis
+BRCA1 mutation carrier
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, BEATRICE MRN TESTPC02         Page 1
+
+RADIOLOGY AND PATHOLOGY REPORTS
+
+CT ABDOMEN AND PELVIS WITH CONTRAST
+Date of exam: 2026-11-18 08:00
+IMPRESSION:
+Large volume ascites. New peritoneal nodularity in the right paracolic gutter and pelvis,
+largest 2.2 cm, and omental thickening, consistent with recurrent peritoneal carcinomatosis.
+No bowel obstruction.
+
+ASCITIC FLUID CYTOLOGY
+Date of exam: 2026-11-18 16:00
+IMPRESSION:
+Positive for malignant cells, consistent with metastatic high-grade serous carcinoma (PAX8
+and WT1 positive). SAAG 7 g/L, total protein 41 g/L.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, BEATRICE MRN TESTPC02         Page 2

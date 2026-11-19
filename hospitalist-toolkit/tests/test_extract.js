@@ -177,4 +177,30 @@ ok("held med -> on-hold order, text once", hr.status === "on-hold" && !hr.dosage
 r = X.fromText("LABORATORY RESULTS\nCollected: 2026-11-08 11:30\n\nPhosphate   0.82   mmol/L   0.80 - 1.45\n\nLABORATORY RESULTS\nCollected: 2026-11-09 11:30\n\nPhosphate   0.35   mmol/L   0.80 - 1.45   L\n", { fileName: "daily.pdf" });
 const ph = r.items.filter((i) => i.key === "phos");
 ok("ISO Collected dates per section", ph.length === 2 && X.iso(ph[1].t) === "2026-11-09" && X.iso(ph[0].t) === "2026-11-08", ph.map((i) => [i.value, X.iso(i.t)]));
+// tumour markers and peritoneal carcinomatosis problems
+r = X.fromText(`LABORATORY RESULTS
+Collected: 2026-11-18 08:00
+Test                      Result     Units
+CEA                       96         ug/L
+CA-125                    780        kU/L
+CA 19-9                   1250       kU/L
+Calcium                   2.15       mmol/L
+HE4                       640        pmol/L
+
+ACTIVE PROBLEM LIST
+Malignant neoplasm of sigmoid colon
+Secondary malignant neoplasm of peritoneum
+Small bowel obstruction
+Malignant ascites
+
+IMPRESSION:
+No bowel obstruction. No liver metastases.`, { fileName: "pc.pdf" });
+const val = (k) => (r.items.find((i) => i.key === k) || {}).value;
+ok("CEA read", val("cea") === 96, r.items.filter((i) => i.kind === "lab").map((i) => [i.key, i.value]));
+ok("CA-125 read (not calcium)", val("ca125") === 780 && val("ca") === 2.15);
+ok("CA 19-9 read", val("ca199") === 1250);
+ok("HE4 read", val("he4") === 640);
+const dx = r.items.filter((i) => i.kind === "condition").map((i) => i.label);
+ok("colon primary, carcinomatosis, obstruction, ascites", ["Malignant neoplasm of colon/rectum", "Peritoneal carcinomatosis", "Bowel obstruction", "Ascites"].every((n) => dx.includes(n)), dx);
+ok("'No liver metastases' not a problem", !dx.includes("Liver metastases"), dx);
 console.log(`\n${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);

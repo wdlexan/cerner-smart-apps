@@ -48,6 +48,13 @@
     L("ammonia", "ammonia", "16362-6", "Ammonia", "umol/L"),
     L("osm", "serum osmolality|osmolality", "2692-2", "Serum osmolality", "mmol/kg"),
     L("ica", "ionized calcium|ionised calcium|calcium,? ionized", "1994-3", "Ionized calcium", "mmol/L"),
+    L("cea", "\\bcea\\b|carcinoembryonic antigen", "2039-6", "CEA", "ug/L"),
+    L("ca125", "\\bca[ -]?125\\b|cancer antigen 125", "10334-1", "CA-125", "kU/L"),
+    L("ca199", "\\bca[ -]?19[ -]9\\b|cancer antigen 19-9", "24108-3", "CA 19-9", "kU/L"),
+    L("ca724", "\\bca[ -]?72[ -]4\\b", "17842-6", "CA 72-4", "kU/L"),
+    L("ca153", "\\bca[ -]?15[ -]3\\b|cancer antigen 15-3", "6875-9", "CA 15-3", "kU/L"),
+    L("he4", "\\bhe4\\b|human epididymis protein 4", "55180-3", "HE4", "pmol/L"),
+    L("afp", "\\bafp\\b|alpha.?fetoprotein", "1834-1", "AFP", "ug/L"),
     L("hcg", "beta.?hcg|\\bhcg\\b|chorionic gonadotropin", "21198-7", "beta-hCG", "IU/L"),
     L("phtfree", "phenytoin,?\\s*free(?: level)?|free phenytoin(?: level)?", "3969-3", "Phenytoin level, free", "umol/L"),
     L("pht", "phenytoin (?:level|concentration)", "3968-5", "Phenytoin level", "umol/L"),
@@ -270,7 +277,15 @@
     ["Anorexia nervosa", /anorexia nervosa/i, "F50.00"], ["Parkinson disease", /parkinson'?s?\s+disease/i, "G20"], ["Benign prostatic hyperplasia", /benign prostatic|\bbph\b/i, "N40.0"],
     ["Mild cognitive impairment", /mild cognitive impairment|\bmci\b/i, "G31.84"], ["Urinary tract infection", /urinary tract infection|\buti\b|pyelonephritis|cystitis/i, "N39.0"], ["Delirium", /delirium/i, "F05"],
     ["Acute kidney injury", /acute kidney injury|\baki\b/i, "N17.9"], ["Hyponatremia", /hyponatr(?:a)?emia/i, "E87.1"], ["Sepsis", /\bsepsis\b|\bseptic\b/i, "A41.9"],
-    ["Hip fracture", /hip fracture|fractured? (?:neck of )?femur|femoral neck fracture|intertrochanteric|subtrochanteric/i, "S72.0"], ["Cancer (as stated)", /\bcarcinoma\b|\blymphoma\b|\bleukemia\b/i, "C80.1"],
+    ["Hip fracture", /hip fracture|fractured? (?:neck of )?femur|femoral neck fracture|intertrochanteric|subtrochanteric/i, "S72.0"], ["Peritoneal carcinomatosis", /carcinomatosis|peritoneal metasta|metasta\w* (?:to|of|in) (?:the )?peritone|neoplasm of (?:the )?peritoneum|omental (?:cake|caking|mass|metasta)/i, "C78.6"], ["Pseudomyxoma peritonei", /pseudomyxoma/i, "C48.2"],
+    ["Malignant neoplasm of colon/rectum", /(?:malignant neoplasm|cancer|carcinoma|adenocarcinoma) of (?:the )?(?:sigmoid |ascending |descending |transverse )?(?:colon|rectum|cecum)|(?:colon|colorectal|rectal|sigmoid) (?:cancer|adenocarcinoma|carcinoma)/i, "C18.9"],
+    ["Malignant neoplasm of stomach", /(?:malignant neoplasm|cancer|carcinoma|adenocarcinoma) of (?:the )?stomach|gastric (?:cancer|adenocarcinoma|carcinoma)/i, "C16.9"],
+    ["Malignant neoplasm of ovary", /(?:malignant neoplasm|cancer|carcinoma) of (?:the )?ovary|ovarian (?:cancer|carcinoma)|high.grade serous/i, "C56.9"],
+    ["Malignant neoplasm of pancreas", /(?:malignant neoplasm|cancer|carcinoma|adenocarcinoma) of (?:the )?pancreas|pancreatic (?:cancer|adenocarcinoma|carcinoma)/i, "C25.9"],
+    ["Appendiceal mucinous neoplasm", /appendiceal (?:mucinous )?(?:neoplasm|cancer|adenocarcinoma|carcinoma)/i, "C18.1"],
+    ["Bowel obstruction", /bowel obstruction|intestinal obstruction|\bsbo\b/i, "K56.69"], ["Gastric outlet obstruction", /gastric outlet obstruction/i, "K31.1"],
+    ["Ascites", /ascites/i, "R18.8"], ["Liver metastases", /(?:liver|hepatic) metasta/i, "C78.7"],
+    ["Cancer (as stated)", /\bcarcinoma\b|\blymphoma\b|\bleukemia\b/i, "C80.1"],
     ["Status epilepticus", /status epilepticus/i, "G40.901"], ["Epilepsy", /epilep(?:sy|tic)/i, "G40.909"], ["Seizure", /\bseizures?\b|convulsions?/i, "R56.9"],
     ["Alcohol use disorder", /alcohol use disorder|alcohol dependence|alcoholism/i, "F10.20"],
     ["Cellulitis", /cellulitis|erysipelas/i, "L03.90"], ["Necrotizing fasciitis", /necroti[sz]ing fasciitis|necroti[sz]ing soft tissue/i, "M72.6"], ["Diverticulitis", /diverticulitis/i, "K57.92"],
@@ -279,7 +294,7 @@
     ["Ascending cholangitis", /cholangitis/i, "K83.09"], ["Cholecystitis", /cholecystitis/i, "K81.9"], ["Choledocholithiasis", /choledocholithiasis/i, "K80.50"],
     ["Tuberculosis", /tuberculosis/i, "A15.9"], ["Fournier gangrene", /fournier/i, "N49.3"], ["Epididymo-orchitis", /epididym|orchitis/i, "N45.3"], ["Perianal abscess", /perianal abscess|perirectal abscess|ischiorectal abscess/i, "K61.0"]
   ];
-  const DX_CTX = /diagnos|problem|\bdx\b|history of|\bpmh\b|\bhx\b|assessment|impression|comorbid/i, NEG = /\bno (?:history|evidence|signs?)\b|denies|negative for|rule out|\br\/o\b|family history|\bfhx\b|without|differential|\bddx\b|\bvs\.?\s|versus|\?|possible|query|to exclude|precautions?/i;
+  const DX_CTX = /diagnos|problem|\bdx\b|history of|\bpmh\b|\bhx\b|assessment|impression|comorbid/i, NEG = /\bno (?:history|evidence|signs?)\b|\bno (?:[a-z]+ ){0,2}(?:obstruction|metasta\w*|ascites|carcinomatosis)\b|denies|negative for|rule out|\br\/o\b|family history|\bfhx\b|without|differential|\bddx\b|\bvs\.?\s|versus|\?|possible|query|to exclude|precautions?/i;
   const DX_SECTION = /past medical|medical history|\bpmh\b|problem list|active problems|diagnos[ie]s|assessment|impression|comorbidit/i;
   function conditionItems(lines, docT) {
     const out = [], seen = new Set(); let inDx = false;

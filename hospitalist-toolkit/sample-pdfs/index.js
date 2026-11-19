@@ -222,6 +222,36 @@ window.SAMPLE_PDFS = [
   "file": "Pain/07 Simone.pdf"
  },
  {
+  "folder": "Peritoneal carcinomatosis",
+  "label": "01 Arthur - colorectal, SBO, low K, metoclopramide",
+  "file": "Peritoneal carcinomatosis/01 Arthur - colorectal, SBO, low K, metoclopramide.pdf"
+ },
+ {
+  "folder": "Peritoneal carcinomatosis",
+  "label": "02 Beatrice - ovarian, tense ascites, CA-125 rising",
+  "file": "Peritoneal carcinomatosis/02 Beatrice - ovarian, tense ascites, CA-125 rising.pdf"
+ },
+ {
+  "folder": "Peritoneal carcinomatosis",
+  "label": "03 Charles - gastric, outlet obstruction, high Ca, lactate",
+  "file": "Peritoneal carcinomatosis/03 Charles - gastric, outlet obstruction, high Ca, lactate.pdf"
+ },
+ {
+  "folder": "Peritoneal carcinomatosis",
+  "label": "04 Doris - new ascites, unknown primary",
+  "file": "Peritoneal carcinomatosis/04 Doris - new ascites, unknown primary.pdf"
+ },
+ {
+  "folder": "Peritoneal carcinomatosis",
+  "label": "05 Edward - appendiceal pseudomyxoma, CRS referral",
+  "file": "Peritoneal carcinomatosis/05 Edward - appendiceal pseudomyxoma, CRS referral.pdf"
+ },
+ {
+  "folder": "Peritoneal carcinomatosis",
+  "label": "06 Florence - pancreatic, inoperable MBO, end of life",
+  "file": "Peritoneal carcinomatosis/06 Florence - pancreatic, inoperable MBO, end of life.pdf"
+ },
+ {
   "folder": "Seizure",
   "label": "01 Kevin - new onset",
   "file": "Seizure/01 Kevin - new onset.pdf"

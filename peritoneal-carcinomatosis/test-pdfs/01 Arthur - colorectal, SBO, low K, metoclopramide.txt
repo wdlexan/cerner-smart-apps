@@ -1,0 +1,107 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, ARTHUR                    DOB: 1958-04-11     Sex: M
+MRN: TESTPC01                            Age: 68
+
+ALLERGIES
+No known drug allergies
+
+ED PHYSICIAN NOTE
+Date of service: 2026-11-13 06:00
+68 year old with sigmoid adenocarcinoma (pMMR, KRAS mutated) and peritoneal metastases, on
+second-line FOLFIRI-bevacizumab, last dose 3 weeks ago. Four days of colicky pain,
+distension and vomiting, no flatus for 2 days. CT: small bowel obstruction with two
+transition points in the pelvis. NG inserted, 1.4 L out. Admit hospitalist, general surgery
+consulted.
+
+HOSPITALIST PROGRESS NOTE
+Date of service: 2026-11-19 08:00
+Day 6. Still vomiting despite NG, colicky pain. Surgery: not an operative candidate
+(multiple levels, carcinomatosis). Metoclopramide continued from ED, Buscopan PRN added
+yesterday. Dexamethasone day 7 without clear benefit. Weight down 6 kg over 2 months. ECOG 2
+before admission. Goals-of-care discussion not yet held.
+
+VITAL SIGNS
+2026-11-13 06:00 BP: 132/80 HR: 104 RR: 20 Temp: 37.4 C SpO2: 96%
+2026-11-16 12:00 BP: 124/76 HR: 98 RR: 18 Temp: 37.1 C SpO2: 96%
+2026-11-18 12:00 BP: 112/70 HR: 106 RR: 18 Temp: 37.0 C SpO2: 95%
+2026-11-19 08:00 BP: 108/66 HR: 110 RR: 20 Temp: 37.2 C SpO2: 95%
+
+LABORATORY RESULTS
+Collected: 2026-08-21 12:00
+Test                      Result           Units           
+
+CEA                       18               ug/L            
+
+LABORATORY RESULTS
+Collected: 2026-10-12 12:00
+Test                      Result           Units           
+
+CEA                       42               ug/L            
+
+LABORATORY RESULTS
+Collected: 2026-11-13 08:00
+Test                      Result           Units           
+
+Creatinine                82               umol/L          
+
+LABORATORY RESULTS
+Collected: 2026-11-17 12:00
+Test                      Result           Units           
+
+CEA                       96               ug/L            
+
+CA 19-9                   210              kU/L            
+
+LABORATORY RESULTS
+Collected: 2026-11-19 07:00
+Test                      Result           Units           
+
+Sodium                    133              mmol/L          
+
+Potassium                 3.1              mmol/L          
+
+Magnesium                 0.62             mmol/L          
+
+Calcium                   2.15             mmol/L          
+
+Albumin                   26               g/L             
+
+Creatinine                131              umol/L          
+
+Lactate                   1.4              mmol/L          
+
+WBC                       11.2             x10^9/L         
+
+Hemoglobin                104              g/L             
+
+
+ACTIVE MEDICATION ORDERS (2026-11-19)
+Metoclopramide 10 mg IV q6h
+Hyoscine butylbromide 20 mg subcut q6h PRN
+Dexamethasone 8 mg IV daily
+Hydromorphone 0.5 mg subcut q2h PRN
+Sennosides 17.2 mg PO at bedtime
+Enoxaparin 40 mg subcut daily
+
+ACTIVE PROBLEM LIST
+Malignant neoplasm of sigmoid colon
+Secondary malignant neoplasm of peritoneum
+Small bowel obstruction
+Hypertension
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, ARTHUR MRN TESTPC01         Page 1
+
+RADIOLOGY AND PATHOLOGY REPORTS
+
+CT ABDOMEN AND PELVIS WITH CONTRAST
+Date of exam: 2026-11-13 08:00
+IMPRESSION:
+Dilated small bowel loops with two transition points in the pelvis. Omental caking and
+diffuse peritoneal nodularity consistent with peritoneal carcinomatosis. Small volume
+ascites. Mild left hydronephrosis.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, ARTHUR MRN TESTPC01         Page 2

@@ -1,0 +1,73 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, EDWARD                    DOB: 1974-12-15     Sex: M
+MRN: TESTPC05                            Age: 51
+
+ALLERGIES
+No known drug allergies
+
+ED PHYSICIAN NOTE
+Date of service: 2026-11-17 00:00
+51 year old, fit, ECOG 0. Gradual abdominal distension over 4 months, now uncomfortable.
+Exam: distended, doughy, no peritonism. Eating and passing stool.
+
+HOSPITALIST NOTE
+Date of service: 2026-11-19 08:00
+CT and biopsy consistent with low-grade appendiceal mucinous neoplasm with pseudomyxoma
+peritonei. Large volume mucinous ascites, scalloping of liver. Not drainable by needle. Plan
+referral to peritoneal surface malignancy centre for cytoreductive surgery and HIPEC.
+
+VITAL SIGNS
+2026-11-17 00:00 BP: 132/84 HR: 82 RR: 16 Temp: 36.6 C SpO2: 98%
+2026-11-19 08:00 BP: 128/80 HR: 80 RR: 16 Temp: 36.7 C SpO2: 98%
+
+LABORATORY RESULTS
+Collected: 2026-11-17 10:00
+Test                      Result           Units           
+
+Sodium                    139              mmol/L          
+
+Potassium                 4.3              mmol/L          
+
+Creatinine                84               umol/L          
+
+Albumin                   38               g/L             
+
+Hemoglobin                138              g/L             
+
+CEA                       34               ug/L            
+
+CA 19-9                   88               kU/L            
+
+CA-125                    64               kU/L            
+
+
+ACTIVE MEDICATION ORDERS (2026-11-19)
+Acetaminophen 1 g PO q6h PRN
+Polyethylene glycol 3350 17 g PO daily
+
+ACTIVE PROBLEM LIST
+Pseudomyxoma peritonei
+Low grade appendiceal mucinous neoplasm
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, EDWARD MRN TESTPC05         Page 1
+
+RADIOLOGY AND PATHOLOGY REPORTS
+
+CT ABDOMEN AND PELVIS WITH CONTRAST
+Date of exam: 2026-11-17 02:00
+IMPRESSION:
+Large volume low-attenuation mucinous ascites with scalloping of the liver and splenic
+surfaces. Cystic appendiceal mass 4 cm. Omental caking. Small bowel mesentery relatively
+spared. Findings consistent with pseudomyxoma peritonei.
+
+OMENTAL CORE BIOPSY PATHOLOGY
+Date of exam: 2026-11-18 16:00
+IMPRESSION:
+Low-grade mucinous carcinoma peritonei, consistent with appendiceal origin (CK20 and CDX2
+positive, CK7 negative).
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, EDWARD MRN TESTPC05         Page 2

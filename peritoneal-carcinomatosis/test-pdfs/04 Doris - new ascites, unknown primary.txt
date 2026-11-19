@@ -1,0 +1,77 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, DORIS                     DOB: 1963-10-08     Sex: F
+MRN: TESTPC04                            Age: 63
+
+ALLERGIES
+No known drug allergies
+
+ED PHYSICIAN NOTE
+Date of service: 2026-11-17 20:00
+63 year old previously well, ex-smoker. Six weeks of bloating, early satiety, 5 kg weight
+loss and change in bowel habit. Shifting dullness. No known cancer. Gynecology referral
+pending. Admitted for work-up.
+
+HOSPITALIST NOTE
+Date of service: 2026-11-19 09:00
+CT: omental cake and ascites, no clear primary; ovaries mildly bulky. Diagnostic tap sent.
+CA-125 high but CEA also high - GI primary not excluded. Plan core biopsy of omentum with IR
+and colonoscopy/OGD.
+
+VITAL SIGNS
+2026-11-17 20:00 BP: 128/78 HR: 88 RR: 16 Temp: 36.8 C SpO2: 97%
+2026-11-19 09:00 BP: 124/76 HR: 86 RR: 16 Temp: 36.7 C SpO2: 97%
+
+LABORATORY RESULTS
+Collected: 2026-11-18 06:00
+Test                      Result           Units           
+
+Sodium                    137              mmol/L          
+
+Potassium                 4.2              mmol/L          
+
+Creatinine                70               umol/L          
+
+Albumin                   32               g/L             
+
+Calcium                   2.32             mmol/L          
+
+Hemoglobin                112              g/L             
+
+CA-125                    420              kU/L            
+
+CEA                       58               ug/L            
+
+CA 19-9                   310              kU/L            
+
+
+ACTIVE MEDICATION ORDERS (2026-11-19)
+Acetaminophen 1 g PO q6h PRN
+Enoxaparin 40 mg subcut daily
+
+ACTIVE PROBLEM LIST
+Ascites, new
+Omental mass
+Weight loss
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, DORIS MRN TESTPC04         Page 1
+
+RADIOLOGY AND PATHOLOGY REPORTS
+
+CT CHEST ABDOMEN AND PELVIS WITH CONTRAST
+Date of exam: 2026-11-18 00:00
+IMPRESSION:
+Moderate ascites with omental caking and peritoneal thickening suspicious for peritoneal
+carcinomatosis. Mildly bulky ovaries bilaterally (possible Krukenberg tumours versus
+primary). Possible thickening of the gastric antrum. No liver metastases.
+
+ASCITIC FLUID ANALYSIS
+Date of exam: 2026-11-18 16:00
+IMPRESSION:
+SAAG 6 g/L, total protein 38 g/L, WBC 420 (lymphocyte predominant). Cytology: adenocarcinoma
+with signet-ring features; immunostains pending (CK7, CK20, CDX2, PAX8).
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, DORIS MRN TESTPC04         Page 2
