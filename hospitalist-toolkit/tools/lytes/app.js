@@ -18,7 +18,13 @@ const PDFS = {
   phos: { file: "phosphate.pdf", label: "Phosphate infosheet (PDF): low and high PO4, mild / moderate / severe, treatment, when to repeat labs", src: [] },
   Ca: { file: "hypercalcemia.pdf", label: "Hypercalcemia infosheet (PDF): mild, moderate, severe — treatment and when to repeat labs", src: ["SFE_HYPER", "ES2023"] },
   Mg: { file: "magnesium.pdf", label: "Magnesium infosheet (PDF): low and high Mg, mild / moderate / severe, treatment, when to repeat labs", src: [] } };
-const PDF_V = "20261118c";
+const PDF_V = "20261118d";
+const PROD = window.LYTES_PRODUCTS || {};
+function stock(e) {
+  const rows = PROD[e]; if (!rows) return "";
+  return `<details class="stock"><summary>What we stock (local replacement sheet, Dec 2014)</summary><table>${rows.map((r) => `<tr><td><b>${esc(r[0])}</b></td><td>${esc(r[1])}</td></tr>`).join("")}</table>
+    <div class="why">${esc(PROD.all)} Confirm with pharmacy: the sheet is from 2014.</div></details>`;
+}
 const state = { f: null, x: {} };
 
 /* ---- values ---- */
@@ -96,7 +102,7 @@ function drawPlan(e, a, m) {
     return `<tr><td><b>${esc(r.when)}</b></td><td>${esc(r.what)}</td><td class="why">${s0.url ? `<a href="${esc(s0.url)}" target="_blank" rel="noopener">${esc(s0.label)}</a>` : esc(s0.label)}</td></tr>`; }).join("")}</table>` : "";
   body.innerHTML = `<div class="muted">${esc(ref.grade)}</div>${pdfRow(e)}
     <h3>Possible causes in this patient</h3>${causes}
-    <h3>Treatment</h3>${treat}
+    <h3>Treatment</h3>${treat}${stock(e)}
     <h3>When to repeat labs</h3>${rc}
     <div class="src">${esc(a.doseNote)} Symptoms: ${esc(ref.symptoms)}</div>
     <div class="row noprint"><button class="linkbtn" data-ref="${p.key}">Full reference: ${esc(ref.title)}</button></div>`;

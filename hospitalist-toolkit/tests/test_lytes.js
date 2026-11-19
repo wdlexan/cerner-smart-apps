@@ -55,7 +55,7 @@ has("1 PO4 1.9 mild high plan exists", [{ text: a.plans.phos ? a.plans.phos.key 
 // 2: hypoK 2.6, Mg 0.48, digoxin, QTc 512, furosemide, urine K:Cr 6.1
 a = run(1);
 eq("2 K moderate low", a.g.K.key + " " + a.g.K.sev, "hypoK 2");
-has("2 Mg 5 g in K plan", all(a.plans.K), "5 g IV over 5 h"); has("2 digoxin target", all(a.plans.K), "Target K ≥ 4.0");
+has("2 Mg 5 g in K plan", all(a.plans.K), "magnesium sulfate 5 g in 100 mL NS"); has("2 digoxin target", all(a.plans.K), "Target K ≥ 4.0");
 has("2 diuretic cause", a.plans.K.causes, "Diuretic"); has("2 kidney loss by urine K:Cr", a.plans.K.causes, "kidney losing K");
 has("2 metabolic alkalosis cause", a.plans.K.causes, "Metabolic alkalosis");
 has("2 digoxin flag", a.flags, "digoxin"); has("2 QTc torsades flag", a.flags, "torsades"); has("2 Mg severe flag", a.flags, "(< 0.5)");
@@ -63,8 +63,8 @@ has("2 digoxin flag", a.flags, "digoxin"); has("2 QTc torsades flag", a.flags, "
 // 3: refeeding, PO4 0.27, weight 41, K 3.0 -> potassium phosphate, 0.32-0.64 mmol/kg = 13-26 mmol
 a = run(2);
 eq("3 PO4 severe", a.g.phos.sev, 3);
-has("3 KPO4 15 mmol peripheral", all(a.plans.phos), "Potassium phosphate 15 mmol IV via peripheral line");
-has("3 weight ceiling 41 kg", all(a.plans.phos), "0.64 mmol/kg = 26 mmol"); has("3 repeat 15 mmol", all(a.plans.phos), "give another 15 mmol");
+has("3 PO4 0.27 → 30 mmol", all(a.plans.phos), "IV phosphate 30 mmol (PO4 0.27 < 0.3)"); has("3 KPO4 15 × 2 peripheral", all(a.plans.phos), "KPO4 15 mmol (22 mmol K) in 255 mL IV over 4–6 h, peripheral OK, × 2");
+has("3 PO line 32 mmol", all(a.plans.phos), "4 mL PO BID");
 has("3 thiamine", all(a.plans.phos), "thiamine 100 mg"); has("3 refeeding flag", a.flags, "Refeeding pattern");
 has("3 refeeding cause", a.plans.phos.causes, "Refeeding");
 
@@ -112,24 +112,31 @@ a = run(2); has("3 refeeding daily labs", rc(a.plans.phos), "first 3–5 days of
 a = run(4); has("5 infusion q4-6h", rc(a.plans.Ca), "Every 4–6 h on infusion");
 
 // phosphate salt choice
-let ph = R.assess({ phos: 0.25, K: 5.3, weight: 70 }, {}, [], []); has("PO4 low + K 5.3 → Na phos", all(ph.plans.phos), "Sodium phosphate 15 mmol IV");
-ph = R.assess({ phos: 0.25, K: 4.6, creatinine: 400, age: 70, sex: "male" }, {}, [], []); has("eGFR < 30 + K 4.6 → Na phos", all(ph.plans.phos), "Sodium phosphate 15 mmol"); has("renal one dose", all(ph.plans.phos), "one dose, then recheck");
-ph = R.assess({ phos: 0.5, K: 4.2 }, { npo: true }, [], []); has("moderate NPO → KPO4 15", all(ph.plans.phos), "Potassium phosphate 15 mmol IV via peripheral line");
-ph = R.assess({ phos: 0.5, K: 4.2 }, {}, [], []); has("moderate eating → PO first", all(ph.plans.phos), "Phosphate Novartis");
+let ph = R.assess({ phos: 0.25, K: 5.3, weight: 70 }, {}, [], []); has("PO4 low + K 5.3 → NaPO4 30", all(ph.plans.phos), "NaPO4 30 mmol (40 mmol Na) in 260 mL");
+ph = R.assess({ phos: 0.25, K: 4.6, creatinine: 400, age: 70, sex: "male" }, {}, [], []); has("eGFR < 30 + K 4.6 → NaPO4 15 (halved)", all(ph.plans.phos), "50% dose for eGFR < 30): NaPO4 15 mmol");
+ph = R.assess({ phos: 0.5, K: 4.2 }, { npo: true }, [], []); has("moderate NPO → KPO4 15", all(ph.plans.phos), "IV phosphate 15 mmol (PO4 0.5): KPO4 15 mmol");
+ph = R.assess({ phos: 0.45, K: 4.2, weight: 72 }, { npo: true }, [], []); has("PO4 0.45 and 72 kg → 30 mmol", all(ph.plans.phos), "IV phosphate 30 mmol (PO4 0.45 < 0.5 and weight 72 kg ≥ 60)");
+ph = R.assess({ phos: 0.45, K: 4.2, weight: 52 }, { npo: true }, [], []); has("PO4 0.45 and 52 kg → 15 mmol", all(ph.plans.phos), "IV phosphate 15 mmol");
+ph = R.assess({ phos: 0.5, K: 4.2 }, {}, [], []); has("moderate eating → PO first", all(ph.plans.phos), "sodium phosphate oral solution 4 mmol/mL");
 
 // magnesium
 eq("Mg 0.65 mild", R.gradeMg(0.65).sev, 1); eq("Mg 0.55 moderate", R.gradeMg(0.55).sev, 2); eq("Mg 0.45 severe", R.gradeMg(0.45).sev, 3);
 eq("Mg 1.5 mild high", R.gradeMg(1.5).sev, 1); eq("Mg 2.4 moderate high", R.gradeMg(2.4).sev, 2); eq("Mg 3.0 severe high", R.gradeMg(3.0).sev, 3); eq("Mg 2.2 + symptoms severe", R.gradeMg(2.2, { symptoms: true }).sev, 3);
 a = run(1); eq("2 Mg plan", a.plans.Mg.key + " " + a.plans.Mg.sev, "hypoMg 3");
-has("2 Mg 5 g", all(a.plans.Mg), "Magnesium sulfate 5 g IV over 5 h"); has("2 QTc 512 → 2 g bolus", all(a.plans.Mg), "2 g IV over 10–15 min");
+has("2 Mg 5 g", all(a.plans.Mg), "Magnesium sulfate 5 g in 100 mL NS IV, no faster than 2 g/h"); ok("2 single torsades line", all(a.plans.Mg).filter((t) => /Torsades/.test(t.text)).length === 1); has("2 QTc 512 → 2 g bolus", all(a.plans.Mg), "2 g IV over 10–15 min");
 has("2 PPI cause", a.plans.Mg.causes, "PPI"); has("2 diuretic cause", a.plans.Mg.causes, "diuretic"); has("2 K low too", all(a.plans.Mg), "replace Mg with K");
 ok("2 no 4 g anywhere", !JSON.stringify(a.plans).match(/\b4 g\b|1–2 g IV|2–4 g/), "");
-has("2 Mg recheck 6-12 h", rc(a.plans.Mg), "6–12 h after the IV dose ends");
+has("2 Mg recheck ≥ 1 h local", rc(a.plans.Mg), "At least 1 h after the IV dose");
 a = run(8); eq("9 Mg severe high", a.plans.Mg.key + " " + a.plans.Mg.sev, "hyperMg 3");
 has("9 calcium gluconate", all(a.plans.Mg), "Calcium gluconate 10% 10–20 mL"); has("9 stop MoM", all(a.plans.Mg), "Milk of Magnesia");
 has("9 dialysis", all(a.plans.Mg), "nephrology for dialysis"); has("9 cause Mg load", a.plans.Mg.causes, "Magnesium intake");
 has("9 urgent flag", a.flags, "severe hypermagnesemia"); has("9 hourly reflexes", rc(a.plans.Mg), "Patellar reflexes");
-let mr = R.assess({ Mg: 0.55, creatinine: 400, age: 70, sex: "male" }, {}, [], []); has("renal hypoMg 2 g", all(mr.plans.Mg), "2 g IV over 1–2 h (eGFR < 30");
+let mr = R.assess({ Mg: 0.55, creatinine: 400, age: 70, sex: "male" }, {}, [], []); has("renal hypoMg 2 g", all(mr.plans.Mg), "2 g in 50 mL NS IV over at least 1 h (50% dose");
+
+// local sheet: K
+let kk = R.assess({ K: 3.2, weight: 70 }, {}, ["Digoxin 0.125 mg"], []); has("K need to 4.0 on digoxin", all(kk.plans.K), "80–160 mEq if acute loss"); has("K-Dur mild", all(kk.plans.K), "K-Dur 20 mEq");
+kk = R.assess({ K: 2.3 }, { npo: true }, [], []); has("severe K peripheral bags", all(kk.plans.K), "KCl 10 mEq/100 mL bags, each over at least 30 min");
+has("SR level ≥ 4 h", rc(R.assess({ K: 2.8 }, {}, [], []).plans.K), "At least 4 h after K-Dur");
 
 // unit conversion: mg/dL calcium and phosphate
 const conv = C.parse({ patient: null, obs: [

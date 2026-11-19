@@ -2,6 +2,7 @@
    Run:  node infosheets.js   then for each:  google-chrome --headless --no-pdf-header-footer --print-to-pdf=<name>.pdf <name>.html
    Content written by Claude (UNVERIFIED): keep it in step with rules.js and reference.js. */
 const fs = require("fs"), path = require("path");
+const LOC = '<span class="tag">Local sheet</span>';
 const G = (t) => `<span class="tag">${t}</span>`, P = '<span class="tag p">Practice</span>';
 const CSS = fs.readFileSync(path.join(__dirname, "hypercalcemia.html"), "utf8").match(/<style>[\s\S]*?<\/style>/)[0];
 
@@ -41,14 +42,14 @@ const sheets = [
       ["K (mmol/L)", "3.0–3.4", "2.5–2.9", "&lt; 2.5, <b>or any level with ECG changes, weakness or arrhythmia</b>"],
       ["Symptoms / ECG", "Usually none", "Weakness, cramps, constipation; flat T, U waves", "Paralysis, ileus, rhabdomyolysis; ST depression, long QU, ectopy, VT/VF, torsades (worse with digoxin, ischemia, low Mg)"],
       ["Where", "Ward / outpatient", "Ward; ECG if K &lt; 2.8, heart disease or digoxin", "Cardiac monitor; HDU if paralysis or arrhythmia"],
-      ["Potassium", "KCl 20–40 mmol PO BID (40–80 mmol/day)", "KCl 40 mmol PO 2–3 times today, or IV KCl 10 mmol/h peripherally", "IV KCl max 10 mmol/h peripheral, up to 20 mmol/h central with monitoring (local policy), plus PO if able; in saline, not dextrose"],
-      ["Magnesium", "Check; PO or 2 g IV if low", "MgSO4 2 g IV over 1–2 h, or 5 g over 5 h if Mg &lt; 0.6", "MgSO4 5 g IV over 5 h (2 g over 10–15 min first if torsades)"],
-      ["Repeat labs " + P, "Next morning, then daily on KCl or diuretic", "4–6 h after the doses, then next morning", "1–2 h after each 40 mmol IV, then every 4–6 h until &gt; 3.0"]]),
+      ["Potassium", "K-Dur 20 mEq SR 1–2 tabs PO BID (40–80 mEq/day)", "K-Dur 20 mEq × 2 PO BID–TID; or KCl 10 mEq/100 mL IV peripheral bags, each ≥ 30 min " + LOC, "Peripheral: KCl 10 mEq/100 mL bags, each ≥ 30 min. Central only: KCl 20 mEq/50 mL or 40 mEq/100 mL (rate per IV manual) " + LOC + ". Plus PO if able; not in dextrose"],
+      ["Magnesium", "Check; PO or MgSO4 2 g IV if low", "MgSO4 2 g IV, or 5 g if Mg &lt; 0.6 " + LOC, "MgSO4 5 g IV, max 2 g/h (2 g over 10–15 min first if torsades)"],
+      ["Repeat labs", "Next morning; at least 4 h after an SR tablet " + LOC, "At least 4 h after K-Dur / Slow-K, 1–2 h after elixir " + LOC, "1–2 h after each 40 mEq IV, then every 4–6 h until &gt; 3.0 " + P]]),
     lowBoxes: box("Causes of low K", ["<b>Kidney loss:</b> loop/thiazide diuretics, osmotic diuresis, metabolic alkalosis, aldosterone excess (hypertension), low Mg, amphotericin, RTA, Gitelman/Bartter",
         "<b>GI loss:</b> vomiting / NG suction, diarrhea, laxatives, high-output stoma", "<b>Shift into cells:</b> insulin (DKA), salbutamol, refeeding, alkalosis, periodic paralysis",
         "Spot urine K:Cr &gt; 1.5 mmol/mmol = kidney loss; &lt; 1.5 = GI, shift or intake"]) +
-      box("Good to know", ["About 10 mmol KCl raises K by ~0.1 mmol/L (less when very low or losses continue)", "Target ≥ 4.0 with AF, ischemia, heart failure or digoxin",
-        "DKA: hold insulin until K ≥ 3.3", "eGFR &lt; 30: half doses, recheck sooner", "Ongoing diuretic loss: add spironolactone or amiloride rather than more KCl", "K that will not correct = replace Mg"]),
+      box("Good to know", ["100–200 mEq raises K by about 1 mmol/L in acute loss; up to 400 mEq in chronic loss " + LOC, "Products: KCl 8 mEq SR (Slow-K), 20 mEq SR (K-Dur), elixir 1.33 mEq/mL (salty, dilute), K citrate 25 mEq (~40% as effective); premixed KCl 20 or 40 mEq/L in 1 L " + LOC, "Target ≥ 4.0 with AF, ischemia, heart failure or digoxin",
+        "DKA: hold insulin until K ≥ 3.3", "GFR &lt; 30: 50% dose, monitor more often " + LOC, "Ongoing diuretic loss: add spironolactone or amiloride rather than more KCl", "K that will not correct = replace Mg"]),
     high: sevTable("High potassium (hyperkalemia)", 3, [
       ["K (mmol/L)", "5.1–5.9 " + G("UKKA: mild 5.5–5.9"), "6.0–6.4 " + G("UKKA"), "≥ 6.5 " + G("UKKA") + ", <b>or any level with ECG changes</b>"],
       ["First", "Is it real? Hemolysis, high platelets (&gt; 500) or WBC (&gt; 50): repeat as plasma K", "12-lead ECG urgently (all K ≥ 6.0) " + G("UKKA"), "Continuous cardiac monitor " + G("UKKA") + "; 12-lead ECG now"],
@@ -62,18 +63,19 @@ const sheets = [
         "<b>Shift out:</b> insulin deficiency, acidosis, hyperosmolality", "<b>Cell breakdown:</b> rhabdomyolysis, tumour lysis, hemolysis, GI bleed"]) +
       box("Good to know", ["Calcium protects the heart for 30–60 min only: it does not lower K", "Insulin effect wears off at 4–6 h: rebound K is why the 4 and 6 h checks matter", "Hypoglycemia after insulin-glucose is common with low eGFR",
         "Digoxin toxicity with high K: digoxin immune Fab", "Restart RAAS blockers later at a lower dose with a binder when they matter (HF, CKD)"]),
-    sources: `UK Kidney Association. Clinical practice guideline: treatment of acute hyperkalaemia in adults (2023) — <a href="https://ukkidney.org/wp-content/uploads/drupal-archive/FINAL%20VERSION%20-%20UKKA%20CLINICAL%20PRACTICE%20GUIDELINE%20-%20MANAGEMENT%20OF%20HYPERKALAEMIA%20IN%20ADULTS%20-%20191223.pdf">UKKA PDF</a>: severity bands, ECG and monitor indications, K at 1, 2, 4, 6 and 24 h, glucose for at least 6 h after insulin-glucose. Low-K grading, doses and recheck times are common practice.` },
+    sources: `UK Kidney Association. Clinical practice guideline: treatment of acute hyperkalaemia in adults (2023) — <a href="https://ukkidney.org/wp-content/uploads/drupal-archive/FINAL%20VERSION%20-%20UKKA%20CLINICAL%20PRACTICE%20GUIDELINE%20-%20MANAGEMENT%20OF%20HYPERKALAEMIA%20IN%20ADULTS%20-%20191223.pdf">UKKA PDF</a>: severity bands, ECG and monitor indications, K at 1, 2, 4, 6 and 24 h, glucose for at least 6 h after insulin-glucose. Low-K products and doses: Local electrolyte replacement sheet (Richard Wanbon, PharmD, Dec 22, 2014): products, doses, rates and timing of levels marked Local sheet. It is from 2014: confirm with pharmacy. Other low-K intervals are common practice.` },
 
   { file: "phosphate", title: "Phosphate: low and high, mild / moderate / severe",
     sub: "normal PO4 0.80–1.45 mmol/L (2.5–4.5 mg/dL) · check K, Mg and Ca with it",
     low: sevTable("Low phosphate (hypophosphatemia)", 3, [
       ["PO4 (mmol/L)", "0.65–0.79", "0.32–0.64", "&lt; 0.32 (&lt; 1 mg/dL), <b>or symptoms</b>"],
       ["Symptoms", "Usually none", "Weakness, fatigue", "Respiratory muscle weakness, failure to wean, heart failure, rhabdomyolysis, hemolysis, confusion, seizures"],
-      ["Eating", "Diet; Phosphate Novartis 500 mg (≈ 16 mmol) BID if refeeding risk or weak", "Phosphate Novartis 1 tab TID (≈ 48 mmol/day); diarrhea", "IV first; PO once &gt; 0.32 and eating"],
-      ["IV (standard)", "Potassium phosphate 15 mmol IV via peripheral line once, if not eating / refeeding risk", "Potassium phosphate 15 mmol IV peripheral once, recheck, repeat once if still &lt; 0.65", "Potassium phosphate 15 mmol IV peripheral; recheck; repeat 15 mmol while &lt; 0.32 (usually 30–45 mmol in 24 h; ceiling 0.64 mmol/kg, max 50 mmol)"],
-      ["Repeat labs " + P, "Next morning", "2–4 h after an IV dose ends, then daily", "2–4 h after each IV dose; every 6–12 h until &gt; 0.65; then daily"]]),
-    lowBoxes: box("Potassium phosphate 15 mmol: safety", ["Contains about <b>22 mmol K</b> (Canadian product ≈ 3 mmol PO4 + 4.4 mmol K per mL: check yours): counts toward the peripheral K limit of 10 mmol/h, so give over at least 2–3 h", "Dilution and rate per Island Health / pharmacy protocol",
-        "Use <b>sodium phosphate 15 mmol</b> instead if K ≥ 5.0, or eGFR &lt; 30 / dialysis with K ≥ 4.5", "eGFR &lt; 30: one dose, recheck before repeating", "Never in the same line as calcium; caution if Ca is high (precipitation)"]) +
+      ["Eating", "Diet (skim milk 8 mmol / 250 mL); sodium phosphate solution 4 mmol/mL 4 mL PO BID if refeeding risk or weak", "Sodium phosphate solution 4 mL PO BID (32 mmol/day); diarrhea above 32 " + LOC, "IV first; PO once eating"],
+      ["IV dose " + LOC, "15 mmol, only if not eating / refeeding risk", "15 mmol; <b>30 mmol (15 × 2) if &lt; 0.5 and ≥ 60 kg</b>", "<b>30 mmol (15 mmol × 2)</b> if &lt; 0.3 (or &lt; 0.5 and ≥ 60 kg)"],
+      ["IV product " + LOC, "KPO4 15 mmol (22 mmol K) in 255 mL, peripheral OK, over 4–6 h", "Same; NaPO4 15 mmol / 125 mL or 30 mmol / 260 mL (peripheral OK) if K high or GFR low", "KPO4 15 mmol peripheral × 2, or KPO4 30 mmol / 255 mL central, each over 4–6 h"],
+      ["Repeat labs " + LOC, "Next morning", "2 h after the dose if acute; 72 h level more accurate", "2 h after the dose; repeat levels often unnecessary; daily while replacing"]]),
+    lowBoxes: box("IV phosphate: safety", ["KPO4 15 mmol carries <b>22 mmol K</b> (30 mmol carries 44): give over 4–6 h " + LOC, "Central-only bags: KPO4 15 mmol / 125 mL and KPO4 30 mmol / 255 mL " + LOC,
+        "Use <b>NaPO4</b> (15 mmol + 20 mmol Na, or 30 mmol + 40 mmol Na) if K ≥ 5.0, or GFR &lt; 30 / dialysis with K ≥ 4.5", "GFR &lt; 30: 50% dose " + LOC, "Never in the same line as calcium; caution if Ca is high (precipitation)"]) +
       box("Causes of low PO4", ["<b>Shift:</b> refeeding (malnutrition, alcohol, eating disorder), insulin / DKA treatment, respiratory alkalosis (sepsis, withdrawal), hungry bone", "<b>Low intake / absorption:</b> alcohol, vitamin D deficiency, binders, calcium carbonate, Mg/Al antacids",
         "<b>Kidney loss:</b> high PTH, ferric carboxymaltose (IV iron, weeks), Fanconi (tenofovir, ifosfamide, myeloma), foscarnet, acetazolamide, after kidney transplant", "<b>Refeeding:</b> thiamine 100 mg before feeding, start at 10–20 kcal/kg/day, daily PO4, K, Mg for the first 3–5 days " + P]),
     high: sevTable("High phosphate (hyperphosphatemia)", 3, [
@@ -85,19 +87,19 @@ const sheets = [
     highBoxes: box("Causes of high PO4", ["<b>Low excretion:</b> AKI, CKD, hypoparathyroidism", "<b>Inside load:</b> tumour lysis, rhabdomyolysis, hemolysis, DKA before insulin", "<b>Outside load:</b> Fleet / sodium phosphate enema or bowel prep, supplements, vitamin D excess",
         "<b>False high:</b> paraprotein (myeloma), high lipids, hemolysis, liposomal amphotericin, heparin in the sample"]) +
       box("Good to know", ["Never give a phosphate enema with low eGFR, ileus or dehydration", "High PO4 + low Ca + high K + high urate in cancer = tumour lysis", "Ca × PO4 product &gt; 4.4 mmol²/L²: calcification risk"]),
-    sources: "No single guideline sets the grading, doses or recheck times for phosphate: they are common practice. The potassium phosphate 15 mmol peripheral dose is the local standard; confirm rate and dilution with Island Health pharmacy." },
+    sources: "Local electrolyte replacement sheet (Richard Wanbon, PharmD, Dec 22, 2014): products, doses, rates and timing of levels marked Local sheet. It is from 2014: confirm with pharmacy. The grading of severity and the high-phosphate section are common practice (no single guideline)." },
 
   { file: "magnesium", title: "Magnesium: low and high, mild / moderate / severe",
-    sub: "normal Mg 0.70–1.00 mmol/L (1.7–2.4 mg/dL) · magnesium sulfate comes as 2 g or 5 g",
+    sub: "normal Mg 0.70–1.00 mmol/L (1.7–2.4 mg/dL) · magnesium sulfate 2 g (8 mmol) or 5 g (20 mmol)",
     low: sevTable("Low magnesium (hypomagnesemia)", 3, [
       ["Mg (mmol/L)", "0.60–0.69", "0.50–0.59", "&lt; 0.50, <b>or tetany, seizure, arrhythmia</b>"],
       ["Symptoms / ECG", "Often none; low K or Ca that will not correct", "Tremor, cramps, weakness; long QT", "Tetany, Chvostek / Trousseau, seizures, confusion; AF, VT, torsades; digoxin toxicity"],
-      ["Treatment", "PO magnesium (magnesium oxide 400–800 mg daily–BID, or glucoheptonate); diarrhea limits dose. MgSO4 2 g IV over 1–2 h if low K/Ca, arrhythmia or long QT", "MgSO4 <b>5 g IV over 5 h</b> (or 2 g over 1–2 h if close to 0.60)", "Torsades / seizure: MgSO4 <b>2 g IV over 10–15 min</b> (1–2 min if pulseless). Then MgSO4 <b>5 g IV over 5 h</b>; often a second 5 g over 12–24 h"],
-      ["eGFR &lt; 30 / dialysis", "PO or 2 g IV", "2 g IV, recheck before more", "2 g IV at a time, recheck before more"],
-      ["Repeat labs " + P, "Next morning, then daily while replacing", "Next morning, then daily", "6–12 h after the infusion ends (earlier reads falsely high), then daily; cardiac monitor until QT shortens"]]),
+      ["Treatment", "PO target 20 mmol/day: Mg 250 mg elemental tab BID, or Mg Rougier 30 mL TID " + LOC + ". MgSO4 2 g / 50 mL IV if low K/Ca, arrhythmia or long QT", "Mg &lt; 0.6: MgSO4 <b>5 g in 100 mL NS</b> IV, max 2 g/h " + LOC, "Torsades / seizure: MgSO4 <b>2 g IV over 10–15 min</b> (crash-cart vials). Then MgSO4 <b>5 g IV</b>, max 2 g/h (slower keeps more); often a second dose"],
+      ["GFR &lt; 30 / dialysis", "50% dose " + LOC, "MgSO4 2 g, recheck before more", "MgSO4 2 g at a time, recheck before more"],
+      ["Repeat labs " + LOC, "Next morning, then daily while replacing", "At least 1 h after IV; 72 h level more accurate", "At least 1 h after IV, then daily; cardiac monitor until QT shortens"]]),
     lowBoxes: box("Causes of low Mg", ["<b>GI:</b> diarrhea, laxatives, high-output stoma, malabsorption, pancreatitis, long-term PPI, alcohol, malnutrition", "<b>Kidney:</b> loop/thiazide diuretics, alcohol, glycosuria / DKA, aminoglycosides, amphotericin, cisplatin, tacrolimus/cyclosporine, foscarnet, pentamidine, cetuximab/panitumumab, Gitelman",
         "<b>Shift:</b> refeeding, insulin, hungry bone after parathyroidectomy", "Unclear cause: fractional excretion of Mg &gt; 2–4% = kidney loss; &lt; 2% = GI or intake"]) +
-      box("Good to know", ["Serum Mg is &lt; 1% of body Mg: a normal level does not rule out depletion", "About half of IV Mg is lost in the urine: slower infusions (about 1 g/h) keep more", "Replace Mg first or with K and Ca: they will not correct otherwise",
+      box("Good to know", ["Serum Mg is &lt; 1% of body Mg: a normal level does not rule out depletion", "Much of IV Mg is lost in the urine: slower rates keep more (max 2 g/h) " + LOC, "2 g = 8 mmol; 24 mg elemental Mg = 1 mmol " + LOC, "Replace Mg first or with K and Ca: they will not correct otherwise",
         "Stop or reduce a PPI if no firm indication; amiloride or spironolactone for diuretic loss"]),
     high: sevTable("High magnesium (hypermagnesemia)", 3, [
       ["Mg (mmol/L)", "1.01–1.99", "2.0–2.99", "≥ 3.0, <b>or symptoms</b> (lost reflexes, hypotension, drowsiness, slow breathing)"],
@@ -107,6 +109,6 @@ const sheets = [
     highBoxes: box("Causes of high Mg", ["<b>Load + low eGFR (most cases):</b> milk of magnesia (magnesium hydroxide), magnesium citrate / Pico-Salax / Citro-Mag bowel prep, Mg antacids and enemas, supplements, IV magnesium sulfate", "<b>Low excretion:</b> AKI, CKD, lithium, hypothyroidism, adrenal insufficiency",
         "<b>Shift out:</b> tumour lysis, rhabdomyolysis, hemolysis, DKA before insulin"]) +
       box("Good to know", ["Loss of patellar reflexes comes before respiratory depression: check reflexes", "Calcium only buys time; dialysis removes Mg", "Avoid Mg-containing laxatives with eGFR &lt; 30"]),
-    sources: "No single guideline sets the magnesium grading, doses or recheck times: they are common practice. Doses use the stocked magnesium sulfate sizes (2 g and 5 g); confirm rate with Island Health pharmacy." }];
+    sources: "Local electrolyte replacement sheet (Richard Wanbon, PharmD, Dec 22, 2014): products, doses, rates and timing of levels marked Local sheet. It is from 2014: confirm with pharmacy. The grading of severity and the high-magnesium section are common practice (no single guideline)." }];
 
 sheets.forEach((o) => { fs.writeFileSync(path.join(__dirname, o.file + ".html"), page(o)); console.log("wrote " + o.file + ".html"); });

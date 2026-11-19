@@ -14,12 +14,13 @@
         ["Low intake", "Poor oral intake, alcohol, eating disorder (usually with another cause)."]],
       tests: ["Mg (always), creatinine, glucose, tCO2 / blood gas", "ECG", "Spot urine K and creatinine: K:Cr > 1.5 mmol/mmol = kidney loss; < 1.5 = GI, shift or intake", "If kidney loss and hypertension: renin and aldosterone; if normal BP and alkalosis: urine Cl (vomiting vs diuretic vs Gitelman/Bartter)"],
       treat: [
-        ["Mild", "KCl 20–40 mmol PO BID–TID (40–80 mmol/day). Each 10 mmol raises K about 0.1 mmol/L (less when K is very low or losses continue)."],
-        ["Moderate", "KCl 40 mmol PO 2–3 times in a day, or IV KCl 10 mmol/h peripherally. Recheck after 40–80 mmol."],
-        ["Severe or ECG changes", "Cardiac monitor. IV KCl up to 10 mmol/h peripheral, up to 20 mmol/h central with monitoring (local policy), plus PO if able. Give in saline, not dextrose. Recheck every 1–2 h after each 40 mmol."],
-        ["Always", "Correct Mg (magnesium sulfate 2 g IV, or 5 g IV over 5 h if < 0.6). Treat the cause; for ongoing diuretic loss add spironolactone or amiloride rather than more KCl. Halve doses and recheck sooner with eGFR < 30."],
+        ["How much", "100–200 mEq raises K by about 1 mmol/L in acute loss (up to 400 mEq in chronic loss) (local sheet)."],
+        ["Mild", "K-Dur 20 mEq SR 1–2 tabs PO BID (40–80 mEq/day). K citrate 25 mEq tabs are easier to take but only ~40% as effective as KCl."],
+        ["Moderate", "K-Dur 20 mEq × 2 (40 mEq) PO BID–TID, or KCl elixir 1.33 mEq/mL (dilute; salty). IV: KCl 10 mEq/100 mL peripheral bags, each over at least 30 min."],
+        ["Severe or ECG changes", "Cardiac monitor. Peripheral: KCl 10 mEq/100 mL bags, each over at least 30 min. Central only: KCl 20 mEq/50 mL or 40 mEq/100 mL, rate per IV manual. Plus PO if able. IV fluid: premixed KCl 20 or 40 mEq/L (½NS + KCl mixed by pharmacy); not dextrose."],
+        ["Always", "Correct Mg (MgSO4 2 g IV, or 5 g if Mg < 0.6). Treat the cause; for ongoing diuretic loss add spironolactone or amiloride rather than more KCl. GFR < 30: 50% dose and monitor more often (local sheet)."],
         ["Targets", "≥ 3.5; ≥ 4.0 with AF, ischemia, heart failure or digoxin. In DKA hold insulin until K ≥ 3.3."]],
-      repeat: "Severe: K 1–2 h after each 40 mmol IV, then every 4–6 h until > 3.0. Moderate: 4–6 h after doses, then next morning. Mild: next morning, then daily on KCl or diuretic. Sooner with eGFR < 30. (Common practice.)",
+      repeat: "SR tablets (K-Dur, Slow-K) release K over 4–8 h: draw the level at least 4 h after the dose; 1–2 h after elixir (local sheet). Severe IV: K 1–2 h after each 40 mEq, then every 4–6 h until > 3.0. Mild: next morning, then daily on KCl or diuretic. Sooner with GFR < 30.",
       pearls: ["Low K that will not correct = low Mg until proven otherwise.", "Hypertension + low K + metabolic alkalosis: think aldosterone excess.", "Periodic paralysis: give small doses; rebound high K is common after the shift reverses."]
     },
     hyperK: {
@@ -53,12 +54,12 @@
         ["Other", "Continuous renal replacement therapy, burns recovery, rapidly growing leukemia/lymphoma."]],
       tests: ["K, Mg, Ca, creatinine, glucose, CK (if weak)", "If cause unclear: urine phosphate and creatinine (fractional excretion of PO4 > 5% with low serum = kidney loss), PTH, 25-OH D, glucose/protein/urate in urine (Fanconi)"],
       treat: [
-        ["Mild", "Dietary phosphate; PO phosphate (Phosphate Novartis 500 mg ≈ 16 mmol) 1 tab BID–TID if refeeding risk, ventilated or weak."],
-        ["Moderate", "PO phosphate 16 mmol TID (diarrhea limits dose), or if not eating / ventilated: potassium phosphate 15 mmol IV peripherally, recheck, repeat once if needed."],
-        ["Severe or symptomatic", "Potassium phosphate 15 mmol IV peripherally; recheck 2–4 h after; repeat 15 mmol while < 0.32 (usually 30–45 mmol in 24 h; ceiling about 0.64 mmol/kg, max 50 mmol)."],
-        ["Choosing the salt", "Standard: potassium phosphate 15 mmol IV via peripheral line (≈ 22 mmol K: counts toward the peripheral K limit of 10 mmol/h; rate and dilution per local protocol). Sodium phosphate 15 mmol instead if K ≥ 5.0, or with eGFR < 30 / dialysis and K ≥ 4.5. With eGFR < 30 give one dose and recheck before repeating. Never in the same line as calcium; caution with high calcium."],
+        ["IV dose (local sheet)", "15 mmol × 2 (30 mmol) if PO4 < 0.3, or < 0.5 in a patient ≥ 60 kg; otherwise 15 mmol. Infuse each over 4–6 h."],
+        ["IV products", "Peripheral OK: KPO4 15 mmol PO4 + 22 mmol K in 255 mL; NaPO4 15 mmol + 20 mmol Na in 125 mL; NaPO4 30 mmol + 40 mmol Na in 260 mL. Central only: KPO4 15 mmol in 125 mL; KPO4 30 mmol + 44 mmol K in 255 mL."],
+        ["Choosing the salt", "KPO4 usually; NaPO4 if K ≥ 5.0, or GFR < 30 / dialysis with K ≥ 4.5. GFR < 30: 50% dose. Never in the same line as calcium; caution if Ca is high."],
+        ["PO", "16–32 mmol/day (diarrhea above 32): sodium phosphate oral solution 4 mmol/mL, 4 mL PO BID; skim milk 8 mmol per 250 mL. Na acid phosphate 500 mg effervescent (16 mmol) is non-formulary."],
         ["Refeeding", "Thiamine 100 mg before feeding; start feeds at 10–20 kcal/kg/day; daily PO4, K, Mg for 3–5 days; dietitian."]],
-      repeat: "2–4 h after each IV dose; every 6–12 h while < 0.32; daily PO4, K, Mg for the first 3–5 days of feeding when refeeding risk. (Common practice.)",
+      repeat: "Acute: 2 h after the IV dose; a level about 72 h later is more accurate, and repeat levels are often unnecessary (local sheet). Refeeding risk: daily PO4, K, Mg for the first 3–5 days of feeding.",
       pearls: ["Low PO4 after ferric carboxymaltose can last weeks and cause osteomalacia with repeat doses.", "In DKA routine phosphate is not needed unless < 0.32 or there is heart failure, respiratory weakness or anemia.", "Low PO4 with low K and low Mg in a thin patient on day 2–4 of feeding: refeeding syndrome."]
     },
     hyperPhos: {
@@ -131,13 +132,12 @@
         ["Other", "Massive transfusion (citrate), burns, pregnancy and lactation, critical illness."]],
       tests: ["K, Ca (ionized), PO4, creatinine, glucose", "ECG (QTc)", "If cause unclear: urine Mg and creatinine. Fractional excretion of Mg > 2–4% with low serum Mg = kidney loss; < 2% = GI loss or intake"],
       treat: [
-        ["Torsades / seizure / severe symptoms", "Magnesium sulfate 2 g IV over 10–15 min (over 1–2 min in pulseless torsades), cardiac monitor, then the severe dose."],
-        ["Severe (< 0.50) or symptomatic", "Magnesium sulfate 5 g IV over 5 h (about 1 g/h); often a second 5 g over the next 12–24 h."],
-        ["Moderate (0.50–0.59)", "Magnesium sulfate 5 g IV over 5 h, or 2 g IV over 1–2 h if close to 0.60."],
-        ["Mild (0.60–0.69)", "PO magnesium (magnesium oxide 400–800 mg daily–BID, or magnesium glucoheptonate; diarrhea limits dose), or magnesium sulfate 2 g IV over 1–2 h if low K or Ca, arrhythmia or long QT."],
-        ["Kidney function", "eGFR < 30 or dialysis: 2 g at a time and recheck before more (risk of high Mg)."],
+        ["Torsades / seizure / severe symptoms", "MgSO4 2 g IV over 10–15 min (1–2 min if pulseless; 2 g vials in crash carts and select units only), cardiac monitor, then the dose below."],
+        ["Mg < 0.6 (local sheet)", "MgSO4 5 g in 100 mL NS IV (20 mmol); max rate 2 g/h, slower keeps more (e.g. 4–5 h). Often a second dose when severe."],
+        ["Mg 0.6–0.69", "PO: target 20 mmol/day divided (diarrhea above 20): magnesium 250 mg elemental tab BID, or Mg glucoheptonate (Mg Rougier) 30 mL TID. Or MgSO4 2 g in 50 mL NS IV (8 mmol) if needed quickly."],
+        ["Kidney function", "GFR < 30 or dialysis: 50% dose (2 g instead of 5 g) and recheck before more."],
         ["Stop the cause", "Stop or reduce a PPI if possible; amiloride or spironolactone for ongoing diuretic loss; thiamine and slow feeds with alcohol or malnutrition."]],
-      repeat: "Severe: 6–12 h after the IV dose ends, then daily (an earlier level reads falsely high). Others: next morning, then daily while replacing. eGFR < 30: before every repeat dose. (Common practice.)",
+      repeat: "At least 1 h after an IV dose; a level 72 h after is more accurate (local sheet). Daily while replacing. GFR < 30: before every repeat dose.",
       pearls: ["Slow infusions keep more Mg: fast boluses are largely lost in the urine.", "Check Mg ≥ 6 h after an infusion: an early level is falsely high.", "Low K or low Ca that will not correct: replace Mg."]
     },
     hyperMg: {
@@ -158,7 +158,22 @@
       pearls: ["Loss of patellar reflexes comes before respiratory depression: check them.", "Milk of magnesia or Mg-containing bowel prep in an older patient with CKD is the classic ward cause.", "Magnesium is cleared by dialysis; calcium only buys time."]
     }
   };
+  /* what is stocked: local electrolyte replacement sheet (R. Wanbon, PharmD, Dec 2014). Confirm with pharmacy: the sheet may be out of date. */
+  const PRODUCTS = {
+    K: [["IV, premixed 1 L", "KCl 20 mEq/L and 40 mEq/L (see pharmacy therapeutic interchange list); ½NS + KCl must be mixed by pharmacy"],
+      ["IV, peripheral", "KCl 10 mEq/100 mL (sterile water base): each bag over at least 30 min"],
+      ["IV, central only", "KCl 20 mEq/50 mL; KCl 40 mEq/100 mL (rate per IV manual)"],
+      ["IV with phosphate", "KPO4 15 mmol PO4 + 22 mmol K in 250 mL (peripheral OK) or 125 mL (central); KPO4 30 mmol + 44 mmol K in 255 mL (central); over 4–6 h"],
+      ["PO", "KCl 8 mEq SR (Slow-K); KCl 20 mEq SR (K-Dur): level ≥ 4 h after. KCl elixir 1.33 mEq/mL (dilute; level 1–2 h after). K citrate 25 mEq tabs (~40% as effective)"]],
+    phos: [["IV, peripheral OK", "KPO4 15 mmol + 22 mmol K in 255 mL; NaPO4 15 mmol + 20 mmol Na in 125 mL; NaPO4 30 mmol + 40 mmol Na in 260 mL"],
+      ["IV, central only", "KPO4 15 mmol + 22 mmol K in 125 mL; KPO4 30 mmol + 44 mmol K in 255 mL"],
+      ["IV rule", "Over 4–6 h. 15 mmol × 2 if PO4 < 0.3, or < 0.5 and ≥ 60 kg; otherwise 15 mmol. Level 2 h after if acute; 72 h level more accurate"],
+      ["PO", "Sodium phosphate solution 4 mmol/mL (oral Fleet) 4 mL BID; Na acid phosphate 500 mg effervescent = 16 mmol (NON-FORMULARY) 1 tab BID; skim milk 8 mmol/250 mL. Aim 16–32 mmol/day"]],
+    Mg: [["IV", "MgSO4 2 g (8 mmol) in 50 mL NS; MgSO4 5 g (20 mmol) in 100 mL NS. Max 2 g/h; 5 g if Mg < 0.6. MgSO4 2 g vials: crash carts and select units, restricted indications"],
+      ["PO", "Mg 25 mg elemental tabs (prevention); Mg 250 mg elemental tabs (≈ 10 mmol) BID; Mg glucoheptonate 100 mg/mL (Mg Rougier) 30 mL = 6 mmol TID; Mg hydroxide (Milk of Magnesia) 5 mL TID. Aim 20 mmol/day"],
+      ["Levels", "At least 1 h after IV; 72 h after is more accurate"]],
+    all: "ALL electrolytes: 50% dose reduction and more frequent monitoring when GFR < 30 mL/min." };
   const ORDER = ["hypoK", "hyperK", "hypoPhos", "hyperPhos", "hypoCa", "hyperCa", "hypoMg", "hyperMg"];
-  const api = { REF, ORDER };
-  if (typeof module !== "undefined" && module.exports) module.exports = api; else { window.LYTES_REF = REF; window.LYTES_ORDER = ORDER; }
+  const api = { REF, ORDER, PRODUCTS };
+  if (typeof module !== "undefined" && module.exports) module.exports = api; else { window.LYTES_REF = REF; window.LYTES_ORDER = ORDER; window.LYTES_PRODUCTS = PRODUCTS; }
 })();

@@ -282,21 +282,26 @@
     const t = [], add = (tier, text) => t.push({ tier, text });
     const w = v.weight, eg = v.eGFR, renal = (eg != null && eg < 30) || x.dialysis || p.dialysis.length > 0;
     const lowMg = v.Mg != null && v.Mg < 0.7, po = !x.npo;
-    const mgLine = () => add(sev >= 2 || (v.Mg != null && v.Mg < 0.6) ? "now" : "next", "Magnesium " + v.Mg + ": give magnesium sulfate " + (v.Mg < 0.6 && !renal ? "5 g IV over 5 h" : "2 g IV over 1–2 h") + (renal ? " (eGFR low or dialysis: 2 g only, then recheck)" : "") + ", or PO magnesium if mild and eating. Low Mg must be fixed for K and Ca to correct.");
+    const mgLine = () => add(sev >= 2 || (v.Mg != null && v.Mg < 0.6) ? "now" : "next", "Magnesium " + v.Mg + ": magnesium sulfate " + (v.Mg < 0.6 && !renal ? "5 g in 100 mL NS IV (max 2 g/h; slower keeps more, e.g. over 5 h)" : "2 g in 50 mL NS IV over 1–2 h") + (renal ? " (eGFR < 30 or dialysis: 50% dose, so 2 g, then recheck)" : "") + ", or PO magnesium if mild and eating. Low Mg must be fixed for K and Ca to correct.");
 
     if (key === "hypoK") {
+      /* local replacement sheet (R. Wanbon PharmD, Dec 2014): 100–200 mEq raises K ~1 mmol/L in acute loss (up to 400 in chronic loss);
+         KCl 10 mEq/100 mL peripheral bags, each over at least 30 min; KCl 20 mEq/50 mL and 40 mEq/100 mL central only (rate per IV manual);
+         PO: K-Dur 20 mEq SR, Slow-K 8 mEq SR (level ≥ 4 h after), KCl elixir 1.33 mEq/mL (dilute; level 1–2 h after), K citrate 25 mEq (40% as effective). */
       if (lowMg) mgLine();
+      const tgt = m.digoxin.length || p.af.length || p.hf.length || p.cad.length ? 4.0 : 3.5;
+      if (v.K != null && v.K < tgt) { const d = tgt - v.K; add("also", "Rough need to reach " + tgt.toFixed(1) + ": " + Math.round(d * 100) + "–" + Math.round(d * 200) + " mEq if acute loss (100–200 mEq per 1 mmol/L), up to " + Math.round(d * 400) + " mEq if chronic; ongoing losses add to this." + (renal ? " Halve with eGFR < 30." : "")); }
       if (sev === 3) {
         add("now", "Cardiac monitor and 12-lead ECG (U waves, ST depression, QT/QU prolongation, ectopy).");
-        add("now", "IV KCl: peripheral line max 10 mmol/h; central line up to 20 mmol/h on a cardiac monitor (per local policy). Example: 40 mmol over 4 h peripherally, then recheck." + (po ? " Add KCl 40 mmol PO at the same time if able to swallow." : ""));
-        add("now", "Run IV KCl in saline, not dextrose (dextrose → insulin → K falls further).");
-        } else if (sev === 2) {
+        add("now", "IV KCl: peripheral = KCl 10 mEq/100 mL bags, each over at least 30 min (e.g. 4 bags = 40 mEq, then recheck); central line = KCl 20 mEq/50 mL or 40 mEq/100 mL, rate per the IV manual, on a cardiac monitor." + (po ? " Add K-Dur 20 mEq × 2 tabs (40 mEq) PO at the same time if able to swallow." : ""));
+        add("now", "If IV fluid is needed: premixed KCl 20 or 40 mEq/L in 1 L (saline-based, not dextrose; ½NS + KCl must be mixed by pharmacy).");
+      } else if (sev === 2) {
         add("now", "ECG if K < 2.8, heart disease or digoxin.");
-        add("now", po ? "KCl 40 mmol PO two or three times today (KCl SR tablets or liquid); about 10 mmol raises K by ~0.1 mmol/L, less when losses continue." : "IV KCl 40 mmol over 4 h (peripheral max 10 mmol/h), repeat after recheck.");
+        add("now", po ? "K-Dur 20 mEq: 2 tabs (40 mEq) PO BID–TID today; or KCl elixir 1.33 mEq/mL 30 mL (40 mEq), diluted, if tablets are a problem." : "KCl 10 mEq/100 mL IV peripheral × 4 bags (40 mEq), each over at least 30 min, then recheck.");
       } else {
-        add("now", po ? "KCl 20–40 mmol PO BID (40–80 mmol/day) until ≥ 3.5 (≥ 4.0 if AF, ischemia, heart failure or digoxin)." : "Add KCl 20 mmol/L to maintenance IV fluid, or KCl 20–40 mmol IV over 2–4 h.");
+        add("now", po ? "K-Dur 20 mEq: 1–2 tabs PO BID (40–80 mEq/day) until ≥ 3.5 (≥ 4.0 if AF, ischemia, heart failure or digoxin). Potassium citrate 25 mEq tabs are easier to take but only about 40% as effective as KCl." : "Premixed KCl 20 mEq/L in maintenance IV fluid, or KCl 10 mEq/100 mL IV × 2 bags.");
       }
-      if (renal) add("now", "eGFR < 30 or dialysis: use half doses and recheck sooner (rebound hyperkalemia risk).");
+      if (renal) add("now", "eGFR < 30 or dialysis: 50% dose reduction and recheck sooner (local sheet; rebound hyperkalemia risk).");
       if (m.loop.length || m.thiazide.length) add("also", "On a diuretic: if it continues, add a K-sparing agent (spironolactone 12.5–25 mg) or reduce the diuretic, rather than escalating KCl alone.");
       if (m.digoxin.length) add("now", "On digoxin: low K increases digoxin toxicity. Target K ≥ 4.0; check digoxin level and ECG.");
       if (p.dka.length || m.insulin.some((n) => /infusion|drip|iv/i.test(n))) add("now", "Insulin infusion / DKA: hold insulin if K < 3.3 until replaced (per DKA protocol).");
@@ -328,23 +333,27 @@
     }
 
     if (key === "hypoPhos") {
-      /* Standard IV dose (local practice): potassium phosphate 15 mmol IV via a peripheral line, one dose at a time with a recheck.
-         Canadian K phosphate injection is about 3 mmol PO4 + 4.4 mmol K per mL, so 15 mmol PO4 ≈ 22 mmol K (check the product). */
+      /* local replacement sheet (R. Wanbon PharmD, Dec 2014): IV over 4–6 h; 15 mmol × 2 if PO4 < 0.3, or < 0.5 in a patient ≥ 60 kg; 15 mmol otherwise.
+         Peripheral OK: KPO4 15 mmol PO4 + 22 mmol K in 255 mL; NaPO4 15 mmol + 20 mmol Na in 125 mL; NaPO4 30 mmol + 40 mmol Na in 260 mL.
+         Central only: KPO4 15 mmol in 125 mL; KPO4 30 mmol + 44 mmol K in 255 mL. PO: 16–32 mmol/day (diarrhea above 32). 50% dose with GFR < 30. */
       const k = v.K, useNa = (k != null && k >= 5.0) || (renal && (k == null || k >= 4.5));
-      const unit = useNa ? "Sodium phosphate 15 mmol IV (instead of potassium phosphate: " + (k != null && k >= 5.0 ? "K " + k + " ≥ 5.0" : "eGFR < 30 or dialysis" + (k != null ? " with K " + k : ", K unknown")) + ")"
-        : "Potassium phosphate 15 mmol IV via peripheral line (≈ 22 mmol K" + (k != null ? "; K " + k : "; check K first") + ")";
-      const ceil = w != null ? " Weight-based ceiling: 0.64 mmol/kg = " + Math.min(Math.round(0.64 * w), 50) + " mmol in 24 h for " + w + " kg." : "";
-      const kNote = useNa ? "" : " The 22 mmol K counts toward the K limits (peripheral max 10 mmol K/h): give over at least 2–3 h, dilution and rate per Island Health / pharmacy protocol.";
-      const once = renal ? " eGFR < 30 or dialysis: one dose, then recheck before any repeat." : "";
+      const big = v.phos != null && (v.phos < 0.3 || (v.phos < 0.5 && w != null && w >= 60));
+      let mmol = big ? 30 : 15; const halved = renal && mmol === 30; if (halved) mmol = 15;
+      const why = big ? "PO4 " + v.phos + (v.phos < 0.3 ? " < 0.3" : " < 0.5 and weight " + w + " kg ≥ 60") : "PO4 " + v.phos + (v.phos < 0.5 && w == null ? " (enter weight: 30 mmol if < 0.5 and ≥ 60 kg)" : "");
+      const prod = useNa
+        ? (mmol === 30 ? "NaPO4 30 mmol (40 mmol Na) in 260 mL IV over 4–6 h, peripheral OK" : "NaPO4 15 mmol (20 mmol Na) in 125 mL IV over 4–6 h, peripheral OK") + " — sodium salt because " + (k != null && k >= 5.0 ? "K " + k + " ≥ 5.0" : "eGFR < 30 or dialysis" + (k != null ? " with K " + k : ", K unknown"))
+        : (mmol === 30 ? "KPO4 15 mmol (22 mmol K) in 255 mL IV over 4–6 h, peripheral OK, × 2 (30 mmol; 44 mmol K). Central line: one bag of KPO4 30 mmol / 44 mmol K in 255 mL over 4–6 h" : "KPO4 15 mmol (22 mmol K) in 255 mL IV over 4–6 h, peripheral OK") + (k != null ? " (K " + k + ")" : " (check K first)");
+      const ivLine = "IV phosphate " + mmol + " mmol (" + why + (halved ? "; 50% dose for eGFR < 30" : "") + "): " + prod + ". Not in the same line as calcium.";
+      const poLine = "PO phosphate 16–32 mmol/day: sodium phosphate oral solution 4 mmol/mL, 4 mL PO BID (32 mmol/day); or skim milk (8 mmol per 250 mL). Diarrhea is common above 32 mmol/day." + (renal ? " eGFR < 30: half dose." : "");
       if (sev === 3 || x.symptoms) {
-        add("now", unit + ". Recheck PO4 2–4 h after it ends; if still < 0.32 give another 15 mmol (usual total 30–45 mmol in 24 h)." + ceil + once + kNote + " Not in the same line as calcium.");
+        add("now", ivLine);
         add("now", "Severe low phosphate can cause respiratory muscle weakness, failure to wean, rhabdomyolysis, hemolysis and heart failure: check CK and look for weakness.");
-        if (po) add("next", "Once above 0.32 and eating: PO phosphate (Phosphate Novartis 500 mg ≈ 16 mmol) 1 tab BID–TID.");
+        if (po) add("next", "Then, once eating: " + poLine);
       } else if (sev === 2) {
-        add("now", po ? "PO phosphate (Phosphate Novartis 500 mg tab ≈ 16 mmol): 1 tab TID (≈ 48 mmol/day); diarrhea is common. If not eating, ventilated or < 0.5: IV instead." : unit + " once, recheck, repeat 15 mmol once if still < 0.65." + once + kNote);
-        if (po) add("next", "IV alternative: " + unit + " once, recheck, repeat once if still < 0.65." + once + kNote);
+        add("now", po ? poLine + " If not eating, ventilated or < 0.5: IV instead." : ivLine);
+        if (po) add("next", "IV alternative: " + ivLine);
       } else {
-        add("now", po ? "Encourage dietary phosphate (milk, protein); PO phosphate 16 mmol BID if refeeding risk, ventilated or weak." : unit + " once if refeeding risk or symptoms." + kNote);
+        add("now", po ? "Dietary phosphate (skim milk 8 mmol per 250 mL, protein); " + poLine.replace("PO phosphate", "PO phosphate if refeeding risk, ventilated or weak:") : ivLine.replace("): ", ", only if refeeding risk or symptoms): "));
       }
       if (v.Ca != null && (v.corrCa || v.Ca) > 2.55) add("now", "Calcium is high: IV phosphate can precipitate calcium phosphate. Discuss before giving IV.");
       if (lowMg) mgLine();
@@ -385,11 +394,11 @@
 
     if (key === "hypoMg") {
       const torsades = x.ecg || (v.QTc != null && v.QTc >= 500);
-      if (sev === 3 && (torsades || x.symptoms)) add("now", "Torsades, seizure, tetany or arrhythmia: magnesium sulfate 2 g IV over 10–15 min (over 1–2 min in arrest / pulseless torsades), then continue as below. Cardiac monitor.");
-      /* stocked sizes: magnesium sulfate 2 g or 5 g IV */
-      if (sev === 3) add("now", renal ? "Magnesium sulfate 2 g IV over 1–2 h (eGFR < 30 or dialysis: 2 g only), recheck Mg before any more." : "Magnesium sulfate 5 g IV over 5 h (about 1 g/h); a second 5 g over the next 12–24 h is often needed: tissue stores refill slowly and about half of IV Mg is lost in the urine.");
-      else if (sev === 2) add("now", renal ? "Magnesium sulfate 2 g IV over 1–2 h (eGFR < 30 or dialysis), then recheck." : "Magnesium sulfate 5 g IV over 5 h (or 2 g IV over 1–2 h if close to 0.6); oral alone is slow at this level.");
-      else add("now", po ? "PO magnesium: magnesium oxide 400–800 mg (≈ 10–20 mmol) daily–BID, or magnesium glucoheptonate per product; diarrhea limits dose. Or magnesium sulfate 2 g IV over 1–2 h if needed quickly (low K or Ca, arrhythmia, QT)." : "Magnesium sulfate 2 g IV over 1–2 h.");
+      /* local replacement sheet (R. Wanbon PharmD, Dec 2014): MgSO4 2 g (8 mmol) in 50 mL NS or 5 g (20 mmol) in 100 mL NS; max 2 g/h, slower keeps more; 5 g if Mg < 0.6.
+         PO target 20 mmol/day divided (diarrhea above 20): Mg 250 mg elemental tab (≈ 10 mmol) BID; Mg glucoheptonate (Mg Rougier) 30 mL (6 mmol) TID. 50% dose with GFR < 30. */
+      if (sev === 3 && (torsades || x.symptoms)) add("now", "Torsades, seizure or arrhythmia: magnesium sulfate 2 g IV over 10–15 min (1–2 min if pulseless; 2 g vials are in crash carts and select units, restricted indications), cardiac monitor; then as below.");
+      if (v.Mg != null && v.Mg < 0.6) add("now", renal ? "Magnesium sulfate 2 g in 50 mL NS IV over at least 1 h (50% dose for eGFR < 30 or dialysis), recheck before more." : "Magnesium sulfate 5 g in 100 mL NS IV, no faster than 2 g/h (at least 2.5 h; over 4–5 h keeps more). " + (sev === 3 ? "A second dose is often needed: tissue stores refill slowly and much of IV Mg is lost in the urine." : ""));
+      else add("now", po ? "PO magnesium, target 20 mmol/day divided: magnesium 250 mg elemental tab BID, or Mg glucoheptonate (Mg Rougier) 30 mL PO TID; diarrhea above 20 mmol/day." + (renal ? " eGFR < 30: half dose." : "") + " Or magnesium sulfate 2 g IV over at least 1 h if needed quickly (low K or Ca, arrhythmia, QT)." : "Magnesium sulfate 2 g in 50 mL NS IV over at least 1 h" + (renal ? " (eGFR < 30: give it, then recheck before more)" : "") + ".");
       if (v.K != null && v.K < 3.5) add("now", "K " + v.K + " is low too: replace Mg with K, or K will not correct.");
       if ((v.corrCa != null ? v.corrCa : v.Ca) != null && (v.corrCa != null ? v.corrCa : v.Ca) < 2.10) add("now", "Calcium is low too: replace Mg first (low Mg blocks PTH).");
       if (m.ppi.length) add("next", "On a PPI (" + m.ppi[0] + "): stop or step down if no firm indication; Mg often stays low until it is stopped.");
@@ -436,6 +445,7 @@
     SFE_HYPER: { label: "Society for Endocrinology emergency guidance: acute hypercalcaemia (2016)", url: "https://www.endocrinology.org/media/4277/emergency-guidance_acute-hypercalcaemia-in-adults.pdf" },
     ES2023: { label: "Endocrine Society guideline: hypercalcemia of malignancy (JCEM 2023)", url: "https://doi.org/10.1210/clinem/dgac621" },
     SFE_HYPO: { label: "Society for Endocrinology emergency guidance: acute hypocalcaemia (2016)", url: "https://doi.org/10.1530/EC-16-0056" },
+    LOCAL: { label: "Local electrolyte replacement sheet (R. Wanbon, PharmD, Dec 2014)", url: "" },
     practice: { label: "Common practice: no guideline sets this interval", url: "" } };
   function recheck(key, sev, v, x, m, p, val) {
     const r = [], add = (when, what, src) => r.push({ when, what, src: src || "practice" });
@@ -453,15 +463,14 @@
       }
     }
     if (key === "hypoK") {
-      if (sev === 3) { add("1–2 h after each 40 mmol IV", "Serum K (and Mg if replacing).", "practice"); add("Every 4–6 h until K > 3.0", "Serum K; then daily."); add("Continuous", "Cardiac monitor during IV replacement at > 10 mmol/h or with ECG changes."); }
-      else if (sev === 2) { add("4–6 h after the doses", "Serum K (with Mg)."); add("Next morning, then daily", "K, Mg, creatinine while on replacement or diuretic."); }
-      else add("Next morning, then daily while on KCl or diuretic", "K and Mg.");
+      if (sev === 3) { add("1–2 h after each 40 mEq IV", "Serum K (and Mg if replacing).", "practice"); add("Every 4–6 h until K > 3.0", "Serum K; then daily."); add("Continuous", "Cardiac monitor during fast IV replacement or with ECG changes."); }
+      else if (sev === 2) { add("At least 4 h after K-Dur / Slow-K (1–2 h after elixir)", "Serum K (with Mg): SR tablets release K over 4–8 h.", "LOCAL"); add("Next morning, then daily", "K, Mg, creatinine while on replacement or diuretic."); }
+      else add("Next morning, then daily while on KCl or diuretic (at least 4 h after an SR dose)", "K and Mg.", "LOCAL");
       if (renal) add("Sooner (2–4 h after each dose)", "eGFR < 30 or dialysis: rebound high K risk.");
     }
     if (key === "hypoPhos") {
-      if (sev >= 2 || x.symptoms) add("2–4 h after each IV dose ends", "PO4 (plus K if potassium phosphate, Ca if high-dose).");
-      if (sev === 3) add("Every 6–12 h until PO4 > 0.65", "PO4, K, Mg, Ca; CK if weak.");
-      add(sev === 1 ? "Next morning" : "Then daily", "PO4, K, Mg until normal and stable.");
+      if (sev >= 2 || x.symptoms) add("2 h after the IV dose ends, if acute", "PO4 (plus K if KPO4). A level about 72 h later reflects stores better, and repeat levels are often unnecessary.", "LOCAL");
+      add(sev === 1 ? "Next morning" : "Then daily while replacing", "PO4, K, Mg until normal and stable.");
       if (p.malnutrition.length || p.alcohol.length) add("Daily for the first 3–5 days of feeding", "PO4, K, Mg (refeeding).");
     }
     if (key === "hyperPhos") {
@@ -478,8 +487,8 @@
       add("After discharge", "Weekly calcium until stable on oral calcium / vitamin D, then every 3–6 months.");
     }
     if (key === "hypoMg") {
-      if (sev === 3) add("6–12 h after the IV dose ends, then daily", "Mg (a level right after an infusion reads falsely high while Mg moves into cells), with K and Ca.");
-      else add("Next morning, then daily while on replacement", "Mg, K, Ca.");
+      add("At least 1 h after the IV dose (next day is fine)", "Mg with K and Ca. An early level overestimates stores; a level 72 h after the dose is more accurate.", "LOCAL");
+      add("Daily while replacing", "Mg, K, Ca.");
       if (renal) add("Before every repeat dose", "Mg (eGFR < 30 or dialysis: risk of high Mg).");
       if (x.ecg || (v.QTc != null && v.QTc >= 500)) add("Continuous; repeat ECG after Mg", "Cardiac monitor until QT shortens and no torsades.");
     }
