@@ -4,7 +4,7 @@
    A tab is only loaded the first time you open it, and stays loaded when you switch away. */
 
 // To add a tool: put its files in tools/<folder>/ and add a line here.
-const TOOL_V = "20261119d"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
+const TOOL_V = "20261119e"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
 const TOOLS = [
   { key: "today", label: "Today (what changed)", tags: "what changed daily trends vitals overnight summary", path: "tools/today/index.html" },
   { key: "labs",  label: "Labs", tags: "lab results cbc lytes electrolytes chemistry blood work",                 path: "tools/labs/index.html" },
@@ -17,6 +17,7 @@ const TOOLS = [
   { key: "opioid", label: "Opioid safety", tags: "opioid safety narcotics naloxone morphine oxycodone hydromorphone",       path: "tools/opioid/index.html" },
   { key: "pain",  label: "Pain management", tags: "pain management analgesia",      path: "tools/pain/index.html" },
   { key: "abx",   label: "Antibiotics", tags: "antibiotics antimicrobial stewardship iv po switch duration",          path: "tools/abx/index.html" },
+  { key: "abxmap", label: "Antibiotic chooser (body map)", tags: "antibiotic chooser body map which antibiotic empiric choice site lung skin bladder kidney prostate colon gallbladder joint brain sinus dental groin sepsis c diff allergy mrsa esbl pseudomonas", path: "tools/abxmap/index.html" },
   { key: "inf",   label: "Infections by site", tags: "infections sepsis pneumonia uti cellulitis source",   path: "tools/infections/index.html" },
   { key: "cw",    label: "Choosing Wisely", tags: "choosing wisely low value tests overuse",      path: "tools/cw/index.html", keepHeader: true }, // its header holds the Look back control
   { key: "dx",    label: "Diagnosis check", tags: "diagnosis check cognitive bias second look missed differential harm",      path: "tools/dx/index.html", keepHeader: true }, // its header holds the Look back control

@@ -1,0 +1,124 @@
+/* Antibiotic chooser - pure rules (no DOM). UNVERIFIED draft written by Claude: verify against Island Health formulary, local antibiogram, pharmacy.
+   Regimens come from infections-data.js (INF_SITES) + extra-sites.js; these rules only sort and badge them for the patient's criteria.
+   node hospitalist-toolkit/tests/test_abxmap.js */
+(function () {
+  // drug -> class (class id = page key in ../abx/abx-classes-pages.js)
+  const DRUGS = [
+    { key: "pen", cls: "pen", name: "penicillin", re: /penicillin|amoxicillin|ampicillin|cloxacillin|piperacillin|pip-?tazo/i, bl: true },
+    { key: "amino-pen-sidechain", cls: "ceph", name: "cephalexin/cefadroxil", re: /cephalexin|cefadroxil|cefaclor|cefprozil/i, bl: true, ceph: true, sharedSide: true },
+    { key: "ceph", cls: "ceph", name: "cephalosporin", re: /\bcef(?!adroxil)\w*|ceftriaxone|cefazolin|cefepime|ceftazidime|cefuroxime|cefixime|cefotaxime|ceftaroline|cefoxitin/i, bl: true, ceph: true },
+    { key: "carb", cls: "carb", name: "carbapenem", re: /meropenem|ertapenem|imipenem/i, bl: true, carb: true },
+    { key: "aztreonam", cls: "carb", name: "aztreonam", re: /aztreonam/i },
+    { key: "vanco", cls: "mrsa", name: "vancomycin", re: /vancomycin/i },
+    { key: "linezolid", cls: "mrsa", name: "linezolid", re: /linezolid/i },
+    { key: "dapto", cls: "mrsa", name: "daptomycin", re: /daptomycin/i },
+    { key: "rifampin", cls: "mrsa", name: "rifampin", re: /rifampin|rifampicin/i },
+    { key: "ag", cls: "ag", name: "aminoglycoside", re: /gentamicin|tobramycin|amikacin|aminoglycoside/i },
+    { key: "fq", cls: "fq", name: "fluoroquinolone", re: /ciprofloxacin|levofloxacin|moxifloxacin|fluoroquinolone/i },
+    { key: "macro", cls: "mac", name: "macrolide", re: /azithromycin|clarithromycin|erythromycin/i },
+    { key: "strongcyp", cls: "mac", name: "clarithro/erythro", re: /clarithromycin|erythromycin/i },
+    { key: "tetra", cls: "mac", name: "tetracycline", re: /doxycycline|minocycline|tigecycline/i },
+    { key: "tmpsmx", cls: "uti", name: "TMP-SMX", re: /tmp-?smx|trimethoprim-sulfamethoxazole|co-?trimoxazole|septra|bactrim/i },
+    { key: "nitro", cls: "uti", name: "nitrofurantoin", re: /nitrofurantoin|macrobid/i },
+    { key: "fosfo", cls: "uti", name: "fosfomycin", re: /fosfomycin/i },
+    { key: "clinda", cls: "anaer", name: "clindamycin", re: /clindamycin/i },
+    { key: "metro", cls: "anaer", name: "metronidazole", re: /metronidazole/i },
+    { key: "fidax", cls: "cdiff", name: "fidaxomicin", re: /fidaxomicin/i }];
+
+  function drugsIn(text) { return DRUGS.filter((d) => d.re.test(text || "")); }
+
+  /* Which risk a regimen row is for, read from its setting text. */
+  const COND = { mrsa: /mrsa/i, pseudo: /pseudomonas|hospital-acquired|healthcare|nosocomial|neutropeni/i, esbl: /esbl/i };
+  function conditionsOf(setting) { return Object.keys(COND).filter((k) => COND[k].test(setting || "")); }
+
+  /* ctx: { allergy: 'none'|'pen-mild'|'pen-severe'|'bl-delayed', sulfa, otherAllergyText, crcl, qtRisk, valproate, warfarin, serotonergic,
+            statinColch, pregnant, steroids, age, cdiffHx, risks:{mrsa,pseudo,esbl} }
+     returns { status: 'ok'|'caution'|'avoid', notes:[...] } for one regimen text */
+  function assess(text, ctx) {
+    const ds = drugsIn(text), has = (k) => ds.some((d) => d.key === k), notes = [];
+    // first choice = text before the first "or", bracket, semicolon or "step down"; drugs only named after that are alternatives
+    const firstPart = String(text || "").split(/\bor\b|\(|;|step(?:\s|-)?down|\+\/-|±/i)[0];
+    const inFirst = (keys) => !keys || keys.some((k) => { const d = DRUGS.find((x) => x.key === k); return d && d.re.test(firstPart); });
+    let status = "ok";
+    const bump = (s, msg, keys) => {
+      if (s === "avoid" && !inFirst(keys)) { s = "caution"; msg = "Alternative in this line: " + msg; }
+      notes.push({ s, msg }); if (s === "avoid" || (s === "caution" && status === "ok")) status = s === "avoid" ? "avoid" : "caution"; };
+    // "X, or Y" regimens: only judge the whole line; notes say which drug
+    const a = ctx.allergy || "none";
+    if (a === "pen-severe") {
+      if (has("pen")) bump("avoid", "Penicillin anaphylaxis/severe immediate reaction: avoid penicillins (incl. pip-tazo, amox-clav).", ["pen"]);
+      if (has("amino-pen-sidechain")) bump("avoid", "Cephalexin/cefadroxil share a side chain with amoxicillin/ampicillin – avoid after penicillin anaphylaxis.", ["amino-pen-sidechain"]);
+      else if (has("ceph")) bump("caution", "Cephalosporin with dissimilar side chain (cefazolin, ceftriaxone, cefepime): cross-reactivity ~1–2%; usually given with monitoring – first dose observed.");
+      if (has("carb")) bump("caution", "Carbapenem after penicillin anaphylaxis: cross-reactivity <1%; generally acceptable with monitoring.");
+    } else if (a === "pen-mild") {
+      if (has("pen")) bump("caution", "Non-severe penicillin label: PEN-FAST <3 → direct oral amoxicillin challenge / delabel; otherwise choose a cephalosporin.");
+    } else if (a === "bl-delayed") {
+      if (has("pen") || has("ceph") || has("amino-pen-sidechain") || has("carb")) bump("avoid", "Severe delayed beta-lactam reaction (SJS/TEN, DRESS): avoid all beta-lactams – ID/allergy input.", ["pen", "ceph", "amino-pen-sidechain", "carb"]);
+      if (has("aztreonam")) bump("caution", "Aztreonam: usually tolerated, but ask ID/allergy after a severe delayed reaction.");
+    }
+    if (ctx.sulfa && has("tmpsmx")) bump("avoid", "Sulfonamide antibiotic allergy: avoid TMP-SMX.", ["tmpsmx"]);
+    if (ctx.otherAllergyText) ds.forEach((d) => { const m = (text.match(d.re) || [])[0]; if (m && new RegExp(m, "i").test(ctx.otherAllergyText)) bump("avoid", `Allergy recorded to ${m}.`, [d.key]); });
+    if (ctx.crcl != null) {
+      if (ctx.crcl < 30 && has("nitro")) bump("avoid", `Nitrofurantoin needs CrCl ≥30 (CrCl ~${ctx.crcl}).`, ["nitro"]);
+      if (ctx.crcl < 50 && has("ag")) bump("caution", `Aminoglycoside with CrCl ~${ctx.crcl}: nephro/ototoxicity – single dose or avoid; levels.`);
+      if (ctx.crcl < 30 && has("tmpsmx")) bump("caution", `TMP-SMX with CrCl ~${ctx.crcl}: halve dose, watch K.`);
+      if (ctx.crcl < 50 && has("ceph") && /cefepime/i.test(text)) bump("caution", "Cefepime: dose to CrCl – neurotoxicity if not adjusted.");
+      if (ctx.crcl < 50 && (has("vanco") && !/vancomycin\s*(125|500)\s*mg\s*po/i.test(text))) bump("caution", "IV vancomycin: renal dosing and levels (AUC).");
+    }
+    if (ctx.valproate && has("carb")) bump("avoid", "On valproate: carbapenems drop valproate levels within a day → seizures. Choose another agent.", ["carb"]);
+    if (ctx.qtRisk && (has("fq") || has("macro"))) bump("caution", "QT risk (long QTc or other QT drugs): fluoroquinolone/macrolide – ECG, K, Mg.");
+    if (ctx.warfarin && (has("tmpsmx") || has("metro") || has("fq") || has("strongcyp"))) bump("caution", "On warfarin: INR rises – check INR in 3–5 days or reduce warfarin.");
+    if (ctx.serotonergic && has("linezolid")) bump("caution", "Linezolid with SSRI/SNRI/serotonergic drugs: serotonin syndrome risk.");
+    if (ctx.statinColch && has("strongcyp")) bump("caution", "Clarithromycin/erythromycin with statin/colchicine/DOAC/CCB: strong CYP3A4 inhibition – prefer azithromycin or hold the interacting drug.");
+    if (ctx.pregnant && (has("fq") || has("tetra") || has("ag"))) bump("caution", "Pregnancy: avoid fluoroquinolones, tetracyclines and aminoglycosides if an alternative exists.");
+    if (ctx.pregnant && has("tmpsmx")) bump("caution", "Pregnancy: TMP-SMX – avoid in first trimester and near term.");
+    if ((ctx.steroids || (ctx.age || 0) >= 65) && has("fq")) bump("caution", "Age ≥65 or steroids: fluoroquinolone tendon rupture, aortic aneurysm, delirium.");
+    if (ctx.cdiffHx && (has("clinda") || has("fq"))) bump("caution", "Previous C. difficile: clindamycin and fluoroquinolones carry the highest risk.");
+    return { status, notes, classes: [...new Set(ds.map((d) => d.cls))] };
+  }
+
+  /* Sort a site's regimens for the chosen severity and risks.
+     returns { main:[...], matched:[...], ifRisk:[...], other:[...] } each item = {row, conds, a} */
+  function choose(site, tier, ctx) {
+    const risks = ctx.risks || {};
+    const out = { main: [], matched: [], ifRisk: [], other: [] };
+    (site.abx || []).forEach((row) => {
+      const conds = conditionsOf(row.setting), a = assess(row.regimen, ctx), item = { row, conds, a };
+      if (tier && row.tier !== tier) { out.other.push(item); return; }
+      if (!conds.length) out.main.push(item);
+      else if (conds.some((c) => risks[c])) out.matched.push(item);
+      else out.ifRisk.push(item);
+    });
+    const rank = { ok: 0, caution: 1, avoid: 2 };
+    ["main", "matched", "ifRisk"].forEach((k) => out[k].sort((x, y) => rank[x.a.status] - rank[y.a.status]));
+    return out;
+  }
+
+  /* Allergy lines from the site that apply to the chosen allergy. */
+  function allergyLines(site, allergy) {
+    const L = site.allergy || [];
+    if (allergy === "none") return [];
+    const re = allergy === "pen-mild" ? /non-?severe|mild|rash|low.risk/i : allergy === "pen-severe" ? /severe|anaphyla|carbapenem|cross/i : /delayed|sjs|ten|dress|all beta|severe/i;
+    const hit = L.filter((x) => re.test(x));
+    return hit.length ? hit : L;
+  }
+
+  function crcl(age, kg, cr, sex) { if (!age || !kg || !cr) return null; return Math.round(((140 - age) * kg * (sex === "female" ? 1.04 : 1.23)) / cr); }
+
+  function note(site, tier, item, ctx) {
+    const L = [];
+    L.push(`Infection: ${site.label}${tier ? " – " + tier : ""}.`);
+    if (item) L.push(`Antibiotic: ${item.row.regimen} (${item.row.setting}).`);
+    const al = { none: "no beta-lactam allergy", "pen-mild": "non-severe penicillin allergy label", "pen-severe": "penicillin anaphylaxis/severe immediate reaction", "bl-delayed": "severe delayed beta-lactam reaction" }[ctx.allergy || "none"];
+    L.push(`Allergy: ${al}${ctx.sulfa ? "; sulfonamide allergy" : ""}. CrCl ~${ctx.crcl != null ? ctx.crcl + " mL/min" : "___"}.`);
+    const r = Object.keys(ctx.risks || {}).filter((k) => ctx.risks[k]).map((k) => ({ mrsa: "MRSA", pseudo: "Pseudomonas/hospital-acquired", esbl: "ESBL" })[k]);
+    if (r.length) L.push("Resistance risk: " + r.join(", ") + ".");
+    if (item && item.a.notes.length) L.push("Cautions: " + item.a.notes.map((n) => n.msg).join(" "));
+    if ((site.duration || []).length) L.push("Planned duration: " + site.duration[0]);
+    L.push("Cultures sent: ___. Review at 48–72 h: narrow to cultures, IV→PO, stop date ___.");
+    return L.join("\n");
+  }
+
+  const api = { DRUGS, drugsIn, conditionsOf, assess, choose, allergyLines, crcl, note };
+  if (typeof module !== "undefined" && module.exports) module.exports = api; else window.AbxMapRules = api;
+})();
