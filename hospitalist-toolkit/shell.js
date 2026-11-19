@@ -4,7 +4,7 @@
    A tab is only loaded the first time you open it, and stays loaded when you switch away. */
 
 // To add a tool: put its files in tools/<folder>/ and add a line here.
-const TOOL_V = "20261118p"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
+const TOOL_V = "20261119a"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
 const TOOLS = [
   { key: "today", label: "Today (what changed)", tags: "what changed daily trends vitals overnight summary", path: "tools/today/index.html" },
   { key: "labs",  label: "Labs", tags: "lab results cbc lytes electrolytes chemistry blood work",                 path: "tools/labs/index.html" },
@@ -24,6 +24,7 @@ const TOOLS = [
   { key: "hah",   label: "Hospital at Home", tags: "hospital at home hah virtual ward",     path: "tools/hah/index.html" },
   { key: "calc",  label: "Calculators", tags: "calculators scores egfr curb chads wells",          path: "tools/calc/index.html" },
   { key: "ai",    label: "AI summary", tags: "ai summary draft llm",           path: "tools/ai/index.html" },
+  { key: "pc",    label: "Peritoneal carcinomatosis", tags: "peritoneal carcinomatosis peritoneum metastases omental cake pci sugarbaker hipec crs cytoreduction malignant bowel obstruction mbo sbo octreotide buscopan venting peg malignant ascites paracentesis pleurx indwelling catheter colorectal gastric ovarian pseudomyxoma cea ca-125 chemo oncology prognosis", path: "tools/pc/index.html" },
   { key: "tox",   label: "Oncology toxicity", tags: "oncology toxicity chemotherapy immunotherapy cancer",    path: "tools/tox/index.html", keepHeader: true }, // its header holds the draft/version note
   { key: "watch", label: "Watch-ahead", tags: "watch ahead deterioration early warning",          path: "tools/watch/index.html", keepHeader: true }, // its header holds the draft/version note
   { key: "bsab",  label: "CRS/ICANS (bispecific)", tags: "crs icans bispecific teclistamab myeloma cytokine release", path: "tools/bispecific/index.html" },

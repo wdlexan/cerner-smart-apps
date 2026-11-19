@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Peritoneal Carcinomatosis – Hospitalist Toolkit</title>
+<style>
+  :root{--ink:#1f2933;--muted:#5f6c7b;--line:#dde3ea;--bg:#f5f7fa;--card:#fff;--accent:#0b6bcb;--accent-soft:#e3eefc;--th:#eef1f4;
+        --red:#9b1c1c;--red-soft:#fde8e8;--amber:#8a5200;--amber-soft:#fff1d6;--green:#1d6b3a;--green-soft:#e4f4ea}
+  @media (prefers-color-scheme: dark){:root{--ink:#e8edf2;--muted:#9aa7b5;--line:#2b333d;--bg:#111418;--card:#1a1f26;--accent:#6aa9ff;--accent-soft:#14325c;--th:#222a33;
+        --red:#ffb3b3;--red-soft:#4a1d1d;--amber:#ffd38a;--amber-soft:#4a3511;--green:#9be0b1;--green-soft:#16361f}
+        .reg{background:var(--card)!important;color:var(--ink)} .reg[data-ls="1"]{background:#5a4a12!important}.reg[data-ls="2"]{background:#7a4a10!important}.reg[data-ls="3"]{background:#7a2a20!important}}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--bg);font-size:14.5px;line-height:1.45}
+  header{background:var(--accent);color:#fff;padding:10px 16px;display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline}
+  header h1{font-size:17px;margin:0;font-weight:600}
+  header .pt{font-size:13.5px;opacity:.95}
+  #demoBanner{display:none;background:var(--amber-soft);color:var(--amber);padding:6px 16px;font-size:13px;border-bottom:1px solid #f0d58a}
+  nav{display:flex;flex-wrap:wrap;gap:2px;background:var(--card);border-bottom:1px solid var(--line);padding:0 8px;position:sticky;top:0;z-index:5}
+  nav button{border:0;background:none;padding:10px 11px;font-size:13.5px;cursor:pointer;color:var(--muted);border-bottom:3px solid transparent}
+  nav button.on{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+  main{max-width:1100px;margin:0 auto;padding:14px 16px 60px}
+  section.tab{display:none} section.tab.on{display:block}
+  h2{font-size:17px;margin:6px 0 10px} h3{font-size:15px;margin:14px 0 6px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:0 0 12px}
+  .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+  details{background:var(--card);border:1px solid var(--line);border-radius:8px;margin:0 0 8px;padding:0 12px}
+  details>summary{cursor:pointer;padding:9px 0;font-weight:600}
+  details[open]>summary{border-bottom:1px solid var(--line);margin-bottom:8px}
+  details>*:last-child{margin-bottom:10px}
+  ul{margin:4px 0 8px;padding-left:20px} li{margin:2px 0}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;margin:4px 0 8px}
+  th,td{border:1px solid var(--line);padding:5px 7px;text-align:left;vertical-align:top}
+  th{background:var(--th)}
+  .flag{border-radius:6px;padding:7px 10px;margin:5px 0;border-left:4px solid}
+  .flag.red{background:var(--red-soft);border-color:var(--red)}
+  .flag.amber{background:var(--amber-soft);border-color:#d4a72c}
+  .flag.green{background:var(--green-soft);border-color:var(--green)}
+  .flag.info{background:var(--accent-soft);border-color:var(--accent)}
+  .muted{color:var(--muted);font-size:13px}
+  .pill{display:inline-block;border-radius:10px;padding:1px 8px;font-size:12px;background:var(--th);margin:0 4px 4px 0}
+  .btn{background:var(--accent);color:#fff;border:0;border-radius:6px;padding:7px 12px;cursor:pointer;font-size:13.5px}
+  .btn.ghost{background:var(--card);color:var(--accent);border:1px solid var(--accent)}
+  select,input,textarea{background:var(--card);color:var(--ink)} select,input[type=number]{font-size:13.5px;padding:4px 6px;border:1px solid var(--line);border-radius:5px}
+  textarea{width:100%;min-height:260px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;padding:8px;border:1px solid var(--line);border-radius:6px}
+  /* PCI */
+  .pciwrap{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start}
+  .abd{display:grid;grid-template-columns:repeat(3,96px);grid-template-rows:repeat(3,78px);gap:4px}
+  .sb{display:grid;grid-template-columns:repeat(4,72px);gap:4px;margin-top:8px}
+  .reg{border:1px solid #9fb3c2;border-radius:6px;background:var(--card);color:var(--ink);cursor:pointer;font-size:12px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;user-select:none;padding:2px}
+  .sb .reg{height:58px}
+  .reg b{font-size:18px}
+  .reg[data-ls="1"]{background:#fff3c4}.reg[data-ls="2"]{background:#ffd08a}.reg[data-ls="3"]{background:#f59a8b}
+  .pcitotal{font-size:30px;font-weight:700;color:var(--accent)}
+  .chk label{display:block;margin:3px 0}
+  @media print{nav,header,#demoBanner,.noprint{display:none!important} section.tab{display:none!important} #tab-handout{display:block!important} body{background:#fff}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Peritoneal carcinomatosis</h1>
+  <span class="pt">Signs, tests, PCI, approach by primary (colorectal, gastric, ovarian), bowel obstruction, ascites, chemo, prognosis. Read-only.</span>
+</header>
+<nav id="nav">
+  <button data-t="chart" class="on">Chart</button>
+  <button data-t="ss">Signs &amp; symptoms</button>
+  <button data-t="tests">Tests</button>
+  <button data-t="pci">PCI score</button>
+  <button data-t="primary">By primary</button>
+  <button data-t="mbo">Bowel obstruction</button>
+  <button data-t="ascites">Ascites</button>
+  <button data-t="chemo">Chemo</button>
+  <button data-t="prog">Prognosis</button>
+  <button data-t="handout">Handout</button>
+  <button data-t="note">Note draft</button>
+</nav>
+<main>
+
+<!-- ================= CHART ================= -->
+<section class="tab on" id="tab-chart">
+  <div class="flag amber"><b>Decision-support draft. It orders nothing.</b> Content and doses were written by Claude from general knowledge (PSOGI/ASCO/ESMO/NCCN-type guidance, PRODIGE 7, OVHIPEC-1, MASCC/palliative MBO guidance) and have <b>not been verified</b>: check against BC Cancer protocols, Island Health pharmacy and local policy. Use made-up or sandbox patients until Island Health approves real data.</div>
+  <div class="card">
+    <div id="pstatus" class="muted">Open from Cerner to read the chart, or pick a made-up patient:</div>
+    <div style="margin-top:6px"><select id="testsel"><option value="">Made-up patient…</option></select> <span id="ptLine" class="muted"></span></div>
+    <div id="errs" style="color:var(--red);font-size:12.5px"></div>
+  </div>
+  <h2>From the chart</h2>
+  <div id="chartFlags"></div>
+  <div class="grid2">
+    <div class="card"><h3>Problems that matter here</h3><div id="chartConds" class="muted">Loading…</div></div>
+    <div class="card"><h3>Likely primary</h3><div id="chartPrimary" class="muted">Loading…</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3>Key labs (latest)</h3><div id="chartLabs" class="muted">Loading…</div></div>
+    <div class="card"><h3>Tumour markers (last 3)</h3><div id="chartMarkers" class="muted">Loading…</div></div>
+  </div>
+  <div class="card"><h3>Relevant active medications</h3><div id="chartMeds" class="muted">Loading…</div></div>
+  <div class="card"><h3>Imaging / reports mentioning peritoneal disease</h3><div id="chartReports" class="muted">Loading…</div></div>
+  <p class="muted">Rules are a prompt, not a decision. Matching is by LOINC code and text; check anything that looks wrong in PowerChart.</p>
+</section>
+
+<!-- ================= SIGNS & SYMPTOMS ================= -->
+<section class="tab" id="tab-ss">
+  <h2>Signs &amp; symptoms</h2>
+  <div class="flag info">Often silent until bulky. Many patients present first with ascites, early satiety, or a bowel obstruction. Up to a third of new cases have no known primary at presentation.</div>
+  <div class="grid2">
+    <div class="card"><h3>Symptoms</h3><ul>
+      <li>Abdominal distension, bloating, increasing girth / clothes tight</li>
+      <li>Early satiety, anorexia, nausea, vomiting</li>
+      <li>Vague diffuse abdominal pain or discomfort</li>
+      <li>Change in bowel habit, constipation, intermittent colicky pain (partial obstruction)</li>
+      <li>Weight loss, fatigue, cachexia (may be masked by ascites weight gain)</li>
+      <li>Dyspnea – tense ascites splinting the diaphragm, or pleural effusion</li>
+    </ul></div>
+    <div class="card"><h3>Exam</h3><ul>
+      <li>Shifting dullness / fluid wave (ascites)</li>
+      <li>Palpable "omental cake" – firm upper/mid-abdominal mass</li>
+      <li>Sister Mary Joseph nodule (umbilical)</li>
+      <li>Blumer shelf – rectal shelf on DRE (pouch of Douglas deposits)</li>
+      <li>Left supraclavicular node (Virchow), cachexia, edema</li>
+      <li>Distension, tinkling or absent bowel sounds (obstruction)</li>
+      <li>Ovarian/adnexal mass (primary ovarian, or Krukenberg from gastric/colorectal)</li>
+    </ul></div>
+  </div>
+  <div class="card"><h3>Complications to look for on admission</h3>
+    <table><tr><th>Problem</th><th>Clue</th><th>Do</th></tr>
+      <tr><td>Malignant bowel obstruction</td><td>Colicky pain, vomiting (feculent late), no flatus</td><td>CT A/P with contrast → see <a href="#" data-goto="mbo">Bowel obstruction</a></td></tr>
+      <tr><td>Malignant ascites</td><td>Distension, dyspnea, early satiety</td><td>Diagnostic ± therapeutic paracentesis → <a href="#" data-goto="ascites">Ascites</a></td></tr>
+      <tr><td>Ureteric obstruction / AKI</td><td>Rising creatinine, hydronephrosis</td><td>US kidneys; urology/IR for stent/nephrostomy if fits goals</td></tr>
+      <tr><td>VTE</td><td>Leg swelling, dyspnea, tachycardia</td><td>Low threshold for imaging; cancer-associated VTE</td></tr>
+      <tr><td>Malnutrition / refeeding risk</td><td>Weight loss, low intake &gt;5 days, low K/PO4/Mg</td><td>Dietitian; check PO4/Mg/K before and after feeding</td></tr>
+      <tr><td>Perforation / ischemia</td><td>Peritonitis, sudden severe pain, high lactate, free air</td><td>Urgent general surgery</td></tr>
+      <tr><td>Electrolyte-driven ileus</td><td>Low K, low Mg, high Ca, opioids</td><td>Correct; review constipating meds</td></tr>
+      <tr><td>Biliary obstruction / cholangitis</td><td>Jaundice, fever, high ALP/bili</td><td>US/CT; ERCP or PTC</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ================= TESTS ================= -->
+<section class="tab" id="tab-tests">
+  <h2>Investigations</h2>
+  <details open><summary>Imaging</summary>
+    <table><tr><th>Test</th><th>Use</th><th>Limits</th></tr>
+      <tr><td><b>CT chest/abdomen/pelvis with IV contrast</b></td><td>First test. Omental caking, peritoneal thickening/enhancement, nodules, ascites, scalloping of liver/spleen surface, tethered bowel, transition point, hydronephrosis. Stages the primary.</td><td>Misses small nodules (&lt;5 mm sensitivity often &lt;30%); underestimates PCI, esp. small bowel mesentery.</td></tr>
+      <tr><td>MRI abdomen/pelvis with DWI</td><td>Better for small-volume disease and small bowel serosa; used by peritoneal surgery centres pre-CRS.</td><td>Long scan, needs breath-holding; availability.</td></tr>
+      <tr><td>PET-CT</td><td>Extra-abdominal disease before surgery; unclear primary.</td><td>Poor for mucinous tumours and small nodules.</td></tr>
+      <tr><td>US</td><td>Ascites volume, mark tap site, hydronephrosis.</td><td>Not for staging.</td></tr>
+    </table>
+  </details>
+  <details open><summary>Labs</summary><ul>
+    <li><b>Baseline:</b> CBC, lytes, creatinine, Ca (corrected), Mg, PO4, albumin, LFTs, INR, lactate if obstruction/ischemia concern.</li>
+    <li><b>Tumour markers</b> (support, never diagnose): CEA (colorectal, gastric, appendiceal), CA 19-9 (pancreaticobiliary, gastric, colorectal), CA-125 (ovarian – but also raised by <i>any</i> ascites/peritoneal irritation), CA 72-4 (gastric, if available). CEA:CA-125 ratio &gt;25 favours GI over ovarian origin.</li>
+  </ul></details>
+  <details open><summary>Ascitic fluid</summary><ul>
+    <li>Cell count + diff, albumin (SAAG), total protein, glucose, LDH, Gram stain/culture, <b>cytology</b> (send a large volume – ≥50–100 mL, more improves yield).</li>
+    <li>Peritoneal carcinomatosis pattern: SAAG &lt;11 g/L, protein &gt;25 g/L, high LDH, low glucose. Cytology is positive in most true carcinomatosis; negative cytology with SAAG ≥11 suggests liver metastases / portal hypertension instead.</li>
+  </ul></details>
+  <details open><summary>Tissue diagnosis – needed before oncology can treat</summary><ul>
+    <li><b>Image-guided core biopsy</b> of omentum/peritoneal nodule (IR) – usually best first route; cores allow IHC and molecular tests.</li>
+    <li><b>Diagnostic laparoscopy</b> – gold standard for PCI and resectability; done by surgical oncology / gyne-onc, not a ward procedure.</li>
+    <li>Endoscopy/colonoscopy to find GI primary; mammogram if lobular breast suspected; gyne exam + pelvic US/MRI if ovarian.</li>
+    <li>IHC hints: CK7−/CK20+/CDX2+/SATB2+ → colorectal; CK7+/PAX8+/WT1+ → Müllerian (ovarian/tubal/primary peritoneal); CK7+/CK20± /CDX2± → gastric/upper GI; GATA3+ → breast; calretinin/WT1/D2-40 → mesothelioma.</li>
+  </ul></details>
+  <details><summary>Molecular / biomarker tests oncology will want (order on the tissue, or flag in consult)</summary>
+    <table><tr><th>Primary</th><th>Tests</th></tr>
+      <tr><td>Colorectal</td><td>MMR/MSI, KRAS/NRAS, BRAF V600E, HER2</td></tr>
+      <tr><td>Gastric / GEJ</td><td>HER2, PD-L1 CPS, MMR/MSI, Claudin 18.2</td></tr>
+      <tr><td>Ovarian (high-grade)</td><td>Germline BRCA1/2 (all), tumour BRCA/HRD, folate receptor-α (platinum-resistant)</td></tr>
+    </table>
+  </details>
+</section>
+
+<!-- ================= PCI ================= -->
+<section class="tab" id="tab-pci">
+  <h2>Peritoneal Cancer Index (Sugarbaker)</h2>
+  <p class="muted noprint">Click a region to cycle lesion size 0 → 1 → 2 → 3. Usually scored at laparoscopy/laparotomy; a CT-based score underestimates true PCI.</p>
+  <div class="pciwrap">
+    <div>
+      <div class="abd" id="abdGrid"></div>
+      <div class="muted" style="margin:8px 0 2px">Small bowel</div>
+      <div class="sb" id="sbGrid"></div>
+      <div class="noprint" style="margin-top:10px"><button class="btn ghost" id="pciReset">Reset</button></div>
+    </div>
+    <div style="flex:1;min-width:280px">
+      <div class="card">
+        <div>PCI total <span class="muted">(0–39)</span></div>
+        <div class="pcitotal" id="pciTotal">0</div>
+        <label>Primary: <select id="pciPrimary">
+          <option value="colorectal">Colorectal</option><option value="gastric">Gastric</option>
+          <option value="ovarian">Ovarian</option><option value="pmp">Appendiceal / PMP</option><option value="other">Other</option>
+        </select></label>
+        <div id="pciInterp" style="margin-top:8px"></div>
+      </div>
+      <div class="card"><h3>Lesion size (LS)</h3><table>
+        <tr><td>LS 0</td><td>No tumour seen</td></tr><tr><td>LS 1</td><td>Tumour ≤0.5 cm</td></tr>
+        <tr><td>LS 2</td><td>Tumour &gt;0.5 to ≤5 cm</td></tr><tr><td>LS 3</td><td>Tumour &gt;5 cm or confluent</td></tr></table>
+        <h3>Completeness of cytoreduction (CC)</h3><table>
+        <tr><td>CC-0</td><td>No visible residual</td></tr><tr><td>CC-1</td><td>Residual &lt;2.5 mm</td></tr>
+        <tr><td>CC-2</td><td>2.5 mm – 2.5 cm</td></tr><tr><td>CC-3</td><td>&gt;2.5 cm</td></tr></table>
+        <p class="muted">CC-0/1 is what predicts benefit from CRS. Final resectability is a peritoneal surface malignancy surgeon's call.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= BY PRIMARY ================= -->
+<section class="tab" id="tab-primary">
+  <h2>Approach by primary tumour</h2>
+  <div class="flag info">General rule: <b>tissue diagnosis + biomarkers + performance status + PCI</b> decide everything. Early referral to medical oncology and, if possibly resectable, a peritoneal surface malignancy (CRS/HIPEC) centre or gyne-oncology.</div>
+  <details open><summary>Colorectal</summary>
+    <ul>
+      <li>~5–10% have peritoneal metastases at diagnosis; peritoneal disease responds worse to chemo and has shorter survival than liver/lung-only metastases.</li>
+      <li><b>Workup:</b> CT C/A/P, colonoscopy, CEA, MMR/MSI, RAS/BRAF, HER2. MRI-DWI ± diagnostic laparoscopy if CRS being considered.</li>
+      <li><b>Possible CRS candidate:</b> ECOG 0–1, limited PCI (generally ≤15–20; lower is better), no unresectable extra-abdominal disease, achievable CC-0. Perioperative systemic chemo around CRS.</li>
+      <li><b>HIPEC:</b> PRODIGE 7 – adding 30-min oxaliplatin HIPEC to complete CRS did not improve survival and added late complications. CRS itself is the key step; HIPEC use varies by centre (mitomycin C regimens still used).</li>
+      <li><b>Not a surgical candidate:</b> systemic therapy by biomarkers (see <a href="#" data-goto="chemo">Chemo</a>); dMMR/MSI-H → immunotherapy first line.</li>
+      <li>Watch for: obstruction (often colonic – consider stent), ureteric obstruction, mucinous ascites.</li>
+    </ul>
+  </details>
+  <details><summary>Gastric / GEJ</summary>
+    <ul>
+      <li>Peritoneum is the commonest site of gastric spread; positive peritoneal cytology alone = M1 (stage IV). Worst prognosis of the three.</li>
+      <li><b>Workup:</b> CT C/A/P, OGD + biopsy, HER2, PD-L1 CPS, MMR/MSI, Claudin 18.2. <b>Staging laparoscopy with washings</b> for cT3–4 or node-positive disease before curative-intent treatment – CT misses much peritoneal disease.</li>
+      <li><b>Treatment is mainly systemic.</b> CRS/HIPEC only for very limited disease (PCI ≤6–7 in most series) or cytology-only disease after good chemo response, ideally in a trial (e.g. GASTRIPEC, PERISCOPE II). PIPAC is investigational.</li>
+      <li>Watch for: gastric outlet obstruction (duodenal stent or venting gastrostomy), bleeding from primary, linitis plastica → poor gastric emptying, Krukenberg tumours, malnutrition.</li>
+    </ul>
+  </details>
+  <details><summary>Ovarian / tubal / primary peritoneal (high-grade serous)</summary>
+    <ul>
+      <li>Most present at stage III–IV <i>with</i> peritoneal disease – this is still potentially <b>curative-intent</b> treatment, unlike GI primaries. Refer to gyne-oncology urgently.</li>
+      <li><b>Workup:</b> CT C/A/P, CA-125 (and CEA/CA 19-9 to exclude GI primary), pelvic US/MRI, biopsy (core or laparoscopy), <b>germline BRCA testing for all</b>, tumour HRD.</li>
+      <li><b>Surgery goal = no residual disease.</b> Primary debulking if complete resection is feasible and patient fit; otherwise neoadjuvant carboplatin/paclitaxel ×3 → interval debulking → 3 more cycles.</li>
+      <li><b>HIPEC:</b> OVHIPEC-1 – cisplatin HIPEC at interval debulking improved median OS (≈34 → 46 months). Used at some centres.</li>
+      <li><b>Maintenance:</b> PARP inhibitor (olaparib for BRCA-mutated; niraparib; olaparib + bevacizumab if HRD+).</li>
+      <li>Watch for: MBO at recurrence (common cause of death), recurrent ascites, pleural effusions, VTE.</li>
+    </ul>
+  </details>
+  <details><summary>Other primaries</summary>
+    <ul>
+      <li><b>Appendiceal / pseudomyxoma peritonei:</b> slow-growing mucinous disease; CRS + HIPEC (mitomycin C) at an expert centre, even with high PCI. Long survival possible. Chemo responds poorly in low-grade disease.</li>
+      <li><b>Peritoneal mesothelioma:</b> CRS + HIPEC in selected; otherwise systemic therapy. Ask about asbestos.</li>
+      <li><b>Pancreatic:</b> very poor prognosis; systemic chemo (FOLFIRINOX or gemcitabine/nab-paclitaxel) if fit; early palliative care.</li>
+      <li><b>Lobular breast:</b> can spread to peritoneum/GI wall and mimic GI primary; ER-positive often → endocrine-based therapy.</li>
+      <li><b>Unknown primary:</b> core biopsy with IHC panel; women with Müllerian IHC profile are treated as ovarian.</li>
+    </ul>
+  </details>
+</section>
+
+<!-- ================= MBO ================= -->
+<section class="tab" id="tab-mbo">
+  <h2>Malignant bowel obstruction (MBO)</h2>
+  <div id="mboFlags"></div>
+  <details open><summary>What to watch out for</summary>
+    <ul>
+      <li>Often <b>partial, multi-level and intermittent</b>; may settle and recur. Small bowel more common than colon in carcinomatosis.</li>
+      <li>Exclude mimics: constipation/faecal impaction, opioid-induced ileus, hypokalemia, hypomagnesemia, hypercalcemia, adhesions, volvulus, hernia, chemo-related (vinca, anticholinergics).</li>
+      <li><b>Red flags → urgent surgery:</b> peritonitis, free air, closed-loop obstruction, rising lactate, fever with tachycardia, strangulation.</li>
+      <li>High-output vomiting → dehydration, AKI, hypokalemia, metabolic alkalosis; aspiration risk.</li>
+      <li>Missed: delirium from opioids + dehydration; pressure injuries; refeeding when feeding restarted.</li>
+    </ul>
+  </details>
+  <details open><summary>Is surgery / a stent reasonable? (decision with surgery + oncology + patient)</summary>
+    <div class="chk" id="mboChk">
+      <b>Favours procedure</b>
+      <label><input type="checkbox" data-w="1"> Single transition point on CT</label>
+      <label><input type="checkbox" data-w="1"> ECOG 0–2 / was independent before admission</label>
+      <label><input type="checkbox" data-w="1"> Further systemic therapy options available</label>
+      <label><input type="checkbox" data-w="1"> Expected survival &gt;2–3 months</label>
+      <b>Against procedure</b>
+      <label><input type="checkbox" data-w="-1"> Multiple transition points / diffuse small bowel involvement</label>
+      <label><input type="checkbox" data-w="-1"> Rapidly reaccumulating or large-volume ascites</label>
+      <label><input type="checkbox" data-w="-1"> Palpable diffuse intra-abdominal masses / prior abdominal radiation</label>
+      <label><input type="checkbox" data-w="-1"> Albumin &lt;30 g/L or significant malnutrition</label>
+      <label><input type="checkbox" data-w="-1"> Poor performance status (ECOG 3–4)</label>
+    </div>
+    <div id="mboChkOut" class="flag info">Tick the boxes that apply.</div>
+    <ul>
+      <li><b>Colonic or gastric outlet single-level obstruction:</b> self-expanding metal stent (GI/endoscopy) – quicker recovery than surgery.</li>
+      <li><b>Surgery</b> (bypass, diversion/stoma, resection): meaningful 30-day mortality in carcinomatosis (often quoted 15–30%) and high re-obstruction.</li>
+      <li><b>Venting gastrostomy (IR/GI)</b> for refractory vomiting when surgery is not an option – lets patient drink/eat small amounts and go home without an NG tube.</li>
+    </ul>
+  </details>
+  <details open><summary>Medical management (works alongside or instead of a procedure)</summary>
+    <table>
+      <tr><th>Step</th><th>Option</th><th>Typical adult dose</th><th>Notes</th></tr>
+      <tr><td>Decompression</td><td>NPO / sips; NG tube to drainage</td><td>–</td><td>NG for high-volume vomiting or distension; aim to remove once secretions controlled.</td></tr>
+      <tr><td>Fluids</td><td>IV or hypodermoclysis</td><td>~1–1.5 L/day if goal is comfort</td><td>Large volumes increase secretions/edema. Replace K, Mg, PO4.</td></tr>
+      <tr><td rowspan="2">Reduce secretions</td><td>Octreotide</td><td>100–200 mcg SC q8h, or 300–600 mcg/24 h CSCI</td><td>Reduces NG output/vomiting; switch to LAR if effective and prognosis allows.</td></tr>
+      <tr><td>Hyoscine butylbromide <i>or</i> glycopyrrolate</td><td>Buscopan 20 mg SC q4–6h (max 120 mg/day); glycopyrrolate 0.2–0.4 mg SC q4–6h</td><td>Also treats colic. Anticholinergic: dry mouth, urinary retention.</td></tr>
+      <tr><td>Reduce edema</td><td>Dexamethasone</td><td>6–16 mg/day IV/SC (once daily, morning) × 3–5 days</td><td>Stop if no response by day 5; taper if helpful. Check glucose; add PPI.</td></tr>
+      <tr><td rowspan="4">Nausea</td><td>Haloperidol</td><td>0.5–1 mg SC q6–8h PRN (usual max ~5 mg/day)</td><td>First line in complete MBO. Check QTc.</td></tr>
+      <tr><td>Metoclopramide</td><td>10 mg SC q6h</td><td><b>Partial obstruction only, no colic.</b> Stop if colic worsens. Avoid in complete MBO and with anticholinergics.</td></tr>
+      <tr><td>Ondansetron</td><td>4–8 mg IV/SC q8h</td><td>Constipating; second line.</td></tr>
+      <tr><td>Olanzapine</td><td>2.5–5 mg ODT at bedtime</td><td>Useful for refractory nausea.</td></tr>
+      <tr><td>Acid</td><td>Pantoprazole or famotidine</td><td>Pantoprazole 40 mg IV daily</td><td>Reduces gastric secretion volume.</td></tr>
+      <tr><td>Pain</td><td>Opioid SC/IV (hydromorphone, morphine if renal ok)</td><td>Opioid-naive frail: hydromorphone 0.25–0.5 mg SC q1h PRN</td><td>Colic: add antispasmodic, not more opioid.</td></tr>
+      <tr><td>Bowels</td><td>Partial MBO: softeners (docusate) / osmotic; <b>avoid stimulants</b> (senna, bisacodyl) in complete MBO</td><td>–</td><td>Water-soluble contrast (Gastrografin) follow-through can predict and sometimes speed resolution in partial obstruction.</td></tr>
+    </table>
+  </details>
+  <details><summary>Nutrition &amp; goals of care</summary>
+    <ul>
+      <li>TPN: consider only if expected survival is months (not weeks), good performance status, and a plan (e.g. bridge to chemo or surgery). Discuss with oncology/palliative.</li>
+      <li>Median survival after MBO in advanced cancer is roughly 1–3 months; inoperable MBO often less. Have a goals-of-care conversation early and document it.</li>
+      <li>Involve palliative care early; many patients can go home with SC octreotide/antiemetics, venting PEG, or hospice.</li>
+    </ul>
+  </details>
+</section>
+
+<!-- ================= ASCITES ================= -->
+<section class="tab" id="tab-ascites">
+  <h2>Malignant ascites</h2>
+  <details open><summary>Diagnose</summary><ul>
+    <li>Diagnostic paracentesis: cell count, albumin (SAAG), protein, glucose, LDH, culture, cytology (large volume).</li>
+    <li><b>SAAG &lt;11 g/L</b> → peritoneal carcinomatosis (diuretics rarely help). <b>SAAG ≥11 g/L</b> → massive liver mets, portal vein thrombosis, or coexisting cirrhosis (diuretics may help).</li>
+    <li>Rule out SBP if fever, pain or delirium (PMN ≥250/µL), and chylous ascites (milky; triglycerides) from lymphatic obstruction.</li>
+  </ul></details>
+  <details open><summary>Treat symptoms</summary>
+    <table><tr><th>Option</th><th>When</th><th>Notes</th></tr>
+      <tr><td><b>Therapeutic paracentesis</b></td><td>Tense, symptomatic ascites</td><td>Fast relief; typically recurs in 1–2 weeks. Albumin replacement usually not needed in pure malignant ascites; consider for large taps (&gt;5 L) with SAAG ≥11 / liver mets or hypotension.</td></tr>
+      <tr><td>Diuretics</td><td>SAAG ≥11 g/L</td><td>Spironolactone 100 mg ± furosemide 40 mg daily; watch Na, K, creatinine. Little benefit if SAAG low.</td></tr>
+      <tr><td><b>Tunnelled indwelling peritoneal catheter</b> (PleurX/Aspira-type)</td><td>Needing taps more than about every 1–2 weeks, or prognosis limited</td><td>IR-placed; home drainage by patient/family/home care. Risks: infection, leak, blockage. Good for going home.</td></tr>
+      <tr><td>Systemic treatment</td><td>Chemo-sensitive tumour (esp. ovarian)</td><td>Best long-term control; bevacizumab helps in ovarian.</td></tr>
+      <tr><td>Peritoneovenous shunt</td><td>Rarely now</td><td>DIC, shunt failure.</td></tr>
+    </table>
+  </details>
+  <details><summary>Watch for</summary><ul>
+    <li>Post-tap hypotension, AKI, hyponatremia; protein loss and malnutrition with repeated taps.</li>
+    <li>Bowel puncture is more likely with adherent loops/omental cake – use US guidance.</li>
+    <li>Catheter: fever, cloudy fluid, redness or pus at site, abdominal pain → peritonitis/infection workup.</li>
+    <li>Dyspnea may be pleural effusion too – check chest imaging.</li>
+  </ul></details>
+</section>
+
+<!-- ================= CHEMO ================= -->
+<section class="tab" id="tab-chemo">
+  <h2>Systemic &amp; intraperitoneal therapy (for orientation – oncology decides)</h2>
+  <p class="muted">Funded regimens depend on BC Cancer protocols; check current protocol codes with oncology/pharmacy.</p>
+  <details open><summary>Colorectal</summary><table>
+    <tr><th>Setting</th><th>Usual options</th></tr>
+    <tr><td>1st line, pMMR</td><td>FOLFOX / CAPOX / FOLFIRI (FOLFOXIRI if very fit) + bevacizumab; or + anti-EGFR (panitumumab/cetuximab) if RAS/BRAF wild-type and left-sided</td></tr>
+    <tr><td>dMMR / MSI-H</td><td>Pembrolizumab (KEYNOTE-177) or nivolumab + ipilimumab</td></tr>
+    <tr><td>BRAF V600E</td><td>Encorafenib + cetuximab (± mFOLFOX6 first line, BREAKWATER; 2nd line BEACON)</td></tr>
+    <tr><td>HER2-amplified</td><td>Trastuzumab + tucatinib (later line)</td></tr>
+    <tr><td>KRAS G12C</td><td>Sotorasib + panitumumab or adagrasib + cetuximab (later line)</td></tr>
+    <tr><td>Later lines</td><td>Trifluridine/tipiracil + bevacizumab; fruquintinib; regorafenib</td></tr>
+    <tr><td>Intraperitoneal</td><td>CRS ± HIPEC at expert centre (selected); oxaliplatin HIPEC no added benefit in PRODIGE 7</td></tr>
+  </table></details>
+  <details><summary>Gastric / GEJ</summary><table>
+    <tr><th>Setting</th><th>Usual options</th></tr>
+    <tr><td>1st line HER2-negative</td><td>FOLFOX / CAPOX + nivolumab (PD-L1 CPS ≥5) or + pembrolizumab; Claudin 18.2-positive: + zolbetuximab</td></tr>
+    <tr><td>1st line HER2-positive</td><td>Fluoropyrimidine/platinum + trastuzumab (+ pembrolizumab if CPS ≥1)</td></tr>
+    <tr><td>2nd line</td><td>Paclitaxel + ramucirumab; HER2+: trastuzumab deruxtecan</td></tr>
+    <tr><td>3rd line</td><td>Trifluridine/tipiracil</td></tr>
+    <tr><td>Intraperitoneal</td><td>CRS/HIPEC only for very limited disease, ideally on trial; PIPAC investigational</td></tr>
+  </table></details>
+  <details><summary>Ovarian (high-grade serous)</summary><table>
+    <tr><th>Setting</th><th>Usual options</th></tr>
+    <tr><td>Primary</td><td>Carboplatin + paclitaxel q3w ×6 (± bevacizumab), around primary or interval debulking; ± cisplatin HIPEC at interval surgery</td></tr>
+    <tr><td>Maintenance</td><td>BRCAm: olaparib; HRD+: olaparib + bevacizumab; niraparib regardless of status</td></tr>
+    <tr><td>Platinum-sensitive relapse (&gt;6 mo)</td><td>Platinum doublet (carbo + PLD / gemcitabine / paclitaxel) ± bevacizumab, then PARPi if not used</td></tr>
+    <tr><td>Platinum-resistant</td><td>Weekly paclitaxel, PLD, or topotecan ± bevacizumab; FRα-high: mirvetuximab soravtansine</td></tr>
+  </table></details>
+  <details><summary>Chemo while obstructed or with ascites</summary><ul>
+    <li>Chemo-naive or chemo-sensitive tumours (ovarian, MSI-H colorectal, newly diagnosed colorectal) can open a partial MBO – worth an urgent oncology opinion.</li>
+    <li>After multiple lines and poor PS, chemo rarely reverses MBO; focus on comfort.</li>
+    <li>Bevacizumab: perforation and wound-healing risk – hold around surgery/stents, caution with active obstruction.</li>
+    <li>Oral agents (capecitabine, PARPi, TKIs) need a working gut – check absorption if vomiting.</li>
+  </ul></details>
+</section>
+
+<!-- ================= PROGNOSIS ================= -->
+<section class="tab" id="tab-prog">
+  <h2>Prognosis</h2>
+  <div class="card">
+    <table><tr><th>Primary</th><th>Untreated / best supportive care</th><th>Systemic therapy</th><th>Selected for CRS ± HIPEC</th></tr>
+      <tr><td>Colorectal</td><td>~5–7 months</td><td>~12–17 months (worse than liver/lung-only mets)</td><td>~40 months median (PRODIGE 7)</td></tr>
+      <tr><td>Gastric</td><td>~3–6 months</td><td>~9–15 months</td><td>Limited data; selected low-PCI ~12–20 months</td></tr>
+      <tr><td>Ovarian (stage III–IV)</td><td>–</td><td colspan="2">Median ~3–5 years overall; longer with no residual disease after surgery and with BRCA/PARPi</td></tr>
+      <tr><td>Appendiceal low-grade PMP</td><td colspan="3">Many years with complete CRS + HIPEC</td></tr>
+      <tr><td>Any primary + inoperable MBO</td><td colspan="3">Weeks to ~3 months</td></tr>
+    </table>
+    <p class="muted">Approximate medians from trials and series; individual patients vary widely.</p>
+  </div>
+  <div class="card">
+    <h3>Patient factors (estimate)</h3>
+    <div class="grid2">
+      <label>ECOG <select id="pgEcog"><option value="0">0</option><option value="1">1</option><option value="2" selected>2</option><option value="3">3</option><option value="4">4</option></select></label>
+      <label>Albumin (g/L) <input type="number" id="pgAlb" style="width:80px"></label>
+      <label><input type="checkbox" id="pgMbo"> MBO this admission</label>
+      <label><input type="checkbox" id="pgAsc"> Recurrent ascites</label>
+      <label><input type="checkbox" id="pgLines"> ≥2 prior lines of chemo / no options left</label>
+      <label>PPS (%) <select id="pgPps"><option value="">–</option><option>100</option><option>90</option><option>80</option><option>70</option><option>60</option><option>50</option><option>40</option><option>30</option><option>20</option><option>10</option></select></label>
+    </div>
+    <div id="pgOut" style="margin-top:8px"></div>
+  </div>
+</section>
+
+<!-- ================= HANDOUT ================= -->
+<section class="tab" id="tab-handout">
+  <div class="noprint" style="margin-bottom:8px">
+    <label><input type="checkbox" id="hoDrain"> Include drain care (indwelling ascites catheter)</label>
+    <label style="margin-left:12px"><input type="checkbox" id="hoMbo" checked> Include bowel blockage section</label>
+    <button class="btn" style="margin-left:12px" onclick="window.print()">Print handout</button>
+  </div>
+  <div class="card" id="handout">
+    <h2>Going home: cancer in the lining of the abdomen</h2>
+    <p>Your cancer has spread to the lining of your abdomen (the <b>peritoneum</b>). This can cause fluid build-up (ascites) and can slow or block the bowel. Your care team: <span id="hoTeam">________________________</span></p>
+    <h3>Things you can do</h3>
+    <ul>
+      <li>Eat small, frequent, soft or liquid meals. Avoid tough skins, nuts, seeds, raw vegetables and stringy meats if you have had a blockage.</li>
+      <li>Drink fluids through the day unless told otherwise.</li>
+      <li>Keep a record of bowel movements, gas, vomiting and your waist size or weight.</li>
+      <li>Take your bowel and anti-nausea medicines as prescribed. Do not stop pain medicines suddenly.</li>
+    </ul>
+    <div id="hoMboSec"><h3>Signs your bowel may be blocking</h3>
+      <ul><li>Cramping belly pain that comes and goes</li><li>Swollen, hard belly</li><li>Vomiting, especially large amounts or dark/brown vomit</li><li>No stool <b>and</b> no gas for 24 hours or more</li></ul>
+      <p>If this starts: stop solid food, sip clear fluids only, and call your team or go to the Emergency Department.</p></div>
+    <div id="hoDrainSec" style="display:none"><h3>Your drain</h3>
+      <ul><li>Drain as instructed (usually not more than the amount your team set each time).</li><li>Keep the site clean and dry; change the dressing as shown.</li><li>Call your home care nurse or team if the drain stops working or leaks.</li></ul></div>
+    <h3>Call your team or go to the Emergency Department if</h3>
+    <ul>
+      <li>Vomiting that will not stop, or you cannot keep fluids down for 12–24 hours</li>
+      <li>No stool or gas for more than 24 hours with belly pain or swelling</li>
+      <li>Fever 38.0 °C or higher – <b>especially if you are on chemotherapy</b> (this can be an emergency)</li>
+      <li>Belly swelling getting worse quickly, or harder to breathe because of it</li>
+      <li>Drain site red, hot, swollen or leaking pus, or cloudy drain fluid</li>
+      <li>Much less urine than normal, very dizzy when standing, or very dry mouth</li>
+      <li>Leg swelling or pain in one leg</li>
+      <li>Yellow skin or eyes</li>
+    </ul>
+    <h3 style="color:#b42318">Call 911 if</h3>
+    <ul>
+      <li>Sudden, severe belly pain, or a belly that is rigid and very tender</li>
+      <li>Vomiting blood or material that looks like coffee grounds; black or bloody stool in large amounts</li>
+      <li>Chest pain, sudden shortness of breath, or coughing blood</li>
+      <li>Fainting, confusion, or very hard to wake up</li>
+    </ul>
+    <p class="muted">Questions: _______________________ &nbsp; Phone: _______________________</p>
+  </div>
+</section>
+
+<!-- ================= NOTE ================= -->
+<section class="tab" id="tab-note">
+  <h2>Assessment &amp; plan draft</h2>
+  <div class="noprint" style="margin-bottom:8px">
+    <label>My decision: <input id="noteDecision" style="width:60%;padding:5px" placeholder="e.g. Conservative MBO management, surgery consulted, GOC with family tomorrow"></label>
+    <button class="btn ghost" id="noteRebuild">Rebuild from chart</button>
+    <button class="btn" id="noteCopy">Copy</button>
+  </div>
+  <textarea id="noteText"></textarea>
+  <p class="muted">Editable. Pulls problems, labs, flags, PCI and your MBO checklist. Paste into the PowerChart note and edit.</p>
+</section>
+
+</main>
+<script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+<script src="rules.js?v=20261119a"></script>
+<script src="chart.js?v=20261119a"></script>
+<script src="samples.js?v=20261119a"></script>
+<script src="app.js?v=20261119a"></script>
+</body>
+</html>
