@@ -108,6 +108,26 @@
     return r;
   }
 
-  const api = { grade, tbw, deficit, perLitre, plan, meds, MEDS, MEDLABEL, cause, treatment, recheck };
+  /* step-by-step working with the patient's numbers (shown in the card) */
+  function tbwFactor(age, sex) { const old = ok(age) && age >= 65; return sex === "female" ? (old ? 0.45 : 0.5) : (old ? 0.5 : 0.6); }
+  function explain(x) {
+    const s = [], na = x.na, w = x.wt;
+    if (!ok(na) || na <= 145) return s;
+    const fac = tbwFactor(x.age, x.sex), who = (x.sex === "female" ? "woman" : x.sex === "male" ? "man" : "sex unknown (man's factor used)") + (ok(x.age) ? ", " + x.age + " y" + (x.age >= 65 ? " (65 or older)" : " (under 65)") : ", age unknown (under-65 factor used)");
+    s.push({ step: "1. Total body water", formula: "TBW = weight × factor (man 0.6, woman 0.5; 65 or older: man 0.5, woman 0.45)",
+      calc: ok(w) ? w + " kg × " + fac + " [" + who + "] = " + r1(w * fac) + " L" : "Enter weight to calculate (" + who + ": factor " + fac + ")" });
+    if (!ok(w)) return s;
+    const water = r1(w * fac), ratio = Math.round((na / 140 - 1) * 1000) / 1000;
+    s.push({ step: "2. Free water deficit", formula: "Deficit = TBW × (Na ÷ 140 − 1)", calc: water + " × (" + na + " ÷ 140 − 1) = " + water + " × " + ratio + " = " + deficit(na, water) + " L" });
+    const pl = plan(na, water, x.acute, null), perL = -pl.perL;
+    s.push({ step: "3. Effect of 1 L D5W", formula: "Change per litre = (infusate Na − serum Na) ÷ (TBW + 1); D5W has no Na", calc: "(0 − " + na + ") ÷ (" + water + " + 1) = −" + perL + " mmol/L per litre" });
+    s.push({ step: "4. Target for 24 h", formula: x.acute ? "Acute (< 48 h): lower toward 145, about 1 mmol/L/h" : "Chronic / unknown: fall of no more than 10 mmol/L in 24 h", calc: "Lower by " + pl.drop24 + " → about " + pl.target24 });
+    s.push({ step: "5. Litres in 24 h", formula: "Litres = target fall ÷ change per litre", calc: pl.drop24 + " ÷ " + perL + " = " + pl.litres + " L" });
+    s.push({ step: "6. Starting rate", formula: "Rate = litres × 1000 ÷ 24 + insensible loss (≈ 40 mL/h)" + (ok(x.uoMlH) && x.uoMlH > 125 ? " + dilute urine" : ""),
+      calc: pl.litres + " × 1000 ÷ 24 + 40 = " + Math.round(pl.litres * 1000 / 24) + " + 40 = " + pl.rate + " mL/h" + (ok(x.uoMlH) && x.uoMlH > 125 ? " (+ urine losses ≈ " + Math.round(x.uoMlH) + " mL/h)" : "") });
+    return s;
+  }
+
+  const api = { grade, tbw, tbwFactor, explain, deficit, perLitre, plan, meds, MEDS, MEDLABEL, cause, treatment, recheck };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.HyperRules = api;
 })(this);

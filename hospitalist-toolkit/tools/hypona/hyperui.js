@@ -24,7 +24,7 @@
   /* insert the card after the tiles */
   const css = document.createElement("style");
   css.textContent = `body.is-hyper .hypo-only { display:none; } .hx-banner { background:var(--a-bg); color:var(--a-ink); border-radius:8px; padding:8px 12px; margin:0 0 8px; }
-    #sec-hyper table td:first-child { font-weight:600; width:24%; vertical-align:top; } .hx-tier { display:inline-block; min-width:44px; font-size:11px; font-weight:700; text-transform:uppercase; border-radius:4px; padding:0 5px; margin-right:6px; text-align:center; }
+    #sec-hyper table td:first-child { font-weight:600; width:24%; vertical-align:top; } #sec-hyper table.hx-calc td:first-child { width:18%; } #sec-hyper table.hx-calc th { text-align:left; color:var(--muted); font-weight:600; } .hx-tier { display:inline-block; min-width:44px; font-size:11px; font-weight:700; text-transform:uppercase; border-radius:4px; padding:0 5px; margin-right:6px; text-align:center; }
     .hx-tier.now { background:var(--r-bg); color:var(--r-ink); } .hx-tier.next { background:var(--a-bg); color:var(--a-ink); } .hx-tier.also { background:var(--b-bg); color:var(--b-ink); }
     #sec-hyper ul { margin:4px 0 8px 18px; padding:0; } #sec-hyper li { margin:4px 0; } #sec-hyper h3 { font-size:14px; margin:12px 0 4px; }`;
   document.head.appendChild(css);
@@ -97,6 +97,8 @@
       ${x.cause.steps.length ? `<div class="muted">${x.cause.steps.map(esc).join(" ")}</div>` : ""}
       ${med.length ? `<h3>Medications that can raise sodium</h3><ul>${med.join("")}</ul>` : ""}
       <h3>Treatment</h3><ul>${H.treatment(x).map((t) => `<li><span class="hx-tier ${t.tier}">${tiers[t.tier]}</span>${esc(t.text)}</li>`).join("")}</ul>
+      <h3>How it was calculated</h3><table class="hx-calc"><tr><th>Step</th><th>Formula</th><th>This patient</th></tr>${H.explain(x).map((r) => `<tr><td>${esc(r.step)}</td><td>${esc(r.formula)}</td><td><b>${esc(r.calc)}</b></td></tr>`).join("")}</table>
+      <div class="muted">Formulas ignore ongoing losses (fever, diarrhea, dilute urine) and can be off with obesity or edema; 0.45% saline lowers Na about half as much per litre as D5W. Recheck sodium and adjust to the result.</div>
       ${trendHtml}
       <h3>When to repeat labs</h3><table>${H.recheck(x).map((r) => `<tr><td>${esc(r.when)}</td><td>${esc(r.what)}</td></tr>`).join("")}</table>
       <div class="src">Uses weight, volume status, symptoms and onset from the top of the page, and the urine values from the cause helper (typed or chart). Doses and rates are starting points: recheck sodium and adjust.</div>`;

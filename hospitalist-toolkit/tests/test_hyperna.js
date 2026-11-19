@@ -39,5 +39,14 @@ let r = H.recheck({ na: 162, symptoms: "moderate" }); has("severe recheck 2-4 h"
 r = H.recheck({ na: 152 }); has("moderate recheck 4-6 h", r.map((i) => i.when), "Every 4–6 h");
 eq("no plan when Na normal", H.treatment({ na: 140 }).length, 0);
 
+// worked steps (patient G: 52 kg woman 88, Na 162)
+let ex = H.explain({ na: 162, wt: 52, age: 88, sex: "female", acute: false });
+has("step 1 TBW", ex.map((e) => e.calc), "52 kg × 0.45 [woman, 88 y (65 or older)] = 23.4 L");
+has("step 2 deficit", ex.map((e) => e.calc), "23.4 × (162 ÷ 140 − 1) = 23.4 × 0.157 = 3.7 L");
+has("step 3 per litre", ex.map((e) => e.calc), "(0 − 162) ÷ (23.4 + 1) = −6.6 mmol/L per litre");
+has("step 6 rate", ex.map((e) => e.calc), "= 103 mL/h");
+ex = H.explain({ na: 155, wt: 80, age: 54, sex: "male" }); has("man under 65", ex.map((e) => e.calc), "80 kg × 0.6 [man, 54 y (under 65)] = 48 L");
+eq("no weight: only step 1", H.explain({ na: 155, age: 54, sex: "male" }).length, 1);
+
 console.log(fail ? `\n${fail} FAILED` : "\nall passed");
 process.exit(fail ? 1 : 0);
