@@ -87,5 +87,15 @@ ok("CA19-9 with high bili note", R.markerAdvice("gastric", "male", 74, { ca199: 
 f = C.parse({ obs: [{ resourceType: "Observation", status: "final", code: { coding: [{ system: "http://loinc.org", code: "55180-3" }], text: "HE4" }, effectiveDateTime: new Date().toISOString(), valueQuantity: { value: 120, unit: "pmol/L" } }] });
 eq("HE4 parsed", f.latest.he4 && f.latest.he4.v, 120);
 
+// daily progress note
+let dn = R.dailyNote({ date: "2026-11-19", primaryLabel: "Colorectal", mbo: true, asc: false, d: { ng: "1400", ngc: "feculent", flat: "no", pain: "6" }, labs: "K 3.1 (3.4)", mboMeds: ["octreotide 100 mcg subcut q8h"], dexDays: 6, decision: "Venting PEG" });
+ok("daily: NG output and character", /NG output 1400 mL\/24 h \(feculent\)/.test(dn));
+ok("daily: dex day 6 reassess", /Dexamethasone day ~6 – reassess/.test(dn));
+ok("daily: blanks stay ___", /last BM ___/.test(dn) && /code status ___/.test(dn));
+ok("daily: no ascites line when no ascites", !/Malignant ascites –/.test(dn));
+ok("daily: decision", /Decision: Venting PEG/.test(dn));
+dn = R.dailyNote({ asc: true, d: { tap: "4800" } });
+ok("daily: ascites line with tap", /Malignant ascites – last tap 4800 mL/.test(dn) && !/Malignant bowel obstruction –/.test(dn));
+
 console.log(fail ? `\n${fail} FAILED` : "\nall passed");
 process.exit(fail ? 1 : 0);

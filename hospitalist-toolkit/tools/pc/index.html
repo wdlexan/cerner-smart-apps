@@ -42,7 +42,7 @@
   .btn{background:var(--accent);color:#fff;border:0;border-radius:6px;padding:7px 12px;cursor:pointer;font-size:13.5px}
   .btn.ghost{background:var(--card);color:var(--accent);border:1px solid var(--accent)}
   select,input,textarea{background:var(--card);color:var(--ink)} select,input[type=number]{font-size:13.5px;padding:4px 6px;border:1px solid var(--line);border-radius:5px}
-  textarea{width:100%;min-height:260px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;padding:8px;border:1px solid var(--line);border-radius:6px}
+  textarea{width:100%;min-height:420px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;padding:8px;border:1px solid var(--line);border-radius:6px}
   /* PCI */
   .pciwrap{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start}
   .abd{display:grid;grid-template-columns:repeat(3,96px);grid-template-rows:repeat(3,78px);gap:4px}
@@ -461,21 +461,42 @@
 
 <!-- ================= NOTE ================= -->
 <section class="tab" id="tab-note">
-  <h2>Assessment &amp; plan draft</h2>
+  <h2>Note draft</h2>
+  <div class="noprint" style="margin-bottom:8px">
+    <label><input type="radio" name="noteType" value="ap" checked> Assessment &amp; plan (admission / consult)</label>
+    <label style="margin-left:14px"><input type="radio" name="noteType" value="daily"> Daily progress note</label>
+  </div>
+  <div class="card noprint" id="dailyInputs" style="display:none">
+    <div class="muted" style="margin-bottom:6px">Bedside details for today (optional – blanks stay as ___ in the note):</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px 16px">
+      <label>Hospital day <input type="number" id="dHd" style="width:60px"></label>
+      <label>NG output (mL/24 h) <input type="number" id="dNg" style="width:80px"></label>
+      <label>NG character <select id="dNgC"><option value="">–</option><option>bilious</option><option>clear/gastric</option><option>feculent</option><option>no NG</option></select></label>
+      <label>Vomits (24 h) <input type="number" id="dVom" style="width:60px"></label>
+      <label>Flatus <select id="dFlat"><option value="">–</option><option>yes</option><option>no</option></select></label>
+      <label>Last BM <input id="dBm" style="width:110px" placeholder="e.g. 3 days ago"></label>
+      <label>Intake <select id="dDiet"><option value="">–</option><option>NPO</option><option>sips</option><option>clear fluids</option><option>full fluids</option><option>low-residue diet</option></select></label>
+      <label>Pain score <input type="number" id="dPain" style="width:60px" min="0" max="10"></label>
+      <label>Breakthrough doses (24 h) <input type="number" id="dBt" style="width:60px"></label>
+      <label>Drain/tap (mL) <input type="number" id="dTap" style="width:80px"></label>
+      <label>Weight (kg) <input type="number" id="dWt" style="width:70px"></label>
+      <label>Code status <select id="dCode"><option value="">–</option><option>Full code</option><option>M1</option><option>M2</option><option>M3 (comfort)</option><option>DNR, ward-level care</option></select></label>
+    </div>
+  </div>
   <div class="noprint" style="margin-bottom:8px">
     <label>My decision: <input id="noteDecision" style="width:60%;padding:5px" placeholder="e.g. Conservative MBO management, surgery consulted, GOC with family tomorrow"></label>
     <button class="btn ghost" id="noteRebuild">Rebuild from chart</button>
     <button class="btn" id="noteCopy">Copy</button>
   </div>
   <textarea id="noteText"></textarea>
-  <p class="muted">Editable. Pulls problems, labs, flags, PCI and your MBO checklist. Paste into the PowerChart note and edit.</p>
+  <p class="muted">Editable. Pulls problems, labs (with previous value), active MBO medications, dexamethasone day, flags, PCI and your checklists. Paste into the PowerChart note and edit.</p>
 </section>
 
 </main>
 <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
-<script src="rules.js?v=20261119b"></script>
-<script src="chart.js?v=20261119b"></script>
-<script src="samples.js?v=20261119b"></script>
-<script src="app.js?v=20261119b"></script>
+<script src="rules.js?v=20261119c"></script>
+<script src="chart.js?v=20261119c"></script>
+<script src="samples.js?v=20261119c"></script>
+<script src="app.js?v=20261119c"></script>
 </body>
 </html>

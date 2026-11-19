@@ -149,6 +149,46 @@
     return L.join("\n");
   }
 
-  const api = { REGIONS, pciTotal, pciInterp, mboAdvice, prognosis, detectPrimary, flags, corrCa, note, markerAdvice, MARKER_NAME, ULN };
+  /* Daily progress note (SOAP). o = { date, hd, primaryLabel, mbo, asc, d: bedside inputs, labs: "K 3.1 (3.4), …",
+     mboMeds: [..], painMeds: [..], dexDays, anticoag: [..], chemo: [..], flags: [..], prog, pps, decision } */
+  function dailyNote(o) {
+    const d = o.d || {}, b = (v, u) => (v === "" || v == null ? "___" : v + (u || "")), L = [];
+    L.push(`DAILY PROGRESS NOTE – ${o.date || "___"}${d.hd ? " – hospital day " + d.hd : ""}`);
+    L.push(`Peritoneal carcinomatosis${o.primaryLabel ? " (" + o.primaryLabel + " primary)" : " – primary not yet established"}${o.mbo ? "; malignant bowel obstruction" : ""}${o.asc ? "; malignant ascites" : ""}.`);
+    L.push("");
+    L.push("S: Pain " + b(d.pain, "/10") + ", breakthrough doses " + b(d.bt) + " in 24 h; nausea/vomiting " + b(d.vom) + " episode(s)" + (d.ngc && d.ngc !== "no NG" ? " (" + d.ngc + ")" : "") + ".");
+    L.push("   Flatus " + b(d.flat) + "; last BM " + b(d.bm) + "; intake " + b(d.diet) + ". Distension/dyspnea: ___. Mentation: ___.");
+    L.push("   Patient/family understanding and concerns: ___");
+    L.push("");
+    L.push("O: Vitals ___. Urine output ___. Weight " + b(d.wt, " kg") + ".");
+    if (o.mbo || d.ng) L.push("   NG output " + b(d.ng, " mL/24 h") + (d.ngc ? " (" + d.ngc + ")" : "") + ".");
+    if (o.asc || d.tap) L.push("   Ascites drain/tap: " + b(d.tap, " mL") + "; appearance ___; site ___.");
+    L.push("   Abdomen: distension ___, tenderness ___, peritonism ___, bowel sounds ___.");
+    L.push("   Labs: " + (o.labs || "___") + (o.labs ? "  [previous value in brackets]" : ""));
+    L.push("");
+    L.push("A/P:");
+    let n = 1;
+    if (o.mbo) {
+      L.push(`${n++}. Malignant bowel obstruction – partial / complete; improving / unchanged / worse.`);
+      L.push("   - Current: " + (o.mboMeds && o.mboMeds.length ? o.mboMeds.join("; ") : "no antisecretory/antiemetic ordered"));
+      if (o.dexDays != null) L.push(`   - Dexamethasone day ~${o.dexDays}${o.dexDays >= 5 ? " – reassess: stop if no response by day 5, taper if helping" : " of 5-day trial"}.`);
+      L.push("   - NG: continue / clamp trial / remove. Fluids ~1–1.5 L/day; replace K/Mg/PO4.");
+      L.push("   - Surgery / stent / venting gastrostomy: ___ (consulted: ___).");
+    }
+    if (o.asc) L.push(`${n++}. Malignant ascites – last tap ${b(d.tap, " mL")}; reaccumulation rate ___; indwelling catheter: ___.`);
+    L.push(`${n++}. Pain/nausea – ${o.painMeds && o.painMeds.length ? o.painMeds.join("; ") : "___"}. Changes today: ___. Bowel regimen: ${o.mbo ? "held/partial-MBO softener only" : "___"}.`);
+    L.push(`${n++}. Fluids/electrolytes/nutrition – replaced: ___. Dietitian: ___. Refeeding risk: ___. TPN: not indicated / discussed.`);
+    L.push(`${n++}. Cancer – ${o.primaryLabel || "primary unknown: biopsy/IHC ___"}. Pathology/biomarkers pending: ___. Oncology plan: ___.${o.chemo && o.chemo.length ? " Recent anticancer therapy: " + o.chemo.join("; ") + "." : ""}`);
+    L.push(`${n++}. VTE prophylaxis: ${o.anticoag && o.anticoag.length ? o.anticoag.join("; ") : "___"}. Lines/drains: ___. Mobility/skin: ___.`);
+    L.push(`${n++}. Goals of care – code status ${b(d.code)}; PPS ${o.pps ? o.pps + "%" : "___"}; palliative care: ___; last family meeting: ___.`);
+    if (o.prog) L.push("   Prognosis estimate: " + o.prog);
+    L.push(`${n++}. Disposition – barriers: symptom control / drain teaching / home care / hospice. EDD: ___.`);
+    if (o.flags && o.flags.length) { L.push(""); L.push("Flagged today:"); o.flags.forEach((x) => L.push("- " + x)); }
+    L.push("");
+    L.push("Decision: " + (o.decision || "____________________"));
+    return L.join("\n");
+  }
+
+  const api = { dailyNote, REGIONS, pciTotal, pciInterp, mboAdvice, prognosis, detectPrimary, flags, corrCa, note, markerAdvice, MARKER_NAME, ULN };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else window.PCRules = api;
 })();

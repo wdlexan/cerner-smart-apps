@@ -108,8 +108,29 @@
   // ---- note ----
   let noteEdited = false;
   $("noteText").oninput = () => (noteEdited = true);
+  const noteType = () => (document.querySelector('input[name="noteType"]:checked') || {}).value || "ap";
+  const DAILY_IDS = { hd: "dHd", ng: "dNg", ngc: "dNgC", vom: "dVom", flat: "dFlat", bm: "dBm", diet: "dDiet", pain: "dPain", bt: "dBt", tap: "dTap", wt: "dWt", code: "dCode" };
+  document.querySelectorAll('input[name="noteType"]').forEach((r) => (r.onchange = () => { $("dailyInputs").style.display = noteType() === "daily" ? "" : "none"; buildNote(true); }));
+  Object.values(DAILY_IDS).forEach((id) => { $(id).oninput = () => buildNote(true); $(id).onchange = () => buildNote(true); });
+  function buildDaily() {
+    const f = state.f, d = {};
+    Object.entries(DAILY_IDS).forEach(([k, id]) => (d[k] = $(id).value.trim()));
+    const labTxt = f ? ["na", "k", "mg", "po4", "cr", "alb", "wbc", "hb", "lactate"].filter((k) => f.l[k] && f.l[k].length).map((k) => {
+      const a = f.l[k], cur = a[a.length - 1], prev = a.length > 1 ? a[a.length - 2] : null;
+      return `${C.LABS.find((l) => l.id === k).name} ${cur.v}${prev ? " (" + prev.v + ")" : ""}`; }).concat(f.corrCa != null ? ["corr Ca " + f.corrCa] : []).join(", ") : "";
+    const c = (f && f.cls) || {}, uniq = (a) => [...new Set(a)];
+    return R.dailyNote({
+      date: new Date().toLocaleDateString("en-CA"), primaryLabel: state.primary ? PRIMARY_LABEL[state.primary] : "",
+      mbo: $("pgMbo").checked, asc: $("pgAsc").checked, d, labs: labTxt,
+      mboMeds: uniq([].concat(c.octreo || [], c.anticholin || [], c.antiemetic || [], c.dex || [])),
+      painMeds: uniq([].concat(c.opioid || [])), dexDays: c.dex && c.dex.length ? f.dexDays : null,
+      anticoag: c.anticoag || [], chemo: c.chemo || [], pps: $("pgPps").value,
+      flags: f ? R.flags(f).filter((x) => x.level === "red" || x.level === "amber").map((x) => x.text) : [],
+      prog: R.prognosis(progInputs()).text, decision: $("noteDecision").value.trim() });
+  }
   function buildNote(force) {
     if (noteEdited && !force) return;
+    if (noteType() === "daily") { $("noteText").value = buildDaily(); noteEdited = false; return; }
     const f = state.f, tot = R.pciTotal(state.ls);
     const L = (k) => f && f.latest[k] ? `${C.LABS.find((l) => l.id === k).name} ${f.latest[k].v}` : null;
     const o = {
