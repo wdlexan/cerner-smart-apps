@@ -22,8 +22,8 @@ const PDF_V = "20261118d";
 const PROD = window.LYTES_PRODUCTS || {};
 function stock(e) {
   const rows = PROD[e]; if (!rows) return "";
-  return `<details class="stock"><summary>What we stock (local replacement sheet, Dec 2014)</summary><table>${rows.map((r) => `<tr><td><b>${esc(r[0])}</b></td><td>${esc(r[1])}</td></tr>`).join("")}</table>
-    <div class="why">${esc(PROD.all)} Confirm with pharmacy: the sheet is from 2014.</div></details>`;
+  return `<details class="stock"><summary>${e === "Ca" ? "Calcium products and the PowerChart infusion order" : "What we stock (local replacement sheet, Dec 2014)"}</summary><table>${rows.map((r) => `<tr><td><b>${esc(r[0])}</b></td><td>${esc(r[1])}</td></tr>`).join("")}</table>
+    <div class="why">${e === "Ca" ? "Confirm rates with the Island Health IV manual / pharmacy." : esc(PROD.all) + " Confirm with pharmacy: the sheet is from 2014."}</div></details>`;
 }
 const state = { f: null, x: {} };
 

@@ -288,6 +288,18 @@
     return { acute, chronic, days: { acute: aD, chronic: cD }, text };
   }
 
+  /* ---- calcium infusion as ordered in PowerChart: calcium gluconate (additive) 5,000 mg + dextrose 5% in water 500 mL = 10 mg/mL
+     (same concentration as the Society for Endocrinology 10 g in 1 L). 1 g calcium gluconate ≈ 93 mg (2.3 mmol) elemental Ca, so 1 mL ≈ 0.93 mg elemental.
+     Usual dose 0.5–1.5 mg elemental Ca/kg/h; SfE: 50–100 mL/h, titrated to normal calcium. ---- */
+  const CA_BAG = { mg: 5000, mL: 500, label: "calcium gluconate (additive) 5,000 mg + Dextrose 5% in Water 500 mL" };
+  function caInfusion(w) {
+    const conc = CA_BAG.mg / CA_BAG.mL, el = conc * 0.093; // mg gluconate/mL, mg elemental/mL
+    const at = (r) => r + " mL/h = " + Math.round(r * conc) + " mg/h calcium gluconate (≈ " + Math.round(r * el) + " mg elemental)" + (w != null ? ", " + Math.round(r * el / w * 100) / 100 + " mg/kg/h" : "") + ", bag lasts " + Math.round(CA_BAG.mL / r * 10) / 10 + " h";
+    const wt = w != null ? " For " + w + " kg, 0.5–1.5 mg/kg/h = " + Math.round(0.5 * w / el) + "–" + Math.round(1.5 * w / el) + " mL/h." : " Weight-based: about 0.55–1.6 mL/kg/h (enter weight to calculate).";
+    return "Infusion (PowerChart order): " + CA_BAG.label + " (" + conc + " mg/mL). Start " + at(50) + "; up to " + at(100) + " if very low or still symptomatic." + wt +
+      " Titrate by 10–20 mL/h to ionized Ca every 4–6 h; aim low-normal. Peripheral line OK; not with bicarbonate or phosphate. Calcium chloride only by central line. Wean by halving the rate every 6–12 h once oral calcium (± calcitriol) is working.";
+  }
+
   /* ---- patient-specific treatment lines: { text, tier: "now"|"next"|"also", calc } ---- */
   const DOSE_NOTE = "Doses are typical adult starting doses: confirm with Island Health protocol and pharmacy.";
   function treatment(key, sev, v, x, m, p) {
@@ -392,8 +404,8 @@
       if (lowMg) mgLine();
       if (sev === 3) {
         add("now", "Cardiac monitor and ECG (long QT). Look for tetany, perioral tingling, carpopedal spasm, laryngospasm, seizure.");
-        add("now", "Calcium gluconate 10% 10–20 mL (1–2 g) IV in 50–100 mL D5W over 10–20 min. Then infusion: 10 g calcium gluconate (100 mL of 10%) in 1 L D5W or saline" + (w != null ? ", start 50 mL/h (≈ " + Math.round(50 * 0.93 / w * 10) / 10 + " mg elemental Ca/kg/h for " + w + " kg)" : ", start 50 mL/h (≈ 0.5–1.5 mg elemental Ca/kg/h)") + "; titrate to ionized Ca every 4–6 h.");
-        add("now", "Not in the same line as bicarbonate or phosphate. Calcium chloride only by central line (vein injury).");
+        add("now", "Bolus: calcium gluconate 10% 10–20 mL (1–2 g) IV in 50–100 mL D5W over 10–20 min (repeat if tetany or seizure returns).");
+        add("now", caInfusion(w));
         if (m.digoxin.length) add("now", "On digoxin: give IV calcium slowly with monitoring.");
         if (v.phos != null && v.phos > 2.0) add("now", "Phosphate " + v.phos + " is high: precipitation risk. Give IV calcium for symptoms only and treat the phosphate.");
       } else if (!pseudo) {
@@ -579,6 +591,6 @@
     return { v, g, plans, flags: flags(v, x, m, p, g), meds: m, prob: p, doseNote: DOSE_NOTE };
   }
 
-  const api = { RANGES, SEV, SOURCES, recheck, kEstimate, correctedCa, egfr, gradeK, gradePhos, gradeCa, gradeMg, classifyMeds, classifyProblems, causesFor, treatment, flags, assess, MEDS, PROB };
+  const api = { RANGES, SEV, SOURCES, recheck, kEstimate, caInfusion, CA_BAG, correctedCa, egfr, gradeK, gradePhos, gradeCa, gradeMg, classifyMeds, classifyProblems, causesFor, treatment, flags, assess, MEDS, PROB };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else window.LytesRules = api;
 })();

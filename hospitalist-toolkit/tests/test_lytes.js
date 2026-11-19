@@ -79,7 +79,7 @@ ok("4 eGFR ≥ 30 or < 30 path present", all(a.plans.Ca).some((t) => /Zoledronic
 // 5: post-thyroidectomy, iCa 0.86 symptomatic
 a = run(4);
 eq("5 Ca severe low ionized", a.g.Ca.key + " " + a.g.Ca.sev + " " + a.g.Ca.basis, "hypoCa 3 ionized");
-has("5 IV calcium gluconate", all(a.plans.Ca), "Calcium gluconate 10% 10–20 mL"); has("5 calcitriol", all(a.plans.Ca), "calcitriol 0.25–0.5 mcg");
+has("5 IV calcium gluconate bolus", all(a.plans.Ca), "Bolus: calcium gluconate 10% 10–20 mL"); has("5 calcitriol", all(a.plans.Ca), "calcitriol 0.25–0.5 mcg");
 has("5 Mg first", all(a.plans.Ca), "Magnesium 0.6"); has("5 hypopara cause", a.plans.Ca.causes, "thyroid or parathyroid surgery");
 has("5 QTc flag", a.flags, "QTc 486"); not("5 not torsades (< 500)", a.flags, "torsades");
 
@@ -144,6 +144,12 @@ eq("K est acute", ke.acute.join("-"), "100-200"); eq("K est chronic", ke.chronic
 ke = R.kEstimate(3.0, 3.5, false, true); eq("K 3.0→3.5 acute days", ke.days.acute.join("-"), "1-2"); ok("maintenance with losses", /maintenance/.test(ke.text));
 ke = R.kEstimate(3.0, 4.0, true, false); ok("renal rate halved", /40–60 mEq\/day/.test(ke.text), ke.text);
 has("K card shows how long", all(R.assess({ K: 3.0 }, {}, ["Furosemide 40 mg"], []).plans.K), "How long: at 80–120 mEq/day");
+
+// calcium infusion: 5,000 mg / 500 mL = 10 mg/mL; 70 kg 0.5–1.5 mg/kg/h = 38–113 mL/h
+let ci = R.caInfusion(70); ok("Ca bag label", ci.indexOf("5,000 mg + Dextrose 5% in Water 500 mL (10 mg/mL)") > -1, ci);
+ok("50 mL/h = 500 mg/h, 47 mg elemental, 10 h", ci.indexOf("50 mL/h = 500 mg/h calcium gluconate (≈ 47 mg elemental), 0.66 mg/kg/h, bag lasts 10 h") > -1, ci);
+ok("70 kg range 38–113 mL/h", ci.indexOf("= 38–113 mL/h") > -1, ci);
+a = run(4); has("5 card uses PowerChart bag", all(a.plans.Ca), "Infusion (PowerChart order)");
 
 // unit conversion: mg/dL calcium and phosphate
 const conv = C.parse({ patient: null, obs: [

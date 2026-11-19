@@ -93,7 +93,7 @@
       tests: ["Ionized Ca (or albumin), Mg, PO4, creatinine", "PTH and 25-OH vitamin D", "ECG (QTc)", "Lipase if abdominal pain; CK and urate if lysis / rhabdo"],
       treat: [
         ["First", "Correct Mg if low (magnesium sulfate 2 g IV, or 5 g over 5 h if < 0.6): Ca will not correct otherwise."],
-        ["Severe or symptomatic", "Calcium gluconate 10% 10–20 mL (1–2 g) IV in 50–100 mL D5W over 10–20 min (can repeat), then infusion: 10 g calcium gluconate in 1 L D5W or saline at 50 mL/h (0.5–1.5 mg elemental Ca/kg/h), titrated to ionized Ca every 4–6 h. Cardiac monitor. Not with bicarbonate or phosphate in the same line; calcium chloride only by central line."],
+        ["Severe or symptomatic", "Bolus: calcium gluconate 10% 10–20 mL (1–2 g) IV in 50–100 mL D5W over 10–20 min (can repeat). Then infusion (PowerChart order): calcium gluconate 5,000 mg + D5W 500 mL (10 mg/mL, ≈ 0.93 mg elemental Ca/mL): start 50 mL/h, range 50–100 mL/h (0.5–1.5 mg elemental Ca/kg/h ≈ 0.55–1.6 mL/kg/h); bag lasts 10 h at 50 mL/h. Titrate to ionized Ca every 4–6 h. Cardiac monitor. Not with bicarbonate or phosphate; calcium chloride only by central line."],
         ["Mild / chronic", "Calcium carbonate 500–1000 mg elemental PO BID–TID with meals (citrate if on PPI or achlorhydria); vitamin D3 1000–2000 IU daily (more to replete deficiency)."],
         ["Hypoparathyroidism", "Calcitriol 0.25–0.5 mcg BID plus calcium; aim for low-normal calcium (2.0–2.1) to limit hypercalciuria; endocrinology."],
         ["CKD", "Treat only if symptomatic or severe; calcitriol and phosphate control with nephrology."]],
@@ -169,6 +169,9 @@
       ["IV, central only", "KPO4 15 mmol + 22 mmol K in 125 mL; KPO4 30 mmol + 44 mmol K in 255 mL"],
       ["IV rule", "Over 4–6 h. 15 mmol × 2 if PO4 < 0.3, or < 0.5 and ≥ 60 kg; otherwise 15 mmol. Level 2 h after if acute; 72 h level more accurate"],
       ["PO", "Sodium phosphate solution 4 mmol/mL (oral Fleet) 4 mL BID; Na acid phosphate 500 mg effervescent = 16 mmol (NON-FORMULARY) 1 tab BID; skim milk 8 mmol/250 mL. Aim 16–32 mmol/day"]],
+    Ca: [["IV infusion (PowerChart)", "Calcium gluconate (additive) 5,000 mg + Dextrose 5% in Water 500 mL = 10 mg/mL (≈ 0.93 mg elemental Ca/mL). 50 mL/h = 500 mg/h; 100 mL/h = 1 g/h"],
+      ["IV bolus", "Calcium gluconate 10% 10 mL = 1 g ≈ 90–93 mg (2.25 mmol) elemental Ca; raises total Ca about 0.1–0.2 mmol/L for 2–3 h"],
+      ["PO", "Calcium carbonate (40% elemental); calcium citrate if on a PPI; calcitriol 0.25–0.5 mcg BID if PTH low or CKD"]],
     Mg: [["IV", "MgSO4 2 g (8 mmol) in 50 mL NS; MgSO4 5 g (20 mmol) in 100 mL NS. Max 2 g/h; 5 g if Mg < 0.6. MgSO4 2 g vials: crash carts and select units, restricted indications"],
       ["PO", "Mg 25 mg elemental tabs (prevention); Mg 250 mg elemental tabs (≈ 10 mmol) BID; Mg glucoheptonate 100 mg/mL (Mg Rougier) 30 mL = 6 mmol TID; Mg hydroxide (Milk of Magnesia) 5 mL TID. Aim 20 mmol/day"],
       ["Levels", "At least 1 h after IV; 72 h after is more accurate"]],
