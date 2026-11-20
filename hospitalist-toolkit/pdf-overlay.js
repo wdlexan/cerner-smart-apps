@@ -59,6 +59,7 @@
   }
   function banner(st, local) {
     if (!st.items.length && !local) return;
+    if (local && !st.items.length && /[?&]pocket=1/.test(location.search)) return; // pocket mode (iPhone, no Cerner): blank patient on purpose
     const go = () => {
       if (document.getElementById("pdf-import-banner")) return;
       if (!/\/tools\//.test(location.pathname) && !local) return;   // the toolkit header shows its own count

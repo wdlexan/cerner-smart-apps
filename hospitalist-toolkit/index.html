@@ -2,7 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <!-- iPhone home-screen app (pocket mode, no Cerner): see pocket.js -->
+  <link rel="manifest" href="pocket.webmanifest">
+  <link rel="apple-touch-icon" href="pocket-icons/icon-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Toolkit">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0b6bcb">
   <title>Hospitalist Toolkit</title>
   <style>
     :root { --bg:#f5f7fa; --ink:#1f2933; --muted:#6b7785; --accent:#0b6bcb; --line:#dde3ea; }
@@ -28,6 +35,14 @@
     #frames iframe.on { display:block; }
     .msg { max-width:900px; margin:24px auto; padding:16px; background:#fff; border:1px solid var(--line); border-radius:8px; font-size:14px; }
     .err { color:#b00020; }
+    /* pocket mode (iPhone): clear the notch and home bar, tighter header, full-width search */
+    html.pocket header { padding:calc(env(safe-area-inset-top) + 6px) 12px 0; }
+    html.pocket .navrow { flex-wrap:wrap; gap:4px; }
+    html.pocket #toolsearch { flex:1 1 100%; font-size:16px; } /* 16px stops iOS zooming in on tap */
+    html.pocket nav button { padding:8px 10px; }
+    html.pocket #pdfbar { display:none !important; } /* no Import PDF on the phone */
+    html.pocket #frames { margin-bottom:env(safe-area-inset-bottom); }
+    html.pocket #frames iframe { -webkit-overflow-scrolling:touch; }
   </style>
 </head>
 <body>
@@ -45,8 +60,9 @@
   <div id="frames"><div class="msg" id="msg">Signing in…</div></div>
 
   <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
-  <script src="pdf-overlay.js?v=20261103a"></script>
-  <script src="shell.js?v=20261119c"></script>
+  <script src="pocket.js?v=20261120a"></script>
+  <script src="pdf-overlay.js?v=20261120p"></script>
+  <script src="shell.js?v=20261120p"></script>
   <script src="consult-widget.js?v=20261119c"></script>
   <script src="pdf-extract.js?v=20261120a"></script>
   <script src="sample-pdfs/index.js?v=20261120a"></script>

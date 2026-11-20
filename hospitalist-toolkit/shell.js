@@ -55,6 +55,12 @@ const TOOLS = [
   { key: "forms", label: "Forms", tags: "forms referral requisition pdf form 4.1 bc cancer pulse gi",                path: "tools/forms/index.html" }
 ];
 
+// POCKET MODE (index.html?pocket=1, the iPhone home-screen app; see pocket.js): no Cerner connection, so hide the tabs that only read the chart.
+const POCKET_HIDE = ["today", "plist", "labs", "crit", "notes", "ai", "forms", "consult", "ed", "hah", "risk", "watch", "dx", "cw", "mobility"];
+const POCKET = window.TK_POCKET === true;
+if (POCKET) for (let i = TOOLS.length - 1; i >= 0; i--) if (POCKET_HIDE.includes(TOOLS[i].key)) TOOLS.splice(i, 1);
+const TAB_KEY = POCKET ? "pocket-tab" : "toolkit-tab";
+
 const $ = (id) => document.getElementById(id);
 
 // index.html?test=1 (optionally &patient=…&tab=…) opens TEST MODE directly: Cerner's open sandbox, no login.
@@ -99,7 +105,8 @@ async function start(client) {
   window.TK = { patientId: client.patient.id, isPdfPatient: /^pdfpt-/.test(client.patient.id), switchPatient, backToCerner }; // used by the PDF import button
   try { $("patient").textContent = describe(await client.patient.read()); }
   catch (e) { $("patient").textContent = "Patient " + client.patient.id; }
-  if (window.TK.isPdfPatient) pdfPatientChip();
+  if (POCKET) pocketChip();
+  else if (window.TK.isPdfPatient) pdfPatientChip();
   let testMode = false; try { testMode = sessionStorage.getItem("toolkit-test") === "1"; } catch (e) {}
   if (testMode) $("patient").innerHTML = `<span style="background:#fff3cd;color:#7a4b00;border-radius:10px;padding:1px 8px;font-weight:700;margin-right:6px">TEST MODE · open sandbox, no login</span>${esc($("patient").textContent)}`;
   $("msg").remove();
@@ -110,7 +117,7 @@ async function start(client) {
 
   // Open the tab named in the address (#labs), else the last one used, else Today
   let first = (target && target.tab) || location.hash.slice(1);
-  if (!TOOLS.some((t) => t.key === first)) { try { first = localStorage.getItem("toolkit-tab"); } catch (e) {} }
+  if (!TOOLS.some((t) => t.key === first)) { try { first = localStorage.getItem(TAB_KEY); } catch (e) {} }
   if (!TOOLS.some((t) => t.key === first)) first = TOOLS[0].key;
   show(first);
 }
@@ -150,16 +157,17 @@ function show(key) {
     f = document.createElement("iframe");
     f.dataset.k = key;
     f.title = tool.label;
-    f.onload = () => { if (!tool.keepHeader) tidy(f); };
+    f.onload = () => { if (!tool.keepHeader) tidy(f); if (POCKET) pocketFit(f); };
     // "complete=1" tells the fhirclient library inside the tool that sign-in is already finished.
     // Without it, a tool running inside a frame waits for a pop-up/frame sign-in that never comes.
-    f.src = tool.path + "?complete=1&v=" + TOOL_V; // v forces a fresh copy of each tool page after an update
+    f.src = tool.path + "?complete=1" + (POCKET ? "&pocket=1" : "") + "&v=" + TOOL_V; // v forces a fresh copy of each tool page after an update
     $("frames").appendChild(f);
   }
   document.querySelectorAll("#frames iframe").forEach((x) => x.classList.toggle("on", x === f));
   document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("on", b.dataset.k === key));
+  if (POCKET) { const b = document.querySelector(`#tabs button[data-k="${key}"]`); if (b) b.scrollIntoView({ inline: "center", block: "nearest" }); }
   history.replaceState(null, "", "#" + key);
-  try { localStorage.setItem("toolkit-tab", key); } catch (e) {}
+  try { localStorage.setItem(TAB_KEY, key); } catch (e) {}
 }
 
 // Each tool has its own blue title bar with the patient's name; the toolkit header already shows it.
@@ -195,6 +203,36 @@ function pdfPatientChip() {
   el.innerHTML = `<span style="background:#fde8e8;color:#7a1b1b;border-radius:10px;padding:1px 8px;font-weight:700;margin-right:6px">PDF-only patient</span>${esc(el.textContent)}` +
     (r && r.patient ? ` <button id="tocerner" style="margin-left:8px;background:#fff;color:#0b6bcb;border:0;border-radius:6px;padding:3px 9px;font-size:12px;cursor:pointer" title="${esc(r.label || "")}">Back to Cerner patient</button>` : "");
   const b = document.getElementById("tocerner"); if (b) b.onclick = backToCerner;
+}
+
+// Pocket mode: the tabs were laid out for a PowerChart window, so squeeze each one to the phone's width.
+function pocketFit(frame) {
+  let d; try { d = frame.contentDocument; } catch (e) { return; }
+  if (!d || !d.head) return;
+  const s = d.createElement("style");
+  s.textContent = `html, body { max-width:100vw; overflow-x:hidden; -webkit-text-size-adjust:100%; }
+    body { padding-bottom:calc(env(safe-area-inset-bottom) + 70px) !important; }
+    main, .wrap, .container { margin-left:0 !important; margin-right:0 !important; padding-left:8px !important; padding-right:8px !important; max-width:100% !important; }
+    * { min-width:0 !important; }
+    div, section, article, aside, details, fieldset, form, label, p, ul, ol, pre, img, svg, canvas, iframe { max-width:100%; }
+    pre, code { white-space:pre-wrap; word-break:break-word; }
+    table { display:block; overflow-x:auto; max-width:100%; }
+    input, select, textarea { max-width:100%; font-size:16px; }`;
+  d.head.appendChild(s);
+  const fix = () => {
+    d.querySelectorAll("body *").forEach((el) => {
+      const cs = d.defaultView.getComputedStyle(el);
+      if (cs.display.includes("flex") && cs.flexWrap === "nowrap" && cs.flexDirection.startsWith("row") && el.scrollWidth > el.clientWidth + 2) el.style.flexWrap = "wrap";
+      if (cs.display.includes("grid") && el.scrollWidth > el.clientWidth + 2) el.style.gridTemplateColumns = "minmax(0,1fr)";
+    });
+  };
+  fix(); setTimeout(fix, 800); setTimeout(fix, 2500);
+  let t; new d.defaultView.MutationObserver(() => { clearTimeout(t); t = setTimeout(fix, 300); }).observe(d.body, { childList: true, subtree: true });
+}
+
+function pocketChip() {
+  $("patient").innerHTML = `<span style="background:#e6f4ea;color:#14532d;border-radius:10px;padding:1px 8px;font-weight:700">Pocket · not connected to Cerner</span>`;
+  const b = document.getElementById("pdfbar"); if (b) b.remove(); // no Import PDF on the phone (keeps patient documents off the device)
 }
 
 // ---- standalone launch: find the patient named in the link ----
