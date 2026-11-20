@@ -58,8 +58,8 @@ eq("cols: low confidence flagged", rows[0].low, ["reason"]);
 eq("no header -> null", P.parseWords(words.slice(12)), null);
 
 // admit date from length of stay
-eq("admit text", P.admitText({ los: 6.3 }, new Date(2026, 10, 19, 18, 55)), "≈ 13-Nov (LOS 6.3 d)");
-eq("admit from discharge", P.admitText({ los: 2, discharged: "18-Nov-2026 10:10" }, new Date(2026, 10, 19)), "≈ 16-Nov (LOS 2 d)");
+eq("admit text", P.admitText({ los: 6.3 }, new Date(2026, 10, 19, 18, 55)), "13-Nov");
+eq("admit from discharge", P.admitText({ los: 2, discharged: "18-Nov-2026 10:10" }, new Date(2026, 10, 19)), "16-Nov");
 // merge keeps one copy per FIN
 eq("merge", P.merge([{ fin: "1", name: "A" }], [{ fin: "1", name: "A" }, { fin: "2", name: "B" }]).length, 2);
 

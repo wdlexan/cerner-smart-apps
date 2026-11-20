@@ -105,12 +105,12 @@
     const mo = MON.findIndex((x) => x.toLowerCase() === m[2].toLowerCase());
     return mo < 0 ? null : new Date(+m[3], mo, +m[1], +m[4], +m[5]);
   }
-  // Admit date estimated from length of stay, counted back from when the screenshot was taken (or from discharge)
+  // Admit date (e.g. 17-Oct) worked out from length of stay, counted back from when the screenshot was taken (or from discharge)
   function admitText(row, takenAt) {
     if (row.los == null || isNaN(row.los)) return "";
     const end = parseDis(row.discharged) || takenAt || new Date();
     const d = new Date(end.getTime() - row.los * 864e5);
-    return "≈ " + String(d.getDate()).padStart(2, "0") + "-" + MON[d.getMonth()] + " (LOS " + (+row.los.toFixed(1)) + " d)";
+    return String(d.getDate()).padStart(2, "0") + "-" + MON[d.getMonth()];
   }
 
   // Merge rows from several screenshots: the same FIN (or name + location) is kept once
