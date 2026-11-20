@@ -69,6 +69,10 @@
     .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0}
     .muted{color:var(--mute)}
     .disc{font-size:12px;color:var(--mute);margin-top:18px;border-top:1px solid var(--line);padding-top:8px}
+    .have{background:var(--okbg);color:var(--ok);border-radius:10px;padding:0 7px;font-size:12px;margin-left:6px;white-space:nowrap}
+    #tab-order h4{margin:8px 0 2px;font-size:13px;color:var(--acc)}
+    #tab-order ul{margin:2px 0 6px;padding-left:20px}
+    .ordall{columns:3 240px;font-size:13px}.ordall a{display:block;padding:2px 0;color:var(--acc);text-decoration:none}.ordall a:hover{text-decoration:underline}
     #toast{position:fixed;bottom:18px;right:18px;background:#13294b;color:#fff;padding:8px 14px;border-radius:6px;display:none}
     @media print{nav,header select,.btn{display:none}.tab{display:block!important}tr[hidden]{display:table-row!important}}
   </style>
@@ -81,6 +85,7 @@
 </header>
 <nav id="nav">
   <button data-t="interp" class="on">Interpretation</button>
+  <button data-t="order">Which test?</button>
   <button data-t="labs">Serology &amp; labs</button>
   <button data-t="feat">Clinical features</button>
   <button data-t="note">Note &amp; consult</button>
@@ -89,6 +94,7 @@
 </nav>
 <main>
   <section id="tab-interp" class="tab on"></section>
+  <section id="tab-order" class="tab"></section>
   <section id="tab-labs" class="tab"></section>
   <section id="tab-feat" class="tab"></section>
   <section id="tab-note" class="tab"></section>
@@ -98,6 +104,7 @@
 <div id="toast"></div>
 <script src="engine.js"></script>
 <script src="demo.js"></script>
+<script src="order-guide.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

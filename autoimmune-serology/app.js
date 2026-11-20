@@ -88,7 +88,7 @@
     $('#pt').innerHTML = `${A.mode === 'demo' ? '<span class="badge">MADE-UP TEST PATIENT</span> ' : ''}<b>${esc(p.name || '')}</b> · ${p.age != null ? p.age + ' y' : ''} ${esc((p.sex || '')[0] || '').toUpperCase()} · MRN ${esc(p.mrn || '—')}`;
     R = E.evaluate(A.S, A.F, A.ctx);
     renderInterp();
-    if (full) { renderLabs(); renderFeat(); }
+    if (full) { renderLabs(); renderFeat(); renderOrder(); }
     renderNote();
   }
 
@@ -249,6 +249,53 @@
     wc();
   }
   const wc = () => { const n = $('#consultTa').value.trim().split(/\s+/).length; $('#wc').textContent = `${n} words`; };
+
+  // ---------- Which test? (disease -> tests to order) ----------
+  const OG = window.SeroOrderGuide;
+  let orderQ = '';
+  function renderOrder() {
+    const host = $('#tab-order'); if (!OG) { host.innerHTML = '<div class="box">order-guide.js not loaded.</div>'; return; }
+    if (!host.dataset.built) {
+      host.dataset.built = '1';
+      host.innerHTML = `<div class="box"><div class="row"><b>Disease or test:</b>
+        <input type="search" id="ordQ" list="ordList" placeholder="e.g. primary biliary cirrhosis, PBC, GPA, myositis… or a test, e.g. AMA" style="flex:1;min-width:260px;padding:7px 9px;font-size:15px" autocomplete="off">
+        <datalist id="ordList">${OG.GUIDE.map(d => `<option value="${esc(d.name)}">`).join('')}</datalist></div>
+        <div class="muted" style="font-size:12px">Type a disease (abbreviations and old names work) to see what to order. Type a test name to see which diseases it is used for. ✓ = result already in this chart / entered here.</div></div>
+        <div id="ordRes"></div>
+        ${sec('ord-all', `Browse all conditions (${OG.GUIDE.length})`, `<div class="ordall">${OG.GUIDE.map(d => `<a href="#" data-d="${esc(d.name)}">${esc(d.name)}</a>`).join('')}</div>`, false)}
+        <p class="disc">Draft from general practice — confirm against your lab's test menu and current guidelines.</p>`;
+      $('#ordQ').addEventListener('input', e => { orderQ = e.target.value; drawOrder(); });
+      host.querySelector('.ordall').addEventListener('click', e => { const a = e.target.closest('a[data-d]'); if (!a) return; e.preventDefault(); orderQ = a.dataset.d; $('#ordQ').value = orderQ; drawOrder(); window.scrollTo(0, 0); });
+    }
+    drawOrder();
+  }
+  function testLi(x) {
+    const s = x.id && A.S[x.id];
+    const have = s ? ` <span class="have">✓ ${esc(E.TEST[x.id] && E.TEST[x.id].type !== 'num' ? E.optLabel(E.TEST[x.id].type, s.v) : s.v + ' ' + (E.TEST[x.id] ? E.TEST[x.id].unit : ''))}</span>` : '';
+    return `<li><b>${esc(x.name)}</b>${x.why ? ` <span class="muted">— ${esc(x.why)}</span>` : ''}${have}</li>`;
+  }
+  function orderText(d) {
+    const L = (h, a) => (a && a.length ? [h + ':', ...a.map(x => '- ' + x.name)] : []);
+    return [d.name, ...L('Order first', d.first), ...L('Then / to confirm', d.then), ...L('Also consider', d.also), ...(d.note ? ['Note: ' + d.note] : [])].join('\n');
+  }
+  function drawOrder() {
+    const box = $('#ordRes'); if (!box) return;
+    const res = OG.search(orderQ);
+    if (!orderQ.trim()) { box.innerHTML = ''; return; }
+    if (!res.length) { box.innerHTML = `<div class="box muted">No match for "${esc(orderQ)}". Try another name or abbreviation, or browse the list below.</div>`; return; }
+    const byTest = res[0].s <= 30;
+    box.innerHTML = (byTest ? `<div class="box muted">"${esc(orderQ)}" looks like a test — conditions that use it:</div>` : '') +
+      res.slice(0, 8).map((x, i) => {
+        const d = x.d, k = 'ord-' + d.name;
+        const body = `${d.first && d.first.length ? `<h4>Order first</h4><ul>${d.first.map(testLi).join('')}</ul>` : ''}
+          ${d.then && d.then.length ? `<h4>Then / to confirm</h4><ul>${d.then.map(testLi).join('')}</ul>` : ''}
+          ${d.also && d.also.length ? `<h4>Also consider</h4><ul>${d.also.map(testLi).join('')}</ul>` : ''}
+          ${d.note ? `<div class="note">${esc(d.note)}</div>` : ''}
+          <div class="row"><button class="btn alt" data-copy="${esc(d.name)}">Copy order list</button></div>`;
+        return `<details class="box sec" data-sec="${esc(k)}" ${i < (byTest ? 3 : 1) || isOpen(k, false) ? 'open' : ''}><summary><h3>${esc(d.name)}</h3></summary>${body}</details>`;
+      }).join('');
+    box.querySelectorAll('[data-copy]').forEach(b => (b.onclick = () => copy(orderText(OG.GUIDE.find(d => d.name === b.dataset.copy)))));
+  }
 
   function renderRef() {
     $('#tab-ref').innerHTML = `
