@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Autoimmune Serology — launching…</title>
+  <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+</head>
+<body style="font-family:system-ui,sans-serif;padding:24px">
+  <p>Connecting to the EHR…</p>
+  <script>
+    // EHR launch (from PowerChart) sends ?iss=&launch=. Opening launch.html directly = standalone launch to the Cerner sandbox.
+    const CLIENT_ID = '09c38f54-fb4d-4664-87b6-67b57983ac01';
+    const SANDBOX_ISS = 'https://fhir-ehr-code.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d';
+    const params = new URLSearchParams(location.search);
+    const ehrLaunch = params.has('launch');
+    FHIR.oauth2.authorize({
+      clientId: CLIENT_ID,
+      iss: params.get('iss') || SANDBOX_ISS,
+      scope: (ehrLaunch ? 'launch ' : 'launch/patient ') +
+        'openid fhirUser online_access user/Practitioner.read ' +
+        'patient/Patient.read patient/Observation.read patient/Condition.read patient/MedicationRequest.read',
+      redirectUri: 'index.html'
+    });
+  </script>
+</body>
+</html>

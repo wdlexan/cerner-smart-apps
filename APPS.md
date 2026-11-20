@@ -22,3 +22,11 @@ Card in the IBD tab (ibd-flowsheet/eim.js): eye, skin and mouth, joints and spin
 ## 18. IBD: VTE prophylaxis card
 
 Card in the IBD tab (ibd-flowsheet/vte.js): who gets prophylaxis (every admitted flare, rectal bleeding is not a reason to hold), start timing, agent and typical dose (enoxaparin 40 mg daily; UFH or 30 mg if CrCl under 30; obesity note), when to hold (severe bleeding, platelets under 50), and duration (until discharge and mobile; about 28 days after major abdominal or pelvic surgery, often extended after UC colectomy). Platelets fill from the chart. UNVERIFIED draft from general knowledge: confirm with local protocol and pharmacy. Tests: node ibd-flowsheet/test_vte.js
+
+## 19. Autoimmune serology interpreter
+
+Standalone app in autoimmune-serology/ (launch.html, index.html, app.js, engine.js, demo.js). Reads ANA titre and pattern, ENA (dsDNA, Sm, RNP, Ro, La, Scl-70, centromere, RNA pol III, histone), myositis antibodies, ANCA (IIF, PR3, MPO), anti-GBM, RF, anti-CCP, C3/C4/CH50, antiphospholipid antibodies, cryoglobulins, AMA/ASMA/LKM, HLA-B27 and supporting labs from the chart (matched by test name); every result can be entered or overridden.
+- Scores SLE (2019 EULAR/ACR), RA (2010), Sjögren (2016), SSc (2013), GPA/MPA/EGPA (2022) plus drug-induced lupus, MCTD, myositis/antisynthetase, anti-GBM, APS, cryoglobulinemia, PBC/AIH, SpA, PMR/GCA, with ✓/✗/? lines.
+- ANA, complement and ANCA pattern boxes; red flags (RPGN, pulmonary-renal, scleroderma renal crisis, MDA5, GCA, lupus nephritis); medication checks (DIL/ANCA drugs, anticoagulants and lupus anticoagulant, statins and HMGCR); next tests; note draft; consult message.
+- Seven made-up cases: index.html?demo=sle|mpa|ra|dil|lowana|cryo|ssc
+- Classification criteria are research tools; UNVERIFIED draft from general knowledge. Verify before clinical use.

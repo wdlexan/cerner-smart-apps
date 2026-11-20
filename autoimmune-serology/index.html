@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Autoimmune Serology Interpreter</title>
+  <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+  <style>
+    :root{--bg:#f6f7f9;--card:#fff;--ink:#1d2330;--mute:#5d6678;--line:#dde1e8;--acc:#1f5fa8;--ok:#1e7b46;--okbg:#e6f4ec;--warn:#9a5b00;--warnbg:#fff4e0;--bad:#b42318;--badbg:#fdecea;--na:#8a93a3}
+    *{box-sizing:border-box}
+    body{margin:0;font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink)}
+    header{background:#13294b;color:#fff;padding:10px 16px;display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+    header h1{font-size:17px;margin:0;font-weight:600}
+    #pt{font-size:13px;opacity:.95}
+    #demoSel{margin-left:auto;padding:4px;border-radius:4px;max-width:340px}
+    .badge{background:#f5b301;color:#000;font-weight:700;border-radius:4px;padding:1px 6px;font-size:12px}
+    nav{display:flex;gap:2px;background:#fff;border-bottom:1px solid var(--line);padding:0 12px;flex-wrap:wrap}
+    nav button{border:0;background:none;padding:10px 14px;font-size:14px;cursor:pointer;color:var(--mute);border-bottom:3px solid transparent}
+    nav button.on{color:var(--acc);border-bottom-color:var(--acc);font-weight:600}
+    main{padding:14px 16px;max-width:1150px;margin:auto}
+    .tab{display:none}.tab.on{display:block}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+    .box{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:12px}
+    .box h3{margin:0 0 6px;font-size:14px}
+    .flag{background:var(--badbg);border:1px solid #f3b8b2;color:var(--bad);border-radius:8px;padding:10px 14px;margin-bottom:12px}
+    .flag li{margin:3px 0}
+    .card{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--na);border-radius:8px;padding:10px 14px;margin-bottom:10px}
+    .card.meets{border-left-color:var(--bad)}.card.possible{border-left-color:#e08a00}.card.unlikely{border-left-color:#9fb3c8}
+    .card summary{cursor:pointer;display:flex;gap:10px;align-items:center;flex-wrap:wrap;list-style:none}
+    .card summary::-webkit-details-marker{display:none}
+    .card .nm{font-weight:600;font-size:15px}
+    .pill{font-size:12px;border-radius:12px;padding:1px 9px;font-weight:600}
+    .pill.meets{background:var(--badbg);color:var(--bad)}.pill.possible{background:var(--warnbg);color:var(--warn)}.pill.unlikely{background:#eef2f6;color:#4a5a6e}.pill.na{background:#f0f0f0;color:#777}
+    .bar{flex:0 0 120px;height:8px;background:#e7ebf0;border-radius:4px;overflow:hidden}.bar i{display:block;height:100%;background:var(--acc)}
+    .basis{color:var(--mute);font-size:12px;margin:4px 0}
+    ul.pts{list-style:none;padding:0;margin:6px 0}
+    ul.pts li{padding:2px 0;display:flex;gap:8px}
+    .s{width:18px;text-align:center;font-weight:700}
+    .s-ok{color:var(--ok)}.s-no{color:var(--bad)}.s-q{color:var(--na)}.s-t{color:var(--warn)}
+    .w{margin-left:auto;color:var(--mute);font-variant-numeric:tabular-nums}
+    .note{background:#f3f6fb;border-radius:6px;padding:6px 10px;margin:4px 0;font-size:13px}
+    table{border-collapse:collapse;width:100%}
+    th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top;font-size:13px}
+    th{background:#f0f3f7;font-weight:600}
+    td.grp{background:#e9eef5;font-weight:700}
+    select,input[type=number],input[type=text],textarea{font:inherit;padding:4px 6px;border:1px solid #c5ccd6;border-radius:4px;background:#fff}
+    tr.chart td:nth-child(2) select,tr.chart td:nth-child(2) input{border-color:var(--acc);background:#eef5fd}
+    tr.manual td:nth-child(2) select,tr.manual td:nth-child(2) input{border-color:#e08a00;background:#fff8ec}
+    .src{font-size:12px;color:var(--mute)}
+    .feat{columns:2 320px;column-gap:24px}
+    .feat fieldset{break-inside:avoid;border:1px solid var(--line);border-radius:8px;margin:0 0 12px;padding:8px 12px;background:#fff}
+    .feat legend{font-weight:600;padding:0 4px}
+    .feat label{display:block;padding:2px 0;cursor:pointer}
+    .feat label.auto{background:#fff4d6;border-radius:4px}
+    .feat label.auto::after{content:" ← problem list, verify";font-size:11px;color:var(--warn)}
+    textarea{width:100%;min-height:220px;font:13px/1.4 ui-monospace,Consolas,monospace}
+    .btn{background:var(--acc);color:#fff;border:0;border-radius:5px;padding:7px 14px;cursor:pointer;font-size:13px}
+    .btn.alt{background:#fff;color:var(--acc);border:1px solid var(--acc)}
+    .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0}
+    .muted{color:var(--mute)}
+    .disc{font-size:12px;color:var(--mute);margin-top:18px;border-top:1px solid var(--line);padding-top:8px}
+    #toast{position:fixed;bottom:18px;right:18px;background:#13294b;color:#fff;padding:8px 14px;border-radius:6px;display:none}
+    @media print{nav,header select,.btn{display:none}.tab{display:block!important}}
+  </style>
+</head>
+<body>
+<header>
+  <h1>Autoimmune Serology Interpreter</h1>
+  <span id="pt">Loading…</span>
+  <select id="demoSel" title="Load a made-up teaching case"></select>
+</header>
+<nav id="nav">
+  <button data-t="interp" class="on">Interpretation</button>
+  <button data-t="labs">Serology &amp; labs</button>
+  <button data-t="feat">Clinical features</button>
+  <button data-t="note">Note &amp; consult</button>
+  <button data-t="ref">Reference</button>
+</nav>
+<main>
+  <section id="tab-interp" class="tab on"></section>
+  <section id="tab-labs" class="tab"></section>
+  <section id="tab-feat" class="tab"></section>
+  <section id="tab-note" class="tab"></section>
+  <section id="tab-ref" class="tab"></section>
+  <p class="disc">Decision support only. Classification criteria are research tools that support — not replace — clinical diagnosis. Antibody results must be read with pre-test probability; confirm with the lab report and involve rheumatology/nephrology as appropriate.</p>
+</main>
+<div id="toast"></div>
+<script src="engine.js"></script>
+<script src="demo.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
