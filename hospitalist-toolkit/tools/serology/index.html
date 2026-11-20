@@ -49,8 +49,18 @@
     tr.manual td:nth-child(2) select,tr.manual td:nth-child(2) input{border-color:#e08a00;background:#fff8ec}
     .src{font-size:12px;color:var(--mute)}
     .feat{columns:2 320px;column-gap:24px}
-    .feat fieldset{break-inside:avoid;border:1px solid var(--line);border-radius:8px;margin:0 0 12px;padding:8px 12px;background:#fff}
-    .feat legend{font-weight:600;padding:0 4px}
+    .feat details.fs{break-inside:avoid;border:1px solid var(--line);border-radius:8px;margin:0 0 12px;padding:8px 12px;background:#fff}
+    .feat details.fs[open]>summary{margin-bottom:4px}
+    details.sec>summary,.feat details.fs>summary,details.box>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px}
+    details.sec>summary::-webkit-details-marker,.feat details.fs>summary::-webkit-details-marker,details.box>summary::-webkit-details-marker{display:none}
+    details.sec>summary::before,.feat details.fs>summary::before,details.box>summary::before,.card summary::before,tr.grp-row td::before{content:"▾";color:var(--mute);font-size:12px;width:12px;display:inline-block}
+    details.sec:not([open])>summary::before,.feat details.fs:not([open])>summary::before,details.box:not([open])>summary::before,.card:not([open]) summary::before,tr.grp-row.shut td::before{content:"▸"}
+    details.sec>summary h3{margin:0}
+    details.sec[open]>summary{margin-bottom:6px}
+    .cnt{font-weight:400;font-size:12px;color:var(--mute);margin-left:6px}
+    tr.grp-row{cursor:pointer;user-select:none}
+    #expAll,#colAll{margin-left:auto;align-self:center;border:1px solid var(--line);background:#fff;color:var(--acc);border-radius:5px;padding:3px 9px;font-size:12px;cursor:pointer}
+    #colAll{margin-left:4px}
     .feat label{display:block;padding:2px 0;cursor:pointer}
     .feat label.auto{background:#fff4d6;border-radius:4px}
     .feat label.auto::after{content:" ← problem list, verify";font-size:11px;color:var(--warn)}
@@ -61,7 +71,7 @@
     .muted{color:var(--mute)}
     .disc{font-size:12px;color:var(--mute);margin-top:18px;border-top:1px solid var(--line);padding-top:8px}
     #toast{position:fixed;bottom:18px;right:18px;background:#13294b;color:#fff;padding:8px 14px;border-radius:6px;display:none}
-    @media print{nav,header select,.btn{display:none}.tab{display:block!important}}
+    @media print{nav,header select,.btn{display:none}.tab{display:block!important}tr[hidden]{display:table-row!important}}
   </style>
 </head>
 <body>
@@ -76,6 +86,7 @@
   <button data-t="feat">Clinical features</button>
   <button data-t="note">Note &amp; consult</button>
   <button data-t="ref">Reference</button>
+  <button id="expAll" type="button" title="Open every section on this tab">Expand all</button><button id="colAll" type="button" title="Close every section on this tab">Collapse all</button>
 </nav>
 <main>
   <section id="tab-interp" class="tab on"></section>
@@ -86,8 +97,8 @@
   <p class="disc">Decision support only. Classification criteria are research tools that support — not replace — clinical diagnosis. Antibody results must be read with pre-test probability; confirm with the lab report and involve rheumatology/nephrology as appropriate.</p>
 </main>
 <div id="toast"></div>
-<script src="engine.js?v=20261120a"></script>
-<script src="demo.js?v=20261120a"></script>
-<script src="app.js?v=20261120a"></script>
+<script src="engine.js?v=20261120b"></script>
+<script src="demo.js?v=20261120b"></script>
+<script src="app.js?v=20261120b"></script>
 </body>
 </html>

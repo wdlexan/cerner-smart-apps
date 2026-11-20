@@ -12,6 +12,24 @@
     document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x === b));
     document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x.id === 'tab-' + b.dataset.t));
   });
+  // ---------- collapsible sections (open/closed remembered in this browser) ----------
+  let OPEN = {}; try { OPEN = JSON.parse(localStorage.getItem('sero-open') || '{}'); } catch (e) { OPEN = {}; }
+  const isOpen = (k, def) => (k in OPEN ? OPEN[k] : def);
+  const saveOpen = () => { try { localStorage.setItem('sero-open', JSON.stringify(OPEN)); } catch (e) { /* storage off */ } };
+  const sec = (k, title, body, def = true) => `<details class="box sec" data-sec="${k}" ${isOpen(k, def) ? 'open' : ''}><summary><h3>${title}</h3></summary>${body}</details>`;
+  document.addEventListener('toggle', e => { const d = e.target; if (d.dataset && d.dataset.sec) { OPEN[d.dataset.sec] = d.open; saveOpen(); } }, true);
+  function setAll(open) {
+    const tab = document.querySelector('.tab.on'); if (!tab) return;
+    tab.querySelectorAll('details[data-sec]').forEach(d => { d.open = open; OPEN[d.dataset.sec] = open; });
+    tab.querySelectorAll('tr.grp-row').forEach(tr => setGroup(tr, open));
+    saveOpen();
+  }
+  function setGroup(tr, open) {
+    tr.classList.toggle('shut', !open); OPEN['lab-' + tr.dataset.g] = open;
+    tr.parentNode.querySelectorAll(`tr[data-grp="${tr.dataset.g}"]`).forEach(x => (x.hidden = !open));
+  }
+  document.getElementById('expAll').onclick = () => setAll(true);
+  document.getElementById('colAll').onclick = () => setAll(false);
   const toast = msg => { const t = $('#toast'); t.textContent = msg; t.style.display = 'block'; setTimeout(() => (t.style.display = 'none'), 1800); };
   const copy = txt => (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(() => toast('Copied'), () => {
     const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); toast('Copied');
@@ -78,7 +96,7 @@
   const VERD = { meets: 'Meets criteria / pattern fits', possible: 'Possible — needs more', unlikely: 'Less likely', na: 'Not assessable' };
   function cardHtml(c, open) {
     const pct = c.score != null && c.threshold ? Math.max(0, Math.min(100, (c.score / c.threshold) * 100)) : null;
-    return `<details class="card ${c.verdict}" ${open ? 'open' : ''}><summary>
+    return `<details class="card ${c.verdict}" data-sec="card-${c.key}" ${isOpen('card-' + c.key, open) ? 'open' : ''}><summary>
       <span class="nm">${esc(c.name)}</span><span class="pill ${c.verdict}">${VERD[c.verdict]}</span>
       ${pct != null ? `<span class="bar" title="${c.score} of ${c.threshold}"><i style="width:${pct}%"></i></span><span class="muted">${c.score}/${c.threshold}</span>` : ''}
       </summary>
@@ -97,15 +115,15 @@
       ${R.flags.length ? `<div class="flag"><b>⚠ Act now</b><ul>${R.flags.map(f => `<li>${esc(f)}</li>`).join('')}</ul></div>` : ''}
       ${nDone === 0 ? `<div class="box">No autoimmune serology found in the chart${A.mode === 'fhir' ? ' (sandbox patients rarely have these labs)' : ''}. Enter results on the <b>Serology &amp; labs</b> tab, or pick a made-up case at the top right.</div>` : ''}
       <div class="grid">
-        <div class="box"><h3>ANA</h3>${R.anaSummary.map(t => `<p>${esc(t)}</p>`).join('')}</div>
-        <div class="box"><h3>Complement: ${esc(R.complement.pattern)}</h3><p>${esc(R.complement.text)}</p>${R.complement.causes.length ? `<ul>${R.complement.causes.map(c => `<li>${esc(c)}</li>`).join('')}</ul>` : ''}</div>
-        <div class="box"><h3>ANCA</h3>${R.ancaSummary.map(t => `<p>${esc(t)}</p>`).join('')}</div>
+        ${sec('ana', 'ANA', R.anaSummary.map(t => `<p>${esc(t)}</p>`).join(''))}
+        ${sec('comp', `Complement: ${esc(R.complement.pattern)}`, `<p>${esc(R.complement.text)}</p>${R.complement.causes.length ? `<ul>${R.complement.causes.map(c => `<li>${esc(c)}</li>`).join('')}</ul>` : ''}`)}
+        ${sec('anca', 'ANCA', R.ancaSummary.map(t => `<p>${esc(t)}</p>`).join(''))}
       </div>
       <h2 style="font-size:16px;margin:8px 0">Conditions to consider</h2>
       ${top.length ? top.map(c => cardHtml(c, true)).join('') : '<div class="box muted">No condition currently meets criteria or is flagged as possible with the data entered.</div>'}
-      ${R.next.length ? `<div class="box"><h3>Suggested next tests</h3><ul>${R.next.map(n => `<li><b>${esc(n.test)}</b> <span class="muted">— ${esc(n.why)}</span></li>`).join('')}</ul></div>` : ''}
-      ${low.length ? `<details class="box"><summary><b>Less likely (${low.length})</b> — click to see why</summary>${low.map(c => cardHtml(c, false)).join('')}</details>` : ''}
-      ${na.length ? `<details class="box"><summary><b>Not assessable with current data (${na.length})</b></summary>${na.map(c => cardHtml(c, false)).join('')}</details>` : ''}`;
+      ${R.next.length ? sec('next', `Suggested next tests (${R.next.length})`, `<ul>${R.next.map(n => `<li><b>${esc(n.test)}</b> <span class="muted">— ${esc(n.why)}</span></li>`).join('')}</ul>`) : ''}
+      ${low.length ? `<details class="box" data-sec="grp-low" ${isOpen('grp-low', false) ? 'open' : ''}><summary><b>Less likely (${low.length})</b> — click to see why</summary>${low.map(c => cardHtml(c, false)).join('')}</details>` : ''}
+      ${na.length ? `<details class="box" data-sec="grp-na" ${isOpen('grp-na', false) ? 'open' : ''}><summary><b>Not assessable with current data (${na.length})</b></summary>${na.map(c => cardHtml(c, false)).join('')}</details>` : ''}`;
   }
 
   function control(t) {
@@ -121,11 +139,12 @@
       <span style="margin-left:auto"></span><button class="btn alt" id="resetLabs">${A.mode === 'fhir' ? 'Reset to chart values' : 'Clear all'}</button></div>
       <table><thead><tr><th style="width:30%">Test</th><th style="width:32%">Result</th><th>Source</th></tr></thead><tbody>`;
     groups.forEach(g => {
-      h += `<tr><td class="grp" colspan="3">${esc(g)}</td></tr>`;
-      E.TESTS.filter(t => t.group === g).forEach(t => {
+      const gt = E.TESTS.filter(t => t.group === g), n = gt.filter(t => A.S[t.id]).length, op = isOpen('lab-' + g, true);
+      h += `<tr class="grp-row${op ? '' : ' shut'}" data-g="${esc(g)}"><td class="grp" colspan="3">${esc(g)} <span class="cnt">${n ? `${n} result${n > 1 ? 's' : ''}` : 'none'}</span></td></tr>`;
+      gt.forEach(t => {
         const s = A.S[t.id];
         const cls = s ? (s.src === 'chart' ? 'chart' : 'manual') : '';
-        h += `<tr class="${cls}"><td>${esc(t.name)}</td><td>${control(t)}</td><td class="src">${s ? (s.src === 'chart' ? `${esc(s.raw)}: ${esc(s.disp)} · ${esc((s.date || '').slice(0, 10))}${s.note ? ' · ' + esc(s.note) : ''}` : s.src === 'demo' ? `made-up: ${esc(s.disp)}` : 'entered here') : ''}</td></tr>`;
+        h += `<tr class="${cls}" data-grp="${esc(g)}" ${op ? '' : 'hidden'}><td>${esc(t.name)}</td><td>${control(t)}</td><td class="src">${s ? (s.src === 'chart' ? `${esc(s.raw)}: ${esc(s.disp)} · ${esc((s.date || '').slice(0, 10))}${s.note ? ' · ' + esc(s.note) : ''}` : s.src === 'demo' ? `made-up: ${esc(s.disp)}` : 'entered here') : ''}</td></tr>`;
       });
     });
     h += '</tbody></table></div>';
@@ -138,23 +157,28 @@
         if (t.type === 'num') val = parseFloat(val); else if (/^\d+$/.test(val)) val = parseInt(val, 10);
         A.S[t.id] = { v: val, disp: t.type === 'num' ? `${val} ${t.unit}` : E.optLabel(t.type, val), src: 'manual' };
       }
-      el.closest('tr').className = A.S[t.id] ? 'manual' : '';
+      el.closest('tr').classList.remove('chart', 'manual'); if (A.S[t.id]) el.closest('tr').classList.add('manual');
       el.closest('tr').querySelector('.src').textContent = A.S[t.id] ? 'entered here' : '';
       renderAll(false);
     }));
+    $('#tab-labs').querySelectorAll('tr.grp-row').forEach(tr => (tr.onclick = () => { setGroup(tr, tr.classList.contains('shut')); saveOpen(); }));
     $('#resetLabs').onclick = () => { A.S = JSON.parse(JSON.stringify(A.chartS)); renderAll(true); };
   }
 
   function renderFeat() {
-    let h = `<div class="box"><div class="row"><b>RA joint count (2010 criteria):</b> <select id="raJ">${E.RA_JOINTS.map(([v, l]) => `<option value="${v}" ${String(A.F.raJoints || '') === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></div>
+    let h = `<details class="box sec" data-sec="feat-top" ${isOpen('feat-top', true) ? 'open' : ''}><summary><h3>RA joint count &amp; medications</h3></summary><div class="row"><b>RA joint count (2010 criteria):</b> <select id="raJ">${E.RA_JOINTS.map(([v, l]) => `<option value="${v}" ${String(A.F.raJoints || '') === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></div>
       <div class="row" style="align-items:flex-start"><b style="min-width:150px">Medications<br><span class="muted" style="font-weight:400">(one per line; checked for drug-induced lupus/ANCA, anticoagulants, statins)</span></b>
-      <textarea id="medsTa" style="min-height:90px;flex:1">${esc((A.ctx.meds || []).join('\n'))}</textarea></div></div><div class="feat">`;
+      <textarea id="medsTa" style="min-height:90px;flex:1">${esc((A.ctx.meds || []).join('\n'))}</textarea></div></details><div class="feat">`;
     E.FEATURES.forEach(([g, items]) => {
-      h += `<fieldset><legend>${esc(g)}</legend>${items.map(([id, l]) => `<label class="${A.autoF.has(id) ? 'auto' : ''}"><input type="checkbox" data-f="${id}" ${A.F[id] || (id === 'age50' && A.pt.age >= 50) ? 'checked' : ''} ${id === 'age50' ? 'disabled' : ''}> ${esc(l)}</label>`).join('')}</fieldset>`;
+      const n = items.filter(([id]) => A.F[id] || (id === 'age50' && A.pt.age >= 50)).length;
+      h += `<details class="fs" data-sec="feat-${esc(g)}" ${isOpen('feat-' + g, true) ? 'open' : ''}><summary><b>${esc(g)}</b> <span class="cnt" data-cnt="${esc(g)}">${n ? n + ' ticked' : ''}</span></summary>${items.map(([id, l]) => `<label class="${A.autoF.has(id) ? 'auto' : ''}"><input type="checkbox" data-f="${id}" ${A.F[id] || (id === 'age50' && A.pt.age >= 50) ? 'checked' : ''} ${id === 'age50' ? 'disabled' : ''}> ${esc(l)}</label>`).join('')}</details>`;
     });
     h += '</div>';
     $('#tab-feat').innerHTML = h;
-    $('#tab-feat').querySelectorAll('[data-f]').forEach(cb => cb.addEventListener('change', () => { A.F[cb.dataset.f] = cb.checked; renderAll(false); }));
+    $('#tab-feat').querySelectorAll('[data-f]').forEach(cb => cb.addEventListener('change', () => {
+      A.F[cb.dataset.f] = cb.checked;
+      const d = cb.closest('details'), n = d.querySelectorAll('input:checked').length; d.querySelector('.cnt').textContent = n ? n + ' ticked' : '';
+      renderAll(false); }));
     $('#raJ').onchange = e => { A.F.raJoints = e.target.value; renderAll(false); };
     $('#medsTa').oninput = e => { A.ctx.meds = e.target.value.split('\n').map(s => s.trim()).filter(Boolean); renderAll(false); };
   }
@@ -204,14 +228,14 @@
     const host = $('#tab-note');
     if (!host.dataset.built) {
       host.dataset.built = '1';
-      host.innerHTML = `<div class="box"><h3>Note draft (editable — copy into the PowerChart note)</h3>
+      host.innerHTML = `<details class="box sec" data-sec="note" ${isOpen('note', true) ? 'open' : ''}><summary><h3>Note draft (editable — copy into the PowerChart note)</h3></summary>
         <textarea id="noteTa"></textarea>
-        <div class="row"><button class="btn" id="copyNote">Copy note</button><button class="btn alt" id="regenNote">Regenerate from current data</button><span class="muted" id="noteState"></span></div></div>
-        <div class="box"><h3>Consult message (MS Teams / text)</h3>
+        <div class="row"><button class="btn" id="copyNote">Copy note</button><button class="btn alt" id="regenNote">Regenerate from current data</button><span class="muted" id="noteState"></span></div></details>
+        <details class="box sec" data-sec="consult" ${isOpen('consult', true) ? 'open' : ''}><summary><h3>Consult message (MS Teams / text)</h3></summary>
         <div class="row">Specialty <select id="spec"><option>Rheumatology</option><option>Nephrology</option><option>Respirology</option><option>Dermatology</option><option>Neurology</option><option>Hepatology</option></select>
         Dr. <input type="text" id="drName" placeholder="surname" style="width:160px"></div>
         <textarea id="consultTa" style="min-height:110px"></textarea>
-        <div class="row"><button class="btn" id="copyConsult">Copy message</button><button class="btn alt" id="regenConsult">Regenerate</button><span class="muted" id="wc"></span></div></div>`;
+        <div class="row"><button class="btn" id="copyConsult">Copy message</button><button class="btn alt" id="regenConsult">Regenerate</button><span class="muted" id="wc"></span></div></details>`;
       $('#noteTa').oninput = () => { A.noteEdited = true; $('#noteState').textContent = 'Edited — your text is kept until you press Regenerate.'; };
       $('#consultTa').oninput = () => { A.consultEdited = true; wc(); };
       $('#copyNote').onclick = () => copy($('#noteTa').value);
@@ -228,14 +252,14 @@
 
   function renderRef() {
     $('#tab-ref').innerHTML = `
-      <div class="box"><h3>Antibody guide</h3><table><thead><tr><th>Test</th><th>Main associations</th><th>Pearls / false positives</th></tr></thead><tbody>
-      ${E.LIBRARY.map(r => `<tr><td><b>${esc(r[0])}</b></td><td>${esc(r[1])}</td><td>${esc(r[2])}</td></tr>`).join('')}</tbody></table></div>
-      <div class="box"><h3>Complement patterns</h3><table><thead><tr><th>C3</th><th>C4</th><th>Think of</th></tr></thead><tbody>
+      <details class="box sec" data-sec="ref-ab" ${isOpen('ref-ab', true) ? 'open' : ''}><summary><h3>Antibody guide</h3></summary><table><thead><tr><th>Test</th><th>Main associations</th><th>Pearls / false positives</th></tr></thead><tbody>
+      ${E.LIBRARY.map(r => `<tr><td><b>${esc(r[0])}</b></td><td>${esc(r[1])}</td><td>${esc(r[2])}</td></tr>`).join('')}</tbody></table></details>
+      <details class="box sec" data-sec="ref-comp" ${isOpen('ref-comp', true) ? 'open' : ''}><summary><h3>Complement patterns</h3></summary><table><thead><tr><th>C3</th><th>C4</th><th>Think of</th></tr></thead><tbody>
       <tr><td>Low</td><td>Low</td><td>SLE, cryoglobulinemia, immune-complex MPGN, endocarditis/shunt nephritis, HBV/HCV, urticarial vasculitis</td></tr>
       <tr><td>Low</td><td>Normal</td><td>Post-infectious GN, C3 glomerulopathy, atypical HUS, sepsis</td></tr>
       <tr><td>Normal</td><td>Low</td><td>Cryoglobulinemia, hereditary/acquired angioedema (C1-INH), early SLE, C4 null alleles</td></tr>
-      <tr><td>Normal</td><td>Normal</td><td>ANCA vasculitis, anti-GBM, IgA vasculitis/nephropathy, RA, SSc (does not exclude SLE)</td></tr></tbody></table></div>
-      <div class="box"><h3>Ordering pearls</h3><ul>
+      <tr><td>Normal</td><td>Normal</td><td>ANCA vasculitis, anti-GBM, IgA vasculitis/nephropathy, RA, SSc (does not exclude SLE)</td></tr></tbody></table></details>
+      <details class="box sec" data-sec="ref-pearls" ${isOpen('ref-pearls', true) ? 'open' : ''}><summary><h3>Ordering pearls</h3></summary><ul>
         <li>Order ANA only with a compatible picture — in unselected patients most positives are false positives.</li>
         <li>Once ANA is positive, do not repeat it to follow disease; follow dsDNA, C3/C4, urine and CBC in SLE.</li>
         <li>ANCA: PR3/MPO immunoassay is the first-line test (2017 international consensus); IIF alone misses cases.</li>
@@ -243,7 +267,7 @@
         <li>Infections (endocarditis, HCV, HBV, TB, parvovirus B19) mimic autoimmune serology — get blood cultures before immunosuppression if febrile.</li>
         <li>Antiphospholipid tests need confirmation ≥12 weeks apart; lupus anticoagulant is unreliable on anticoagulants.</li>
         <li>Sjögren and antisynthetase syndrome can have a negative HEp-2 ANA — order Ro/Jo-1 directly if suspected.</li>
-      </ul></div>`;
+      </ul></details>`;
   }
 
   // ---------- start ----------
