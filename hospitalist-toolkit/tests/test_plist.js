@@ -95,6 +95,7 @@ eq("wrong patient", C.mentions("Mrs. Other, MRN:07654321", { name: "Testman, Al"
 const X0 = require("../tools/plist/xlsx.js");
 eq("pmhx short one row", X0.halves("COPD, AF"), ["COPD, AF", ""]);
 eq("pmhx long two rows", X0.halves("Cardiac Amyloidosis, DVT lower limb 2021, Iron defic anemia, Osteoporosis, UTI"), ["Cardiac Amyloidosis, DVT lower limb 2021", "Iron defic anemia, Osteoporosis, UTI"]);
+eq("pmhx 3 lines", require("../tools/plist/xlsx.js").lines("Alpha disease, Beta disease, Gamma disease, Delta disease, Epsilon disease, Zeta disease, Eta disease, Theta disease, Iota", 3).length, 3);
 eq("spread 3", X0.spread(["a", "b", "c"]), ["a", "b", "c"]);
 eq("spread 5", X0.spread("a; b; c; d; e"), ["a; b", "c; d", "e"]);
 
@@ -109,16 +110,16 @@ else {
       most: "C2", allergy: "n", gfr: 91, vtep: "y", issues: ["A", "B", "C", "D"], todo: ["t1"], pmhx: "COPD" }] },
     { floor: "HAH", patients: [{ name: "Sample, Bo", location: "HAH-VGH HAH1 A", age: 35, admit: "", reason: "Abdominal pain", fp: "n" }] }], { spare: 1 })
     .then((u8) => JSZip.loadAsync(u8)).then((z) => z.file("xl/worksheets/sheet1.xml").async("string")).then((x) => {
-      eq("rows written", (x.match(/<row /g) || []).length, 1 + 2 * 4 + 3);
+      eq("rows written", (x.match(/<row /g) || []).length, 1 + 2 + 2 * 4 + 4);
       eq("floor in A2", /<c r="A2"[^>]*t="inlineStr"><is><t[^>]*>S7B<\/t>/.test(x), true);
       eq("name escaped in F3", x.includes("Sample, Ann &amp; Co") && x.includes("Altered &lt;LOC&gt;"), true);
       eq("age is a number", /<c r="E3"[^>]*><v>82<\/v><\/c>/.test(x), true);
       eq("pmhx row", /<c r="F4"[^>]*><is><t[^>]*>pmhx: COPD</.test(x), true);
       eq("MOST, gfr number", /<c r="I3"[^>]*><is><t[^>]*>C2</.test(x) && /<c r="K3"[^>]*><v>91<\/v>/.test(x), true);
-      eq("issues over 3 rows", /<c r="O3"[^>]*><is><t[^>]*>A; B</.test(x) && /<c r="O4"[^>]*><is><t[^>]*>C; D</.test(x), true);
-      eq("second floor at row 6", /<c r="A6"[^>]*><is><t[^>]*>HAH</.test(x), true);
-      eq("dimension", /<dimension ref="A1:S12"\/>/.test(x), true);
-      eq("colour rules to last row", /sqref="K1:K12"/.test(x) && !/sqref="[^"]*H26/.test(x), true);
+      eq("issues over 4 rows", /<c r="O3"[^>]*><is><t[^>]*>A</.test(x) && /<c r="O6"[^>]*><is><t[^>]*>D</.test(x), true);
+      eq("second floor at row 7", /<c r="A7"[^>]*><is><t[^>]*>HAH</.test(x), true);
+      eq("dimension", /<dimension ref="A1:S15"\/>/.test(x), true);
+      eq("colour rules to last row", /sqref="K1:K15"/.test(x) && !/sqref="[^"]*H26/.test(x), true);
       done();
     }).catch((e) => { fail++; console.log("FAIL excel: " + e.message); done(); });
 }
