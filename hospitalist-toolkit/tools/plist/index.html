@@ -289,7 +289,7 @@
       const groups = PList.group(keep).map((g) => ({ floor: g.floor, patients: g.patients.map((r) => ({
         name: r.name, location: PList.roomOf(r.location), age: r.age, admit: PList.admitText(r, taken), reason: r.reason,
         fp: r.pcp ? "y" : "n", note: r.discharged ? "Discharged " + r.discharged : "", ...(r.c || {}) })) }));
-      const tpl = await (await fetch("template.xlsx?v=20261119b")).arrayBuffer();
+      const tpl = await (await fetch("template.xlsx?v=20261119c")).arrayBuffer();
       const blob = await PListXlsx.build(JSZip, tpl, groups, { type: "blob", spare: $("spare").checked ? 3 : 0 });
       const a = document.createElement("a"), d = taken;
       a.href = URL.createObjectURL(blob); a.download = `VGH_patient_list_${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}.xlsx`;
