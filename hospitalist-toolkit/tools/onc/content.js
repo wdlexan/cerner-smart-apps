@@ -1,0 +1,372 @@
+/* Oncology tab: reference content for each cancer and the oncologic emergency cards.
+   UNVERIFIED draft written by Claude from general knowledge (BC Cancer, CCO, ASCO, ESMO, NCCN-type guidance and landmark trials, to mid-2026).
+   Regimens are named, not dosed: the BC Cancer protocol is the source of truth for doses. Verify before clinical use. */
+(function () {
+  const BC = "https://www.bccancer.bc.ca/health-professionals/clinical-resources/chemotherapy-protocols/";
+  const LINKS = {
+    lung: BC + "lung", breast: BC + "breast", crc: BC + "gastrointestinal", prostate: BC + "genitourinary",
+    supportive: BC + "supportive-care",
+    fn: "https://www.bccancer.bc.ca/health-professionals/clinical-resources/cancer-management-manual/supportive-care/febrile-neutropenia" };
+  const go = (k, t) => `<a href="#" data-goto="${k}">${t}</a>`;
+  const tk = (k, t) => `<a href="#" data-toolkit="${k}">${t}</a>`; // another toolkit tab
+
+  const CANCERS = [
+  // =====================================================================================
+  { key: "lung", name: "Lung", full: "Lung cancer (NSCLC and SCLC)", link: LINKS.lung,
+    intro: `<b>Two diseases.</b> Non-small cell (NSCLC, ~85%: adenocarcinoma, squamous) and small cell (SCLC, ~15%, smokers, fast, chemo-sensitive, paraneoplastic).`,
+    sections: [
+    { t: "At a glance: intent and biomarkers", open: true, h: `
+      <table><tr><th>Setting</th><th>Intent</th></tr>
+        <tr><td>NSCLC stage I–III, limited-stage SCLC</td><td><b>Curative</b></td></tr>
+        <tr><td>NSCLC stage IV, extensive-stage SCLC</td><td><b>Palliative</b>, but survival with a driver mutation can be many years. Oligometastatic disease is sometimes treated radically.</td></tr></table>
+      <ul>
+        <li><b>Biomarkers for every non-squamous NSCLC</b> (and never-smokers with squamous): EGFR, ALK, ROS1, BRAF V600E, KRAS G12C, MET exon 14, RET, NTRK, HER2 (ERBB2) mutation, plus <b>PD-L1 TPS</b>.</li>
+        <li>Early stage: EGFR, ALK and PD-L1 are needed before surgery or adjuvant decisions.</li>
+        <li>Driver-positive tumours usually do <b>not</b> get immunotherapy first (little benefit, more toxicity, especially before or with osimertinib).</li>
+        <li>Staging: CT chest/abdomen, PET-CT, <b>MRI brain</b> (stage II and up, or any neuro symptoms), EBUS for mediastinal nodes.</li>
+      </ul>` },
+    { t: "Treatment for cure", open: false, h: `
+      <table><tr><th>Stage</th><th>Usual approach</th></tr>
+        <tr><td>I (N0)</td><td>Lobectomy (or segmentectomy if ≤2 cm peripheral) with node sampling. <b>SBRT</b> if not fit for surgery. EGFR+ stage IB: adjuvant osimertinib.</td></tr>
+        <tr><td>II–IIIA resectable</td><td>Perioperative or neoadjuvant <b>platinum doublet + immunotherapy</b> (nivolumab, pembrolizumab or durvalumab) → surgery → adjuvant immunotherapy. Or surgery → adjuvant platinum chemo → atezolizumab (PD-L1 ≥1%).<br><b>EGFR+</b>: adjuvant osimertinib for 3 years. <b>ALK+</b>: adjuvant alectinib for 2 years.</td></tr>
+        <tr><td>III unresectable</td><td>Concurrent <b>platinum chemoradiation</b> → durvalumab for 12 months (PACIFIC). EGFR+: osimertinib after chemoradiation (LAURA).</td></tr>
+        <tr><td>Limited-stage SCLC</td><td>Concurrent cisplatin (or carboplatin) + etoposide with thoracic RT → <b>durvalumab consolidation</b> (ADRIATIC). Brain MRI surveillance or prophylactic cranial irradiation. Very early T1–2 N0: surgery then chemo.</td></tr></table>` },
+    { t: "Palliative / metastatic options", open: false, h: `
+      <h4>NSCLC with a driver (targeted pill first)</h4>
+      <table><tr><th>Driver</th><th>Usual first choice</th></tr>
+        <tr><td>EGFR (exon 19 del, L858R)</td><td>Osimertinib (± platinum-pemetrexed, FLAURA2) or amivantamab + lazertinib (MARIPOSA)</td></tr>
+        <tr><td>ALK</td><td>Alectinib or lorlatinib (brigatinib)</td></tr>
+        <tr><td>ROS1</td><td>Entrectinib, crizotinib, repotrectinib</td></tr>
+        <tr><td>BRAF V600E</td><td>Dabrafenib + trametinib (or encorafenib + binimetinib)</td></tr>
+        <tr><td>KRAS G12C</td><td>Usually chemo-immunotherapy first; sotorasib or adagrasib later</td></tr>
+        <tr><td>MET exon 14 / RET / NTRK</td><td>Capmatinib or tepotinib / selpercatinib or pralsetinib / larotrectinib or entrectinib</td></tr>
+        <tr><td>HER2 mutation</td><td>Trastuzumab deruxtecan (usually after first line)</td></tr></table>
+      <h4>NSCLC without a driver</h4>
+      <ul>
+        <li><b>PD-L1 ≥50%</b>: pembrolizumab (or cemiplimab, atezolizumab) alone, or chemo-immunotherapy if bulky/symptomatic.</li>
+        <li><b>PD-L1 &lt;50%</b>: platinum doublet + pembrolizumab (pemetrexed for non-squamous; carboplatin + paclitaxel or nab-paclitaxel for squamous). Alternative: nivolumab + ipilimumab ± 2 cycles of chemo.</li>
+        <li>Maintenance: pemetrexed ± immunotherapy (non-squamous).</li>
+        <li>Later: docetaxel (± ramucirumab), ADCs (datopotamab deruxtecan after EGFR TKI), trials.</li>
+      </ul>
+      <h4>Extensive-stage SCLC</h4>
+      <ul><li>Carboplatin + etoposide + atezolizumab or durvalumab → maintenance immunotherapy.</li>
+        <li>Second line: lurbinectedin, topotecan, <b>tarlatamab</b> (DLL3 bispecific: CRS/ICANS – ${tk("bsab", "CRS/ICANS tab")}).</li>
+        <li>Brain RT for brain mets; consolidative thoracic RT in selected patients.</li></ul>
+      <h4>Local palliation</h4>
+      <ul><li>RT for hemoptysis, bone pain, airway or SVC compression (8 Gy single fraction for bone pain).</li>
+        <li>Bronchoscopy (debulking, stent), indwelling pleural catheter or pleurodesis, SRS or whole-brain RT.</li></ul>` },
+    { t: "What to watch for in hospital", open: true, h: `
+      <table><tr><th>Problem</th><th>Clue</th><th>Do</th></tr>
+        <tr><td><b>Pneumonitis</b> (immunotherapy, TKI, ADC, radiation)</td><td>New cough, hypoxia, ground-glass on CT, 1–6 months after RT</td><td>Hold the drug, CT, sputum/viral swab ± bronchoscopy to exclude infection; grade ≥2: prednisone 1–2 mg/kg. ${tk("tox", "Oncology toxicity tab")}</td></tr>
+        <tr><td>Massive hemoptysis</td><td>&gt;100–200 mL, or any with instability</td><td>Bleeding side down, airway, TXA, stop anticoagulants, IR bronchial artery embolization / bronchoscopy, RT. ${go("emerg", "Emergencies")}</td></tr>
+        <tr><td>SVC syndrome</td><td>Face/arm swelling, chest-wall veins, worse lying</td><td>CT with contrast; <b>biopsy before steroids</b> if lymphoma possible; stent if stridor/confusion. ${go("emerg", "Emergencies")}</td></tr>
+        <tr><td>Malignant pleural / pericardial effusion</td><td>Dyspnea, tachycardia, low BP (tamponade)</td><td>Thoracentesis (cytology); echo; pericardiocentesis if tamponade</td></tr>
+        <tr><td>Brain mets</td><td>Headache, seizure, confusion, focal signs</td><td>MRI; dexamethasone only if symptomatic edema; antiseizure drug only after a seizure; rad onc</td></tr>
+        <tr><td>Hyponatremia (SIADH)</td><td>Mostly SCLC; also cisplatin, cyclophosphamide, vinca, opioids, nausea</td><td>Exclude adrenal insufficiency and hypothyroid. ${tk("hypona", "Sodium tab")}</td></tr>
+        <tr><td>Hypercalcemia</td><td>Squamous (PTHrP)</td><td>${go("emerg", "Emergencies")}</td></tr>
+        <tr><td>Paraneoplastic</td><td>LEMS (proximal weakness, SCLC), cerebellar, ectopic ACTH (low K, high glucose, SCLC)</td><td>VGCC antibodies, AM cortisol/ACTH; neurology</td></tr>
+        <tr><td>VTE</td><td>High risk (adenocarcinoma, ALK/ROS1, amivantamab + lazertinib)</td><td>Low threshold to image; check drug interactions before choosing anticoagulant</td></tr>
+        <tr><td>Radiation esophagitis</td><td>Odynophagia during/after chest RT</td><td>Viscous lidocaine mixes, PPI, nutrition, exclude candida</td></tr>
+      </table>
+      <ul>
+        <li><b>Do not stop an EGFR/ALK pill</b> for long without oncology: disease can flare within days. Hold for surgery/procedures only as oncology advises.</li>
+        <li>Osimertinib, crizotinib, selpercatinib: QTc (ECG, K, Mg). ALK drugs: bradycardia. Lorlatinib: lipids, mood. Many CYP3A4 interactions.</li>
+      </ul>` },
+    { t: "When to call oncology urgently", open: false, h: `<ul>
+      <li>Febrile neutropenia, suspected pneumonitis grade ≥2, any immune side effect grade ≥2.</li>
+      <li>New cord compression, SVC syndrome, new brain mets, massive hemoptysis (also rad onc).</li>
+      <li>Before holding or stopping a targeted pill or immunotherapy.</li>
+      <li>Big drop in performance status: changes what treatment is possible and is the time for a goals-of-care talk.</li></ul>` },
+    { t: "Prognosis (rough) and goals of care", open: false, h: `
+      <table><tr><th>Setting</th><th>Rough outlook</th></tr>
+        <tr><td>Stage I resected</td><td>5-year survival ~70–90%</td></tr>
+        <tr><td>Stage III</td><td>5-year ~35–55% with chemoradiation + durvalumab</td></tr>
+        <tr><td>Stage IV EGFR / ALK</td><td>Median survival ~3–5+ years (ALK longest)</td></tr>
+        <tr><td>Stage IV no driver, chemo-immunotherapy</td><td>Median ~1.5–2 years; ~20–30% of PD-L1-high alive at 5 years</td></tr>
+        <tr><td>Limited-stage SCLC</td><td>Median ~4–5 years with durvalumab consolidation</td></tr>
+        <tr><td>Extensive-stage SCLC</td><td>Median ~12–13 months</td></tr></table>
+      <p class="muted">From trial medians; individuals vary widely. Performance status (ECOG) is the strongest bedside predictor.</p>` } ] },
+
+  // =====================================================================================
+  { key: "breast", name: "Breast", full: "Breast cancer", link: LINKS.breast,
+    intro: `<b>Subtype drives everything:</b> HR+/HER2− (~70%), HER2+ (~15–20%), triple-negative (TNBC, ~10–15%). "HER2-low" (IHC 1+ or 2+/ISH−) matters for trastuzumab deruxtecan.`,
+    sections: [
+    { t: "At a glance: intent and biomarkers", open: true, h: `
+      <table><tr><th>Setting</th><th>Intent</th></tr>
+        <tr><td>Stage I–III (including inflammatory)</td><td><b>Curative</b></td></tr>
+        <tr><td>Stage IV</td><td><b>Palliative</b>, with median survival of years for HR+ and HER2+</td></tr></table>
+      <ul>
+        <li>ER, PR, HER2 (IHC/ISH), Ki-67, grade; genomic score (e.g. Oncotype DX) for HR+ early disease.</li>
+        <li><b>Germline BRCA1/2</b> testing for those who qualify (PARP inhibitor eligibility, family).</li>
+        <li>Metastatic HR+: tumour or ctDNA testing for <b>ESR1, PIK3CA, AKT1, PTEN</b> at progression.</li>
+        <li>New metastasis: biopsy when possible (receptors can change).</li>
+      </ul>` },
+    { t: "Treatment for cure", open: false, h: `
+      <ul><li><b>Surgery</b>: lumpectomy + RT, or mastectomy; sentinel node biopsy. RT after mastectomy if node-positive or large tumour.</li></ul>
+      <table><tr><th>Subtype</th><th>Usual approach</th></tr>
+        <tr><td>HR+/HER2−</td><td><b>Endocrine therapy 5–10 years</b> (tamoxifen premenopausal; aromatase inhibitor postmenopausal; ovarian suppression + AI for high-risk premenopausal).<br>Chemo if high risk or high genomic score (AC→paclitaxel, or docetaxel-cyclophosphamide).<br>High-risk: adjuvant <b>abemaciclib 2 years</b> or <b>ribociclib 3 years</b>; <b>olaparib 1 year</b> if gBRCA.<br>Postmenopausal: zoledronic acid every 6 months for 3 years (bone and recurrence benefit).</td></tr>
+        <tr><td>HER2+</td><td>≥T1c or node-positive: neoadjuvant chemo (e.g. docetaxel + carboplatin, or AC→taxane) + <b>trastuzumab + pertuzumab</b> → surgery → complete 1 year of HER2 therapy. Residual disease → <b>T-DM1</b> (KATHERINE). Small node-negative: paclitaxel + trastuzumab.</td></tr>
+        <tr><td>Triple-negative</td><td>Stage II–III: neoadjuvant <b>pembrolizumab + carboplatin/paclitaxel → AC/EC</b> (KEYNOTE-522) → surgery → adjuvant pembrolizumab. Residual disease → capecitabine, or olaparib if gBRCA.</td></tr></table>` },
+    { t: "Palliative / metastatic options", open: false, h: `
+      <table><tr><th>Subtype</th><th>Usual sequence</th></tr>
+        <tr><td>HR+/HER2−</td><td>1st line: <b>aromatase inhibitor (or fulvestrant) + CDK4/6 inhibitor</b> (ribociclib, palbociclib, abemaciclib).<br>Then by mutation: ESR1 → elacestrant (or newer oral SERD); PIK3CA/AKT1/PTEN → capivasertib or alpelisib + fulvestrant (inavolisib + palbociclib + fulvestrant for early relapse with PIK3CA); everolimus + exemestane; gBRCA → olaparib/talazoparib.<br>Then ADCs: T-DXd (HER2-low/ultralow), sacituzumab govitecan, datopotamab deruxtecan; single-agent chemo (capecitabine, paclitaxel, eribulin).<br><b>Visceral crisis</b> (rapid liver failure, lymphangitic lung) → chemo first.</td></tr>
+        <tr><td>HER2+</td><td>1st line: <b>taxane + trastuzumab + pertuzumab</b> → maintenance HP (+ endocrine if HR+). 2nd line: <b>T-DXd</b>. Then tucatinib + trastuzumab + capecitabine (good for brain mets), T-DM1, others.</td></tr>
+        <tr><td>Triple-negative</td><td>PD-L1 CPS ≥10: chemo + pembrolizumab. Then sacituzumab govitecan; T-DXd if HER2-low; PARP inhibitor if gBRCA; chemo.</td></tr></table>
+      <ul><li><b>Bone mets</b>: denosumab or zoledronic acid (dental check, Ca/vitamin D), RT for pain, orthopedics for impending fracture (Mirels score).</li>
+        <li><b>Brain mets</b>: SRS, surgery or whole-brain RT; HER2+ → tucatinib regimen or T-DXd.</li></ul>` },
+    { t: "What to watch for in hospital", open: true, h: `
+      <table><tr><th>Problem</th><th>Clue</th><th>Do</th></tr>
+        <tr><td><b>Cord compression</b> / pathological fracture</td><td>Bone mets + new back pain, weakness, retention</td><td>${go("emerg", "Emergencies")}: dexamethasone, MRI whole spine within 24 h</td></tr>
+        <tr><td>Hypercalcemia</td><td>Bone mets, thirst, confusion, constipation</td><td>${go("emerg", "Emergencies")}</td></tr>
+        <tr><td>Brain / leptomeningeal mets</td><td>HER2+, TNBC, lobular: headache, cranial nerve palsy, confusion</td><td>MRI brain + spine with gadolinium; LP cytology if leptomeningeal suspected</td></tr>
+        <tr><td>Liver mets / visceral crisis</td><td>Rising bilirubin, ALP, INR</td><td>Urgent oncology (chemo may need to start quickly); exclude biliary obstruction</td></tr>
+        <tr><td>Effusions</td><td>Pleural or pericardial</td><td>Thoracentesis, echo</td></tr>
+        <tr><td>Lobular cancer spread</td><td>GI wall, peritoneum, ureters, mimics GI primary</td><td>Hydronephrosis, bowel obstruction: ${tk("pc", "Peritoneal carcinomatosis tab")}</td></tr>
+        <tr><td>Heart failure</td><td>Anthracycline (cumulative), trastuzumab (usually reversible)</td><td>Echo; hold HER2 drug and call oncology</td></tr>
+        <tr><td>ILD on T-DXd</td><td>New cough, dyspnea, fever</td><td>CT; stop drug; steroids for grade ≥2</td></tr>
+        <tr><td>Hyperglycemia / DKA</td><td>Alpelisib, inavolisib, capivasertib, everolimus</td><td>Glucose checks; hold drug; metformin first line, insulin if high</td></tr>
+        <tr><td>VTE</td><td>Tamoxifen, abemaciclib, chemo</td><td>Treat; ask oncology about stopping tamoxifen</td></tr>
+      </table>
+      <ul>
+        <li><b>Ribociclib</b>: QTc (avoid ondansetron/haloperidol stacking; ECG). <b>Abemaciclib, neratinib, sacituzumab</b>: diarrhea. CDK4/6 drugs: CYP3A4 interactions (clarithromycin, azoles).</li>
+        <li><b>Tamoxifen</b> with paroxetine, fluoxetine or bupropion: reduced effect – prefer venlafaxine, citalopram or escitalopram.</li>
+        <li>Lymphedema arm: limited evidence that BP cuffs/IVs cause harm, but use the other arm when you can (follow local policy).</li>
+        <li>Denosumab: low calcium; do not stop long term without a plan (rebound fractures).</li>
+      </ul>` },
+    { t: "When to call oncology urgently", open: false, h: `<ul>
+      <li>Febrile neutropenia; cord compression; new brain mets; hypercalcemia; rapidly rising bilirubin (visceral crisis).</li>
+      <li>New heart failure on HER2 therapy; suspected ILD on T-DXd; DKA on a PI3K/AKT drug.</li>
+      <li>Before holding endocrine, CDK4/6 or HER2 therapy for more than a few days.</li></ul>` },
+    { t: "Prognosis (rough) and goals of care", open: false, h: `
+      <table><tr><th>Setting</th><th>Rough outlook</th></tr>
+        <tr><td>Stage I–II</td><td>5-year survival &gt;90%</td></tr>
+        <tr><td>Stage III</td><td>5-year ~70–85%</td></tr>
+        <tr><td>Metastatic HR+/HER2− (CDK4/6 era)</td><td>Median ~5 years</td></tr>
+        <tr><td>Metastatic HER2+</td><td>Median ~5+ years</td></tr>
+        <tr><td>Metastatic triple-negative</td><td>Median ~1.5–2 years</td></tr></table>
+      <p class="muted">Liver failure from mets, leptomeningeal disease and declining ECOG mean much shorter survival.</p>` } ] },
+
+  // =====================================================================================
+  { key: "crc", name: "Colorectal", full: "Colorectal cancer", link: LINKS.crc,
+    intro: `<b>Even some stage IV is curable</b>: limited liver or lung mets can be resected or ablated. Peritoneal disease: ${tk("pc", "Peritoneal carcinomatosis tab")}.`,
+    sections: [
+    { t: "At a glance: intent and biomarkers", open: true, h: `
+      <table><tr><th>Setting</th><th>Intent</th></tr>
+        <tr><td>Stage I–III colon and rectum</td><td><b>Curative</b></td></tr>
+        <tr><td>Oligometastatic liver/lung (resectable)</td><td><b>Curative intent</b> (refer to HPB / thoracic surgery)</td></tr>
+        <tr><td>Unresectable stage IV</td><td><b>Palliative</b> (some become resectable after chemo)</td></tr></table>
+      <ul>
+        <li><b>MMR/MSI for all</b>; metastatic: <b>KRAS/NRAS, BRAF V600E, HER2</b>; tumour side (left vs right) for anti-EGFR.</li>
+        <li><b>DPYD testing</b> before 5-FU/capecitabine is recommended and offered in many Canadian centres: check whether it was done.</li>
+        <li>Baseline CEA; CT chest/abdomen/pelvis; rectal: pelvic MRI.</li>
+      </ul>` },
+    { t: "Treatment for cure", open: false, h: `
+      <table><tr><th>Stage</th><th>Usual approach</th></tr>
+        <tr><td>Colon I</td><td>Surgery alone.</td></tr>
+        <tr><td>Colon II</td><td>Surgery. Adjuvant chemo only if high-risk (T4, obstruction/perforation, &lt;12 nodes, LVI) <b>and</b> pMMR. dMMR stage II: no 5-FU alone.</td></tr>
+        <tr><td>Colon III</td><td>Surgery → <b>CAPOX 3 months</b> (T1–3 N1) or <b>FOLFOX/CAPOX 6 months</b> (T4 or N2). Frail/older: capecitabine alone. dMMR stage III: FOLFOX + atezolizumab (ATOMIC) where available.</td></tr>
+        <tr><td>Rectal II–III</td><td><b>Total neoadjuvant therapy</b>: short-course RT (5 × 5 Gy) or chemoradiation with capecitabine, plus FOLFOX/CAPOX → TME surgery, or <b>watch-and-wait</b> if clinical complete response. <b>dMMR rectal</b>: dostarlimab alone (high complete response rates, organ-sparing).</td></tr>
+        <tr><td>Liver / lung mets, resectable</td><td>Perioperative FOLFOX/CAPOX + resection, ablation or SBRT. 5-year survival ~40–50% after liver resection.</td></tr></table>` },
+    { t: "Palliative / metastatic options", open: false, h: `
+      <table><tr><th>Tumour</th><th>Usual first line</th></tr>
+        <tr><td><b>dMMR / MSI-high</b></td><td>Pembrolizumab, or nivolumab + ipilimumab: durable responses</td></tr>
+        <tr><td>pMMR, RAS/BRAF wild-type, <b>left-sided</b></td><td>FOLFOX or FOLFIRI + <b>panitumumab or cetuximab</b></td></tr>
+        <tr><td>pMMR, <b>right-sided or RAS-mutant</b></td><td>FOLFOX/CAPOX or FOLFIRI (FOLFOXIRI if fit) + <b>bevacizumab</b></td></tr>
+        <tr><td>BRAF V600E</td><td>Encorafenib + cetuximab (+ mFOLFOX6 first line, BREAKWATER)</td></tr>
+        <tr><td>HER2-amplified</td><td>Trastuzumab + tucatinib; T-DXd (later lines)</td></tr>
+        <tr><td>KRAS G12C</td><td>Sotorasib or adagrasib + anti-EGFR (later lines)</td></tr></table>
+      <ul>
+        <li>Later lines: trifluridine/tipiracil + bevacizumab, regorafenib, fruquintinib. Maintenance: capecitabine ± bevacizumab.</li>
+        <li>Frail: capecitabine ± bevacizumab, or best supportive care.</li>
+        <li>Local: colonic stent or diverting stoma for obstruction; RT for rectal bleeding/pain; biliary stent for jaundice.</li>
+      </ul>` },
+    { t: "What to watch for in hospital", open: true, h: `
+      <table><tr><th>Problem</th><th>Clue</th><th>Do</th></tr>
+        <tr><td>Bowel obstruction</td><td>Distension, vomiting, no flatus</td><td>CT; surgery or GI (stent/stoma). ${tk("pc", "Peritoneal carcinomatosis tab")} for malignant bowel obstruction</td></tr>
+        <tr><td>Perforation</td><td>Sudden pain, peritonism; higher on <b>bevacizumab</b></td><td>CT, urgent surgery</td></tr>
+        <tr><td>Severe early toxicity on 5-FU/capecitabine</td><td>Mucositis, diarrhea, neutropenia in cycle 1</td><td>Think <b>DPD deficiency</b>; stop drug; uridine triacetate (best within 96 h) – call oncology/pharmacy</td></tr>
+        <tr><td><b>Chest pain on 5-FU/capecitabine</b></td><td>During infusion pump or tablets</td><td>Coronary vasospasm: stop pump, ECG, troponin, nitrates/CCB; no rechallenge without oncology</td></tr>
+        <tr><td><b>Irinotecan diarrhea</b></td><td>Early (&lt;24 h, cramps, sweating) or late (day 2–10)</td><td>Early: atropine. Late: loperamide 4 mg then 2 mg q2h until 12 h free of diarrhea; fluids; C. difficile; admit if fever, dehydrated or neutropenic</td></tr>
+        <tr><td>Oxaliplatin throat symptoms</td><td>Cold-triggered throat tightness, normal sats</td><td>Laryngopharyngeal dysesthesia: reassure, avoid cold drinks; exclude anaphylaxis</td></tr>
+        <tr><td>Low Mg (± K, Ca)</td><td>Cetuximab, panitumumab</td><td>Replace Mg; ${tk("lytes", "Electrolytes tab")}</td></tr>
+        <tr><td>High-output stoma</td><td>&gt;1.5–2 L/day</td><td>AKI, low Mg/Na; loperamide, oral rehydration solution, limit hypotonic drinks</td></tr>
+        <tr><td>Liver mets</td><td>Jaundice, biliary obstruction, cholangitis</td><td>US/CT, ERCP/PTC; bilirubin changes irinotecan dosing</td></tr>
+        <tr><td>VTE</td><td>Common</td><td>DOAC or LMWH; caution with luminal tumour in place (bleeding)</td></tr>
+      </table>
+      <ul><li><b>Anti-VEGF</b>: hypertension, proteinuria, bleeding, wound healing – hold at least 4–6 weeks before elective surgery.</li>
+        <li><b>Capecitabine + warfarin</b>: INR can rise a lot – check INR often or switch anticoagulant.</li>
+        <li>Rising CEA after curative treatment → recurrence work-up (CT).</li></ul>` },
+    { t: "When to call oncology urgently", open: false, h: `<ul>
+      <li>Febrile neutropenia; severe diarrhea or mucositis (DPD deficiency?); chest pain on 5-FU/capecitabine.</li>
+      <li>Perforation or obstruction (also surgery); new jaundice.</li>
+      <li>Home 5-FU pump problems (leak, early empty, disconnect) – call the cancer centre.</li></ul>` },
+    { t: "Prognosis (rough) and goals of care", open: false, h: `
+      <table><tr><th>Setting</th><th>Rough outlook</th></tr>
+        <tr><td>Stage I</td><td>5-year survival ~90%</td></tr>
+        <tr><td>Stage II</td><td>~80%</td></tr>
+        <tr><td>Stage III</td><td>~65–75% (wide range by T and N)</td></tr>
+        <tr><td>Resected liver mets</td><td>~40–50% at 5 years</td></tr>
+        <tr><td>Unresectable metastatic pMMR</td><td>Median ~2.5–3 years; BRAF V600E shorter</td></tr>
+        <tr><td>Metastatic dMMR on immunotherapy</td><td>Many long-term responders</td></tr></table>` } ] },
+
+  // =====================================================================================
+  { key: "prostate", name: "Prostate", full: "Prostate cancer", link: LINKS.prostate,
+    intro: `<b>Most men live a long time with it.</b> Metastatic disease goes from hormone-sensitive (mHSPC) to castration-resistant (mCRPC: progression with testosterone &lt;1.7 nmol/L).`,
+    sections: [
+    { t: "At a glance: intent and biomarkers", open: true, h: `
+      <table><tr><th>Setting</th><th>Intent</th></tr>
+        <tr><td>Localized (any risk group)</td><td><b>Curative</b> (or active surveillance for low risk)</td></tr>
+        <tr><td>PSA rise after surgery/RT</td><td>Salvage treatment, still <b>curative intent</b></td></tr>
+        <tr><td>Metastatic</td><td><b>Palliative</b>; median survival ~5+ years for mHSPC</td></tr></table>
+      <ul>
+        <li>PSA, Grade Group (Gleason), stage → risk group (low / intermediate / high / very high).</li>
+        <li><b>PSMA PET</b> for staging high-risk disease and for PSA recurrence.</li>
+        <li><b>Germline testing</b> (BRCA2, ATM and others) for metastatic or high-risk disease; tumour HRR genes for mCRPC (PARP inhibitor).</li>
+      </ul>` },
+    { t: "Treatment for cure", open: false, h: `
+      <table><tr><th>Risk group</th><th>Usual approach</th></tr>
+        <tr><td>Low (GG1, PSA &lt;10)</td><td><b>Active surveillance</b> (PSA, MRI, repeat biopsy). Watchful waiting if limited life expectancy.</td></tr>
+        <tr><td>Favourable intermediate</td><td>Surveillance (selected), radical prostatectomy, or RT (external beam or brachytherapy)</td></tr>
+        <tr><td>Unfavourable intermediate</td><td>RT + <b>short-term ADT (4–6 months)</b>, or prostatectomy</td></tr>
+        <tr><td>High / very high</td><td>RT + <b>long-term ADT (18–36 months)</b>; very high-risk or node-positive: add <b>abiraterone for 2 years</b> (STAMPEDE). Prostatectomy + pelvic nodes in selected men.</td></tr>
+        <tr><td>PSA recurrence after prostatectomy</td><td>Salvage RT ± ADT, guided by PSMA PET</td></tr></table>` },
+    { t: "Palliative / metastatic options", open: false, h: `
+      <table><tr><th>State</th><th>Usual approach</th></tr>
+        <tr><td><b>mHSPC</b></td><td>Continuous ADT (leuprolide, goserelin, degarelix or relugolix) <b>+ ARPI</b> (abiraterone + prednisone, enzalutamide, apalutamide or darolutamide).<br>High-volume and fit: <b>triplet</b> ADT + docetaxel + darolutamide (ARASENS) or abiraterone (PEACE-1).<br>Low-volume: add RT to the prostate.</td></tr>
+        <tr><td>Non-metastatic CRPC (PSA doubling ≤10 months)</td><td>ADT + apalutamide, enzalutamide or darolutamide</td></tr>
+        <tr><td><b>mCRPC</b></td><td>Change class: docetaxel + prednisone; cabazitaxel; <b>lutetium-177 PSMA</b>; <b>PARP inhibitor</b> (olaparib; niraparib + abiraterone; talazoparib + enzalutamide) for HRR/BRCA; radium-223 (symptomatic bone-only, no visceral mets); pembrolizumab if MSI-high. Switching one ARPI to another rarely works.</td></tr></table>
+      <ul><li>ADT continues through every line, including chemo.</li>
+        <li><b>Bone</b>: denosumab or zoledronic acid for mCRPC bone mets (fewer skeletal events), with calcium/vitamin D; single 8 Gy RT for painful mets.</li></ul>` },
+    { t: "What to watch for in hospital", open: true, h: `
+      <table><tr><th>Problem</th><th>Clue</th><th>Do</th></tr>
+        <tr><td><b>Cord compression</b></td><td>Back pain, then weakness, sensory level, retention</td><td>${go("emerg", "Emergencies")}. Untreated prostate cancer: start <b>degarelix</b> (no flare) or bicalutamide first</td></tr>
+        <tr><td><b>Testosterone flare</b></td><td>First 1–3 weeks of a GnRH agonist: more bone pain, retention, cord compression</td><td>Antiandrogen (bicalutamide) 1 week before and 2–4 weeks after, or use degarelix/relugolix</td></tr>
+        <tr><td>Urinary retention, hydronephrosis</td><td>Rising creatinine, poor flow</td><td>Catheter; US kidneys; urology (nephrostomy/stent)</td></tr>
+        <tr><td>Hematuria, clot retention</td><td>After RT (radiation cystitis) or local progression</td><td>3-way catheter, bladder irrigation; urology</td></tr>
+        <tr><td><b>Abiraterone</b></td><td>Low K, hypertension, edema; LFTs</td><td>Must have prednisone. <b>Acutely ill: stress-dose steroids</b>; NPO → IV hydrocortisone. Do not stop prednisone suddenly</td></tr>
+        <tr><td>Enzalutamide / apalutamide</td><td>Falls, fractures, confusion, seizures (rare)</td><td><b>Strong CYP3A4 inducers</b>: lower DOAC levels (apixaban, rivaroxaban) – ask pharmacy (LMWH often chosen)</td></tr>
+        <tr><td>ADT long term</td><td>QTc, diabetes, cardiovascular events, osteoporosis, anemia, depression</td><td>ECG with QT drugs; bone density, Ca/vitamin D</td></tr>
+        <tr><td>Cytopenias</td><td>Docetaxel, cabazitaxel (febrile neutropenia), Lu-PSMA, radium-223, PARP inhibitors, marrow infiltration</td><td>CBC; blood film (leukoerythroblastic); DIC screen if bleeding</td></tr>
+        <tr><td>Low calcium</td><td>Osteoblastic mets + denosumab</td><td>Ca, vitamin D, replace</td></tr>
+      </table>` },
+    { t: "When to call oncology urgently", open: false, h: `<ul>
+      <li>Cord compression (also rad onc and spine), febrile neutropenia.</li>
+      <li>Acute illness on abiraterone (steroid cover), new bilateral hydronephrosis.</li>
+      <li>Before stopping ADT or an ARPI.</li></ul>` },
+    { t: "Prognosis (rough) and goals of care", open: false, h: `
+      <table><tr><th>Setting</th><th>Rough outlook</th></tr>
+        <tr><td>Localized low/intermediate risk</td><td>10-year prostate-cancer survival &gt;95%</td></tr>
+        <tr><td>High-risk localized</td><td>Most cured or controlled for many years</td></tr>
+        <tr><td>mHSPC (doublet/triplet era)</td><td>Median ~5–7 years</td></tr>
+        <tr><td>mCRPC</td><td>Median ~2–3 years; visceral (liver) mets shorter</td></tr></table>` } ] } ];
+
+  // =====================================================================================
+  const EMERG = [
+    { key: "fn", t: "Febrile neutropenia", open: true, h: `
+      <div class="flag red"><b>Antibiotics within 60 minutes.</b> Fever in anyone who had chemo in the last ~6 weeks is febrile neutropenia until the CBC says otherwise.</div>
+      <ul>
+        <li><b>Definition</b>: temperature ≥38.3 °C once, or ≥38.0 °C for an hour; and ANC &lt;0.5 ×10⁹/L, or expected to fall below 0.5 within 48 h.</li>
+        <li><b>Now</b>: 2 sets of blood cultures (one from each lumen of any line), lactate, CBC diff, lytes, creatinine, LFTs, urine culture, CXR, swabs as indicated.</li>
+        <li><b>Antibiotic</b>: piperacillin-tazobactam 4.5 g IV q6–8h (local protocol; adjust for kidney function).
+          Add vancomycin for suspected line infection, skin/soft tissue infection, MRSA, pneumonia or hemodynamic instability.
+          Penicillin allergy: follow the local protocol (e.g. cefepime if low-risk allergy; meropenem or aztreonam + vancomycin for severe).</li>
+        <li>Shock or ICU: meropenem + vancomycin ± aminoglycoside; ICU early.</li>
+        <li><b>Low risk (MASCC ≥21)</b>: oral ciprofloxacin + amoxicillin-clavulanate can be used in selected patients after the first IV dose, if close follow-up is possible.</li>
+        <li>No rectal exams or suppositories. G-CSF is not routine for established febrile neutropenia (consider if high risk).</li>
+        <li><b>Neutropenic enterocolitis</b>: RLQ pain, diarrhea, CT bowel-wall thickening → piperacillin-tazobactam or meropenem, bowel rest; surgery if perforation.</li>
+        <li>Persistent fever &gt;4–7 days: think fungal (CT chest, galactomannan), lines, C. difficile, drug fever.</li>
+      </ul>
+      <div id="masccBox"></div>
+      <p class="muted"><a href="${LINKS.fn}" target="_blank" rel="noopener">BC Cancer febrile neutropenia guidance</a></p>` },
+    { key: "mscc", t: "Spinal cord compression", open: true, h: `
+      <div class="flag red"><b>Ambulatory at diagnosis = usually stays ambulatory.</b> Do not wait for weakness: new back pain in cancer is cord compression until imaged.</div>
+      <ul>
+        <li><b>Suspect</b>: new back pain (thoracic, worse lying/at night/with cough), band-like radicular pain, leg weakness, sensory level, urinary retention or incontinence (late).</li>
+        <li>Most often prostate, breast, lung, myeloma, kidney, lymphoma.</li>
+        <li><b>Dexamethasone</b> 10 mg IV once, then 4 mg IV/PO q6h (16 mg/day), with a PPI and glucose checks. Lymphoma possible and no deficit: discuss biopsy before steroids.</li>
+        <li><b>MRI whole spine within 24 h</b> (same day, or immediately, with a neuro deficit). CT if MRI not possible.</li>
+        <li>Call <b>radiation oncology and spine surgery</b> the same day: surgery + RT for selected patients (single level, unstable spine, good performance status, expected survival &gt;3 months).</li>
+        <li>Spinal precautions (flat, log roll) if pain is mechanical or the spine may be unstable; bladder scan; bowel regimen; VTE prophylaxis; pain control.</li>
+        <li>Untreated prostate cancer: start ADT with <b>degarelix</b> (no flare).</li>
+      </ul>` },
+    { key: "hcal", t: "Hypercalcemia of malignancy", open: true, h: `
+      <div id="caBox"></div>
+      <ul>
+        <li><b>Causes</b>: PTHrP (squamous lung, breast, kidney, head &amp; neck), bone mets (breast, myeloma), calcitriol (lymphoma).</li>
+        <li><b>Labs</b>: PTH (should be suppressed), PTHrP, 25-OH and 1,25-OH vitamin D, Mg, PO4, creatinine; SPEP/free light chains if no known cancer.</li>
+        <li><b>Stop</b> calcium, vitamin D, thiazides, lithium.</li>
+        <li><b>Normal saline 1 L/h for a few hours</b>, then 150–200 mL/h, aiming for urine output ~100–150 mL/h. Go slower in heart failure or advanced CKD.</li>
+        <li><b>Zoledronic acid 4 mg IV</b> over at least 15 minutes (works in 2–4 days). Caution if creatinine &gt;400 µmol/L: <b>denosumab 120 mg SC</b> instead (watch for low Ca later).</li>
+        <li><b>Calcitonin</b> 4 IU/kg SC/IM q12h for 24–48 h if Ca &gt;3.5 mmol/L or symptomatic (fast but short-lived).</li>
+        <li><b>Prednisone</b> 40–60 mg daily if lymphoma or vitamin-D mediated.</li>
+        <li>Furosemide only for fluid overload after volume repletion. Dialysis for severe hypercalcemia with kidney failure or confusion.</li>
+        <li>Recheck Ca every 12–24 h. Hypercalcemia from cancer often means advanced disease: a good moment for a goals-of-care conversation.</li>
+      </ul>` },
+    { key: "tls", t: "Tumour lysis syndrome", open: false, h: `
+      <div id="tlsBox"></div>
+      <ul>
+        <li>Mostly heme cancers; in solid tumours: <b>SCLC</b>, bulky chemo-sensitive tumours, germ cell, high LDH, extensive liver mets. Can happen before treatment.</li>
+        <li><b>Lab TLS (Cairo-Bishop)</b>: ≥2 of urate ≥476 µmol/L, K ≥6.0 mmol/L, PO4 ≥1.45 mmol/L, corrected Ca ≤1.75 mmol/L, within 3 days before to 7 days after treatment. <b>Clinical TLS</b>: lab TLS plus creatinine ≥1.5 × ULN, arrhythmia or seizure.</li>
+        <li>IV fluids (aim urine output &gt;100 mL/h) if no overload; allopurinol for prevention.</li>
+        <li><b>Rasburicase</b> for high urate or established TLS – <b>check G6PD first</b> (${tk("g6pd", "G6PD tab")}).</li>
+        <li>Treat high K; do not treat asymptomatic low Ca (calcium-phosphate precipitation). No urine alkalinization.</li>
+        <li>Labs every 6–8 h, telemetry; nephrology early if oliguric or K/PO4 rising.</li>
+      </ul>` },
+    { key: "svc", t: "Superior vena cava (SVC) syndrome", open: false, h: `
+      <ul>
+        <li>Face, neck and arm swelling, distended chest-wall veins, dyspnea, worse lying or bending. Causes: lung cancer (SCLC), lymphoma, line-related clot.</li>
+        <li><b>Emergency if</b> stridor, laryngeal edema or confusion (cerebral edema): urgent endovascular stent (IR), airway.</li>
+        <li>Otherwise: CT chest with contrast; head up, O2; <b>get tissue first</b> (steroids can hide lymphoma); then RT or chemo by histology; anticoagulate if clot.</li>
+      </ul>` },
+    { key: "brain", t: "Brain mets / raised intracranial pressure", open: false, h: `
+      <ul>
+        <li>Headache (worse in the morning), vomiting, focal deficit, seizure, confusion, personality change.</li>
+        <li>CT then MRI with gadolinium.</li>
+        <li><b>Dexamethasone</b> only if symptomatic edema: 4–8 mg/day; 10 mg IV then 4 mg q6h if severe. None if asymptomatic. Taper as soon as possible.</li>
+        <li>Seizure → levetiracetam. No prophylactic antiseizure drug without a seizure.</li>
+        <li>Neurosurgery (large single lesion, hydrocephalus) and radiation oncology (SRS or whole-brain RT). Herniation signs → ICU, hyperosmolar therapy.</li>
+      </ul>` },
+    { key: "peri", t: "Malignant pericardial effusion / tamponade", open: false, h: `
+      <ul><li>Dyspnea, tachycardia, low BP, raised JVP, pulsus paradoxus, low-voltage ECG. Lung, breast, lymphoma, melanoma.</li>
+        <li>Urgent echo; pericardiocentesis (cytology). Avoid diuretics and vasodilators; give fluid if hypotensive.</li>
+        <li>Recurrent: pericardial window (cardiac surgery).</li></ul>` },
+    { key: "airway", t: "Massive hemoptysis / airway obstruction", open: false, h: `
+      <ul><li>&gt;100–200 mL in 24 h, or any amount with instability or hypoxia.</li>
+        <li>Lie bleeding side down; large-bore access; stop and reverse anticoagulation; TXA (nebulized or IV); airway with a large ETT (anesthesia/ICU).</li>
+        <li>Bronchoscopy, IR bronchial artery embolization, urgent RT. Match the plan to goals of care; have comfort measures ready (midazolam, dark towels) for a terminal bleed.</li></ul>` },
+    { key: "na", t: "Hyponatremia (SIADH)", open: false, h: `
+      <ul><li>SCLC, cisplatin, cyclophosphamide, vinca alkaloids, opioids, pain, nausea.</li>
+        <li>Exclude <b>adrenal insufficiency</b> (immunotherapy hypophysitis/adrenalitis, steroid withdrawal) and hypothyroidism.</li>
+        <li>Severe symptoms (seizure, coma): 3% saline 100–150 mL bolus. Limit correction to 8 mmol/L in 24 h (6 if high risk).</li>
+        <li>Chronic: fluid restriction, salt tablets, urea, tolvaptan; treating SCLC often fixes it. ${tk("hypona", "Sodium tab")}</li></ul>` },
+    { key: "irae", t: "Immunotherapy side effects (irAEs)", open: false, h: `
+      <ul><li>Any new symptom on a checkpoint inhibitor (even months after the last dose): diarrhea/colitis, pneumonitis, hepatitis, rash, thyroid, hypophysitis/adrenal (fatigue, low Na, low BP), type 1 diabetes/DKA, <b>myocarditis</b> (troponin, ECG – often with myositis/myasthenia, high mortality), nephritis, neuro.</li>
+        <li>Grade 2: hold immunotherapy, prednisone 0.5–1 mg/kg. Grade 3–4: methylprednisolone 1–2 mg/kg IV. Myocarditis: methylprednisolone 1 g IV daily, cardiology.</li>
+        <li>Steroid-refractory: infliximab (colitis), mycophenolate (hepatitis) – with oncology.</li>
+        <li>Grading and organ-by-organ management: ${tk("tox", "Oncology toxicity tab")}.</li></ul>` },
+    { key: "crs", t: "CRS / ICANS (bispecifics, CAR-T)", open: false, h: `
+      <ul><li>Fever, low BP, low O2 (CRS) and confusion, word-finding trouble, handwriting change (ICANS) after tarlatamab, teclistamab and other bispecifics or CAR-T.</li>
+        <li>Grade, tocilizumab, dexamethasone: ${tk("bsab", "CRS/ICANS tab")}.</li></ul>` },
+    { key: "vte", t: "Cancer-associated VTE", open: false, h: `
+      <ul><li>DOAC (apixaban, edoxaban, rivaroxaban) or LMWH. Prefer LMWH or apixaban with an unresected luminal GI/GU tumour (bleeding), and LMWH with strong CYP3A4/P-gp inducers (enzalutamide, apalutamide).</li>
+        <li>Platelets &lt;50: reduce or hold LMWH (discuss with hematology). Brain mets are not a contraindication by themselves.</li>
+        <li>Treat for at least 6 months, and while cancer is active.</li></ul>` },
+    { key: "adrenal", t: "Adrenal crisis", open: false, h: `
+      <ul><li>On long-term steroids (dexamethasone, prednisone with abiraterone) or immunotherapy hypophysitis/adrenalitis.</li>
+        <li>Low BP, low Na, high K, low glucose, vomiting, confusion.</li>
+        <li>Hydrocortisone 100 mg IV, then 50 mg IV q6h (or 200 mg/24 h); fluids; treat the trigger. Draw cortisol/ACTH first if it does not delay treatment.</li></ul>` },
+    { key: "mbo", t: "Malignant bowel obstruction", open: false, h: `<p>${tk("pc", "Peritoneal carcinomatosis tab")}: surgery/stent checklist, octreotide, dexamethasone, antiemetics, venting gastrostomy.</p>` } ];
+
+  // MASCC risk index (febrile neutropenia): total 26, ≥21 = low risk
+  const MASCC = [
+    { id: "burden", text: "Burden of illness", choices: [["5", "No or mild symptoms"], ["3", "Moderate symptoms"], ["0", "Severe symptoms or moribund"]] },
+    { id: "nohypo", text: "No hypotension (SBP > 90)", pts: 5 },
+    { id: "nocopd", text: "No COPD", pts: 4 },
+    { id: "solid", text: "Solid tumour, or blood cancer with no previous fungal infection", pts: 4 },
+    { id: "nodehyd", text: "No dehydration needing IV fluids", pts: 3 },
+    { id: "outpt", text: "Outpatient when fever started", pts: 3 },
+    { id: "young", text: "Age under 60", pts: 2 } ];
+
+  const api = { CANCERS, EMERG, MASCC, LINKS };
+  if (typeof module !== "undefined" && module.exports) module.exports = api; else window.OncContent = api;
+})();

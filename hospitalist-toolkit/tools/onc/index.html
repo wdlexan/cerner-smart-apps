@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Oncology (common cancers) – Hospitalist Toolkit</title>
+<style>
+  :root{--ink:#1f2933;--muted:#5f6c7b;--line:#dde3ea;--bg:#f5f7fa;--card:#fff;--accent:#0b6bcb;--accent-soft:#e3eefc;--th:#eef1f4;
+        --red:#9b1c1c;--red-soft:#fde8e8;--amber:#8a5200;--amber-soft:#fff1d6;--green:#1d6b3a;--green-soft:#e4f4ea}
+  @media (prefers-color-scheme: dark){:root{--ink:#e8edf2;--muted:#9aa7b5;--line:#2b333d;--bg:#111418;--card:#1a1f26;--accent:#6aa9ff;--accent-soft:#14325c;--th:#222a33;
+        --red:#ffb3b3;--red-soft:#4a1d1d;--amber:#ffd38a;--amber-soft:#4a3511;--green:#9be0b1;--green-soft:#16361f}}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--bg);font-size:14.5px;line-height:1.45}
+  header{background:var(--accent);color:#fff;padding:10px 16px;display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline}
+  header h1{font-size:17px;margin:0;font-weight:600}
+  header .pt{font-size:13.5px;opacity:.95}
+  nav{display:flex;flex-wrap:wrap;gap:2px;background:var(--card);border-bottom:1px solid var(--line);padding:0 8px;position:sticky;top:0;z-index:5}
+  nav button{border:0;background:none;padding:10px 11px;font-size:13.5px;cursor:pointer;color:var(--muted);border-bottom:3px solid transparent}
+  nav button.on{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+  nav button .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--red);margin-left:5px;vertical-align:middle}
+  nav button .dot.amber{background:#d4a72c} nav button .dot.pt{background:var(--accent)}
+  main{max-width:1100px;margin:0 auto;padding:14px 16px 60px}
+  section.tab{display:none} section.tab.on{display:block}
+  h2{font-size:17px;margin:6px 0 10px} h3{font-size:15px;margin:14px 0 6px} h4{font-size:14px;margin:12px 0 4px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:0 0 12px}
+  .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px}
+  details{background:var(--card);border:1px solid var(--line);border-radius:8px;margin:0 0 8px;padding:0 12px}
+  details>summary{cursor:pointer;padding:9px 0;font-weight:600;list-style-position:inside}
+  details[open]>summary{border-bottom:1px solid var(--line);margin-bottom:8px}
+  details>*:last-child{margin-bottom:10px}
+  .tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 8px}
+  ul{margin:4px 0 8px;padding-left:20px} li{margin:2px 0}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;margin:4px 0 8px}
+  th,td{border:1px solid var(--line);padding:5px 7px;text-align:left;vertical-align:top}
+  th{background:var(--th)}
+  .flag{border-radius:6px;padding:7px 10px;margin:5px 0;border-left:4px solid}
+  .flag.red{background:var(--red-soft);border-color:var(--red)}
+  .flag.amber{background:var(--amber-soft);border-color:#d4a72c}
+  .flag.green{background:var(--green-soft);border-color:var(--green)}
+  .flag.info{background:var(--accent-soft);border-color:var(--accent)}
+  .flag a{margin-left:4px}
+  .muted{color:var(--muted);font-size:13px}
+  .pill{display:inline-block;border-radius:10px;padding:1px 8px;font-size:12px;background:var(--th);margin:0 4px 4px 0}
+  .btn{background:var(--accent);color:#fff;border:0;border-radius:6px;padding:7px 12px;cursor:pointer;font-size:13.5px}
+  .btn.ghost{background:var(--card);color:var(--accent);border:1px solid var(--accent)}
+  .btn.small{padding:4px 9px;font-size:12.5px}
+  select,input,textarea{background:var(--card);color:var(--ink)}
+  select,input[type=number],input[type=text],input:not([type]){font-size:13.5px;padding:4px 6px;border:1px solid var(--line);border-radius:5px}
+  textarea{width:100%;min-height:380px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;padding:8px;border:1px solid var(--line);border-radius:6px}
+  .chk label{display:block;margin:3px 0}
+  .calc{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin:4px 0 6px}
+  .calc input{width:80px}
+  .score{font-size:26px;font-weight:700;color:var(--accent)}
+  .ho h3{margin-top:12px} .ho .box{border:2px solid var(--red);border-radius:8px;padding:8px 12px;margin:8px 0}
+  .ho .box.amber{border-color:#d4a72c}
+  @media print{nav,header,.noprint,#cw-btn,#cw-panel{display:none!important} section.tab{display:none!important} #tab-handout{display:block!important} body{background:#fff;color:#000} .ho .box{break-inside:avoid}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Oncology (common cancers)</h1>
+  <span class="pt">Lung, breast, colorectal, prostate: intent, treatment for cure and palliation, what to watch for, emergencies. Read-only.</span>
+</header>
+<nav id="nav">
+  <button data-t="chart" class="on">Chart</button>
+  <button data-t="emerg">Emergencies</button>
+  <button data-t="lung">Lung</button>
+  <button data-t="breast">Breast</button>
+  <button data-t="crc">Colorectal</button>
+  <button data-t="prostate">Prostate</button>
+  <button data-t="handout">Handout</button>
+  <button data-t="note">Note draft</button>
+</nav>
+<main>
+
+<!-- ================= CHART ================= -->
+<section class="tab on" id="tab-chart">
+  <div class="flag amber"><b>Decision-support draft. It orders nothing.</b> Content was written by Claude from general knowledge (BC Cancer, CCO, ASCO, ESMO, NCCN-type guidance and landmark trials to mid-2026) and has <b>not been verified</b>. Regimens are named, not dosed: the BC Cancer protocol is the source of truth. Use made-up or sandbox patients until Island Health approves real data.</div>
+  <div class="card">
+    <div id="pstatus" class="muted">Open from Cerner to read the chart, or pick a made-up patient:</div>
+    <div style="margin-top:6px"><select id="testsel"><option value="">Made-up patient…</option></select> <span id="ptLine" class="muted"></span></div>
+    <div id="errs" style="color:var(--red);font-size:12.5px"></div>
+  </div>
+  <div class="tools noprint"><button class="btn ghost small" data-expand="tab-chart">Expand all</button><button class="btn ghost small" data-collapse="tab-chart">Collapse all</button></div>
+  <details open data-k="chart-flags"><summary>Emergencies and safety flags</summary><div id="chartFlags"><span class="muted">No patient loaded.</span></div>
+    <p class="muted">Rules are a prompt, not a decision. Labs are matched by LOINC code and name, drugs by name: check anything that looks wrong in PowerChart.</p></details>
+  <div class="grid2">
+    <details open data-k="chart-cancer"><summary>Cancer found</summary><div id="chartCancer" class="muted">No patient loaded.</div></details>
+    <details open data-k="chart-labs"><summary>Key labs (latest) and temperature</summary><div id="chartLabs" class="muted">No patient loaded.</div></details>
+  </div>
+  <details open data-k="chart-drugs"><summary>Anticancer and bone drugs on the medication list – what to watch for</summary><div id="chartDrugs" class="muted">No patient loaded.</div></details>
+  <div class="grid2">
+    <details data-k="chart-markers"><summary>PSA / CEA / CA 15-3 / testosterone (last 3)</summary><div id="chartMarkers" class="muted">No patient loaded.</div></details>
+    <details data-k="chart-reports"><summary>Recent reports mentioning cancer findings</summary><div id="chartReports" class="muted">No patient loaded.</div></details>
+  </div>
+</section>
+
+<!-- ================= EMERGENCIES ================= -->
+<section class="tab" id="tab-emerg">
+  <h2>Oncologic emergencies</h2>
+  <div id="emergFlags"></div>
+  <div class="tools noprint"><button class="btn ghost small" data-expand="tab-emerg">Expand all</button><button class="btn ghost small" data-collapse="tab-emerg">Collapse all</button>
+    <a class="muted" href="https://www.bccancer.bc.ca/health-professionals/clinical-resources/chemotherapy-protocols/supportive-care" target="_blank" rel="noopener">BC Cancer supportive care protocols</a></div>
+  <div id="emergCards"></div>
+</section>
+
+<!-- ================= CANCER TABS (filled by app.js) ================= -->
+<section class="tab" id="tab-lung"></section>
+<section class="tab" id="tab-breast"></section>
+<section class="tab" id="tab-crc"></section>
+<section class="tab" id="tab-prostate"></section>
+
+<!-- ================= HANDOUT ================= -->
+<section class="tab" id="tab-handout">
+  <div class="card noprint">
+    <b>Patient handout</b> <span class="muted">– sections are pre-ticked from the medication list; change them, then print.</span>
+    <div class="chk" id="hoChk" style="display:flex;flex-wrap:wrap;gap:2px 18px;margin-top:6px">
+      <label><input type="checkbox" data-ho="chemo"> Chemotherapy</label>
+      <label><input type="checkbox" data-ho="immuno"> Immunotherapy</label>
+      <label><input type="checkbox" data-ho="targeted"> Targeted pill / antibody</label>
+      <label><input type="checkbox" data-ho="hormone"> Hormone therapy</label>
+      <label><input type="checkbox" data-ho="radiation"> Radiation</label>
+      <label><input type="checkbox" data-ho="steroid"> Steroids</label>
+      <label><input type="checkbox" data-ho="anticoag"> Blood thinner</label>
+      <label><input type="checkbox" data-ho="bone"> Bone-strengthening drug</label>
+      <label><input type="checkbox" data-ho="bonemets"> Cancer in the bones</label>
+    </div>
+    <div class="calc"><label>Cancer centre / oncology phone <input id="hoPhone" placeholder="e.g. 250-___-____" style="width:170px"></label>
+      <button class="btn" onclick="window.print()">Print handout</button></div>
+  </div>
+  <div class="ho" id="handout"></div>
+</section>
+
+<!-- ================= NOTE ================= -->
+<section class="tab" id="tab-note">
+  <h2>Note draft</h2>
+  <div class="card noprint">
+    <div class="calc">
+      <label>Cancer <input id="nCancer" style="width:220px"></label>
+      <label>Stage / setting <input id="nStage" style="width:170px" placeholder="e.g. stage IV, bone mets"></label>
+      <label>Intent <select id="nIntent"><option value="">–</option><option>curative</option><option>palliative</option><option>unknown – clarify with oncology</option></select></label>
+    </div>
+    <div class="calc">
+      <label>Oncologist <input id="nOnc" style="width:160px"></label>
+      <label>Last treatment <input id="nLast" style="width:130px" placeholder="date / cycle"></label>
+      <label>Code status <select id="nCode"><option value="">–</option><option>Full code</option><option>M1</option><option>M2</option><option>M3 (comfort)</option><option>DNR, ward-level care</option></select></label>
+      <label><input type="checkbox" id="nAware"> Oncology aware</label>
+    </div>
+    <div class="calc"><label style="flex:1">My decision: <input id="noteDecision" style="width:80%" placeholder="e.g. Treat as febrile neutropenia, pip-tazo started, oncology paged"></label></div>
+    <button class="btn ghost" id="noteRebuild">Rebuild from chart</button> <button class="btn" id="noteCopy">Copy</button>
+  </div>
+  <textarea id="noteText"></textarea>
+  <p class="muted">Editable. Pulls the cancer, anticancer drugs, key labs and the red/amber flags. Paste into the PowerChart note and edit.</p>
+</section>
+
+</main>
+<script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+<script src="drugs.js?v=20261120a"></script>
+<script src="rules.js?v=20261120a"></script>
+<script src="chart.js?v=20261120a"></script>
+<script src="content.js?v=20261120a"></script>
+<script src="samples.js?v=20261120a"></script>
+<script src="app.js?v=20261120a"></script>
+</body>
+</html>
