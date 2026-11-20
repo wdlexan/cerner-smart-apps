@@ -76,6 +76,7 @@
     <div class="row">
       <button id="dl">Download Excel</button>
       <label class="small"><input type="checkbox" id="spare" checked> add 3 empty patient rows at the end</label>
+      <button class="ghost" id="addp">+ Add patient by hand</button>
       <button class="ghost" id="clear">Clear list</button>
       <span id="dlmsg" class="small muted"></span>
     </div>
@@ -205,7 +206,7 @@
     $("tbl").querySelectorAll("input[data-k]").forEach((x) => (x.onchange = () => {
       const r = rows[+x.dataset.i], k = x.dataset.k;
       r[k] = k === "age" ? (parseInt(x.value, 10) || null) : k === "los" ? (parseFloat(x.value) || null) : x.value.trim();
-      if (k === "location") r.floor = PList.floorOf(r.location);
+      if (k === "location") r.floor = r.location ? PList.floorOf(r.location) : r.floor;
       r.low = (r.low || []).filter((f) => f !== (LOWMAP[k] || k));
       draw();
     }));
@@ -276,6 +277,14 @@
     } catch (e) { r.cstatus = "Could not read the picture: " + (e.message || e); }
     finally { URL.revokeObjectURL(url); draw(); }
   }
+  // a patient not on the screenshot: blank row at the top of the table, opened for typing (floor follows the room typed)
+  $("addp").onclick = () => {
+    rows.push({ name: "", location: "", floor: "New", age: null, sex: "", service: "", los: null, reason: "", discharged: "", pcp: "", fin: "", mrn: "",
+                low: [], include: true, manual: true });
+    draw();
+    const i = rows.length - 1, el = document.querySelector(`input[data-i="${i}"][data-k="location"]`);
+    if (el) { el.scrollIntoView({ block: "center" }); el.focus(); }
+  };
   $("clear").onclick = () => { rows = []; $("thumbs").innerHTML = ""; $("status").textContent = ""; $("dlmsg").textContent = ""; draw(); };
 
   // ---- Excel out ----
