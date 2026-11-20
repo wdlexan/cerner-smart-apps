@@ -1,6 +1,6 @@
 /* node test_serology_pdfs.js : the made-up Autoimmune serology chart extracts, read by the PDF importer and fed to the serology engine. */
 const path = require("path"), fs = require("fs");
-const X = require("../pdf-extract.js"), E = require("../tools/serology/engine.js");
+const X = require("../pdf-extract.js"), E = require("../tools/serology/engine.js"); require("../tools/serology/criteria.js");
 const dir = path.join(__dirname, "../../autoimmune-serology/test-pdfs"), cases = JSON.parse(fs.readFileSync(path.join(dir, "cases.json")));
 let pass = 0, fail = 0; const ok = (n, c, x) => { console.log((c ? "PASS " : "FAIL ") + n + (!c && x ? " | " + JSON.stringify(x).slice(0, 400) : "")); c ? pass++ : fail++; };
 for (const k of cases) {

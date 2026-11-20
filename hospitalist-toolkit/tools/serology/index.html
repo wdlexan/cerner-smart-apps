@@ -74,6 +74,25 @@
     #tab-order h4{margin:8px 0 2px;font-size:13px;color:var(--acc)}
     #tab-order ul{margin:2px 0 6px;padding-left:20px}
     .ordall{columns:3 240px;font-size:13px}.ordall a{display:block;padding:2px 0;color:var(--acc);text-decoration:none}.ordall a:hover{text-decoration:underline}
+    .crit{border-top:1px solid var(--line);margin-top:8px;padding-top:6px}
+    .crit>summary,.why>summary{cursor:pointer;list-style:none;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+    .crit>summary::-webkit-details-marker,.why>summary::-webkit-details-marker{display:none}
+    .crit>summary::before,.why>summary::before{content:"▾";color:var(--mute);font-size:12px;width:12px}
+    .crit:not([open])>summary::before,.why:not([open])>summary::before{content:"▸"}
+    .why{margin-top:8px}.why>summary{font-size:13px;color:var(--mute)}
+    .cres{font-size:12px;border-radius:10px;padding:1px 8px}.cres.yes{background:var(--badbg);color:var(--bad)}.cres.maybe{background:var(--warnbg);color:var(--warn)}.cres.no{background:#eef2f6;color:#4a5a6e}
+    .csrc{font-size:11px;color:var(--mute);margin:2px 0 0 20px}
+    .pre{font-size:12px;background:#f3f6fb;border-radius:5px;padding:4px 8px;margin:6px 0}
+    .dom{margin:8px 0 4px}.dh{display:flex;gap:8px;align-items:baseline;font-size:12px;font-weight:700;color:var(--acc);border-bottom:1px dashed var(--line);padding-bottom:2px;margin-bottom:2px}
+    .dh .rule{font-weight:400;color:var(--mute)}.dh .dsc{margin-left:auto;font-variant-numeric:tabular-nums}
+    .ci{display:flex;gap:8px;align-items:center;padding:3px 6px;border-radius:5px;font-size:13px}
+    label.ci{cursor:pointer}label.ci:hover{background:#f3f6fb}
+    .ci.on{background:var(--okbg)}
+    .ci .w{margin-left:auto;color:var(--mute);font-variant-numeric:tabular-nums;min-width:30px;text-align:right}
+    .ci.on .w{color:var(--ok);font-weight:700}
+    .ci .lt{font-size:12px;color:var(--mute)}
+    .ci select{font-size:12px;padding:2px}
+    .tot{text-align:right;font-size:13px;margin-top:4px}
     #toast{position:fixed;bottom:18px;right:18px;background:#13294b;color:#fff;padding:8px 14px;border-radius:6px;display:none}
     @media print{nav,header select,.btn{display:none}.tab{display:block!important}tr[hidden]{display:table-row!important}}
   </style>
@@ -103,9 +122,10 @@
   <p class="disc">Decision support only. Classification criteria are research tools that support — not replace — clinical diagnosis. Antibody results must be read with pre-test probability; confirm with the lab report and involve rheumatology/nephrology as appropriate.</p>
 </main>
 <div id="toast"></div>
-<script src="engine.js?v=20261120c"></script>
-<script src="demo.js?v=20261120c"></script>
-<script src="order-guide.js?v=20261120c"></script>
-<script src="app.js?v=20261120c"></script>
+<script src="engine.js?v=20261120d"></script>
+<script src="criteria.js?v=20261120d"></script>
+<script src="demo.js?v=20261120d"></script>
+<script src="order-guide.js?v=20261120d"></script>
+<script src="app.js?v=20261120d"></script>
 </body>
 </html>

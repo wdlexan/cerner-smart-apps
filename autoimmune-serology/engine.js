@@ -72,15 +72,17 @@
 
   // ---------- Clinical features ----------
   const FEATURES = [
-    ['General', [['fever', 'Fever >38.3 °C (no infection)'], ['age50', 'Age ≥50 (auto from DOB)'], ['cocaine', 'Cocaine use (levamisole)'], ['dur6', 'Joint symptoms ≥6 weeks']]],
+    ['General', [['fever', 'Fever >38.3 °C (no infection)'], ['age50', 'Age ≥50 (auto from DOB)'], ['cocaine', 'Cocaine use (levamisole)'], ['dur6', 'Joint symptoms ≥6 weeks'], ['nopriorsle', 'No lupus before the suspect drug started'], ['resolves', 'Improving since the suspect drug was stopped']]],
     ['Skin & mucosa', [['acle', 'Acute cutaneous lupus (malar / photosensitive rash)'], ['scle', 'Subacute cutaneous or discoid lupus'], ['oral', 'Oral ulcers'], ['alopecia', 'Non-scarring alopecia'], ['purpura', 'Palpable purpura'], ['gottron', 'Heliotrope rash / Gottron papules'], ['mechanic', 'Mechanic\'s hands'], ['raynaud', 'Raynaud phenomenon'], ['puffy', 'Puffy (swollen) fingers'], ['sclerodactyly', 'Sclerodactyly (distal to MCPs)'], ['skinprox', 'Skin thickening proximal to MCPs (both hands)'], ['digulcer', 'Digital tip ulcers'], ['pitscar', 'Digital pitting scars'], ['telang', 'Telangiectasia'], ['nailfold', 'Abnormal nailfold capillaries']]],
-    ['Joints', [['synovitis', 'Synovitis ≥2 joints (or tenderness + ≥30 min AM stiffness)'], ['ibp', 'Inflammatory back pain'], ['uveitis', 'Anterior uveitis'], ['girdle', 'Shoulder/hip girdle pain & stiffness']]],
+    ['Joints', [['synovitis', 'Synovitis ≥2 joints (or tenderness + ≥30 min AM stiffness)'], ['ibp', 'Inflammatory back pain'], ['uveitis', 'Anterior uveitis'], ['girdle', 'Bilateral shoulder aching (± hip girdle)'], ['amstiff45', 'Morning stiffness >45 min (shoulders/neck)'], ['hippain', 'Hip pain or limited hip range of motion'], ['backpain3m', 'Back pain ≥3 months, onset before age 45'], ['sacroiliitis', 'Sacroiliitis on MRI or X-ray'], ['enthesitis', 'Enthesitis (heel)'], ['dactylitis', 'Dactylitis'], ['psoriasis', 'Psoriasis'], ['ibd', 'Crohn disease / ulcerative colitis'], ['nsaid', 'Good response to NSAIDs'], ['famhx', 'Family history of spondyloarthritis']]],
     ['Serosa, heart & lung', [['effusion', 'Pleural or pericardial effusion'], ['pericarditis', 'Acute pericarditis'], ['ild', 'ILD / pulmonary fibrosis'], ['nodules', 'Lung nodules, mass or cavitation'], ['pulmhem', 'Diffuse alveolar hemorrhage'], ['asthma', 'Asthma / obstructive airway disease'], ['pah', 'Pulmonary arterial hypertension']]],
     ['ENT & eyes', [['sicca', 'Dry eyes / dry mouth (>3 months)'], ['ocular', 'Ocular staining score ≥5 (or van Bijsterveld ≥4)'], ['schirmer', 'Schirmer ≤5 mm/5 min'], ['saliva', 'Unstimulated salivary flow ≤0.1 mL/min'], ['lipbx', 'Labial gland biopsy: focus score ≥1'], ['nasal', 'Nasal: bloody discharge, crusting, ulcers, sinusitis, septal perforation'], ['cartilage', 'Cartilaginous: ear/nose cartilage, hoarseness/stridor, subglottic'], ['hearing', 'Conductive hearing loss'], ['polyps', 'Nasal polyps'], ['sinusimg', 'Sinus/mastoid inflammation on imaging'], ['gca', 'New headache, jaw claudication or visual symptoms']]],
-    ['Kidney', [['hematuria', 'Hematuria / active urine sediment (RBC casts)'], ['rpgn', 'Rapidly rising creatinine (days–weeks)'], ['proteinuria', 'Proteinuria >0.5 g/day (if UPCR not in chart)'], ['pigN', 'Biopsy: pauci-immune GN'], ['ln25', 'Biopsy: lupus nephritis class II or V'], ['ln34', 'Biopsy: lupus nephritis class III or IV'], ['newhtn', 'New severe hypertension']]],
-    ['Neuro & muscle', [['seizure', 'Seizure'], ['psychosis', 'Psychosis'], ['delirium', 'Delirium'], ['mononeuritis', 'Mononeuritis multiplex / neuropathy'], ['weakness', 'Proximal muscle weakness'], ['dysphagia', 'Dysphagia or respiratory muscle weakness']]],
-    ['Blood & clots', [['aiha', 'Autoimmune hemolysis (confirmed)'], ['thrombosis', 'Arterial or venous thrombosis / small-vessel thrombosis'], ['pregnancy', 'APS pregnancy morbidity (loss ≥10 wk, preterm <34 wk with PET/placental insufficiency, ≥3 early losses)']]],
+    ['Giant cell arteritis', [['visualloss', 'Sudden visual loss'], ['jaw', 'Jaw or tongue claudication'], ['temphead', 'New temporal headache'], ['scalp', 'Scalp tenderness'], ['taexam', 'Abnormal temporal artery exam'], ['tabx', 'Positive temporal artery biopsy or halo sign on ultrasound'], ['axillary', 'Bilateral axillary artery involvement on imaging'], ['petaorta', 'FDG-PET activity throughout the aorta']]],
+    ['Kidney', [['hematuria', 'Hematuria / active urine sediment (RBC casts)'], ['rpgn', 'Rapidly rising creatinine (days–weeks)'], ['proteinuria', 'Proteinuria >0.5 g/day (if UPCR not in chart)'], ['pigN', 'Biopsy: pauci-immune GN'], ['ln25', 'Biopsy: lupus nephritis class II or V'], ['ln34', 'Biopsy: lupus nephritis class III or IV'], ['newhtn', 'New severe hypertension'], ['linearigg', 'Biopsy: linear IgG along the GBM']]],
+    ['Neuro & muscle', [['seizure', 'Seizure'], ['psychosis', 'Psychosis'], ['delirium', 'Delirium'], ['mononeuritis', 'Mononeuritis multiplex / neuropathy'], ['weakness', 'Proximal muscle weakness'], ['dysphagia', 'Dysphagia or respiratory muscle weakness'], ['emg', 'EMG: myopathic changes'], ['musclebx', 'Muscle biopsy: inflammatory myopathy']]],
+    ['Blood & clots', [['aiha', 'Autoimmune hemolysis (confirmed)'], ['thrombosis', 'Arterial or venous thrombosis / small-vessel thrombosis'], ['repeat12', 'Antiphospholipid test positive again ≥12 weeks later'], ['mcomp', 'Serum monoclonal (M) component'], ['cryoq', 'Cryo questionnaire: ≥2 of red spots on legs, brown staining after them, told of viral hepatitis'], ['pregnancy', 'APS pregnancy morbidity (loss ≥10 wk, preterm <34 wk with PET/placental insufficiency, ≥3 early losses)']]],
     ['Biopsy', [['granuloma', 'Granuloma / giant cells on biopsy'], ['eosinfl', 'Extravascular eosinophilic inflammation on biopsy']]],
+    ['Liver', [['pbchisto', 'Liver biopsy: PBC (non-suppurative destructive cholangitis)'], ['aihcompat', 'Liver histology compatible with AIH'], ['aihtypical', 'Liver histology typical of AIH (interface hepatitis, emperipolesis, rosettes)'], ['noviral', 'Viral hepatitis excluded']]],
   ];
 
   const RA_JOINTS = [['', '— not assessed —'], ['0', '1 large joint (0)'], ['1', '2–10 large joints (1)'], ['2', '1–3 small joints (2)'], ['3', '4–10 small joints (3)'], ['5', '>10 joints incl. ≥1 small (5)']];
@@ -603,7 +605,7 @@
       if (F.girdle) P(c, '✓', 'Shoulder/hip girdle pain & stiffness'); if (F.gca) P(c, '✓', 'Headache, jaw claudication or visual symptoms');
       if (neg('rf') || neg('ccp')) P(c, '✓', 'RF/anti-CCP negative (helps separate from elderly-onset RA)');
       c.verdict = F.age50 && (esrHi || crpHi) && (F.girdle || F.gca) ? 'possible' : (F.girdle || F.gca) ? 'unlikely' : 'na';
-      if (F.gca && F.age50) flags.push('Possible giant cell arteritis: if visual symptoms, start high-dose steroids now (don\'t wait for biopsy/US) and contact ophthalmology/rheumatology same day.');
+      if ((F.gca || F.visualloss || F.jaw || F.temphead) && F.age50) flags.push('Possible giant cell arteritis: if visual symptoms, start high-dose steroids now (don\'t wait for biopsy/US) and contact ophthalmology/rheumatology same day.');
     }
 
     // ===== global red flags =====
@@ -630,7 +632,9 @@
     if ((lowC3 || lowC4) && hematuria && !pos('dsdna')) next('ASO / anti-DNase B, blood cultures, HCV/HBV, cryoglobulins', 'low complement + nephritis (post-infectious GN, endocarditis, cryo, C3G)');
     if (lowC3 && !lowC4 && done('c4')) next('Consider C3 nephritic factor / complement factor studies (via nephrology)', 'isolated low C3');
 
-    return { cards, flags: [...new Set(flags)], next: [...nextSet.entries()].map(([t, w]) => ({ test: t, why: w })), complement, anaSummary, ancaSummary, derived: { leuko, thrombo, eos1, prot, esrHi, crpHi, ckHi, upcr, cr } };
+    const X = { F, S, v, pos, neg, done, num, hiOf, age, sex, meds, ana, wbc, plt, eos, upcr, cr, leuko, thrombo, eos1, prot, esrHi, crpHi, ckHi, altHi, alpHi, iggHi, hematuria, lowC3, lowC4, apl, canca, panca, DIL_DRUGS, TEST, optLabel };
+    const criteria = root.SeroCriteria ? root.SeroCriteria.evaluate(X) : {};
+    return { criteria, cards, flags: [...new Set(flags)], next: [...nextSet.entries()].map(([t, w]) => ({ test: t, why: w })), complement, anaSummary, ancaSummary, derived: { leuko, thrombo, eos1, prot, esrHi, crpHi, ckHi, upcr, cr } };
   }
 
   function complementSummary(c3, c4, ch50) {

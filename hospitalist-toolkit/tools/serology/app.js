@@ -94,14 +94,39 @@
 
   const symCls = s => (s === '✓' ? 's-ok' : s === '✗' ? 's-no' : s === '?' ? 's-q' : 's-t');
   const VERD = { meets: 'Meets criteria / pattern fits', possible: 'Possible — needs more', unlikely: 'Less likely', na: 'Not assessable' };
+  // ---------- criteria checklist inside each card ----------
+  const wTxt = w => (w == null ? '' : (w > 0 ? '+' : '') + w);
+  const ruleTxt = (d, kind) => (d.rule === 'max' && kind === 'points' ? 'highest counts' : d.rule === 'sum' ? 'all add' : d.rule === 'count' && d.need ? `need ≥${d.need}` : '');
+  function critItem(i) {
+    const w = `<span class="w">${i.sel ? (i.met ? '+' + i.w : '') : wTxt(i.w)}</span>`;
+    if (i.sel) return `<div class="ci ${i.met ? 'on' : ''}"><span class="s s-q">▾</span><span>${esc(i.l)}</span><select data-crsel="${i.sel}">${E.RA_JOINTS.map(([v, l]) => `<option value="${v}" ${i.selVal === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>${w}</div>`;
+    const lt = i.labTxt ? `<span class="lt">${esc(i.labTxt)}</span>` : '';
+    if (i.f) return `<label class="ci ${i.met ? 'on' : ''}"><input type="checkbox" data-cf="${i.f}" ${A.F[i.f] ? 'checked' : ''}><span>${esc(i.l)}</span>${i.lab === true ? `<span class="have">✓ ${esc(i.from)}</span>` : ''}${lt}${w}</label>`;
+    const sym = i.lab === true ? ['✓', 's-ok'] : i.lab === false ? ['✗', 's-no'] : ['?', 's-q'];
+    return `<div class="ci lab ${i.met ? 'on' : ''}" title="Filled from results — change on the Serology &amp; labs tab"><span class="s ${sym[1]}">${sym[0]}</span><span>${esc(i.l)}</span>${lt || (i.lab == null ? '<span class="lt">not done</span>' : '')}${w}</div>`;
+  }
+  function critHtml(c) {
+    const sets = R.criteria && R.criteria[c.key]; if (!sets) return '';
+    return sets.map((s, si) => {
+      const k = `crit-${c.key}-${si}`, res = s.met === true ? 'yes' : s.met === null ? 'maybe' : 'no';
+      return `<details class="crit" data-sec="${k}" ${isOpen(k, true) ? 'open' : ''}><summary><b>${esc(s.name)}</b><span class="cres ${res}">${esc(s.text)}</span></summary>
+        <div class="csrc">${esc(s.src)}</div>${s.pre ? `<div class="pre">${esc(s.pre)}</div>` : ''}
+        ${s.entry.length ? `<div class="dom"><div class="dh">Entry ${s.entry.length > 1 ? 'criteria (all required)' : 'criterion'}</div>${s.entry.map(critItem).join('')}</div>` : ''}
+        ${s.domains.map(d => `<div class="dom"><div class="dh">${esc(d.d)} <span class="rule">${ruleTxt(d, s.kind)}</span>${s.kind === 'points' ? `<span class="dsc">${d.score}</span>` : d.need ? `<span class="dsc">${d.score}/${d.need}</span>` : ''}</div>${d.items.map(critItem).join('')}</div>`).join('')}
+        ${s.kind === 'points' && s.thr != null ? `<div class="tot">Total <b>${s.total}</b> · threshold ${s.thr}</div>` : ''}
+      </details>`;
+    }).join('');
+  }
   function cardHtml(c, open) {
-    const pct = c.score != null && c.threshold ? Math.max(0, Math.min(100, (c.score / c.threshold) * 100)) : null;
+    const pct = c.verdict !== 'na' && c.score != null && c.threshold ? Math.max(0, Math.min(100, (c.score / c.threshold) * 100)) : null;
     return `<details class="card ${c.verdict}" data-sec="card-${c.key}" ${isOpen('card-' + c.key, open) ? 'open' : ''}><summary>
       <span class="nm">${esc(c.name)}</span><span class="pill ${c.verdict}">${VERD[c.verdict]}</span>
       ${pct != null ? `<span class="bar" title="${c.score} of ${c.threshold}"><i style="width:${pct}%"></i></span><span class="muted">${c.score}/${c.threshold}</span>` : ''}
       </summary>
       <div class="basis">${esc(c.basis)}</div>
-      <ul class="pts">${c.pts.map(x => `<li><span class="s ${symCls(x.s)}">${x.s}</span><span>${esc(x.t)}</span>${x.w != null ? `<span class="w">${x.w > 0 ? '+' : ''}${x.w}</span>` : ''}</li>`).join('')}</ul>
+      ${critHtml(c)}
+      <details class="why" data-sec="why-${c.key}" ${isOpen('why-' + c.key, !(R.criteria && R.criteria[c.key])) ? 'open' : ''}><summary>Summary of findings</summary>
+      <ul class="pts">${c.pts.map(x => `<li><span class="s ${symCls(x.s)}">${x.s}</span><span>${esc(x.t)}</span>${x.w != null ? `<span class="w">${x.w > 0 ? '+' : ''}${x.w}</span>` : ''}</li>`).join('')}</ul></details>
       ${c.notes.map(n => `<div class="note">${esc(n)}</div>`).join('')}
     </details>`;
   }
@@ -316,6 +341,13 @@
         <li>Sjögren and antisynthetase syndrome can have a negative HEp-2 ANA — order Ro/Jo-1 directly if suspected.</li>
       </ul></details>`;
   }
+
+  // ticking a criterion in a card = ticking it on the Clinical features tab
+  $('#tab-interp').addEventListener('change', e => {
+    const cb = e.target.closest('[data-cf]'), sel = e.target.closest('[data-crsel]');
+    if (cb) A.F[cb.dataset.cf] = cb.checked; else if (sel) A.F[sel.dataset.crsel] = sel.value; else return;
+    renderFeat(); renderAll(false);
+  });
 
   // ---------- start ----------
   renderRef();
