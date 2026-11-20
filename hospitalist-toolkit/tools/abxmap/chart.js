@@ -22,6 +22,11 @@
     const now = (opts && opts.now) || Date.now(), f = { meds: [], cls: {}, allergies: [], probs: [], micro: { mrsa: [], esbl: [], pseudo: [], cdiff: [] } };
     const p = raw.patient || {};
     f.sex = String(p.gender || "").toLowerCase();
+    const nm = (p.name || [])[0] || {};
+    f.name = nm.text || [(nm.given || []).join(" "), nm.family].filter(Boolean).join(" ") || "";
+    if (/,/.test(f.name)) f.name = f.name.split(",").map((x) => x.trim()).reverse().join(" "); // "SMITH, John" -> "John SMITH"
+    const mrn = (p.identifier || []).find((i) => /\bMR\b|mrn|medical record/i.test(((i.type && (i.type.coding || []).map((c) => c.code + " " + (c.display || "")).join(" ")) || "") + " " + ((i.type && i.type.text) || "") + " " + (i.system || "")));
+    f.mrn = mrn ? mrn.value : "";
     if (p.birthDate) f.age = Math.floor((now - new Date(p.birthDate).getTime()) / (365.25 * DAY));
     const latest = (re, loinc, conv, not) => (raw.obs || []).filter((o) => o.valueQuantity && (codes(o.code).some((c) => loinc.includes(c)) || (re.test(label(o.code)) && !(not && not.test(label(o.code)))))).map((o) => ({ t: tOf(o), v: conv ? conv(+o.valueQuantity.value, o.valueQuantity.unit || "") : +o.valueQuantity.value })).filter((x) => x.t).sort((a, b) => b.t - a.t)[0];
     f.cr = latest(/creatinine/i, ["2160-0", "38483-4", "14682-9"], (v, u) => (/mg\s*\/\s*dl/i.test(u) ? v * 88.4 : v), /clearance|ratio|urine|kinase/i);

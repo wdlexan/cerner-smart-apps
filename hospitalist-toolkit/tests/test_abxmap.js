@@ -85,4 +85,13 @@ ok("oxacillin R -> MRSA, cefazolin inferred R", sp.flags.mrsa && sp.rows.some((r
 sp = R.expandSusc(R.parseSusc("Escherichia coli, ESBL producer. Resistant to ceftriaxone and ciprofloxacin; susceptible to ertapenem, nitrofurantoin, TMP-SMX."));
 ok("prose report: ESBL, cipro R, nitrofurantoin S", sp.flags.esbl && sp.rows.find((r) => r.drug === "ciprofloxacin").results[0] === "R" && sp.rows.find((r) => r.drug === "nitrofurantoin").results[0] === "S");
 ok("OCR noise 'S$' / '§$' read as S", R.parseSusc("Gentamicin <=1 §$\nTobramycin <=1 S$").rows.every((r) => r.results[0] === "S"));
+// consult message
+let cm = R.consultMsg({ drName: "Lee", service: "ID", name: "Alma TEST", age: 81, sex: "female", mrn: "TEST0001", site: site("skin"), tier: "moderate", abx: ["cefazolin 2 g IV q8h"], allergy: "pen-severe", reason: "S. aureus bacteremia (always)" });
+ok("consult: format start and end", /^Hello Dr\. Lee,\n\nThis is Wayne, hospitalist\. I have Alma TEST, 81, MRN TEST0001/.test(cm.text) && /Your help is much appreciated\.\n\nThanks,\nWayne$/.test(cm.text), cm.text);
+ok("consult: about 50 words", cm.words <= 60, cm.words);
+ok("consult: says skin infection, current antibiotic, allergy and the ask", /skin and soft tissue infection/.test(cm.text) && /cefazolin/.test(cm.text) && /anaphylaxis/.test(cm.text) && /advice on s\. aureus bacteremia\?/i.test(cm.text), cm.text);
+cm = R.consultMsg({ service: "General surgery", age: 70, sex: "male", site: site("biliary"), tier: "severe", abx: [], allergy: "none", reason: "", extra: "Lactate 4 despite fluids, CT shows dilated CBD with stone, needs ERCP or drainage and surgical opinion on gallbladder today please" });
+ok("consult: long extra still trimmed to ~55 words", cm.words <= 60, cm.words);
+ok("consult: blank doctor and MRN placeholders", /Hello Dr\. ___/.test(cm.text) && /MRN ___/.test(cm.text));
+ok("one-line report: organism found", R.parseSusc("Escherichia coli >10^8 CFU/L, ESBL producer. Resistant to ceftriaxone and ciprofloxacin; susceptible to ertapenem.").organisms[0] === "Escherichia coli");
 console.log(fail ? `\n${fail} FAILED` : "\nall passed"); process.exit(fail ? 1 : 0);

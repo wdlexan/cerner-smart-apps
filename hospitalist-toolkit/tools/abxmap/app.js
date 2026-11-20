@@ -66,6 +66,14 @@
   }
   const list = (h, items, open) => (items && items.length ? `<details${open ? " open" : ""}><summary>${h}</summary><ul>${items.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></details>` : "");
 
+  function buildConsult(s, c, reasons) {
+    const f = state.f, why = $("cWhy").value;
+    const prob = f && f.probs.find((p) => s.match && s.match.test(p.text));
+    const m = R.consultMsg({ drName: $("cDr").value.trim(), service: $("cSvc").value, name: f ? f.name : "", age: f ? f.age : null, sex: f ? f.sex : "", mrn: f ? f.mrn : "",
+      site: s, problem: prob ? prob.text.replace(/\s+[A-Z]\d{2}(\.\d+)?$/, "").replace(/\s+Z\d\d.*$/, "") : "", tier: state.tier, abx: f ? f.cls.abx : [], susc: state.susc, allergy: c.allergy,
+      reason: why === "other" ? "" : reasons[+why] || "", extra: $("cExtra").value });
+    $("cMsg").value = m.text; $("cWords").textContent = `~${m.words} words` + (m.words > 60 ? " – a bit long; trim before sending" : "");
+  }
   function draw() {
     const s = state.site && byId(state.site);
     if (!s) return;
@@ -87,8 +95,25 @@
     h += list("Red flags / what to watch for", s.watch, true) + list("Likely organisms", s.organisms);
     if (s.ix) h += list("Tests before / with antibiotics", [].concat(s.ix.blood || [], s.ix.imaging || [], s.ix.other || []));
     h += list("Source control", s.source) + list("Duration", s.duration) + list("IV → PO", s.ivpo) + list("When to call ID", s.idc) + list("When to call a surgeon", s.surgeon);
+    const svc = state.consultSvc || "ID";
+    const reasons = svc === "ID" ? (s.idc || []) : (s.surgeon || []).concat(s.idc || []);
+    h += `<details id="consultCard" open><summary>Consult message (ID / surgery / other) – ~50 words to text or Teams</summary>
+      <div class="crit" style="margin:4px 0">
+        <label>Service <select id="cSvc">${["ID", "General surgery", "Urology", "Orthopedics", "Neurosurgery", "GI", "IR", "Thoracic surgery", "ENT/OMFS", "Other"].map((x) => `<option${x === svc ? " selected" : ""}>${x}</option>`).join("")}</select></label>
+        <label>Dr. <input id="cDr" style="width:140px" value="${esc(state.consultDr || "")}" placeholder="name"></label>
+        <label>Why <select id="cWhy" style="max-width:360px">${reasons.map((r, i) => `<option value="${i}"${String(i) === String(state.consultWhy || 0) ? " selected" : ""}>${esc(r.length > 80 ? r.slice(0, 78) + "…" : r)}</option>`).join("")}<option value="other"${state.consultWhy === "other" ? " selected" : ""}>Other (type below)</option></select></label>
+      </div>
+      <input id="cExtra" style="width:100%;margin-bottom:4px" value="${esc(state.consultExtra || "")}" placeholder="Optional: one more fact or your own reason (e.g. 'Not improving after 72 h, fever 39')">
+      <textarea id="cMsg" style="min-height:150px"></textarea>
+      <div style="display:flex;justify-content:space-between;align-items:center"><span id="cWords" class="small muted"></span><button class="primary" id="cCopy">Copy message</button></div>
+    </details>`;
     h += `<p class="small muted">Full class reference: <a target="_blank" rel="noopener" href="${PDF}">antibiotic classes PDF</a>. Same content as the Infections by site tab.</p>`;
     $("panel").innerHTML = h;
+    buildConsult(s, c, reasons);
+    ["cSvc", "cDr", "cWhy", "cExtra"].forEach((id) => { const el = $(id); el.oninput = el.onchange = () => {
+      state.consultSvc = $("cSvc").value; state.consultDr = $("cDr").value; state.consultWhy = $("cWhy").value; state.consultExtra = $("cExtra").value;
+      if (id === "cSvc") { state.consultWhy = 0; draw(); } else buildConsult(s, c, reasons); }; });
+    $("cCopy").onclick = () => { $("cMsg").select(); try { navigator.clipboard.writeText($("cMsg").value); } catch (e) { document.execCommand("copy"); } $("cCopy").textContent = "Copied"; setTimeout(() => ($("cCopy").textContent = "Copy message"), 1200); };
     $("panel").querySelectorAll("[data-tier]").forEach((b) => (b.onclick = () => { state.tier = b.dataset.tier; draw(); }));
     $("panel").querySelectorAll("[data-use]").forEach((b) => (b.onclick = () => {
       const row = s.abx[+b.dataset.use], item = { row, a: R.assess(row.regimen, c) };

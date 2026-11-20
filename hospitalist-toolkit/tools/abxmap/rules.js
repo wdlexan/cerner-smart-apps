@@ -150,6 +150,7 @@
     const lines = String(text || "").replace(/\r/g, "").split("\n").map((l) => l.replace(/[|]/g, " ").trim()).filter(Boolean);
     lines.forEach((l) => { const m = l.match(ORG_RE); if (m && !SUSC_DRUGS.some(([, re]) => re.test(l)) && out.organisms.length < 3) { const o = m[1].replace(/\s+/g, " "); if (!out.organisms.some((x) => x.toLowerCase() === o.toLowerCase())) out.organisms.push(o); } });
     const all = lines.join(" ");
+    if (!out.organisms.length) { const m = all.match(ORG_RE); if (m) out.organisms.push(m[1].replace(/\s+/g, " ")); } // one-line reports: "E. coli ... resistant to X"
     if (/\bmrsa\b|methicillin[- ]resistant|oxacillin[- ]resistant/i.test(all)) out.flags.mrsa = true;
     if (/\besbl\b|extended[- ]spectrum/i.test(all)) out.flags.esbl = true;
     if (/carbapenemase|\bcre\b|\bcpo\b|\bkpc\b|\bndm\b|\boxa-48\b/i.test(all)) out.flags.cre = true;
@@ -204,6 +205,35 @@
     return notes;
   }
 
-  const api = { parseSusc, expandSusc, suscNotes, SUSC_DRUGS, DRUGS, drugsIn, ivVanco, conditionsOf, assess, choose, allergyLines, crcl, note };
+  /* Consult message in Wayne's format, ~50 words between greeting and sign-off. o = { drName, service, name, age, sex, mrn, site, tier,
+     abx:[current antibiotics], susc, allergy, reason, extra } */
+  const words = (t) => (String(t).trim().match(/\S+/g) || []).length;
+  const shortReason = (r) => String(r || "").replace(/\s*\(.*?\)/g, "").split(/ - | – |;/)[0].trim();
+  const CONSULT_NOUN = { skin: "a skin and soft tissue infection", lung: "pneumonia", uti: "a urinary tract infection", prostate: "acute bacterial prostatitis", groin: "a groin/perineal infection", joint: "a possible septic joint", divert: "diverticulitis/intra-abdominal infection", biliary: "cholangitis/cholecystitis", mening: "meningitis", enceph: "encephalitis", sinus: "sinusitis", dental: "a deep neck/odontogenic infection", tb: "possible TB", sepsis: "sepsis without a clear source", cdiff: "C. difficile colitis" };
+  function consultMsg(o) {
+    const sexWord = o.sex === "female" ? "woman" : o.sex === "male" ? "man" : "patient";
+    const who = [o.name || "___", o.age != null ? `${o.age}` : "", o.mrn ? `MRN ${o.mrn}` : "MRN ___"].filter(Boolean).join(", ");
+    const prob = o.problem || (o.site && (CONSULT_NOUN[o.site.id] || o.site.label)) || "an infection";
+    const site = prob.replace(/\s*\(.*?\)/g, "").replace(/^[A-Z](?=[a-z])/, (c) => c.toLowerCase()).trim();
+    const bits = [`a ${sexWord} with ${o.tier === "severe" && !/severe|shock|sepsis/i.test(site) ? "severe " : ""}${site}`];
+    const org = o.susc && o.susc.organisms && o.susc.organisms.length ? o.susc.organisms.join(" and ") : "";
+    const resist = o.susc ? o.susc.rows.filter((r) => !r.derived && r.results.includes("R")).map((r) => r.drug).slice(0, 3) : [];
+    const flags = o.susc ? ["mrsa", "esbl", "cre"].filter((k) => o.susc.flags[k]).map((k) => ({ mrsa: "MRSA", esbl: "ESBL", cre: "carbapenemase-producing" })[k]) : [];
+    const optional = [];
+    if (!org && (flags.length || resist.length)) optional.push(`Cultures show ${flags.length ? flags.join(" ") + " organism" : "a resistant organism"}${resist.length ? " (resistant to " + resist.join(", ") + ")" : ""}.`);
+    if (org) optional.push(`Cultures grew ${flags.length ? flags.join(" ") + " " : ""}${org}${resist.length ? " (resistant to " + resist.join(", ") + ")" : ""}.`);
+    optional.push(o.abx && o.abx.length ? `Currently on ${o.abx.slice(0, 2).join(" and ")}.` : "No antibiotics started yet.");
+    if (o.allergy && o.allergy !== "none") optional.push({ "pen-mild": "Non-severe penicillin allergy label.", "pen-severe": "Penicillin anaphylaxis.", "bl-delayed": "Severe delayed beta-lactam reaction." }[o.allergy]);
+    if (o.extra) optional.push(o.extra.trim().replace(/([^.])$/, "$1."));
+    const ask = `Could you see ${o.sex === "female" ? "her" : o.sex === "male" ? "him" : "them"} ${o.service === "ID" ? "for advice on " : "to assess "}${shortReason(o.reason) ? shortReason(o.reason).replace(/^[A-Z]/, (c) => c.toLowerCase()) : "management"}?`;
+    let body;
+    for (let n = optional.length; n >= 0; n--) {   // drop the least important pieces until ~50 words
+      body = `I have ${who}, ${bits[0]}. ${optional.slice(0, n).join(" ")} ${ask}`.replace(/\s+/g, " ").trim();
+      if (words(body) <= 55) break;
+    }
+    return { text: `Hello Dr. ${o.drName || "___"},\n\nThis is Wayne, hospitalist. ${body}\n\nYour help is much appreciated.\n\nThanks,\nWayne`, words: words(body) + 4 };
+  }
+
+  const api = { consultMsg, CONSULT_NOUN, parseSusc, expandSusc, suscNotes, SUSC_DRUGS, DRUGS, drugsIn, ivVanco, conditionsOf, assess, choose, allergyLines, crcl, note };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else window.AbxMapRules = api;
 })();
