@@ -76,6 +76,10 @@
     let h = `<h2>${esc(s.label)}</h2><div class="muted">${esc(s.sub || "")}${state.chartSites.includes(s.id) ? ' · <span class="from">on the problem list</span>' : ""}</div>
       <div class="tiers">${tiersHtml}</div>`;
     if (s.watch && s.watch.length) h += `<div class="alert red"><b>Red flag:</b> ${esc(s.watch[0])}</div>`;
+    (s.cards || []).forEach((cd, i) => {
+      const t = cd.table ? `<table style="width:100%;border-collapse:collapse;font-size:12.5px;margin:4px 0 8px">${"<tr>" + cd.table.head.map((x) => `<th style="text-align:left;border:1px solid var(--line);padding:3px 6px">${esc(x)}</th>`).join("") + "</tr>"}${cd.table.rows.map((r) => "<tr>" + r.map((x, j) => `<td style="border:1px solid var(--line);padding:3px 6px">${j ? esc(x) : "<b>" + esc(x) + "</b>"}</td>`).join("") + "</tr>").join("")}</table>` : "";
+      h += `<details${i === 0 ? " open" : ""}><summary>Key decision: ${esc(cd.title)}</summary>${cd.items ? `<ul>${cd.items.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}${t}${cd.note ? `<p class="small muted">${esc(cd.note)}</p>` : ""}</details>`;
+    });
     if (ch.matched.length) h += `<h3>Matches this patient's resistance risk (${riskOn.map((k) => ({ mrsa: "MRSA", pseudo: "Pseudomonas/hospital", esbl: "ESBL" })[k]).join(", ")})</h3>` + ch.matched.map((i) => rxCard(i, s)).join("");
     h += `<h3>${ch.matched.length ? "Standard choices" : "Choices"}</h3>` + (ch.main.length ? ch.main.map((i) => rxCard(i, s)).join("") : '<div class="muted">None at this severity – try another level.</div>');
     if (ch.ifRisk.length) h += `<details><summary>Only if risk factors (${ch.ifRisk.length}) – tick MRSA / Pseudomonas / ESBL above if they apply</summary>${ch.ifRisk.map((i) => rxCard(i, s)).join("")}</details>`;

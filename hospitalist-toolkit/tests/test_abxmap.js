@@ -59,4 +59,8 @@ ok("note includes regimen and CrCl", /Antibiotic: Cefazolin/.test(R.note(site("s
 ok("valproate: 'ceftriaxone (ertapenem if ESBL)' only caution", st("Ceftriaxone 1-2 g IV daily (ertapenem if ESBL); step down to a fluoroquinolone", { valproate: true }) === "caution");
 ok("valproate: 'meropenem or cefepime' still avoid (first choice)", st("Meropenem 1 g IV q8h, or cefepime 2 g", { valproate: true }) === "avoid");
 ok("pen anaphylaxis: 'vancomycin, or clindamycin' ok; 'ceftriaxone or amoxicillin' caution", st("Ceftriaxone 2 g IV daily, or amoxicillin-clavulanate", { allergy: "pen-severe" }) === "caution");
+ok("CrCl 23: acyclovir caution", st("Acyclovir 10 mg/kg IV q8h", { crcl: 23 }) === "caution");
+ok("meningitis and encephalitis are separate sites", site("mening") && site("enceph") && !site("mening").match.test("HSV encephalitis") && site("enceph").match.test("meningoencephalitis"));
+ok("meningitis cards: CSF table, dexamethasone, unsure pathway", site("mening").cards.length === 3 && site("mening").cards[0].table.rows.length === 8);
+ok("encephalitis cards mention DexEnceph", site("enceph").cards.some((c) => (c.items || []).some((x) => /DexEnceph/.test(x))));
 console.log(fail ? `\n${fail} FAILED` : "\nall passed"); process.exit(fail ? 1 : 0);

@@ -291,7 +291,7 @@ function render() {
 
 // Collapsible coloured section. Open/closed state survives re-renders (S.open); badge shows when collapsed too.
 const SEC_COLORS = { sepsis: "#b42318", abx: "#175cd3", allergy: "#b54708", tb: "#6941c6", micro: "#0e7c86",
-  org: "#2b4a6f", watch: "#b42318", ix: "#0e7c86", rx: "#067647", src: "#c4320a", dur: "#6941c6", ivpo: "#3538cd", idc: "#475467", stew: "#667085", note: "#2b4a6f" };
+  org: "#2b4a6f", cards: "#0b6bcb", watch: "#b42318", ix: "#0e7c86", rx: "#067647", src: "#c4320a", dur: "#6941c6", ivpo: "#3538cd", idc: "#475467", stew: "#667085", note: "#2b4a6f" };
 function sec(key, title, body, { open = true, badge = "" } = {}) {
   const isOpen = S.open[key] != null ? S.open[key] : open;
   return `<details class="sec" data-sec="${key}" style="--c:${SEC_COLORS[key] || "#2b4a6f"}" ${isOpen ? "open" : ""}>
@@ -363,6 +363,10 @@ function mismatch() {
   return [...new Set(out)];
 }
 function list(items) { return `<ul>${(items || []).map(x => `<li>${esc(x)}</li>`).join("")}</ul>`; }
+function cardHTML(c) {
+  const t = c.table ? `<table><tr>${c.table.head.map(h => `<th>${esc(h)}</th>`).join("")}</tr>${c.table.rows.map(r => `<tr>${r.map((x, i) => i === 0 ? `<td><b>${esc(x)}</b></td>` : `<td>${esc(x)}</td>`).join("")}</tr>`).join("")}</table>` : "";
+  return `<h3>${esc(c.title)}</h3>${c.items ? list(c.items) : ""}${t}${c.note ? `<p class="muted">${esc(c.note)}</p>` : ""}`;
+}
 function siteBlock(site, sp) {
   const ba = betaAllergies(), severeAllergy = ba.some(a => SEVERE_RX.test(allergyReactions(a)) || a.criticality === "high") || S.pen.severe;
   const imaging = S.reports.filter(r => /ct|mri|x-?ray|ultrasound|\bus\b|radiograph|scan|echo/i.test(repText(r)) && !/culture/i.test(repText(r)));
@@ -380,6 +384,7 @@ function siteBlock(site, sp) {
     ${cb ? `<div class="${cb.s >= 3 ? "alert" : cb.s === 2 ? "warn" : "info"}"><b>CURB-65 ${cb.s}/5</b> ${cb.s >= 3 ? "- severe, consider ICU review" : cb.s === 2 ? "- admit" : "- low risk (outpatient if otherwise OK)"}<br><span class="muted">${cb.items.map(([n, v]) => `${v === null ? "?" : v ? "&#10003;" : "&#10007;"} ${n}`).join(" &middot; ")}</span></div>` : ""}
     ${list(site.watch)}
   `, { badge: [lr ? `<span class="pill ${lr.s >= 8 ? "p-red" : lr.s >= 6 ? "p-amb" : "p-gry"}">LRINEC ${lr.s}</span>` : "", cb ? `<span class="pill ${cb.s >= 3 ? "p-red" : cb.s === 2 ? "p-amb" : "p-gry"}">CURB-65 ${cb.s}</span>` : "", site.id === "biliary" ? (g => g.met ? `<span class="pill ${g.grade === 3 ? "p-red" : g.grade === 2 ? "p-amb" : "p-blu"}">Tokyo grade ${g.grade}</span>` : "")(tg18()) : ""].join("") })}
+  ${(site.cards || []).length ? sec("cards", "Key decisions", site.cards.map(cardHTML).join("")) : ""}
   ${sec("ix", "Investigations - blood, imaging, cultures", `
     <h3>Blood</h3>${list(site.ix.blood)}
     <p class="muted">In chart: WBC ${labTxt("wbc")}, CRP ${labTxt("crp")}, lactate ${labTxt("lactate")}, creatinine ${labTxt("creatinine")}, ESR ${labTxt("esr")} &middot; Blood cultures ${bc ? '<span class="pill p-grn">sent</span>' : '<span class="pill p-amb">none found</span>'}</p>

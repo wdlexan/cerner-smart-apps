@@ -23,7 +23,8 @@
     { key: "fosfo", cls: "uti", name: "fosfomycin", re: /fosfomycin/i },
     { key: "clinda", cls: "anaer", name: "clindamycin", re: /clindamycin/i },
     { key: "metro", cls: "anaer", name: "metronidazole", re: /metronidazole/i },
-    { key: "fidax", cls: "cdiff", name: "fidaxomicin", re: /fidaxomicin/i }];
+    { key: "fidax", cls: "cdiff", name: "fidaxomicin", re: /fidaxomicin/i },
+    { key: "acyclovir", cls: null, name: "acyclovir", re: /acyclovir|aciclovir|ganciclovir|foscarnet/i }];
 
   function drugsIn(text) { return DRUGS.filter((d) => d.re.test(text || "")); }
 
@@ -65,6 +66,7 @@
       if (ctx.crcl < 50 && has("ceph") && /cefepime/i.test(text)) bump("caution", "Cefepime: dose to CrCl – neurotoxicity if not adjusted.");
       if (ctx.crcl < 50 && (has("vanco") && !/vancomycin\s*(125|500)\s*mg\s*po/i.test(text))) bump("caution", "IV vancomycin: renal dosing and levels (AUC).");
     }
+    if (ctx.crcl != null && ctx.crcl < 50 && has("acyclovir")) bump("caution", `Acyclovir/antiviral with CrCl ~${ctx.crcl}: dose for CrCl, IV fluids, daily creatinine – crystal nephropathy and neurotoxicity.`);
     if (ctx.valproate && has("carb")) bump("avoid", "On valproate: carbapenems drop valproate levels within a day → seizures. Choose another agent.", ["carb"]);
     if (ctx.qtRisk && (has("fq") || has("macro"))) bump("caution", "QT risk (long QTc or other QT drugs): fluoroquinolone/macrolide – ECG, K, Mg.");
     if (ctx.warfarin && (has("tmpsmx") || has("metro") || has("fq") || has("strongcyp"))) bump("caution", "On warfarin: INR rises – check INR in 3–5 days or reduce warfarin.");
@@ -74,7 +76,7 @@
     if (ctx.pregnant && has("tmpsmx")) bump("caution", "Pregnancy: TMP-SMX – avoid in first trimester and near term.");
     if ((ctx.steroids || (ctx.age || 0) >= 65) && has("fq")) bump("caution", "Age ≥65 or steroids: fluoroquinolone tendon rupture, aortic aneurysm, delirium.");
     if (ctx.cdiffHx && (has("clinda") || has("fq"))) bump("caution", "Previous C. difficile: clindamycin and fluoroquinolones carry the highest risk.");
-    return { status, notes, classes: [...new Set(ds.map((d) => d.cls))] };
+    return { status, notes, classes: [...new Set(ds.map((d) => d.cls).filter(Boolean))] };
   }
 
   /* Sort a site's regimens for the chosen severity and risks.

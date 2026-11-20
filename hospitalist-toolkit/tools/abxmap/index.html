@@ -26,11 +26,11 @@
   @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
   .mapcard { position:sticky; top:8px; }
   svg#body { width:100%; height:auto; display:block; }
-  svg .skin { fill:var(--skin); stroke:#b89a7e; stroke-width:1.2; cursor:pointer; transition: fill .12s; }
-  svg .skin:hover, svg .skin.hov { fill:var(--skin-h); }
-  svg .org { fill:var(--org); stroke:#7d8fa6; stroke-width:1.2; cursor:pointer; transition: fill .12s; }
-  svg .org:hover, svg .org.hov { fill:var(--org-h); }
-  svg .on { fill:var(--sel) !important; opacity:.85; }
+  svg .skin { fill:url(#gSkin); stroke:#b89a7e; stroke-width:1.2; cursor:pointer; transition: fill .12s; }
+  svg .skinwrap:hover .skin, svg .skin.hov { filter: brightness(0.95) drop-shadow(0 0 3px #ffb000); }
+  svg .org { fill:#f0e6dc; stroke:#7d8fa6; stroke-width:1.2; cursor:pointer; transition: fill .12s; }
+  svg g:hover .org, svg .org.hov { filter: brightness(1.15) drop-shadow(0 0 3px #ffb000); stroke:#ff9500 !important; }
+  svg .on { stroke:var(--sel) !important; stroke-width:3.5 !important; filter: drop-shadow(0 0 4px var(--sel)); }
   svg .chart { stroke:#d4380d; stroke-width:2.6; stroke-dasharray:4 2; }
   svg text.lbl { font-size:9.5px; fill:var(--muted); pointer-events:none; }
   #tip { position:absolute; pointer-events:none; background:#1f2933; color:#fff; font-size:12px; padding:3px 8px; border-radius:5px; display:none; white-space:nowrap; z-index:5; }
@@ -111,37 +111,51 @@
     <div class="card mapcard">
       <div style="position:relative">
         <div id="tip"></div>
-        <svg id="body" viewBox="0 0 300 620" role="img" aria-label="Body map: click a site">
-          <!-- skin: silhouette (head, neck, torso, arms, legs) -->
-          <g data-site="skin">
-            <path class="skin" d="M138 98 h24 v22 h-24z"/>
-            <path class="skin" d="M92 122 Q150 108 208 122 L214 170 Q206 250 202 330 L98 330 Q94 250 86 170 Z"/>
-            <path class="skin" d="M92 124 Q70 130 66 170 L54 270 L46 330 Q52 342 62 332 L72 272 L86 190 Z"/>
-            <path class="skin" d="M208 124 Q230 130 234 170 L246 270 L254 330 Q248 342 238 332 L228 272 L214 190 Z"/>
-            <path class="skin" d="M98 330 L148 336 L144 470 L140 590 Q124 600 112 592 L110 470 Z"/>
-            <path class="skin" d="M202 330 L152 336 L156 470 L160 590 Q176 600 188 592 L190 470 Z"/>
+        <svg id="body" viewBox="0 0 300 640" role="img" aria-label="Body map: click a site">
+          <defs>
+            <radialGradient id="gSkin" cx="50%" cy="40%" r="70%"><stop offset="0" stop-color="#f6dcc4"/><stop offset="1" stop-color="#e7bf9c"/></radialGradient>
+            <radialGradient id="gLung" cx="40%" cy="40%" r="70%"><stop offset="0" stop-color="#f4b6b0"/><stop offset="1" stop-color="#d9827c"/></radialGradient>
+            <radialGradient id="gLiver" cx="40%" cy="35%" r="75%"><stop offset="0" stop-color="#b5523f"/><stop offset="1" stop-color="#7d2f24"/></radialGradient>
+            <radialGradient id="gBowel" cx="50%" cy="40%" r="70%"><stop offset="0" stop-color="#f2b8a6"/><stop offset="1" stop-color="#d98b77"/></radialGradient>
+            <radialGradient id="gBrain" cx="50%" cy="40%" r="70%"><stop offset="0" stop-color="#f7c3c5"/><stop offset="1" stop-color="#df9298"/></radialGradient>
+          </defs>
+          <!-- skin: whole body silhouette -->
+          <g data-site="skin" class="skinwrap">
+            <path class="skin" d="M138 100 h24 l2 20 h-28z"/>
+            <path class="skin" d="M100 124 Q150 112 200 124 Q214 128 216 146 L212 214 Q206 262 210 300 Q214 330 200 352 L100 352 Q86 330 90 300 Q94 262 88 214 L84 146 Q86 128 100 124Z"/>
+            <path class="skin" d="M100 126 Q78 130 72 156 L62 214 L56 262 L50 312 Q46 334 54 350 Q60 362 66 350 Q66 336 68 318 L76 266 L84 220 L90 170Z"/>
+            <path class="skin" d="M200 126 Q222 130 228 156 L238 214 L244 262 L250 312 Q254 334 246 350 Q240 362 234 350 Q234 336 232 318 L224 266 L216 220 L210 170Z"/>
+            <path class="skin" d="M102 350 Q124 362 148 356 L146 430 Q142 470 140 500 L138 590 Q140 610 128 616 Q112 618 112 606 L116 590 L114 500 Q108 470 106 430Z"/>
+            <path class="skin" d="M198 350 Q176 362 152 356 L154 430 Q158 470 160 500 L162 590 Q160 610 172 616 Q188 618 188 606 L184 590 L186 500 Q192 470 194 430Z"/>
           </g>
-          <!-- head -->
-          <g data-site="mening"><ellipse class="org" cx="150" cy="56" rx="38" ry="44" style="fill:var(--skin);stroke:#b89a7e"/><ellipse class="org" cx="150" cy="40" rx="27" ry="20"/></g>
-          <g data-site="sinus"><ellipse class="org" cx="139" cy="66" rx="7" ry="5"/><ellipse class="org" cx="161" cy="66" rx="7" ry="5"/><ellipse class="org" cx="150" cy="60" rx="4" ry="4"/></g>
-          <g data-site="dental"><path class="org" d="M134 84 Q150 96 166 84 Q150 90 134 84Z" style="stroke-width:5"/></g>
-          <!-- chest -->
-          <g data-site="lung"><path class="org" d="M144 136 Q112 132 106 170 Q100 205 112 222 Q132 222 144 208 Z"/><path class="org" d="M156 136 Q188 132 194 170 Q200 205 188 222 Q168 222 156 208 Z"/></g>
+          <!-- head = meninges (meningitis); brain = encephalitis -->
+          <g data-site="mening"><path class="skin" d="M150 20 Q186 20 186 62 Q186 92 168 104 Q150 112 132 104 Q114 92 114 62 Q114 20 150 20Z"/><path class="org mening" d="M150 24 Q181 24 182 54 Q182 66 178 70 L122 70 Q118 66 118 54 Q119 24 150 24Z" style="fill:none;stroke:#7d8fa6;stroke-width:3.5"/></g>
+          <g data-site="enceph"><path class="org" style="fill:url(#gBrain)" d="M150 28 Q178 28 178 54 Q178 64 174 67 L126 67 Q122 64 122 54 Q122 28 150 28Z"/>
+            <path d="M150 30 V66 M134 38 q6 6 0 12 q-6 6 2 12 M166 38 q-6 6 0 12 q6 6 -2 12 M142 34 q4 8 -2 14 M158 34 q-4 8 2 14" stroke="#c2707a" stroke-width="1.2" fill="none" pointer-events="none"/></g>
+          <g data-site="sinus"><path class="org" d="M136 74 q6 -4 10 2 q-4 6 -10 -2Z M164 74 q-6 -4 -10 2 q4 6 10 -2Z"/><path class="org" d="M147 70 h6 v6 h-6z"/></g>
+          <g data-site="dental"><path class="org" d="M137 88 Q150 98 163 88 Q150 92 137 88Z" style="fill:#fff;stroke:#a0855f;stroke-width:3"/></g>
+          <!-- thorax -->
+          <g data-site="lung"><path class="org" style="fill:url(#gLung)" d="M143 134 Q118 128 108 156 Q100 186 104 214 Q118 222 136 214 Q142 200 144 186Z"/><path class="org" style="fill:url(#gLung)" d="M157 134 Q182 128 192 156 Q200 186 196 214 Q182 222 164 214 Q160 204 160 196Z"/>
+            <path d="M150 112 V140 M150 140 L138 152 M150 140 L162 152" stroke="#cfd8e3" stroke-width="4" fill="none" pointer-events="none"/></g>
+          <g data-site="sepsis"><path class="org" d="M150 168 Q140 156 132 166 Q126 178 140 192 L154 206 L166 190 Q176 176 168 164 Q160 156 150 168Z" style="fill:#c0392b;stroke:#7b1d16"/></g>
           <!-- abdomen -->
-          <g data-site="biliary"><path class="org" d="M104 230 Q140 222 160 232 Q150 252 120 256 Q104 252 104 230Z"/><ellipse class="org" cx="132" cy="258" rx="7" ry="6"/></g>
-          <g data-site="uti" data-sub="kidneys"><ellipse class="org" cx="108" cy="276" rx="8" ry="13"/><ellipse class="org" cx="192" cy="276" rx="8" ry="13"/></g>
-          <g data-site="divert"><path class="org" d="M170 250 Q194 256 190 286 Q188 306 172 314 L162 312 Q176 300 176 284 Q176 264 164 258Z"/></g>
-          <g data-site="cdiff"><path class="org" d="M122 300 Q150 294 158 304 Q150 312 124 310Z"/></g>
-          <g data-site="uti"><ellipse class="org" cx="150" cy="322" rx="17" ry="11"/></g>
-          <g data-site="prostate"><circle class="org" cx="150" cy="340" r="6"/></g>
-          <g data-site="groin"><path class="org" d="M134 350 L166 350 L150 372 Z"/></g>
+          <g data-site="biliary"><path class="org" style="fill:url(#gLiver)" d="M104 222 Q140 214 168 222 Q170 236 150 240 Q128 248 112 246 Q102 238 104 222Z"/><ellipse class="org" cx="132" cy="250" rx="6" ry="7" style="fill:#6aa84f;stroke:#3d6b2c"/></g>
+          <path d="M156 226 Q186 220 192 238 Q192 254 172 254 Q160 252 156 240Z" fill="#e8a27f" stroke="#b9775a" pointer-events="none"/>
+          <g data-site="uti" data-sub="kidneys"><path class="org" d="M104 262 q-10 10 0 26 q8 4 10 -6 q-4 -8 2 -14 q-2 -8 -12 -6Z" style="fill:#a0453a;stroke:#6d2a22"/><path class="org" d="M196 262 q10 10 0 26 q-8 4 -10 -6 q4 -8 -2 -14 q2 -8 12 -6Z" style="fill:#a0453a;stroke:#6d2a22"/></g>
+          <g data-site="cdiff" data-sub="colon"><path class="org" style="fill:#d98c7a" d="M112 312 L112 266 Q112 256 122 256 L180 256 Q190 256 190 266 L190 276 L182 276 L182 266 Q182 264 178 264 L124 264 Q120 264 120 268 L120 312Z"/></g>
+          <g data-site="divert" data-sub="sigmoid / intra-abdominal"><path class="org" style="fill:url(#gBowel)" d="M124 270 Q150 262 178 270 Q184 284 176 296 Q182 308 168 314 Q150 320 132 314 Q118 306 124 294 Q118 282 124 270Z"/>
+            <path d="M132 280 q8 -6 16 0 q8 6 16 0 M130 292 q10 6 20 0 q10 -6 20 0 M134 304 q8 -6 16 0 q8 6 16 0" stroke="#b9675a" stroke-width="1.3" fill="none" pointer-events="none"/>
+            <path class="org" style="fill:#d98c7a" d="M182 276 L190 276 L190 314 Q186 328 168 330 L160 330 L160 322 L168 322 Q182 320 182 310Z"/></g>
+          <g data-site="uti"><ellipse class="org" cx="150" cy="336" rx="15" ry="10" style="fill:#e9b9a0;stroke:#b58466"/></g>
+          <g data-site="prostate"><circle class="org" cx="150" cy="352" r="5" style="fill:#c98a6a;stroke:#8a5a40"/></g>
+          <g data-site="groin"><path class="org" d="M136 362 L164 362 L150 380Z" style="fill:#ead0b5;stroke:#b89a7e"/></g>
           <!-- joints -->
-          <g data-site="joint"><circle class="org" cx="94" cy="132" r="9"/><circle class="org" cx="206" cy="132" r="9"/><circle class="org" cx="66" cy="228" r="7"/><circle class="org" cx="234" cy="228" r="7"/><circle class="org" cx="124" cy="470" r="11"/><circle class="org" cx="176" cy="470" r="11"/></g>
-          <!-- blood -->
-          <g data-site="sepsis"><path class="org" d="M150 168 Q160 182 160 190 Q160 200 150 200 Q140 200 140 190 Q140 182 150 168Z" style="fill:#e05d5d;stroke:#9b1c1c"/></g>
-          <text class="lbl" x="150" y="226" text-anchor="middle">blood</text>
-          <text class="lbl" x="270" y="300" text-anchor="end">colon</text>
-          <text class="lbl" x="30" y="300">skin</text>
+          <g data-site="joint"><circle class="org" cx="98" cy="134" r="8"/><circle class="org" cx="202" cy="134" r="8"/><circle class="org" cx="64" cy="236" r="6"/><circle class="org" cx="236" cy="236" r="6"/><circle class="org" cx="116" cy="350" r="7"/><circle class="org" cx="184" cy="350" r="7"/><circle class="org" cx="124" cy="476" r="10"/><circle class="org" cx="176" cy="476" r="10"/></g>
+          <text class="lbl" x="150" y="226" text-anchor="middle" style="fill:#fff;font-size:8px">heart/blood</text>
+          <text class="lbl" x="296" y="270" text-anchor="end">colon</text>
+          <text class="lbl" x="4" y="420">skin</text>
+          <text class="lbl" x="296" y="40" text-anchor="end">meninges</text>
+          <text class="lbl" x="296" y="52" text-anchor="end">brain</text>
         </svg>
       </div>
       <div class="sites" id="siteBtns"></div>
@@ -149,7 +163,7 @@
     </div>
 
     <div>
-      <div class="card" id="panel"><div class="empty">Hover over the body and click where the infection is.<br>Lungs · skin · bladder/kidneys · prostate · colon · gallbladder · joints · brain · sinuses · teeth · groin · blood</div></div>
+      <div class="card" id="panel"><div class="empty">Hover over the body and click where the infection is.<br>Lungs · skin · bladder/kidneys · prostate · colon · bowel · liver/gallbladder · joints · meninges (meningitis) · brain (encephalitis) · sinuses · teeth · groin · heart/blood</div></div>
       <div class="card" style="margin-top:12px">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b>Note draft</b><button class="primary" id="copy">Copy</button></div>
         <textarea id="note" placeholder="Click 'Use in note' on a regimen."></textarea>
@@ -159,12 +173,12 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
-<script src="../infections/infections-data.js?v=20261119a"></script>
-<script src="extra-sites.js?v=20261119a"></script>
-<script src="../abx/abx-classes-pages.js?v=20261119a"></script>
-<script src="rules.js?v=20261119a"></script>
-<script src="chart.js?v=20261119a"></script>
-<script src="samples.js?v=20261119a"></script>
-<script src="app.js?v=20261119a"></script>
+<script src="../infections/infections-data.js?v=20261119b"></script>
+<script src="extra-sites.js?v=20261119b"></script>
+<script src="../abx/abx-classes-pages.js?v=20261119b"></script>
+<script src="rules.js?v=20261119c"></script>
+<script src="chart.js?v=20261119b"></script>
+<script src="samples.js?v=20261119b"></script>
+<script src="app.js?v=20261119b"></script>
 </body>
 </html>
