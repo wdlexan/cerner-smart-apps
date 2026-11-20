@@ -47,7 +47,7 @@
 <main>
   <div class="card">
     <h2>Patient list from a screenshot → Excel</h2>
-    <div class="muted small">Take a screenshot of your PowerChart patient list (include the header row: Name, Location, Age …), then paste it here.
+    <div class="muted small">Take a screenshot of your PowerChart patient list (include the header row: Name, Location or Room / Bed, Age …), then paste it here.
       The picture is read <b>in this browser</b>. Nothing is uploaded, nothing is saved in the toolkit or on GitHub, and the Excel file goes to your computer's Downloads.</div>
     <div id="drop" tabindex="0" style="margin-top:12px">
       <div><b>Paste a screenshot (Ctrl+V)</b>, drag one here, or click to choose a picture</div>
@@ -83,7 +83,7 @@
   </div>
 </main>
 
-<script src="parse.js?v=20261119d"></script>
+<script src="parse.js?v=20261119f"></script>
 <script src="xlsx.js?v=20261119d"></script>
 <script src="chart.js?v=20261119b"></script>
 <script>
@@ -183,7 +183,7 @@
 
   function addRows(found, src) {
     const st = $("status");
-    if (!found.length) { st.className = "small err"; st.textContent = "No patients found in that " + src + ". Make sure the Location and Age columns are in the picture."; return; }
+    if (!found.length) { st.className = "small err"; st.textContent = "No patients found in that " + src + ". Make sure the header row and the Location (or Room) and Age columns are in the picture."; return; }
     found.forEach((r) => { r.include = !r.discharged; });
     const before = rows.length; PList.merge(rows, found);
     st.className = "small muted";
@@ -297,7 +297,7 @@
       if (!keep.length) throw new Error("no patients are ticked");
       const groups = PList.group(keep).map((g) => ({ floor: g.floor, patients: g.patients.map((r) => ({
         name: r.name, location: PList.roomOf(r.location), age: r.age, admit: PList.admitText(r, taken), reason: r.reason,
-        fp: r.pcp ? "y" : "n", note: r.discharged ? "Discharged " + r.discharged : "", ...(r.c || {}) })) }));
+        fp: r.pcp ? "y" : r.hasPcpCol ? "n" : "", note: r.discharged ? "Discharged " + r.discharged : "", ...(r.c || {}) })) }));
       const tpl = await (await fetch("template.xlsx?v=20261119c")).arrayBuffer();
       const blob = await PListXlsx.build(JSZip, tpl, groups, { type: "blob", spare: $("spare").checked ? 3 : 0 });
       const a = document.createElement("a"), d = taken;

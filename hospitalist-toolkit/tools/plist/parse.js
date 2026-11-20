@@ -77,6 +77,8 @@
   function floorOf(loc) {
     const s = String(loc || "").trim();
     if (/^HAH/i.test(s)) return "HAH";
+    const bare = s.match(/^([SN]\d)\d{2}\b/i);           // room only (Room/Bed list): S715 -> S7 (the unit letter isn't shown)
+    if (bare) return bare[1].toUpperCase();
     let m = s.match(/^([A-Z0-9]+)-(VGH|[A-Z]{3,4})\b/i);
     if (m) return m[2].toUpperCase() === "VGH" ? m[1].toUpperCase() : m[1].toUpperCase() + " (" + m[2].toUpperCase() + ")";
     m = s.match(/^(VGH|[A-Z]{3})\s+([A-Z0-9]+)/i);
@@ -107,20 +109,26 @@
   }
   // Admit date (e.g. 17-Oct) worked out from length of stay, counted back from when the screenshot was taken (or from discharge)
   function admitText(row, takenAt) {
+    const real = parseDis(row.admitted);
+    if (real) return String(real.getDate()).padStart(2, "0") + "-" + MON[real.getMonth()];
     if (row.los == null || isNaN(row.los)) return "";
     const end = parseDis(row.discharged) || takenAt || new Date();
     const d = new Date(end.getTime() - row.los * 864e5);
     return String(d.getDate()).padStart(2, "0") + "-" + MON[d.getMonth()];
   }
 
-  // Merge rows from several screenshots: the same FIN (or name + location) is kept once
+  // Merge rows from several screenshots (either list layout): the same FIN, MRN or name is kept once,
+  // and blanks in the kept row are filled from the new one (e.g. Admitted date, MRN)
   function merge(list, add) {
-    const key = (r) => r.fin || (r.name + "|" + r.location).toLowerCase();
-    const seen = new Set(list.map(key));
-    add.forEach((r) => { if (!seen.has(key(r))) { list.push(r); seen.add(key(r)); } });
+    const same = (a, b) => (a.fin && a.fin === b.fin) || (a.mrn && a.mrn === b.mrn) ||
+      (a.name && b.name && a.name.toLowerCase().replace(/\s+/g, " ") === b.name.toLowerCase().replace(/\s+/g, " "));
+    add.forEach((r) => {
+      const old = list.find((x) => same(x, r));
+      if (!old) { list.push(r); return; }
+      ["mrn", "fin", "admitted", "dob", "pcp", "service", "sex"].forEach((k) => { if (!old[k] && r[k]) old[k] = r[k]; });
+    });
     return list;
   }
-
 
   // ---- clean-up of single fields (OCR slips seen on real PowerChart screenshots) ----
   const FL = { S: "5", O: "0", o: "0", I: "1", l: "1", Z: "2", B: "8" };      // where a digit belongs
@@ -174,17 +182,28 @@
   const digits = (t) => String(t || "").replace(/[Oo]/g, "0").replace(/[Il|]/g, "1").replace(/\D/g, "");
   const tidy = (t) => clean(t).replace(/^[^A-Za-z0-9]+/, "").replace(/[^A-Za-z0-9).]+$/, "");
 
+  // Room + Bed columns: "HAH25" + "A" -> "HAH25 A"; OCR often joins them ("HAH25A")
+  function roomBed(room, bed) {
+    let r = clean(room).toUpperCase().replace(/\$/g, "S").replace(/\s+/g, "");
+    let b = clean(bed).toUpperCase().replace(/[^A-Z0-9]/g, "");
+    const m = r.match(/^(HAH\d+|[SN]\d{3}|[A-Z]{1,4}\d{1,4})([A-Z])$/);
+    if (!b && m) { r = m[1]; b = m[2]; }
+    return (r + (b ? " " + b : "")).trim();
+  }
+
   // ---- column parser: OCR words with positions, columns found from the header row ----
   // words: [{ text, x0, y0, x1, y1, conf, line }] (line = any id shared by words on one row)
-  const HEAD = [["name", /^name$/], ["location", /^location$/], ["age", /^age$/], ["sex", /^sex$/], ["service", /^medical$/],
-                ["los", /^length$/], ["reason", /^visit$/], ["discharged", /^discharged$/], ["pcp", /^primary$/], ["fin", /^fin$/], ["mrn", /^mrn$/]];
+  // two PowerChart list layouts: "Location" (S7B-VGH S715 A) or separate "Room" + "Bed" (HAH25 | A), the second with DOB and Admitted
+  const HEAD = [["name", /^name$/], ["location", /^location$/], ["room", /^room$/], ["bed", /^bed$/], ["dob", /^dob$/], ["age", /^.?age$/], ["sex", /^sex$/],
+                ["service", /^medical$/], ["admitted", /^admit(?:ted)?$/], ["los", /^length$/], ["reason", /^visit$/], ["discharged", /^disch/],
+                ["pcp", /^primary$/], ["fin", /^fin$/], ["mrn", /^mrn$/]];
   function parseWords(words) {
     const lines = {};
     words.forEach((w) => { (lines[w.line] = lines[w.line] || []).push(w); });
     const ordered = Object.values(lines).map((ws) => ws.sort((a, b) => a.x0 - b.x0))
       .sort((a, b) => a[0].y0 - b[0].y0);
     const norm = (t) => String(t).toLowerCase().replace(/[^a-z]/g, "");
-    const hi = ordered.findIndex((ws) => ws.some((w) => norm(w.text) === "name") && ws.some((w) => norm(w.text) === "location"));
+    const hi = ordered.findIndex((ws) => ws.some((w) => norm(w.text) === "name") && ws.some((w) => /location|room/.test(norm(w.text))));
     if (hi < 0) return null;                                   // no header row in the picture: caller falls back to text
     // header words can run together ("Service|Length"): split them and place each part proportionally
     const hw = [];
@@ -204,7 +223,8 @@
       const f = {}, low = new Set();
       ws.forEach((w) => {
         let c = cols[0];
-        for (const x of cols) if (w.x0 + tol >= x.x) c = x;
+        const mid = (w.x0 + (w.x1 != null ? w.x1 : w.x0)) / 2;   // a word belongs to the column its middle sits in (headers are not always flush with their values)
+        for (const x of cols) if (Math.min(mid, w.x0 + tol + lineH) >= x.x) c = x;
         f[c.k] = (f[c.k] ? f[c.k] + " " : "") + w.text;
         // how sure the reader must be before a cell is left white: names and IDs matter most
         const need = { name: 80, fin: 80, mrn: 80, location: 40, age: 40 }[c.k] || 55;
@@ -213,10 +233,11 @@
       const r = fromFields(f);
       if (r) {
         // a room that still doesn't look like a PowerChart location after clean-up is always flagged
-        if (!/^(?:[SN]\d[A-Z]|\d[A-Z]{2}|HAH)-[A-Z]{3} [A-Z0-9]+(?: [A-Z0-9]{1,2})?$|^VGH [SN]\d[A-Z] [A-Z0-9]+(?: [A-Z0-9]{1,2})?$/.test(r.location)) low.add("location");
+        if (!/^(?:[SN]\d[A-Z]|\d[A-Z]{2}|HAH)-[A-Z]{3} [A-Z0-9]+(?: [A-Z0-9]{1,2})?$|^VGH [SN]\d[A-Z] [A-Z0-9]+(?: [A-Z0-9]{1,2})?$|^[A-Z]{1,4}\d{1,4}(?: [A-Z0-9]{1,2})?$/.test(r.location)) low.add("location");
         if (!(r.age > 0 && r.age < 115)) low.add("age");
         if (!(r.los > 0)) low.add("los");
         if (!r.name || !/^[A-Z][A-Za-z'-]+, [A-Z]/.test(r.name)) low.add("name");
+        r.hasPcpCol = cols.some((x) => x.k === "pcp");   // fp is only "n" when the list shows a PCP column and it is empty
         r.low = Array.from(low); rows.push(r);
       }
     });
@@ -225,7 +246,8 @@
   function fromFields(f) {
     // the end of a long location can spill into the Age column ("... S5BOCB" | "2 65 years")
     let ageTxt = String(f.age || ""), ageM = ageTxt.match(/(\d{1,3})\s*(?:years?|yrs?)/i);
-    if (ageM && ageM.index > 0) { f.location = (f.location || "") + " " + ageTxt.slice(0, ageM.index); }
+    if (ageM && ageM.index > 0 && f.location) { f.location = f.location + " " + ageTxt.slice(0, ageM.index); }
+    if (!f.location && f.room) f.location = roomBed(f.room, f.bed);
     if (!ageM) ageM = ageTxt.match(/(\d{1,3})/);
     // the length of stay can land in the Medical Service column
     if (!(fixLos(f.los) > 0)) { const m = String(f.service || "").match(/(\d+(?:[.,]\d)?)\s*Days?/i); if (m) f.los = m[1]; }
@@ -236,15 +258,15 @@
     if (!loc || !ageM) return null;
     let sex = String(f.sex || f.age || "");
     sex = /fem/i.test(sex) ? "F" : /male/i.test(sex) ? "M" : "";
-    const dis = String(f.discharged || "").match(DIS);
+    const dis = String(f.discharged || "").match(DIS), adm = String(f.admitted || "").match(DIS);
     return {
       name: fixName(f.name), location: loc, floor: floorOf(loc), age: +ageM[1], sex,
       service: tidy(String(f.service || "").split(" ").filter((x) => /[A-Za-z]{3}/.test(x))[0] || ""),
       los: fixLos(f.los), reason: tidy(f.reason), discharged: dis ? dis[1] + " " + dis[2] : "",
-      pcp: tidy(f.pcp), fin, mrn, low: []
+      pcp: tidy(f.pcp), fin, mrn, admitted: adm ? adm[1] + " " + adm[2] : "", dob: (String(f.dob || "").match(/\d{1,2}-[A-Za-z]{3}-\d{4}/) || [""])[0], low: []
     };
   }
 
-  const api = { parse, parseLine, parseWords, floorOf, roomOf, group, admitText, merge, fixLocation, fixLos, fixName };
+  const api = { parse, parseLine, parseWords, floorOf, roomOf, roomBed, group, admitText, merge, fixLocation, fixLos, fixName };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.PList = api;
 })(this);

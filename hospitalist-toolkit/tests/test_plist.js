@@ -62,6 +62,27 @@ eq("admit text", P.admitText({ los: 6.3 }, new Date(2026, 10, 19, 18, 55)), "13-
 eq("admit from discharge", P.admitText({ los: 2, discharged: "18-Nov-2026 10:10" }, new Date(2026, 10, 19)), "16-Nov");
 // merge keeps one copy per FIN
 eq("merge", P.merge([{ fin: "1", name: "A" }], [{ fin: "1", name: "A" }, { fin: "2", name: "B" }]).length, 2);
+const mm = P.merge([{ fin: "9", mrn: "", name: "Sample, Al", location: "HAH-VGH HAH20 A" }], [{ mrn: "123", name: "Sample, Al", location: "HAH20 A", admitted: "12-Nov-2026 14:49" }]);
+eq("merge across layouts by name", [mm.length, mm[0].mrn, mm[0].admitted], [1, "123", "12-Nov-2026 14:49"]);
+
+// Room + Bed layout (Hospital at Home list): Name | Room | Bed | DOB | Age | Sex | Medical Service | MRN | Visit Reason | Admitted | Length of Stay
+eq("roomBed joined by OCR", P.roomBed("HAH25A", ""), "HAH25 A");
+eq("roomBed", P.roomBed("HAH25", "A"), "HAH25 A");
+eq("floor bare HAH room", P.floorOf("HAH25 A"), "HAH");
+eq("floor bare VGH room", P.floorOf("S715 A"), "S7");
+eq("room only stays", P.roomOf("HAH25 A"), "HAH25 A");
+const W2 = (line, x, text) => ({ line, x0: x, x1: x + text.length * 9, y0: line * 30, y1: line * 30 + 20, text, conf: 95 });
+const hah = P.parseWords([
+  W2(0, 0, "Name"), W2(0, 250, "[Room"), W2(0, 330, "'Bed|DOB"), W2(0, 470, "lage"), W2(0, 560, "|sex"), W2(0, 640, "[Medical"), W2(0, 720, "Service|"), W2(0, 860, "MRN"),
+  W2(0, 960, "|visit"), W2(0, 1010, "Reason"), W2(0, 1250, "Admitted"), W2(0, 1450, "|Length"),
+  W2(1, 5, "Sample,"), W2(1, 75, "Ann"), W2(1, 255, "HAH25A"), W2(1, 360, "31-Mar-1946"), W2(1, 475, "80"), W2(1, 500, "years"), W2(1, 565, "Female"),
+  W2(1, 645, "MEDHaH"), W2(1, 840, "01234567"), W2(1, 965, "Urinary"), W2(1, 1035, "retention"), W2(1, 1255, "17-Nov-2026"), W2(1, 1360, "11:41"), W2(1, 1410, "PCT"),
+  W2(1, 1455, "2.4"), W2(1, 1490, "Days")]);
+eq("HAH list: 1 row", hah.length, 1);
+eq("no PCP column -> fp unknown", hah[0].hasPcpCol, false);
+eq("HAH list fields", [hah[0].location, hah[0].floor, hah[0].age, hah[0].sex, hah[0].mrn, hah[0].reason, hah[0].admitted, hah[0].los],
+   ["HAH25 A", "HAH", 80, "F", "01234567", "Urinary retention", "17-Nov-2026 11:41", 2.4]);
+eq("admit date from Admitted column", P.admitText(hah[0], new Date(2026, 10, 30)), "17-Nov");
 
 
 // Chart info (made-up note and banner text)
