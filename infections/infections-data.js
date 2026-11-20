@@ -368,6 +368,57 @@ window.INF_SITES = [
   idc: ["ALL suspected or confirmed active TB - TB specialist (BCCDC TB Services / ID / respirology)", "Report suspected or confirmed TB to public health (Medical Health Officer) - contact tracing; TB drugs supplied free through BCCDC in BC", "Drug resistance, HIV co-infection, pregnancy, liver disease, drug reactions"],
   surgeon: ["Spine surgery for Pott disease with neurological deficit or instability", "Thoracic surgery for empyema/destroyed lung; cardiac surgery for constrictive pericarditis"],
   isolation: ["Airborne precautions (negative-pressure room, N95 for staff, patient wears surgical mask outside the room) as soon as pulmonary/laryngeal TB is suspected", "Stop isolation when TB is excluded: negative TB NAAT or 3 negative AFB smears (local policy and TB physician/IPAC order)", "Confirmed TB: per TB physician - usually after effective treatment for about 2 weeks, clinical improvement and drug susceptibility known (Canadian TB Standards 2022 discourage waiting for smear conversion in every case)"]
+},
+{
+  id: "sepsis", label: "Sepsis, source unclear (blood)", match: /sepsis|septic shock|bacteremia|bacteraemia|febrile neutropenia|fever without source/i,
+  sub: "Empiric therapy while the source is found",
+  organisms: ["Community: E. coli and other Enterobacterales, S. aureus, Strep pneumoniae and other streptococci", "Healthcare-associated, recent antibiotics, lines: MRSA, Pseudomonas, ESBL producers, enterococcus, Candida", "Neutropenia: gram-negatives incl. Pseudomonas first; gram-positives with lines/mucositis"],
+  watch: ["Blood cultures ×2 before antibiotics, but give antibiotics within 1 hour in septic shock", "Look again for the source: lines, skin (incl. back and perineum), urine, chest, abdomen, joints, spine pain (epidural abscess), new murmur (endocarditis), meningism", "If meningitis is possible, use meningitis doses (see Meningitis)", "S. aureus or Candida in blood: always ID consult; echo; remove lines"],
+  ix: { blood: ["Blood cultures ×2 (one from each line), lactate, CBC, creatinine, LFTs, bilirubin, INR"], imaging: ["Chest X-ray; CT of chest/abdomen/pelvis if no source and not improving", "Echo for S. aureus, enterococcus, viridans strep bacteremia"], other: ["Urinalysis and culture, sputum, wound swabs; procalcitonin can support stopping"] },
+  source: ["Remove infected lines/catheters", "Drain abscesses and obstructed systems (urine, bile)"],
+  abx: [
+    { tier: "moderate", setting: "Community-acquired sepsis, source unclear, not in shock", regimen: "Ceftriaxone 2 g IV q24h" },
+    { tier: "moderate", setting: "Add if MRSA risk (prior MRSA, injection drug use, line, severe skin)", regimen: "Add vancomycin IV (load 25 mg/kg, then per pharmacy AUC dosing)" },
+    { tier: "severe", setting: "Septic shock, community", regimen: "Piperacillin-tazobactam 4.5 g IV q6h + vancomycin IV" },
+    { tier: "severe", setting: "Hospital-acquired / recent antibiotics / Pseudomonas risk", regimen: "Piperacillin-tazobactam 4.5 g IV q6h (or cefepime 2 g IV q8h, or meropenem 1 g IV q8h) + vancomycin IV" },
+    { tier: "severe", setting: "Previous ESBL infection or colonization", regimen: "Meropenem 1 g IV q8h + vancomycin IV" },
+    { tier: "severe", setting: "Febrile neutropenia (neutropenic, healthcare)", regimen: "Cefepime 2 g IV q8h or piperacillin-tazobactam 4.5 g IV q6h; add vancomycin for line infection, skin infection, pneumonia, hypotension or MRSA" }
+  ],
+  allergy: ["Non-severe penicillin allergy: cefepime or ceftriaxone are fine", "Severe (anaphylaxis): vancomycin + aztreonam 2 g IV q8h (or + ciprofloxacin 400 mg IV q12h / gentamicin 5–7 mg/kg once); add metronidazole 500 mg IV q12h if abdominal source possible; meropenem is usually acceptable with monitoring", "Severe delayed reaction (SJS/TEN, DRESS): vancomycin + aztreonam or ciprofloxacin – ID input"],
+  duration: ["Set by the source once found; reassess at 48–72 h and stop if no bacterial infection", "Uncomplicated gram-negative bacteremia with source control and improving: 7 days", "S. aureus bacteremia: at least 14 days IV (uncomplicated) – ID"],
+  ivpo: ["IV until stable and the source is known", "Gram-negative bacteremia: oral step-down (fluoroquinolone, TMP-SMX, or high-dose beta-lactam) once stable and susceptible"],
+  idc: ["S. aureus or Candida in blood – always", "Neutropenic fever not settling, MDR organisms", "No source found after 48–72 h"],
+  surgeon: ["Abscess, obstructed bile or urine, necrotizing infection, perforation – source control the same day"]
+},
+{
+  id: "cdiff", label: "C. difficile colitis", match: /c\.? ?diff|clostridi(o)?ides difficile|clostridium difficile|cdad|cdi\b|pseudomembranous/i,
+  sub: "Non-severe, severe, fulminant, first and later recurrences",
+  organisms: ["Clostridioides difficile toxin-producing strains"],
+  watch: ["Severe: WBC >=15 x10^9/L or creatinine >133 umol/L", "Fulminant: hypotension/shock, ileus, toxic megacolon - surgery consult the same day", "Test only unformed stool (>=3 in 24 h) without laxatives in the past 48 h; do not test for cure", "Ileus can mean little diarrhea despite severe disease", "Recurrence = symptoms return within 8 weeks of finishing treatment, with a positive test; about 1 in 4 recur after a first episode, more after each recurrence", "Before calling it a recurrence: rule out post-infectious IBS, laxatives, tube feeds, other infection, IBD flare"],
+  ix: { blood: ["CBC, creatinine, lactate, albumin"], imaging: ["Abdominal X-ray or CT if distension, ileus, peritonism or fulminant"], other: ["Stool C. difficile PCR/GDH with toxin (only if unformed stool)"] },
+  cards: [
+    { title: "Recurrent C. difficile - options by episode (IDSA/SHEA 2021)", table: { head: ["Episode", "Preferred", "Alternatives", "Add / consider"], rows: [
+      ["First episode", "Fidaxomicin 200 mg PO BID x10 days", "Vancomycin 125 mg PO QID x10 days", "Stop PPI and unneeded antibiotics"],
+      ["1st recurrence", "Fidaxomicin 200 mg PO BID x10 days, or extended-pulsed (200 mg BID days 1-5, then 200 mg every other day days 7-25)", "Vancomycin taper and pulse; or vancomycin 125 mg QID x10 days if metronidazole was used the first time", "Bezlotoxumab is no longer available"],
+      ["2nd or later recurrence", "Fidaxomicin (standard or extended-pulsed) or vancomycin taper and pulse", "Vancomycin 125 mg QID x10 days, then rifaximin 400 mg PO TID x20 days", "Fecal microbiota transplant (FMT) after the 2nd recurrence (i.e. 3rd episode) - refer GI/ID"],
+      ["Multiple recurrences, not FMT candidate", "Long-term suppressive vancomycin 125 mg PO daily", "-", "ID/GI"],
+      ["Prior C. difficile and now needs systemic antibiotics", "Shortest, narrowest course; avoid clindamycin, fluoroquinolones, 3rd-gen cephalosporins if possible", "Some give vancomycin 125 mg PO daily (or BID) during the antibiotic course and for ~5 days after (secondary prophylaxis - weaker evidence)", "Discuss with ID for multiple prior recurrences"]] },
+      items: ["Vancomycin taper and pulse (example): 125 mg QID x10-14 days, then 125 mg BID x7 days, then 125 mg daily x7 days, then 125 mg every 2-3 days for 2-8 weeks", "A severe or fulminant recurrence is treated as severe/fulminant first (see those rows)", "FMT: colonoscopy, enema or capsules through an approved program; licensed microbiome products where available", "Metronidazole is not recommended for recurrences"] }],
+  source: ["Stop other antibiotics if possible; stop PPIs and laxatives; contact precautions; soap-and-water hand hygiene (alcohol gel does not kill spores)", "Fulminant/megacolon: colectomy or loop ileostomy with colonic lavage"],
+  abx: [
+    { tier: "mild", setting: "Non-severe, first episode", regimen: "Fidaxomicin 200 mg PO BID x10 days (preferred) or vancomycin 125 mg PO QID x10 days" },
+    { tier: "moderate", setting: "Severe (WBC >=15 or creatinine >133), first episode", regimen: "Fidaxomicin 200 mg PO BID x10 days or vancomycin 125 mg PO QID x10 days" },
+    { tier: "moderate", setting: "First recurrence", regimen: "Fidaxomicin 200 mg PO BID x10 days or extended-pulsed (200 mg BID days 1-5, then every other day days 7-25); or vancomycin taper and pulse" },
+    { tier: "moderate", setting: "Second or later recurrence", regimen: "Fidaxomicin (standard or extended-pulsed) or vancomycin taper and pulse; or vancomycin 125 mg QID x10 days then rifaximin 400 mg PO TID x20 days; refer for fecal microbiota transplant" },
+    { tier: "mild", setting: "Multiple recurrences, not a FMT candidate", regimen: "Suppressive vancomycin 125 mg PO daily long term (ID/GI)" },
+    { tier: "mild", setting: "Prior C. difficile, now on systemic antibiotics (secondary prophylaxis, weaker evidence)", regimen: "Vancomycin 125 mg PO daily or BID during the antibiotic course and ~5 days after" },
+    { tier: "severe", setting: "Fulminant (shock, ileus, megacolon)", regimen: "Vancomycin 500 mg PO/NG QID + metronidazole 500 mg IV q8h; add rectal vancomycin 500 mg in 100 mL saline q6h if ileus" }
+  ],
+  allergy: ["No beta-lactam issue - oral vancomycin and fidaxomicin are not absorbed"],
+  duration: ["10 days for a first episode or standard-course recurrence; extended-pulsed fidaxomicin 25 days; vancomycin taper/pulse 6-12 weeks", "If other antibiotics must continue, many continue C. difficile treatment until those stop", "Second or later recurrence: fecal microbiota transplant"],
+  ivpo: ["Treatment is oral/enteral; IV metronidazole only as an add-on in fulminant disease (IV vancomycin does not reach the colon)"],
+  idc: ["Fulminant disease, any recurrence (ID or GI), immunocompromise, FMT referral"],
+  surgeon: ["Fulminant colitis, toxic megacolon, perforation, rising lactate - general surgery the same day"]
 }
 ];
 

@@ -26,6 +26,12 @@
     { key: "fidax", cls: "cdiff", name: "fidaxomicin", re: /fidaxomicin/i },
     { key: "acyclovir", cls: null, name: "acyclovir", re: /acyclovir|aciclovir|ganciclovir|foscarnet/i }];
 
+  // true if any vancomycin mention is IV (oral/NG/rectal/taper/pulse/125 mg mentions are gut-only, no levels)
+  function ivVanco(text) {
+    const re = /vancomycin/gi; let m, any = false;
+    while ((m = re.exec(text || ""))) { const after = text.slice(m.index, m.index + 45); if (!/\b(po|oral|ng|rectal|taper|pulse|suppressive)\b|125 mg/i.test(after)) any = true; }
+    return any;
+  }
   function drugsIn(text) { return DRUGS.filter((d) => d.re.test(text || "")); }
 
   /* Which risk a regimen row is for, read from its setting text. */
@@ -64,7 +70,7 @@
       if (ctx.crcl < 50 && has("ag")) bump("caution", `Aminoglycoside with CrCl ~${ctx.crcl}: nephro/ototoxicity – single dose or avoid; levels.`);
       if (ctx.crcl < 30 && has("tmpsmx")) bump("caution", `TMP-SMX with CrCl ~${ctx.crcl}: halve dose, watch K.`);
       if (ctx.crcl < 50 && has("ceph") && /cefepime/i.test(text)) bump("caution", "Cefepime: dose to CrCl – neurotoxicity if not adjusted.");
-      if (ctx.crcl < 50 && (has("vanco") && !/vancomycin\s*(125|500)\s*mg\s*po/i.test(text))) bump("caution", "IV vancomycin: renal dosing and levels (AUC).");
+      if (ctx.crcl < 50 && has("vanco") && ivVanco(text)) bump("caution", "IV vancomycin: renal dosing and levels (AUC).");
     }
     if (ctx.crcl != null && ctx.crcl < 50 && has("acyclovir")) bump("caution", `Acyclovir/antiviral with CrCl ~${ctx.crcl}: dose for CrCl, IV fluids, daily creatinine – crystal nephropathy and neurotoxicity.`);
     if (ctx.valproate && has("carb")) bump("avoid", "On valproate: carbapenems drop valproate levels within a day → seizures. Choose another agent.", ["carb"]);
@@ -121,6 +127,6 @@
     return L.join("\n");
   }
 
-  const api = { DRUGS, drugsIn, conditionsOf, assess, choose, allergyLines, crcl, note };
+  const api = { DRUGS, drugsIn, ivVanco, conditionsOf, assess, choose, allergyLines, crcl, note };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else window.AbxMapRules = api;
 })();

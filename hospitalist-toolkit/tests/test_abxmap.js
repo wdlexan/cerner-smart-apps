@@ -1,6 +1,6 @@
 /* node tests/test_abxmap.js - antibiotic chooser rules and chart parsing */
 global.window = {};
-require("../tools/infections/infections-data.js"); require("../tools/abxmap/extra-sites.js"); require("../tools/abxmap/samples.js");
+require("../tools/infections/infections-data.js"); require("../tools/abxmap/extra-sites.js"); require("../tools/abxmap/samples.js"); // extra-sites now empty: sepsis and cdiff live in INF_SITES
 const R = require("../tools/abxmap/rules.js"), C = require("../tools/abxmap/chart.js");
 let fail = 0;
 const ok = (n, c, x) => { if (!c) fail++; console.log((c ? "ok   " : "FAIL ") + n + (!c && x !== undefined ? " | " + JSON.stringify(x).slice(0, 300) : "")); };
@@ -63,4 +63,9 @@ ok("CrCl 23: acyclovir caution", st("Acyclovir 10 mg/kg IV q8h", { crcl: 23 }) =
 ok("meningitis and encephalitis are separate sites", site("mening") && site("enceph") && !site("mening").match.test("HSV encephalitis") && site("enceph").match.test("meningoencephalitis"));
 ok("meningitis cards: CSF table, dexamethasone, unsure pathway", site("mening").cards.length === 3 && site("mening").cards[0].table.rows.length === 8);
 ok("encephalitis cards mention DexEnceph", site("enceph").cards.some((c) => (c.items || []).some((x) => /DexEnceph/.test(x))));
+ok("C. diff: recurrence rows and card", site("cdiff").abx.filter((r) => /recurrence/i.test(r.setting)).length >= 3 && /Recurrent/.test(site("cdiff").cards[0].title));
+ok("C. diff and sepsis are in the shared infections data", window.INF_SITES.some((s) => s.id === "cdiff") && window.INF_SITES.some((s) => s.id === "sepsis"));
+ok("oral vanco taper not flagged as IV", st("Fidaxomicin or vancomycin taper and pulse", { crcl: 20 }) === "ok");
+ok("IV vanco still flagged", st("Piperacillin-tazobactam 4.5 g IV q6h + vancomycin IV", { crcl: 20 }) === "caution");
+ok("ivVanco: 'vancomycin 500 mg PO/NG QID' is oral", !R.ivVanco("Vancomycin 500 mg PO/NG QID + metronidazole 500 mg IV q8h"));
 console.log(fail ? `\n${fail} FAILED` : "\nall passed"); process.exit(fail ? 1 : 0);
