@@ -1,0 +1,51 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, Paul                      DOB: 1972-02-27     Sex: M
+MRN: TESTSE09                            Age: 54
+Admitted: 2026-11-15 (Hospitalist)
+
+HOSPITALIST ADMISSION NOTE
+Date of service: 2026-11-15 15:30
+54 M, three months of exertional dyspnea and dry cough, difficulty climbing stairs and
+getting out of a chair, and cracked rough skin on the sides of the fingers (mechanic's hands).
+Hand arthralgia. Fevers. Proximal weakness 4/5 on exam.
+2026-11-15 14:30 BP: 130/80 HR: 102 RR: 24 Temp: 38.1 C SpO2: 89%
+
+LABORATORY RESULTS
+Collected: 2026-11-15 06:00
+Test                              Result          Units       Reference     Flag
+
+Anti-Jo-1                         Positive                                      
+
+ANA titre                         Negative                                      
+
+Creatine kinase                   2400            U/L         30 - 200      H   
+
+C reactive protein                24              mg/L        0 - 8         H   
+
+Creatinine                        72              umol/L      60 - 110          
+
+
+ACTIVE MEDICATION ORDERS (2026-11-15)
+Acetaminophen 1 g PO QID PRN
+
+ACTIVE PROBLEM LIST
+Interstitial lung disease
+Polyarthritis
+Raynaud phenomenon
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Paul MRN TESTSE09         Page 1
+
+IMAGING AND DIAGNOSTIC REPORTS
+
+CT CHEST HIGH RESOLUTION
+Date of exam: 2026-11-15 11:00
+FINDINGS:
+Bilateral lower-lobe ground glass and reticulation with subpleural sparing.
+IMPRESSION:
+NSIP pattern interstitial lung disease.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Paul MRN TESTSE09         Page 2

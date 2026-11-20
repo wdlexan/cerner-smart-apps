@@ -1,0 +1,74 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, Grace                     DOB: 1999-03-14     Sex: F
+MRN: TESTSE01                            Age: 27
+Admitted: 2026-11-15 (Hospitalist)
+
+HOSPITALIST ADMISSION NOTE
+Date of service: 2026-11-15 14:10
+27 F, previously well. Six weeks of fatigue, photosensitive rash over the cheeks sparing the
+nasolabial folds, painless mouth ulcers, and painful swollen wrists and MCPs with morning
+stiffness over an hour. Two weeks of pleuritic left chest pain. New leg swelling.
+Urinalysis: 3+ blood, 3+ protein, RBC casts on microscopy. Spot urine protein/creatinine
+ratio 1.3 g/g. No new drugs. No fever.
+2026-11-15 13:30 BP: 152/94 HR: 98 RR: 18 Temp: 37.4 C SpO2: 97%
+
+LABORATORY RESULTS
+Collected: 2026-11-15 06:00
+Test                              Result          Units       Reference     Flag
+
+ANA titre                         1:640                                         
+
+ANA pattern                       Homogeneous                                   
+
+Anti-dsDNA                        210             IU/mL       0 - 30        H   
+
+Anti-Sm                           Positive                                      
+
+Anti-U1 RNP                       Positive                                      
+
+Anti-Ro/SSA                       Negative                                      
+
+C3 complement                     0.48            g/L         0.90 - 1.80   L   
+
+C4 complement                     0.04            g/L         0.10 - 0.40   L   
+
+White blood cell count            3.1             x10^9/L     4.0 - 11.0    L   
+
+Platelet count                    82              x10^9/L     150 - 400     L   
+
+Hemoglobin                        108             g/L         120 - 160     L   
+
+Creatinine                        96              umol/L      45 - 90       H   
+
+Lupus anticoagulant               Not detected                                  
+
+
+ACTIVE MEDICATION ORDERS (2026-11-15)
+Hydroxychloroquine 400 mg PO daily
+Prednisone 40 mg PO daily
+Pantoprazole 40 mg PO daily
+Calcium carbonate 500 mg PO BID
+
+ACTIVE PROBLEM LIST
+Malar rash
+Polyarthritis
+Pleural effusion, left
+Oral ulcers
+Glomerulonephritis
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Grace MRN TESTSE01         Page 1
+
+IMAGING AND DIAGNOSTIC REPORTS
+
+CT CHEST WITH CONTRAST
+Date of exam: 2026-11-15 11:00
+FINDINGS:
+Small left pleural effusion. Trace pericardial fluid. Lungs clear.
+IMPRESSION:
+Small left pleural effusion.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Grace MRN TESTSE01         Page 2

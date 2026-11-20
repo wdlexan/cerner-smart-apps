@@ -1,0 +1,82 @@
+[
+ {
+  "file": "01_sle_nephritis_Grace",
+  "label": "01 Grace - SLE with nephritis",
+  "expect": "sle",
+  "age": 27,
+  "sex": "F",
+  "verdict": "meets"
+ },
+ {
+  "file": "02_mpa_rpgn_Harold",
+  "label": "02 Harold - MPA with rapidly rising creatinine",
+  "expect": "mpa",
+  "age": 72,
+  "sex": "M",
+  "verdict": "meets"
+ },
+ {
+  "file": "03_gpa_Ian",
+  "label": "03 Ian - GPA (sinus, cavitating nodules)",
+  "expect": "gpa",
+  "age": 45,
+  "sex": "M",
+  "verdict": "meets"
+ },
+ {
+  "file": "04_ra_Joan",
+  "label": "04 Joan - seropositive rheumatoid arthritis",
+  "expect": "ra",
+  "age": 58,
+  "sex": "F",
+  "verdict": "possible"
+ },
+ {
+  "file": "05_drug_lupus_Kenneth",
+  "label": "05 Kenneth - hydralazine drug-induced lupus",
+  "expect": "dil",
+  "age": 76,
+  "sex": "M",
+  "verdict": "meets"
+ },
+ {
+  "file": "06_low_titre_ana_Muriel",
+  "label": "06 Muriel - low-titre ANA, no autoimmune disease",
+  "expect": null,
+  "age": 82,
+  "sex": "F",
+  "verdict": "meets"
+ },
+ {
+  "file": "07_cryoglobulinemia_Norman",
+  "label": "07 Norman - HCV cryoglobulinemic vasculitis",
+  "expect": "cryo",
+  "age": 61,
+  "sex": "M",
+  "verdict": "meets"
+ },
+ {
+  "file": "08_scleroderma_crisis_Olivia",
+  "label": "08 Olivia - scleroderma renal crisis",
+  "expect": "ssc",
+  "age": 48,
+  "sex": "F",
+  "verdict": "meets"
+ },
+ {
+  "file": "09_antisynthetase_Paul",
+  "label": "09 Paul - antisynthetase syndrome (Jo-1, ILD)",
+  "expect": "myositis",
+  "age": 54,
+  "sex": "M",
+  "verdict": "meets"
+ },
+ {
+  "file": "10_antiphospholipid_Rachel",
+  "label": "10 Rachel - triple-positive antiphospholipid",
+  "expect": "aps",
+  "age": 34,
+  "sex": "F",
+  "verdict": "meets"
+ }
+]

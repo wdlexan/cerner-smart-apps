@@ -85,6 +85,35 @@
     L("b2m", "beta.?2.?microglobulin|\\bb2m\\b", null, "Beta-2 microglobulin", "mg/L"),
     L("igg", "\\bigg\\b", null, "IgG", "g/L"),
     L("mprot", "m.?protein|paraprotein", null, "M-protein", "g/L"),
+    // autoimmune serology (Autoimmune serology tab). Text results use "vals" when the answer is a titre or pattern, not positive/negative.
+    L("anapat", "\\bana pattern|antinuclear antibod(?:y|ies) pattern", null, "ANA pattern", "", { text: true, vals: /^[^\n\d]{0,40}?\b(dense fine speckled|homogeneous|speckled|nucleolar|cytoplasmic|rim|peripheral|centromere|mixed|negative)\b/i }),
+    L("ana", "\\bana(?: titre| titer)?\\b|antinuclear antibod(?:y|ies)(?: titre| titer)?", null, "ANA titre", "", { text: true, vals: /^[^\n]{0,40}?(1\s*:\s*\d+|negative|positive)/i }),
+    L("dsdna", "anti.?ds.?dna|double.?stranded dna", null, "Anti-dsDNA", "IU/mL"),
+    L("rnp", "anti.?(?:u1.?)?rnp", null, "Anti-U1 RNP", "", TXT),
+    L("sm", "anti.?sm\\b|anti.?smith", null, "Anti-Sm", "", TXT),
+    L("ro", "anti.?ro(?:\\/ss-?a)?\\b|\\bss-?a\\b", null, "Anti-Ro/SSA", "", TXT),
+    L("la", "anti.?la(?:\\/ss-?b)?\\b|\\bss-?b\\b", null, "Anti-La/SSB", "", TXT),
+    L("scl70", "anti.?scl.?70|topoisomerase i\\b", null, "Anti-Scl-70", "", TXT),
+    L("cenp", "anti.?centromere|centromere b|\\bcenp", null, "Anti-centromere", "", TXT),
+    L("rnapol", "anti.?rna polymerase iii|rna pol(?:ymerase)? iii", null, "Anti-RNA polymerase III", "", TXT),
+    L("jo1", "anti.?jo.?1\\b|\\bjo.?1\\b", null, "Anti-Jo-1", "", TXT),
+    L("histone", "anti.?histone", null, "Anti-histone", "", TXT),
+    L("pr3", "anti.?pr3\\b|\\bpr3\\b|proteinase.?3", null, "Anti-PR3", "U/mL"),
+    L("mpo", "anti.?mpo\\b|\\bmpo\\b|myeloperoxidase", null, "Anti-MPO", "U/mL"),
+    L("anca", "\\banca\\b(?: \\(?iif\\)?)?", null, "ANCA (IIF)", "", { text: true, vals: /^[^\n\d]{0,40}?\b(perinuclear|cytoplasmic|atypical|negative|positive)\b/i }),
+    L("gbm", "anti.?gbm|glomerular basement membrane", null, "Anti-GBM", "U/mL"),
+    L("acl", "anti.?cardiolipin(?: ig[gm])?", null, "Anticardiolipin IgG", "GPL"),
+    L("b2gpi", "anti.?beta.?2.?glycoprotein(?: i)?(?: ig[gm])?", null, "Anti-beta2 glycoprotein I IgG", "U/mL"),
+    L("lac", "lupus anticoagulant|\\bdrvvt\\b", null, "Lupus anticoagulant", "", TXT),
+    L("ccp", "anti.?ccp|cyclic citrullinated peptide", null, "Anti-CCP", "U/mL"),
+    L("rf", "rheumatoid factor|\\brf\\b", null, "Rheumatoid factor", "IU/mL"),
+    L("c3", "\\bc3\\b(?: complement)?|complement c3", null, "C3 complement", "g/L"),
+    L("c4", "\\bc4\\b(?: complement)?|complement c4", null, "C4 complement", "g/L"),
+    L("cryo", "cryoglobulins?", null, "Cryoglobulins", "", TXT),
+    L("ama", "anti.?mitochondrial(?: antibod(?:y|ies))?", null, "Anti-mitochondrial antibody", "", TXT),
+    L("asma", "anti.?smooth muscle(?: antibod(?:y|ies))?", null, "Anti-smooth muscle antibody", "", TXT),
+    L("b27", "hla.?b27", null, "HLA-B27", "", TXT),
+    L("dat", "direct antiglobulin(?: test)?|direct coombs|\\bdat\\b", null, "Direct antiglobulin test", "", TXT),
     L("cdiff", "c\\.? ?difficile(?: toxin)?|clostridi\\w+ difficile|clostridioides difficile|toxin [ab]", null, "C. difficile", "", TXT),
     L("tb", "quantiferon|\\bigra\\b|t-?spot|mantoux|tuberculin", null, "TB test (IGRA / skin)", "", TXT),
     L("hbsag", "hepatitis b surface antigen|\\bhbsag\\b", "5196-1", "Hepatitis B surface antigen", "", TXT),
@@ -172,7 +201,7 @@
         if (h.i > 45 && k === 0 && !/[:\t]|\s{2}/.test(ln.slice(Math.max(0, h.i - 3), h.i))) { /* name deep inside a sentence: keep only with a clear separator */ }
         const nextI = k + 1 < kept.length ? kept[k + 1].i : ln.length, rest = ln.slice(h.e, nextI);
         const def = h.def; let value = null, unit = "", cmp = "", text = null, tail = "";
-        if (def.text) { const m = TEXTVAL.exec(rest); if (!m) return; text = m[1].replace(/^neg$/i, "Negative").replace(/^pos$/i, "Positive"); text = text[0].toUpperCase() + text.slice(1).toLowerCase(); tail = rest.slice(m[0].length); }
+        if (def.text) { const m = (def.vals || TEXTVAL).exec(rest); if (!m) return; text = m[1].replace(/^neg$/i, "Negative").replace(/^pos$/i, "Positive"); text = text[0].toUpperCase() + text.slice(1).toLowerCase(); tail = rest.slice(m[0].length); }
         else {
           const m = NUM.exec(rest); if (!m) return;
           const n = num(m[1]); if (isNaN(n.v)) return; value = n.v; cmp = n.cmp; tail = rest.slice(m[0].length).replace(/^(\S+)\s+\/\s*(?=[A-Za-zµ])/, "$1/");
@@ -289,7 +318,12 @@
     ["Status epilepticus", /status epilepticus/i, "G40.901"], ["Epilepsy", /epilep(?:sy|tic)/i, "G40.909"], ["Seizure", /\bseizures?\b|convulsions?/i, "R56.9"],
     ["Alcohol use disorder", /alcohol use disorder|alcohol dependence|alcoholism/i, "F10.20"],
     ["Cellulitis", /cellulitis|erysipelas/i, "L03.90"], ["Necrotizing fasciitis", /necroti[sz]ing fasciitis|necroti[sz]ing soft tissue/i, "M72.6"], ["Diverticulitis", /diverticulitis/i, "K57.92"],
-    ["Meningitis", /meningitis/i, "G03.9"], ["Encephalitis", /encephalitis/i, "G04.90"], ["Septic arthritis", /septic arthritis|prosthetic joint infection/i, "M00.9"], ["Osteomyelitis", /osteomyelitis/i, "M86.9"],
+    ["Meningitis", /meningitis/i, "G03.9"], ["Encephalitis", /encephalitis/i, "G04.90"], ["Septic arthritis", /septic arthritis|prosthetic joint infection/i, "M00.9"],
+    ["Raynaud phenomenon", /raynaud/i, "I73.00"], ["Interstitial lung disease", /interstitial lung disease|pulmonary fibrosis|\bild\b/i, "J84.9"], ["Glomerulonephritis", /glomerulonephritis/i, "N05.9"],
+    ["Pleural effusion", /pleural effusion/i, "J90"], ["Pericarditis", /pericarditis/i, "I30.9"], ["Nasal polyps", /nasal polyp/i, "J33.9"], ["Purpura", /purpura/i, "D69.2"],
+    ["Mononeuritis multiplex", /mononeuritis multiplex/i, "G58.7"], ["Polyarthritis", /(?<!osteo)polyarthritis|inflammatory arthritis|synovitis/i, "M13.0"], ["Pulmonary hypertension", /pulmonary (?:arterial )?hypertension/i, "I27.20"],
+    ["Malar rash", /malar rash|acute cutaneous lupus/i, "L93.2"], ["Sclerodactyly", /sclerodactyly/i, "M34.9"], ["Hypertensive emergency", /hypertensive (?:emergency|urgency)|malignant hypertension/i, "I16.1"],
+    ["Oral ulcers", /oral ulcers?|aphthous/i, "K12.0"], ["Alveolar hemorrhage", /alveolar h(?:a)?emorrhage/i, "R04.89"], ["Lung nodules", /(?:lung|pulmonary) nodules?|cavitating nodule/i, "R91.8"], ["Osteomyelitis", /osteomyelitis/i, "M86.9"],
     ["Prostatitis", /prostatitis/i, "N41.0"], ["Sinusitis", /sinusitis/i, "J32.9"], ["Dental abscess", /dental abscess|odontogenic|periapical abscess|ludwig/i, "K04.7"],
     ["Ascending cholangitis", /cholangitis/i, "K83.09"], ["Cholecystitis", /cholecystitis/i, "K81.9"], ["Choledocholithiasis", /choledocholithiasis/i, "K80.50"],
     ["Tuberculosis", /tuberculosis/i, "A15.9"], ["Fournier gangrene", /fournier/i, "N49.3"], ["Epididymo-orchitis", /epididym|orchitis/i, "N45.3"], ["Perianal abscess", /perianal abscess|perirectal abscess|ischiorectal abscess/i, "K61.0"]

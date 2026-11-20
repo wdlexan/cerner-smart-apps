@@ -1,0 +1,65 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, Harold                    DOB: 1954-07-02     Sex: M
+MRN: TESTSE02                            Age: 72
+Admitted: 2026-11-14 (Hospitalist)
+
+HOSPITALIST ADMISSION NOTE
+Date of service: 2026-11-14 16:00
+72 M, two months of malaise, weight loss 6 kg and dry cough. Creatinine 140 four weeks ago
+at his GP, now much higher. Urinalysis: 3+ blood, 2+ protein, dysmorphic red cells.
+No hemoptysis. No sinus symptoms, no asthma. No new drugs.
+2026-11-14 15:00 BP: 148/86 HR: 88 RR: 20 Temp: 37.6 C SpO2: 94%
+
+LABORATORY RESULTS
+Collected: 2026-11-14 06:00
+Test                              Result          Units       Reference     Flag
+
+ANCA (IIF)                        Perinuclear pattern                              
+
+Anti-MPO                          118             U/mL        < 20          H   
+
+Anti-PR3                          <2              U/mL        < 20              
+
+Anti-GBM                          1               U/mL        < 20              
+
+ANA titre                         Negative                                      
+
+C3 complement                     1.20            g/L         0.90 - 1.80       
+
+C4 complement                     0.25            g/L         0.10 - 0.40       
+
+Creatinine                        412             umol/L      60 - 110      H   
+
+Eosinophils                       0.2             x10^9/L     0.0 - 0.5         
+
+Hemoglobin                        98              g/L         135 - 175     L   
+
+C reactive protein                64              mg/L        0 - 8         H   
+
+
+ACTIVE MEDICATION ORDERS (2026-11-14)
+Amlodipine 5 mg PO daily
+Atorvastatin 20 mg PO daily
+
+ACTIVE PROBLEM LIST
+Glomerulonephritis
+Interstitial lung disease
+Hypertension
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Harold MRN TESTSE02         Page 1
+
+IMAGING AND DIAGNOSTIC REPORTS
+
+CT CHEST WITHOUT CONTRAST
+Date of exam: 2026-11-14 12:00
+FINDINGS:
+Basal subpleural reticulation with traction bronchiectasis. No nodules. No alveolar
+hemorrhage.
+IMPRESSION:
+Fibrotic interstitial lung disease, UIP pattern.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Harold MRN TESTSE02         Page 2

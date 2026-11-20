@@ -96,6 +96,7 @@
     [/myositis|inflammatory myopathy/i, 'weakness'], [/(?<!osteo)(rheumatoid |inflammatory |poly)arthritis|synovitis/i, 'synovitis'],
     [/polymyalgia/i, 'girdle'], [/giant cell arteritis|temporal arteritis/i, 'gca'], [/sicca|dry eye|xerostomia|sj[oö]gren/i, 'sicca'],
     [/hemolytic an(a)?emia/i, 'aiha'], [/dysphagia/i, 'dysphagia'],
+    [/malar rash|acute cutaneous lupus/i, 'acle'], [/sclerodactyly/i, 'sclerodactyly'], [/hypertensive (emergency|urgency)|malignant hypertension/i, 'newhtn'], [/(lung|pulmonary) nodules?|cavitating nodule/i, 'nodules'],
   ];
 
   // ---------- Medication lists ----------

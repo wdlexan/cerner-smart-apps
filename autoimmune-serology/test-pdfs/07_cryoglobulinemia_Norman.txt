@@ -1,0 +1,55 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, Norman                    DOB: 1965-04-19     Sex: M
+MRN: TESTSE07                            Age: 61
+Admitted: 2026-11-14 (Hospitalist)
+
+HOSPITALIST ADMISSION NOTE
+Date of service: 2026-11-14 12:00
+61 M, past injection drug use, never treated for hepatitis. Three weeks of palpable purpura
+on both shins, burning feet and right foot drop. Arthralgia of the knees.
+Urinalysis: 2+ blood, 2+ protein.
+2026-11-14 11:00 BP: 158/92 HR: 84 RR: 16 Temp: 37.0 C SpO2: 98%
+
+LABORATORY RESULTS
+Collected: 2026-11-14 06:00
+Test                              Result          Units       Reference     Flag
+
+Rheumatoid factor                 420             IU/mL       0 - 15        H   
+
+C3 complement                     0.95            g/L         0.90 - 1.80       
+
+C4 complement                     <0.02           g/L         0.10 - 0.40   L   
+
+Cryoglobulins                     Positive                                      
+
+Hepatitis C antibody              Positive                                      
+
+Creatinine                        160             umol/L      60 - 110      H   
+
+ALT                               74              U/L         0 - 40        H   
+
+
+ACTIVE MEDICATION ORDERS (2026-11-14)
+Gabapentin 300 mg PO TID
+
+ACTIVE PROBLEM LIST
+Purpura
+Mononeuritis multiplex
+Glomerulonephritis
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Norman MRN TESTSE07         Page 1
+
+IMAGING AND DIAGNOSTIC REPORTS
+
+NERVE CONDUCTION STUDY
+Date of exam: 2026-11-15 10:00
+FINDINGS:
+Asymmetric axonal sensorimotor neuropathy, worst in the right peroneal nerve.
+IMPRESSION:
+Pattern in keeping with mononeuritis multiplex.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Norman MRN TESTSE07         Page 2

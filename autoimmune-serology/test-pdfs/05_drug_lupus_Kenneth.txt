@@ -1,0 +1,58 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, Kenneth                   DOB: 1950-09-11     Sex: M
+MRN: TESTSE05                            Age: 76
+Admitted: 2026-11-12 (Hospitalist)
+
+HOSPITALIST PROGRESS NOTE
+Date of service: 2026-11-16 09:15
+76 M with heart failure on hydralazine for 3 years. Two months of arthralgia and swelling of
+both wrists and knees, low-grade fevers and pleuritic chest pain. No rash, no mouth ulcers.
+Urinalysis bland.
+2026-11-16 08:00 BP: 124/70 HR: 78 RR: 18 Temp: 37.8 C SpO2: 95%
+
+LABORATORY RESULTS
+Collected: 2026-11-16 06:00
+Test                              Result          Units       Reference     Flag
+
+ANA titre                         1:1280                                        
+
+ANA pattern                       Homogeneous                                   
+
+Anti-histone                      Positive                                      
+
+Anti-dsDNA                        4               IU/mL       0 - 30            
+
+C3 complement                     1.30            g/L         0.90 - 1.80       
+
+C4 complement                     0.30            g/L         0.10 - 0.40       
+
+Creatinine                        104             umol/L      60 - 110          
+
+
+ACTIVE MEDICATION ORDERS (2026-11-16)
+Hydralazine 50 mg PO TID
+Isosorbide dinitrate 20 mg PO TID
+Furosemide 40 mg PO daily
+Bisoprolol 5 mg PO daily
+
+ACTIVE PROBLEM LIST
+Heart failure
+Pleural effusion, bilateral
+Polyarthritis
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Kenneth MRN TESTSE05         Page 1
+
+IMAGING AND DIAGNOSTIC REPORTS
+
+CHEST X-RAY
+Date of exam: 2026-11-15 07:00
+FINDINGS:
+Small bilateral pleural effusions. Normal heart size.
+IMPRESSION:
+Small bilateral effusions.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Kenneth MRN TESTSE05         Page 2

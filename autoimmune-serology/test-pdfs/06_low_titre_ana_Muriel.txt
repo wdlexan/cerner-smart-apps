@@ -1,0 +1,63 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, Muriel                    DOB: 1943-12-01     Sex: F
+MRN: TESTSE06                            Age: 82
+Admitted: 2026-11-15 (Hospitalist)
+
+HOSPITALIST ADMISSION NOTE
+Date of service: 2026-11-15 18:00
+82 F admitted after a mechanical fall. Six months of fatigue. GP sent screening blood work
+including an antinuclear screen. No rash, joint swelling, Raynaud, dry eyes or mouth, or
+muscle weakness. Exam unremarkable apart from right hip bruising.
+2026-11-15 17:00 BP: 136/78 HR: 72 RR: 16 Temp: 36.6 C SpO2: 97%
+
+LABORATORY RESULTS
+Collected: 2026-11-15 06:00
+Test                              Result          Units       Reference     Flag
+
+ANA titre                         1:80                                          
+
+ANA pattern                       Dense fine speckled                              
+
+Anti-dsDNA                        2               IU/mL       0 - 30            
+
+Anti-Sm                           Negative                                      
+
+Anti-U1 RNP                       Negative                                      
+
+Anti-Ro/SSA                       Negative                                      
+
+Anti-La/SSB                       Negative                                      
+
+C3 complement                     1.10            g/L         0.90 - 1.80       
+
+C4 complement                     0.22            g/L         0.10 - 0.40       
+
+Creatine kinase                   88              U/L         30 - 200          
+
+Erythrocyte sedimentation rate    22              mm/h        0 - 30            
+
+
+ACTIVE MEDICATION ORDERS (2026-11-15)
+Levothyroxine 75 mcg PO daily
+Vitamin D 1000 units PO daily
+
+ACTIVE PROBLEM LIST
+Hypothyroidism
+Fall
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Muriel MRN TESTSE06         Page 1
+
+IMAGING AND DIAGNOSTIC REPORTS
+
+X-RAY RIGHT HIP
+Date of exam: 2026-11-15 16:00
+FINDINGS:
+No fracture.
+IMPRESSION:
+No acute fracture.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Muriel MRN TESTSE06         Page 2

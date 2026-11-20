@@ -32,6 +32,56 @@ window.SAMPLE_PDFS = [
   "file": "Autoimmune encephalitis/06 Felix - mimic: primary psychosis.pdf"
  },
  {
+  "folder": "Autoimmune serology",
+  "label": "01 Grace - SLE with nephritis",
+  "file": "Autoimmune serology/01 Grace - SLE with nephritis.pdf"
+ },
+ {
+  "folder": "Autoimmune serology",
+  "label": "02 Harold - MPA with rapidly rising creatinine",
+  "file": "Autoimmune serology/02 Harold - MPA with rapidly rising creatinine.pdf"
+ },
+ {
+  "folder": "Autoimmune serology",
+  "label": "03 Ian - GPA (sinus, cavitating nodules)",
+  "file": "Autoimmune serology/03 Ian - GPA (sinus, cavitating nodules).pdf"
+ },
+ {
+  "folder": "Autoimmune serology",
+  "label": "04 Joan - seropositive rheumatoid arthritis",
+  "file": "Autoimmune serology/04 Joan - seropositive rheumatoid arthritis.pdf"
+ },
+ {
+  "folder": "Autoimmune serology",
+  "label": "05 Kenneth - hydralazine drug-induced lupus",
+  "file": "Autoimmune serology/05 Kenneth - hydralazine drug-induced lupus.pdf"
+ },
+ {
+  "folder": "Autoimmune serology",
+  "label": "06 Muriel - low-titre ANA, no autoimmune disease",
+  "file": "Autoimmune serology/06 Muriel - low-titre ANA, no autoimmune disease.pdf"
+ },
+ {
+  "folder": "Autoimmune serology",
+  "label": "07 Norman - HCV cryoglobulinemic vasculitis",
+  "file": "Autoimmune serology/07 Norman - HCV cryoglobulinemic vasculitis.pdf"
+ },
+ {
+  "folder": "Autoimmune serology",
+  "label": "08 Olivia - scleroderma renal crisis",
+  "file": "Autoimmune serology/08 Olivia - scleroderma renal crisis.pdf"
+ },
+ {
+  "folder": "Autoimmune serology",
+  "label": "09 Paul - antisynthetase syndrome (Jo-1, ILD)",
+  "file": "Autoimmune serology/09 Paul - antisynthetase syndrome (Jo-1, ILD).pdf"
+ },
+ {
+  "folder": "Autoimmune serology",
+  "label": "10 Rachel - triple-positive antiphospholipid",
+  "file": "Autoimmune serology/10 Rachel - triple-positive antiphospholipid.pdf"
+ },
+ {
   "folder": "Bowel obstruction",
   "label": "01 Test patient - gallstone ileus",
   "file": "Bowel obstruction/01 Test patient - gallstone ileus.pdf"

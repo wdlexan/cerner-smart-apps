@@ -1,0 +1,53 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, Rachel                    DOB: 1992-06-05     Sex: F
+MRN: TESTSE10                            Age: 34
+Admitted: 2026-11-14 (Hospitalist)
+
+HOSPITALIST ADMISSION NOTE
+Date of service: 2026-11-14 13:00
+34 F with an unprovoked left leg DVT and pulmonary embolism. Two pregnancy losses at 12 and
+14 weeks. Not on estrogen. Clotting studies drawn before heparin was started.
+2026-11-14 12:00 BP: 118/72 HR: 108 RR: 22 Temp: 37.0 C SpO2: 93%
+
+LABORATORY RESULTS
+Collected: 2026-11-14 06:00
+Test                              Result          Units       Reference     Flag
+
+Lupus anticoagulant               Detected                                      
+
+Anticardiolipin IgG               85              GPL         < 20          H   
+
+Anti-beta2 glycoprotein I IgG     64              U/mL        < 20          H   
+
+ANA titre                         1:160                                         
+
+ANA pattern                       Speckled                                      
+
+Platelet count                    110             x10^9/L     150 - 400     L   
+
+Creatinine                        64              umol/L      45 - 90           
+
+
+ACTIVE MEDICATION ORDERS (2026-11-14)
+Enoxaparin 70 mg SC q12h
+
+ACTIVE PROBLEM LIST
+Deep vein thrombosis, left leg
+Pulmonary embolism
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Rachel MRN TESTSE10         Page 1
+
+IMAGING AND DIAGNOSTIC REPORTS
+
+CT PULMONARY ANGIOGRAM
+Date of exam: 2026-11-14 10:00
+FINDINGS:
+Filling defects in right lower lobe segmental arteries.
+IMPRESSION:
+Acute pulmonary embolism.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Rachel MRN TESTSE10         Page 2

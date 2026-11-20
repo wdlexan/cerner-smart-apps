@@ -1,0 +1,63 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, Ian                       DOB: 1981-01-22     Sex: M
+MRN: TESTSE03                            Age: 45
+Admitted: 2026-11-16 (Hospitalist)
+
+HOSPITALIST ADMISSION NOTE
+Date of service: 2026-11-16 10:30
+45 M, three months of nasal crusting, bloody nasal discharge and recurrent sinus infections
+not settling with antibiotics. New cough with streaks of hemoptysis. Right ear fullness with
+reduced hearing. Urinalysis: 2+ blood, 1+ protein. No asthma.
+2026-11-16 09:00 BP: 138/84 HR: 96 RR: 20 Temp: 37.9 C SpO2: 95%
+
+LABORATORY RESULTS
+Collected: 2026-11-16 06:00
+Test                              Result          Units       Reference     Flag
+
+ANCA (IIF)                        Cytoplasmic pattern                              
+
+Anti-PR3                          186             U/mL        < 20          H   
+
+Anti-MPO                          <2              U/mL        < 20              
+
+Creatinine                        165             umol/L      60 - 110      H   
+
+C reactive protein                88              mg/L        0 - 8         H   
+
+Eosinophils                       0.1             x10^9/L     0.0 - 0.5         
+
+Hemoglobin                        121             g/L         135 - 175     L   
+
+
+ACTIVE MEDICATION ORDERS (2026-11-16)
+Amoxicillin-clavulanate 875 mg PO BID
+Saline nasal rinse BID
+
+ACTIVE PROBLEM LIST
+Sinusitis, chronic
+Lung nodules, cavitating
+Glomerulonephritis
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Ian MRN TESTSE03         Page 1
+
+IMAGING AND DIAGNOSTIC REPORTS
+
+CT CHEST WITH CONTRAST
+Date of exam: 2026-11-16 08:00
+FINDINGS:
+Multiple bilateral nodules up to 2.8 cm, two with central cavitation. No effusion.
+IMPRESSION:
+Multiple cavitating nodules.
+
+CT SINUSES
+Date of exam: 2026-11-16 08:30
+FINDINGS:
+Mucosal thickening of the maxillary sinuses with nasal septal erosion.
+IMPRESSION:
+Sinonasal inflammation with septal erosion.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Ian MRN TESTSE03         Page 2

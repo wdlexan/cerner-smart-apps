@@ -1,0 +1,55 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, Joan                      DOB: 1968-05-30     Sex: F
+MRN: TESTSE04                            Age: 58
+Admitted: 2026-11-13 (Hospitalist)
+
+HOSPITALIST CONSULT NOTE
+Date of service: 2026-11-17 11:00
+Admitted with a fall. Four months of symmetric pain and swelling of both wrists, MCPs, PIPs and
+MTPs, more than 10 joints in total, with two hours of morning stiffness. No rash, no mouth
+ulcers, no Raynaud. Synovitis on exam of wrists, MCPs 2-4 bilaterally and knees.
+2026-11-17 08:00 BP: 128/76 HR: 82 RR: 16 Temp: 36.8 C SpO2: 98%
+
+LABORATORY RESULTS
+Collected: 2026-11-17 06:00
+Test                              Result          Units       Reference     Flag
+
+Rheumatoid factor                 180             IU/mL       0 - 15        H   
+
+Anti-CCP                          >250            U/mL        < 20          H   
+
+ANA titre                         1:80                                          
+
+ANA pattern                       Speckled                                      
+
+Erythrocyte sedimentation rate    48              mm/h        0 - 30        H   
+
+C reactive protein                32              mg/L        0 - 8         H   
+
+Hemoglobin                        112             g/L         120 - 160     L   
+
+
+ACTIVE MEDICATION ORDERS (2026-11-17)
+Naproxen 500 mg PO BID
+Acetaminophen 1 g PO QID
+
+ACTIVE PROBLEM LIST
+Polyarthritis
+Fall
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Joan MRN TESTSE04         Page 1
+
+IMAGING AND DIAGNOSTIC REPORTS
+
+X-RAY BOTH HANDS
+Date of exam: 2026-11-16 10:00
+FINDINGS:
+Periarticular osteopenia. Small marginal erosions at the right 2nd and 3rd MCP heads.
+IMPRESSION:
+Erosive inflammatory arthropathy.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Joan MRN TESTSE04         Page 2

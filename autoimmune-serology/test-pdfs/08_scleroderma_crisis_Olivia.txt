@@ -1,0 +1,58 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, Olivia                    DOB: 1978-08-08     Sex: F
+MRN: TESTSE08                            Age: 48
+Admitted: 2026-11-16 (Hospitalist)
+
+HOSPITALIST ADMISSION NOTE
+Date of service: 2026-11-16 20:00
+48 F, eight months of Raynaud, puffy hands, then rapidly spreading skin tightening of the
+fingers, forearms and chest. Prednisone 30 mg started 3 weeks ago by a walk-in clinic for
+hand swelling. Now severe headache, blurred vision, BP 210/120. Urinalysis: 1+ protein.
+2026-11-16 19:00 BP: 210/120 HR: 104 RR: 18 Temp: 36.9 C SpO2: 97%
+
+LABORATORY RESULTS
+Collected: 2026-11-16 18:30
+Test                              Result          Units       Reference     Flag
+
+ANA titre                         1:1280                                        
+
+ANA pattern                       Nucleolar                                     
+
+Anti-RNA polymerase III           Positive                                      
+
+Anti-Scl-70                       Negative                                      
+
+Anti-centromere                   Negative                                      
+
+Creatinine                        238             umol/L      45 - 90       H   
+
+Platelet count                    95              x10^9/L     150 - 400     L   
+
+Hemoglobin                        92              g/L         120 - 160     L   
+
+
+ACTIVE MEDICATION ORDERS (2026-11-16)
+Prednisone 30 mg PO daily
+Nifedipine XL 30 mg PO daily
+
+ACTIVE PROBLEM LIST
+Raynaud phenomenon
+Sclerodactyly
+Hypertensive emergency
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Olivia MRN TESTSE08         Page 1
+
+IMAGING AND DIAGNOSTIC REPORTS
+
+CT HEAD WITHOUT CONTRAST
+Date of exam: 2026-11-16 19:30
+FINDINGS:
+No hemorrhage. Subtle bilateral parieto-occipital hypodensity.
+IMPRESSION:
+Query posterior reversible encephalopathy.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, Olivia MRN TESTSE08         Page 2
