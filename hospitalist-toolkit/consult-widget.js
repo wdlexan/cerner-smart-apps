@@ -33,6 +33,37 @@
   const words = (t) => (String(t).trim().match(/\S+/g) || []).length;
   const ageOf = (b) => { if (!b) return null; const d = new Date(b), n = new Date(); let a = n.getFullYear() - d.getFullYear(); if (n < new Date(n.getFullYear(), d.getMonth(), d.getDate())) a--; return isNaN(a) ? null : a; };
 
+
+  /* ---- labs: short names, which are pertinent to each service ---- */
+  const LAB_SHORT = [[/creatinine(?!.*(urine|clearance|kinase|ratio))/i, "Cr"], [/^potassium|potassium,? (serum|plasma|blood)/i, "K"], [/^sodium|sodium,? (serum|plasma|blood)/i, "Na"], [/bicarbonate|total co2|\bco2\b|\bhco3/i, "HCO3"], [/urea|\bbun\b/i, "Urea"],
+    [/hemoglobin(?!.*a1c)|haemoglobin(?!.*a1c)|^hgb\b|^hb\b/i, "Hb"], [/platelet/i, "Plt"], [/^wbc|white blood|leukocyte(?!.*esterase)/i, "WBC"], [/neutrophil/i, "Neut"], [/c.reactive|^crp/i, "CRP"], [/lactate(?! dehydrogenase)|lactic/i, "Lactate"],
+    [/procalcitonin/i, "PCT"], [/troponin/i, "Trop"], [/bnp|natriuretic/i, "NT-proBNP"], [/bilirubin/i, "Bili"], [/\balt\b|alanine/i, "ALT"], [/\bast\b|aspartate/i, "AST"], [/alkaline phos|\balp\b/i, "ALP"],
+    [/\binr\b|prothrombin/i, "INR"], [/albumin(?!.*urine)/i, "Alb"], [/lipase/i, "Lipase"], [/glucose/i, "Gluc"], [/a1c/i, "A1c"], [/^calcium|calcium,? (total|serum)/i, "Ca"], [/magnesium/i, "Mg"], [/phosph(?!atase)/i, "PO4"],
+    [/lactate dehydrogenase|\bldh\b/i, "LDH"], [/ferritin/i, "Ferritin"], [/haptoglobin/i, "Hapto"], [/reticulocyte/i, "Retic"], [/\bpco2\b/i, "pCO2"], [/^ph\b|\bph,? (arterial|venous|blood)/i, "pH"], [/\btsh\b|thyrotropin/i, "TSH"], [/b12|cobalamin/i, "B12"],
+    [/\bcea\b/i, "CEA"], [/ca[ -]?125/i, "CA-125"], [/ck\b|creatine kinase/i, "CK"], [/ammonia/i, "NH3"], [/osmolal/i, "Osm"]];
+  const PERTINENT = { "Infectious diseases": ["WBC", "CRP", "Lactate", "PCT", "Cr", "Neut"], "General surgery": ["WBC", "Lactate", "Hb", "Lipase", "Bili", "Cr", "INR"], "Internal medicine": ["Hb", "WBC", "Na", "K", "Cr"],
+    Cardiology: ["Trop", "NT-proBNP", "K", "Mg", "Cr", "Hb"], Nephrology: ["Cr", "Urea", "K", "Na", "HCO3", "PO4", "Ca"], Neurology: ["Na", "Gluc", "Ca", "WBC"], Gastroenterology: ["Hb", "Bili", "ALT", "ALP", "INR", "Alb", "Lipase", "Plt"],
+    Respirology: ["WBC", "CRP", "pCO2", "pH", "NT-proBNP"], Hematology: ["Hb", "Plt", "WBC", "Neut", "INR", "LDH", "Bili", "Retic", "Hapto"], "Medical oncology": ["Hb", "Plt", "WBC", "Neut", "Ca", "Cr", "Alb", "Bili"],
+    Endocrinology: ["Gluc", "A1c", "Na", "K", "HCO3", "Ca", "TSH"], Geriatrics: ["Na", "Ca", "Hb", "Cr", "TSH", "B12"], "Palliative care": ["Ca", "Cr", "Na", "Alb", "Hb"], Psychiatry: ["Na", "K", "PO4", "Mg", "Gluc"],
+    Orthopedics: ["Hb", "Cr", "INR", "Plt", "WBC"], Urology: ["Cr", "K", "WBC", "Hb"], Neurosurgery: ["Na", "INR", "Plt", "Hb"], "Vascular surgery": ["Hb", "Cr", "Lactate", "INR"], "Thoracic surgery": ["WBC", "Hb", "INR"],
+    "Interventional radiology": ["INR", "Plt", "Hb", "Cr"], ICU: ["Lactate", "pH", "pCO2", "HCO3", "Cr", "K", "WBC", "Hb"], Other: [] };
+  const shortName = (n) => { const h = LAB_SHORT.find(([re]) => re.test(n || "")); return h ? h[1] : null; };
+  const fmtV = (v) => (Math.abs(v) >= 100 ? Math.round(v) : +(+v).toFixed(Math.abs(v) < 10 ? 2 : 1)).toString().replace(/\.0+$/, "");
+  /* observations -> [{key, label, v, prev, unit, t, flag}] latest per short name, newest first */
+  function summarizeLabs(obs) {
+    const by = {};
+    (obs || []).forEach((o) => {
+      if (!o || !o.valueQuantity || o.valueQuantity.value == null || /entered-in-error|cancelled/.test(o.status || "")) return;
+      const name = (o.code && (o.code.text || ((o.code.coding || [])[0] || {}).display)) || "", key = shortName(name);
+      if (!key || /urine|fluid|csf|ascit|pleural/i.test(name)) return;
+      const t = new Date(o.effectiveDateTime || o.issued || 0).getTime(); if (!t) return;
+      const interp = ((o.interpretation || [])[0] || {}), code = ((interp.coding || [])[0] || {}).code || interp.text || "";
+      (by[key] = by[key] || []).push({ v: +o.valueQuantity.value, unit: o.valueQuantity.unit || "", t, flag: /^(H|HH|L|LL|A|AA|HU|LU)$/.test(code) ? code : "" });
+    });
+    return Object.entries(by).map(([key, a]) => { a.sort((x, y) => y.t - x.t); return { key, v: a[0].v, unit: a[0].unit, t: a[0].t, flag: a[0].flag, prev: a.length > 1 ? a[1].v : null }; }).sort((x, y) => y.t - x.t);
+  }
+  function labLine(labs) { return labs.length ? "Labs: " + labs.map((l) => `${l.key} ${fmtV(l.v)}${l.prev != null && fmtV(l.prev) !== fmtV(l.v) ? ` (prev ${fmtV(l.prev)})` : ""}`).join(", ") + "." : ""; }
+
   /* Pure builder (also used by tests): o = { dr, service, name, age, sex, mrn, problem, hx, why } */
   function build(o) {
     const sexWord = o.sex === "female" ? "woman" : o.sex === "male" ? "man" : "patient", pro = o.sex === "female" ? "her" : o.sex === "male" ? "him" : "them";
@@ -42,19 +73,28 @@
     const hx = String(o.hx || "").trim().replace(/([^.!?])$/, "$1.");
     const why = String(o.why || "").trim().replace(/[.?]+$/, "");
     const ask = why ? (o.service === "Infectious diseases" || /advice|recommend|antibiotic|dose|which/i.test(why) ? `Could you see ${pro} for advice on ${why.replace(/^[A-Z](?=[a-z])/, (c) => c.toLowerCase())}?` : `Could you see ${pro} to ${/^(assess|review|help|consider|see|evaluate|manage)\b/i.test(why) ? why.replace(/^[A-Z]/, (c) => c.toLowerCase()) : "assess " + why.replace(/^[A-Z](?=[a-z])/, (c) => c.toLowerCase())}?`) : `Could you see ${pro}? ___`;
-    const body = `I have ${who}, a ${sexWord} with ${art}${prob}. ${hx} ${ask}`.replace(/\s+/g, " ").trim();
+    const labs = String(o.labs || "").trim().replace(/([^.])$/, "$1.");
+    const body = `I have ${who}, a ${sexWord} with ${art}${prob}. ${hx} ${labs === "." ? "" : labs} ${ask}`.replace(/\s+/g, " ").trim();
     return { text: `Hello Dr. ${o.dr || "___"},\n\nThis is Wayne, hospitalist. ${body}\n\nYour help is much appreciated.\n\nThanks,\nWayne`, words: words(body) + 4 };
   }
-  window.ConsultWidget = { build };
+  window.ConsultWidget = { build, summarizeLabs, labLine, shortName, PERTINENT };
   if (typeof document === "undefined") return;
 
-  let pt = null, probs = [];
+  let pt = null, probs = [], labs = [], labsLoaded = false;
   async function loadPatient() {
     const ctx = window.CONSULT_CTX || {};
     let client = ctx.client || null;
     if (!client && window.FHIR && (location.search.includes("code=") || sessionStorage.getItem("SMART_KEY"))) { try { client = await FHIR.oauth2.ready(); } catch (e) {} }
     if (ctx.patient) pt = ctx.patient;
     else if (client) { try { pt = await client.patient.read(); } catch (e) {} }
+    if (ctx.labs && !labsLoaded) { labs = summarizeLabs(ctx.labs); labsLoaded = true; }
+    if (client && !labsLoaded) {
+      try {
+        const since = new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10);
+        const obs = await client.request(`Observation?patient=${client.patient.id}&category=laboratory&date=ge${since}&_count=200`, { pageLimit: 3, flat: true });
+        labs = summarizeLabs(obs); labsLoaded = true;
+      } catch (e) { labsLoaded = true; }
+    }
     if (client && !probs.length) {
       try {
         const cs = await client.request(`Condition?patient=${client.patient.id}&_count=100`, { flat: true });
@@ -90,17 +130,32 @@
       <div class="row"><label>Problem<input id="cw-prob" list="cw-probs" placeholder="e.g. ESBL pyelonephritis"><datalist id="cw-probs"></datalist></label></div>
       <div class="row"><label>Brief history (1–2 key facts)<input id="cw-hx" placeholder="e.g. Febrile on day 3 of ceftriaxone, creatinine rising."></label></div>
       <div class="row"><label>Why you need their help<input id="cw-why" placeholder="e.g. antibiotic choice and duration / drainage / dialysis"></label></div>
+      <div class="row" style="flex-direction:column;align-items:stretch"><label style="flex:none">Labs to include <span id="cw-labnote"></span></label>
+        <div id="cw-labs" style="display:flex;flex-wrap:wrap;gap:3px 10px;font-size:12.5px;max-height:120px;overflow:auto"></div>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:3px"><a href="#" id="cw-laball" style="font-size:12px;color:#0b6bcb">show all results</a><input id="cw-labx" placeholder="other results to add, e.g. CT: 4 cm abscess" style="flex:1"></div></div>
       <textarea id="cw-msg"></textarea>
       <div class="acts"><span id="cw-words" class="muted"></span><span><button class="ghost" id="cw-close" type="button">Close</button> <button id="cw-copy" type="button">Copy</button></span></div>`);
     document.body.appendChild(btn); document.body.appendChild(pan);
     const $ = (id) => pan.querySelector("#" + id);
-    let edited = false;
+    let edited = false, showAll = false, picked = null; // picked: Set of lab keys the user ticked (null = use the service defaults)
+    const pickedLabs = () => labs.filter((l) => (picked || new Set(PERTINENT[$("cw-svc").value] || [])).has(l.key));
+    const drawLabs = () => {
+      const pert = new Set(PERTINENT[$("cw-svc").value] || []), sel = picked || pert;
+      const list = showAll ? labs : labs.filter((l) => pert.has(l.key) || sel.has(l.key));
+      $("cw-labnote").textContent = labs.length ? `(last 7 days; ticked = usual for ${$("cw-svc").value})` : "(no lab results read – type them below)";
+      $("cw-labs").innerHTML = list.map((l) => `<label style="flex-direction:row;align-items:center;gap:3px;min-width:0;flex:none;color:inherit"><input type="checkbox" data-k="${l.key}" style="width:auto"${sel.has(l.key) ? " checked" : ""}>${l.key} <b${l.flag ? ' style="color:#b42318"' : ""}>${fmtV(l.v)}</b>${l.prev != null ? ` <span class="muted">(${fmtV(l.prev)})</span>` : ""}</label>`).join("") || '<span class="muted">none for this service – "show all results"</span>';
+      $("cw-labs").querySelectorAll("input").forEach((x) => (x.onchange = () => { picked = picked || new Set(sel); x.checked ? picked.add(x.dataset.k) : picked.delete(x.dataset.k); edited = false; refresh(); }));
+      $("cw-laball").textContent = showAll ? "show usual only" : `show all results (${labs.length})`;
+    };
     const refresh = () => {
       if (edited) return;
-      const m = build({ dr: $("cw-dr").value.trim(), service: $("cw-svc").value, name: $("cw-name").value.trim(), age: $("cw-age").value.trim(), sex: $("cw-sex").value, mrn: $("cw-mrn").value.trim(), problem: $("cw-prob").value, hx: $("cw-hx").value, why: $("cw-why").value });
+      const m = build({ dr: $("cw-dr").value.trim(), service: $("cw-svc").value, name: $("cw-name").value.trim(), age: $("cw-age").value.trim(), sex: $("cw-sex").value, mrn: $("cw-mrn").value.trim(), problem: $("cw-prob").value, hx: $("cw-hx").value, why: $("cw-why").value,
+        labs: [labLine(pickedLabs()).replace(/\.$/, ""), $("cw-labx").value.trim()].filter(Boolean).join("; ") });
       $("cw-msg").value = m.text; $("cw-words").textContent = `~${m.words} words` + (m.words > 60 ? " – a bit long, trim the history" : "");
     };
-    ["cw-svc", "cw-dr", "cw-name", "cw-age", "cw-mrn", "cw-sex", "cw-prob", "cw-hx", "cw-why"].forEach((id) => { $(id).addEventListener("input", () => { edited = false; refresh(); }); $(id).addEventListener("change", () => { edited = false; refresh(); }); });
+    ["cw-svc", "cw-dr", "cw-name", "cw-age", "cw-mrn", "cw-sex", "cw-prob", "cw-hx", "cw-why", "cw-labx"].forEach((id) => { $(id).addEventListener("input", () => { edited = false; refresh(); }); $(id).addEventListener("change", () => { edited = false; refresh(); }); });
+    $("cw-svc").addEventListener("change", () => { picked = null; drawLabs(); refresh(); });
+    $("cw-laball").onclick = (e) => { e.preventDefault(); showAll = !showAll; drawLabs(); };
     $("cw-msg").addEventListener("input", () => { edited = true; $("cw-words").textContent = "edited by hand"; });
     $("cw-close").onclick = () => (pan.style.display = "none");
     document.addEventListener("keydown", (e) => { if (e.key === "Escape") pan.style.display = "none"; });
@@ -115,7 +170,7 @@
       const t = topic().replace(/\s*\b(check|tab|review|by site|follow-?up|toolkit|calculator|summary|chooser|flowsheet|screen|monitor|app|pathway|matrix|tracker)\b.*$/i, "").trim();
       if (!$("cw-prob").value && t && !/^(today|notes|labs|forms|meds|physical exam|infections|antibiotic|what changed|ai|diagnosis|choosing wisely|consult|mobility|watch)/i.test(t)) $("cw-prob").value = t;
       $("cw-prob").placeholder = probs.length ? "pick from the problem list or type" : "e.g. ESBL pyelonephritis";
-      $("cw-svc").value = defaultService(); edited = false; refresh();
+      $("cw-svc").value = defaultService(); picked = null; drawLabs(); edited = false; refresh();
       if (!pt) $("cw-words").textContent = "No chart patient (demo or not launched) – type name, age and MRN.";
     };
   }

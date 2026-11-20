@@ -11,4 +11,17 @@ ok("ID phrasing: 'for advice on'", /Could you see him for advice on duration and
 ok("blanks", /Hello Dr\. ___/.test(m.text) && /I have ___, MRN ___/.test(m.text), m.text);
 m = B({ service: "General surgery", sex: "female", problem: "possible ischemic bowel", why: "Assess for laparotomy" });
 ok("no article before 'possible'; 'to assess'", /a woman with possible ischemic bowel\. Could you see her to assess for laparotomy\?/.test(m.text), m.text);
+// labs
+const W = window.ConsultWidget, now = Date.now();
+const ob = (name, v, unit, h, flag) => ({ resourceType: "Observation", status: "final", code: { text: name }, valueQuantity: { value: v, unit }, effectiveDateTime: new Date(now - h * 36e5).toISOString(), interpretation: flag ? [{ coding: [{ code: flag }] }] : [] });
+const L = W.summarizeLabs([ob("Creatinine", 150, "umol/L", 72), ob("Creatinine", 410, "umol/L", 4, "H"), ob("Potassium", 6.1, "mmol/L", 4, "H"), ob("Sodium", 138, "mmol/L", 4), ob("Hemoglobin", 102, "g/L", 4), ob("Creatinine, urine", 9000, "umol/L", 4), ob("Hemoglobin A1c", 0.07, "", 4)]);
+ok("labs: latest with previous, urine excluded", L.find((l) => l.key === "Cr").v === 410 && L.find((l) => l.key === "Cr").prev === 150 && L.filter((l) => l.key === "Cr").length === 1);
+ok("labs: A1c not read as Hb", L.find((l) => l.key === "Hb").v === 102 && L.find((l) => l.key === "A1c"));
+ok("labs: high flag kept", L.find((l) => l.key === "K").flag === "H");
+const neph = L.filter((l) => W.PERTINENT.Nephrology.includes(l.key));
+ok("nephrology picks Cr, K, Na not Hb", neph.map((l) => l.key).sort().join(",") === "Cr,K,Na", neph.map((l) => l.key));
+ok("lab line", W.labLine(neph.filter((l) => l.key !== "Na")) === "Labs: Cr 410 (prev 150), K 6.1." || W.labLine(neph.filter((l) => l.key !== "Na")) === "Labs: K 6.1, Cr 410 (prev 150).", W.labLine(neph));
+m = B({ dr: "Singh", service: "Nephrology", name: "Alma TEST", age: 81, sex: "female", mrn: "TEST0001", problem: "AKI", hx: "Oliguric despite fluids", labs: "Labs: Cr 410 (prev 150), K 6.1", why: "possible need for dialysis" });
+ok("labs in message before the ask", /Oliguric despite fluids\. Labs: Cr 410 \(prev 150\), K 6\.1\. Could you see her/.test(m.text), m.text);
+ok("still ~50 words", m.words <= 60, m.words);
 console.log(fail ? `\n${fail} FAILED` : "\nall passed"); process.exit(fail ? 1 : 0);
