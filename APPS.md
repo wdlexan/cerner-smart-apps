@@ -30,3 +30,4 @@ Standalone app in autoimmune-serology/ (launch.html, index.html, app.js, engine.
 - ANA, complement and ANCA pattern boxes; red flags (RPGN, pulmonary-renal, scleroderma renal crisis, MDA5, GCA, lupus nephritis); medication checks (DIL/ANCA drugs, anticoagulants and lupus anticoagulant, statins and HMGCR); next tests; note draft; consult message.
 - Seven made-up cases: index.html?demo=sle|mpa|ra|dil|lowana|cryo|ssc
 - Classification criteria are research tools; UNVERIFIED draft from general knowledge. Verify before clinical use.
+- Also a toolkit tab: "Autoimmune serology" (hospitalist-toolkit/tools/serology/, key sero, open with #sero); consult button defaults to Rheumatology. Made-up cases are in the standalone app only.

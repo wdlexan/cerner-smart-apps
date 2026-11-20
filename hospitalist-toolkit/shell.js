@@ -4,7 +4,7 @@
    A tab is only loaded the first time you open it, and stays loaded when you switch away. */
 
 // To add a tool: put its files in tools/<folder>/ and add a line here.
-const TOOL_V = "20261119w"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
+const TOOL_V = "20261120a"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
 const TOOLS = [
   { key: "today", label: "Today (what changed)", tags: "what changed daily trends vitals overnight summary", path: "tools/today/index.html" },
   { key: "plist", label: "Patient list (screenshot)", tags: "patient list screenshot excel spreadsheet rounding list census floor ward ocr", path: "tools/plist/index.html" },
@@ -49,6 +49,7 @@ const TOOLS = [
   { key: "seizure", label: "Seizure", tags: "seizure epilepsy status antiseizure",          path: "tools/seizure/index.html" },
   { key: "neuro",  label: "Neuro (non-stroke)", tags: "neuro neurology weakness headache non-stroke", path: "tools/neuro/index.html" },
   { key: "edr",   label: "Eating disorder (ED)", tags: "eating disorder anorexia bulimia refeeding", path: "tools/edr/index.html", keepHeader: true }, // its header holds the Look back control
+  { key: "sero",  label: "Autoimmune serology", tags: "autoimmune serology rheumatology ana ena dsdna anca pr3 mpo rf ccp rheumatoid factor complement c3 c4 lupus sle vasculitis gpa mpa egpa sjogren scleroderma myositis antiphospholipid aps cryoglobulin anti-gbm", path: "tools/serology/index.html" },
   { key: "ae",    label: "Autoimmune encephalitis", tags: "autoimmune encephalitis nmda", path: "tools/ae/index.html", keepHeader: true }, // its header holds the tool's own tabs
   { key: "forms", label: "Forms", tags: "forms referral requisition pdf form 4.1 bc cancer pulse gi",                path: "tools/forms/index.html" }
 ];

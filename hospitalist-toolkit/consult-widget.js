@@ -7,13 +7,13 @@
   if (window.__consultWidget) return; window.__consultWidget = true;
   try { if (window.top !== window && window.top.__consultWidget) return; } catch (e) { /* cross-origin parent: show it */ }
 
-  const SERVICES = ["Infectious diseases", "General surgery", "Internal medicine", "Cardiology", "Nephrology", "Neurology", "Gastroenterology", "Respirology", "Hematology", "Medical oncology", "Endocrinology", "Geriatrics", "Palliative care", "Psychiatry", "Orthopedics", "Urology", "Neurosurgery", "Vascular surgery", "Thoracic surgery", "Interventional radiology", "ICU", "Other"];
+  const SERVICES = ["Infectious diseases", "General surgery", "Internal medicine", "Cardiology", "Nephrology", "Neurology", "Gastroenterology", "Respirology", "Hematology", "Rheumatology", "Medical oncology", "Endocrinology", "Geriatrics", "Palliative care", "Psychiatry", "Orthopedics", "Urology", "Neurosurgery", "Vascular surgery", "Thoracic surgery", "Interventional radiology", "ICU", "Other"];
   // toolkit tab key -> usual service
   const BY_TAB = { abx: "Infectious diseases", abxmap: "Infectious diseases", infections: "Infectious diseases", aki: "Nephrology", transplant: "Nephrology", hypona: "Nephrology", lytes: "Nephrology", acidbase: "Nephrology",
     stroke: "Neurology", neuro: "Neurology", seizure: "Neurology", ae: "Neurology", dementia: "Geriatrics", pd: "Neurology", chf: "Cardiology", af: "Cardiology", liver: "Gastroenterology", ibd: "Gastroenterology",
-    pc: "Medical oncology", tox: "Medical oncology", bispecific: "Medical oncology", g6pd: "Hematology", hip: "Orthopedics", pain: "Palliative care", diabetes: "Endocrinology", ed: "Psychiatry", edr: "Psychiatry",
+    pc: "Medical oncology", tox: "Medical oncology", bispecific: "Medical oncology", g6pd: "Hematology", sero: "Rheumatology", hip: "Orthopedics", pain: "Palliative care", diabetes: "Endocrinology", ed: "Psychiatry", edr: "Psychiatry",
     opioid: "Palliative care", hah: "Internal medicine", mobility: "Geriatrics", falls: "Geriatrics" };
-  const BY_TITLE = [[/infect|antibiot|abx|sepsis/i, "Infectious diseases"], [/\baki\b|kidney|renal|transplant|electrolyte|sodium|acid/i, "Nephrology"], [/stroke|seizure|neuro|encephalit/i, "Neurology"],
+  const BY_TITLE = [[/serolog|rheumat|lupus|vasculitis/i, "Rheumatology"], [/infect|antibiot|abx|sepsis/i, "Infectious diseases"], [/\baki\b|kidney|renal|transplant|electrolyte|sodium|acid/i, "Nephrology"], [/stroke|seizure|neuro|encephalit/i, "Neurology"],
     [/dementia|falls|mobility/i, "Geriatrics"], [/heart|chf|atrial|cardi/i, "Cardiology"], [/liver|cirrho|ibd|crohn|colitis/i, "Gastroenterology"], [/carcinomatosis|oncolog|myeloma|bispecific|toxicit/i, "Medical oncology"],
     [/g6pd|hemat/i, "Hematology"], [/hip|fracture|ortho/i, "Orthopedics"], [/pain|opioid|palliat/i, "Palliative care"], [/diabet/i, "Endocrinology"], [/eating disorder/i, "Psychiatry"]];
 
