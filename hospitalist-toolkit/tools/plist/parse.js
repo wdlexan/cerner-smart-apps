@@ -154,12 +154,18 @@
     return s;
   }
   function fixLos(t) {
-    t = String(t || "").replace(/[Oo]/g, "0").replace(",", ".");
-    const m = t.match(/(\d+(?:\.\d)?)/);
+    t = String(t || "").replace(/(\d)[Oo]|[Oo](?=\d)/g, (m, d) => (d ? d + "0" : "0")).replace(",", ".");
+    const m = t.match(/(\d+(?:\.\d)?)\s*(?:Days?|Doys?|Day5|d)\b/i) || t.match(/(\d+(?:\.\d)?)/);
     if (!m) return null;
     let v = m[1];
     if (!/\./.test(v) && v.length >= 2) v = v.slice(0, -1) + "." + v.slice(-1);  // the list always shows one decimal: "44" was 4.4
     return parseFloat(v);
+  }
+  // room and bed only, for the Excel (the floor is already on the green row): "S7B-VGH S715 A" -> "S715 A"
+  function roomOf(loc) {
+    const s = String(loc || "").trim();
+    let m = s.match(/^[A-Z0-9]+-[A-Z]{3,4}\s+(.+)$/i) || s.match(/^(?:VGH|RJH|[A-Z]{3})\s+[A-Z0-9]+\s+(.+)$/i);
+    return m ? m[1].trim() : s;
   }
   function fixName(t) {
     t = clean(t).replace(/^\S*[^A-Za-z\s,'.-]+/, "").replace(/^[^A-Za-z]+/, "");   // selection icons etc. before the name
@@ -209,6 +215,7 @@
         // a room that still doesn't look like a PowerChart location after clean-up is always flagged
         if (!/^(?:[SN]\d[A-Z]|\d[A-Z]{2}|HAH)-[A-Z]{3} [A-Z0-9]+(?: [A-Z0-9]{1,2})?$|^VGH [SN]\d[A-Z] [A-Z0-9]+(?: [A-Z0-9]{1,2})?$/.test(r.location)) low.add("location");
         if (!(r.age > 0 && r.age < 115)) low.add("age");
+        if (!(r.los > 0)) low.add("los");
         if (!r.name || !/^[A-Z][A-Za-z'-]+, [A-Z]/.test(r.name)) low.add("name");
         r.low = Array.from(low); rows.push(r);
       }
@@ -221,7 +228,7 @@
     if (ageM && ageM.index > 0) { f.location = (f.location || "") + " " + ageTxt.slice(0, ageM.index); }
     if (!ageM) ageM = ageTxt.match(/(\d{1,3})/);
     // the length of stay can land in the Medical Service column
-    if (f.los == null || !/\d/.test(f.los)) { const m = String(f.service || "").match(/(\d+(?:[.,]\d)?)\s*Days?/i); if (m) f.los = m[1]; }
+    if (!(fixLos(f.los) > 0)) { const m = String(f.service || "").match(/(\d+(?:[.,]\d)?)\s*Days?/i); if (m) f.los = m[1]; }
     // FIN (11 digits) and MRN (8 digits) can be split or run together
     let fin = digits(f.fin), mrn = digits(f.mrn);
     if (fin.length !== 11 && (fin + mrn).length === 19) { const all = fin + mrn; fin = all.slice(0, 11); mrn = all.slice(11); }
@@ -238,6 +245,6 @@
     };
   }
 
-  const api = { parse, parseLine, parseWords, floorOf, group, admitText, merge, fixLocation, fixLos, fixName };
+  const api = { parse, parseLine, parseWords, floorOf, roomOf, group, admitText, merge, fixLocation, fixLos, fixName };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.PList = api;
 })(this);

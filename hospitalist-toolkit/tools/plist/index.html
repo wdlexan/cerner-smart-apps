@@ -82,7 +82,7 @@
   </div>
 </main>
 
-<script src="parse.js?v=20261119b"></script>
+<script src="parse.js?v=20261119c"></script>
 <script src="xlsx.js?v=20261119c"></script>
 <script src="chart.js?v=20261119b"></script>
 <script>
@@ -287,7 +287,7 @@
       const keep = rows.filter((r) => r.include);
       if (!keep.length) throw new Error("no patients are ticked");
       const groups = PList.group(keep).map((g) => ({ floor: g.floor, patients: g.patients.map((r) => ({
-        name: r.name, location: r.location, age: r.age, admit: PList.admitText(r, taken), reason: r.reason,
+        name: r.name, location: PList.roomOf(r.location), age: r.age, admit: PList.admitText(r, taken), reason: r.reason,
         fp: r.pcp ? "y" : "n", note: r.discharged ? "Discharged " + r.discharged : "", ...(r.c || {}) })) }));
       const tpl = await (await fetch("template.xlsx?v=20261119a")).arrayBuffer();
       const blob = await PListXlsx.build(JSZip, tpl, groups, { type: "blob", spare: $("spare").checked ? 3 : 0 });

@@ -12,6 +12,13 @@ eq("SSA = S5A", P.fixLocation("VGH SSA S505P"), "VGH S5A S505 P");
 eq("bed I read as 1", P.fixLocation("S7B-VGH $7221"), "S7B-VGH S722 I");
 eq("bed & = A", P.fixLocation("S44-VGH S408 &"), "S4A-VGH S408 A");
 eq("LOS lost decimal", P.fixLos("44 Days"), 4.4);
+eq("room only S7B", P.roomOf("S7B-VGH S715 A"), "S715 A");
+eq("room only VGH S5A", P.roomOf("VGH S5A S505 P"), "S505 P");
+eq("room only HAH", P.roomOf("HAH-VGH HAH20 A"), "HAH20 A");
+eq("room only RJH", P.roomOf("8SW-RJH S835 B"), "S835 B");
+eq("room only S5B OCB", P.roomOf("VGH S5B S5BOCB 2"), "S5BOCB 2");
+eq("LOS stuck to Days", P.fixLos("22.0Days _—"), 22);
+eq("LOS stray o is not 0", P.fixLos("_— o"), null);
 eq("LOS ok", P.fixLos("75.0"), 75);
 eq("name icon junk", P.fixName("B){testman, Gary John"), "Testman, Gary John");
 // floors
