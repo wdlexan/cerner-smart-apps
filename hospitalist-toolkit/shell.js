@@ -4,9 +4,10 @@
    A tab is only loaded the first time you open it, and stays loaded when you switch away. */
 
 // To add a tool: put its files in tools/<folder>/ and add a line here.
-const TOOL_V = "20261119k"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
+const TOOL_V = "20261119m"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
 const TOOLS = [
   { key: "today", label: "Today (what changed)", tags: "what changed daily trends vitals overnight summary", path: "tools/today/index.html" },
+  { key: "plist", label: "Patient list (screenshot)", tags: "patient list screenshot excel spreadsheet rounding list census floor ward ocr", path: "tools/plist/index.html" },
   { key: "labs",  label: "Labs", tags: "lab results cbc lytes electrolytes chemistry blood work",                 path: "tools/labs/index.html" },
   { key: "crit",  label: "Critical labs → MRP", tags: "critical lab alert mrp teams page message",  path: "tools/critical/index.html" },
   { key: "notes", label: "Notes", tags: "notes documents progress note discharge summary compile",                path: "tools/notes/index.html" },

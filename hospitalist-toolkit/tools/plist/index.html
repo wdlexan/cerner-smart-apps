@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Patient list (screenshot)</title>
+  <style>
+    body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:#f5f7fa; color:#1f2933; font-size:14px; }
+    main { max-width:1250px; margin:12px auto; padding:0 16px 40px; }
+    h2 { font-size:17px; margin:4px 0 6px; }
+    .card { background:#fff; border:1px solid #dde3ea; border-radius:8px; padding:14px 16px; margin:0 0 14px; }
+    .muted { color:#6b7785; } .small { font-size:12.5px; }
+    #drop { border:2px dashed #9fb3c8; border-radius:8px; padding:22px; text-align:center; background:#fafcff; cursor:pointer; outline:none; }
+    #drop.over, #drop:focus { border-color:#0b6bcb; background:#eef5fd; }
+    #drop b { color:#0b6bcb; }
+    .row { display:flex; flex-wrap:wrap; gap:10px 16px; align-items:center; margin:10px 0 0; }
+    button { background:#0b6bcb; color:#fff; border:0; border-radius:6px; padding:8px 14px; font-size:14px; cursor:pointer; font-weight:600; }
+    button.ghost { background:#fff; color:#0b6bcb; border:1px solid #0b6bcb; font-weight:500; }
+    button:disabled { opacity:.5; cursor:default; }
+    #status { margin-top:8px; }
+    .err { color:#b00020; }
+    table { border-collapse:collapse; width:100%; font-size:13px; }
+    th { text-align:left; background:#eef2f6; padding:5px 6px; border-bottom:1px solid #dde3ea; white-space:nowrap; position:sticky; top:0; }
+    td { padding:2px 4px; border-bottom:1px solid #eef1f4; vertical-align:middle; }
+    td input[type=text], td input:not([type]) { width:100%; border:1px solid transparent; background:transparent; padding:3px 4px; font:inherit; border-radius:4px; }
+    td input:hover { border-color:#dde3ea; } td input:focus { border-color:#0b6bcb; background:#fff; outline:none; }
+    td.low input { background:#fff3b0; }
+    tr.dc td { color:#8a96a3; } tr.dc td input { color:#8a96a3; }
+    tr.off td { opacity:.45; }
+    .floor { font-weight:700; }
+    .key { display:inline-block; width:12px; height:12px; background:#fff3b0; border:1px solid #e0c96a; vertical-align:-2px; margin-right:4px; }
+    #thumbs img { max-height:70px; border:1px solid #dde3ea; border-radius:4px; margin-right:6px; }
+    textarea { width:100%; min-height:90px; font:12px ui-monospace,Consolas,monospace; }
+    details summary { cursor:pointer; color:#0b6bcb; }
+  </style>
+</head>
+<body>
+<main>
+  <div class="card">
+    <h2>Patient list from a screenshot → Excel</h2>
+    <div class="muted small">Take a screenshot of your PowerChart patient list (include the header row: Name, Location, Age …), then paste it here.
+      The picture is read <b>in this browser</b>. Nothing is uploaded, nothing is saved in the toolkit or on GitHub, and the Excel file goes to your computer's Downloads.</div>
+    <div id="drop" tabindex="0" style="margin-top:12px">
+      <div><b>Paste a screenshot (Ctrl+V)</b>, drag one here, or click to choose a picture</div>
+      <div class="muted small" style="margin-top:4px">Add more screenshots if the list is longer than the screen. Repeated patients are kept once.</div>
+      <input id="file" type="file" accept="image/*" multiple hidden>
+    </div>
+    <div id="thumbs" class="row"></div>
+    <div id="status" class="small muted"></div>
+    <details style="margin-top:8px"><summary class="small">Picture won't read? Paste the list as text instead</summary>
+      <textarea id="txt" placeholder="One patient per line, as copied from PowerChart"></textarea>
+      <button class="ghost" id="useTxt" style="margin-top:6px">Read this text</button>
+    </details>
+  </div>
+
+  <div class="card" id="review" hidden>
+    <h2>Check the list</h2>
+    <div class="small muted"><span class="key"></span>Yellow = the picture was hard to read there. Check names, rooms and ages against PowerChart. Click any cell to fix it.
+      Discharged patients are left out unless you tick them.</div>
+    <div class="row">
+      <label>Screenshot taken <input id="taken" type="datetime-local"></label>
+      <span class="small muted">(admit date is counted back from here using length of stay)</span>
+    </div>
+    <div style="overflow:auto;max-height:60vh;margin-top:10px"><table id="tbl"></table></div>
+    <div class="row">
+      <button id="dl">Download Excel</button>
+      <label class="small"><input type="checkbox" id="spare" checked> add 3 empty patient rows at the end</label>
+      <button class="ghost" id="clear">Clear list</button>
+      <span id="dlmsg" class="small muted"></span>
+    </div>
+  </div>
+</main>
+
+<script src="parse.js?v=20261119a"></script>
+<script src="xlsx.js?v=20261119a"></script>
+<script>
+(function () {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const TESS = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
+  const JSZIP = "https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js";
+  let rows = [];   // kept in memory only - never written to browser storage
+
+  const pad = (n) => String(n).padStart(2, "0");
+  const localInput = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  $("taken").value = localInput(new Date());
+
+  function load(src, test, msg) {
+    return test() ? Promise.resolve() : new Promise((ok, bad) => {
+      const s = document.createElement("script"); s.src = src; s.onload = ok;
+      s.onerror = () => bad(new Error(msg)); document.head.appendChild(s);
+    });
+  }
+
+  // ---- picture in: paste, drop, choose ----
+  const drop = $("drop");
+  drop.onclick = () => $("file").click();
+  drop.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("file").click(); } };
+  $("file").onchange = (e) => { handle(Array.from(e.target.files || [])); e.target.value = ""; };
+  drop.ondragover = (e) => { e.preventDefault(); drop.classList.add("over"); };
+  drop.ondragleave = () => drop.classList.remove("over");
+  drop.ondrop = (e) => { e.preventDefault(); drop.classList.remove("over"); handle(Array.from(e.dataTransfer.files || [])); };
+  document.addEventListener("paste", (e) => {
+    if (/TEXTAREA|INPUT/.test((document.activeElement || {}).tagName)) return;
+    const files = Array.from((e.clipboardData || {}).items || []).filter((i) => i.type.startsWith("image/")).map((i) => i.getAsFile());
+    if (files.length) { e.preventDefault(); handle(files); }
+  });
+  window.focus(); drop.focus();
+
+  let busy = Promise.resolve();
+  function handle(files) {
+    files.filter((f) => f && f.type.startsWith("image/")).forEach((f) => { busy = busy.then(() => readImage(f)); });
+  }
+
+  // Same picture clean-up as the culture & sensitivity reader (Antibiotic chooser), plus:
+  // rows with a dark background (the selected patient: white text on blue) are flipped so the text reads as dark-on-light.
+  function prep(img) {
+    const W = img.naturalWidth, H = img.naturalHeight, c = document.createElement("canvas"); c.width = W; c.height = H;
+    const g = c.getContext("2d"); g.drawImage(img, 0, 0); const d = g.getImageData(0, 0, W, H), p = d.data, L = new Float32Array(W * H);
+    for (let i = 0; i < W * H; i++) L[i] = 0.3 * p[4 * i] + 0.59 * p[4 * i + 1] + 0.11 * p[4 * i + 2];
+    for (let y = 0; y < H; y++) { let s = 0; for (let x = 0; x < W; x++) s += L[y * W + x]; if (s / W < 128) for (let x = 0; x < W; x++) L[y * W + x] = 255 - L[y * W + x]; }
+    const dark = (v) => v < 160;
+    for (let y = 0; y < H; y++) { let run = 0; for (let x = 0; x < W; x++) { run = dark(L[y * W + x]) ? run + 1 : 0; if (run > Math.max(40, W * 0.15)) { for (let xx = 0; xx < W; xx++) if (dark(L[y * W + xx])) L[y * W + xx] = 255; break; } } }
+    for (let x = 0; x < W; x++) { let run = 0; for (let y = 0; y < H; y++) { run = dark(L[y * W + x]) ? run + 1 : 0; if (run > Math.max(20, H * 0.25)) { for (let yy = 0; yy < H; yy++) if (dark(L[yy * W + x])) L[yy * W + x] = 255; break; } } }
+    for (let i = 0; i < W * H; i++) { p[4 * i] = p[4 * i + 1] = p[4 * i + 2] = L[i]; p[4 * i + 3] = 255; }
+    g.putImageData(d, 0, 0);
+    const k = Math.max(1, Math.min(3, 2400 / W)), out = document.createElement("canvas"); out.width = Math.round(W * k); out.height = Math.round(H * k);
+    const o = out.getContext("2d"); o.imageSmoothingEnabled = true; o.imageSmoothingQuality = "high"; o.drawImage(c, 0, 0, out.width, out.height);
+    const od = o.getImageData(0, 0, out.width, out.height), q = od.data;
+    for (let i = 0; i < q.length; i += 4) { const v = q[i] > 170 ? 255 : 0; q[i] = q[i + 1] = q[i + 2] = v; }
+    o.putImageData(od, 0, 0); return out;
+  }
+  // Tesseract.js 5 gives blocks > paragraphs > lines > words; older versions give data.words
+  function wordsOf(data) {
+    const out = [];
+    if (data.blocks && data.blocks.length) {
+      data.blocks.forEach((b, bi) => (b.paragraphs || []).forEach((p, pi) => (p.lines || []).forEach((l, li) => (l.words || []).forEach((w) =>
+        out.push({ text: w.text, x0: w.bbox.x0, y0: w.bbox.y0, x1: w.bbox.x1, y1: w.bbox.y1, conf: w.confidence, line: bi + "-" + pi + "-" + li })))));
+    } else (data.words || []).forEach((w) => out.push({ text: w.text, x0: w.bbox.x0, y0: w.bbox.y0, x1: w.bbox.x1, y1: w.bbox.y1, conf: w.confidence, line: w.line ? w.line.bbox.y0 + ":" + w.line.bbox.x0 : w.bbox.y0 }));
+    return out.filter((w) => String(w.text || "").trim());
+  }
+
+  async function readImage(file) {
+    const st = $("status"); st.className = "small muted";
+    const url = URL.createObjectURL(file);
+    try {
+      const img = new Image(); await new Promise((ok, bad) => { img.onload = ok; img.onerror = () => bad(new Error("that file is not a picture")); img.src = url; });
+      const th = document.createElement("img"); th.src = url; th.alt = "screenshot"; $("thumbs").appendChild(th);
+      st.textContent = "Loading the text reader…";
+      await load(TESS, () => window.Tesseract, "could not load the text reader (network blocked?) – paste the list as text instead");
+      st.textContent = "Reading the screenshot (first time takes ~10 s)…";
+      const worker = await Tesseract.createWorker("eng");
+      await worker.setParameters({ tessedit_pageseg_mode: "6", preserve_interword_spaces: "1" });
+      const { data } = await worker.recognize(prep(img), {}, { text: true, blocks: true });
+      await worker.terminate();
+      let found = PList.parseWords(wordsOf(data));
+      if (!found || !found.length) found = PList.parse(data.text);       // no header row in the picture: read line by line
+      addRows(found, "screenshot");
+    } catch (e) { st.className = "small err"; st.textContent = "Could not read the picture: " + (e.message || e); }
+  }
+  $("useTxt").onclick = () => addRows(PList.parse($("txt").value), "text");
+
+  function addRows(found, src) {
+    const st = $("status");
+    if (!found.length) { st.className = "small err"; st.textContent = "No patients found in that " + src + ". Make sure the Location and Age columns are in the picture."; return; }
+    found.forEach((r) => { r.include = !r.discharged; });
+    const before = rows.length; PList.merge(rows, found);
+    st.className = "small muted";
+    st.textContent = `Found ${found.length} patient(s) in the ${src}; ${rows.length - before} new. ${rows.length} on the list.`;
+    draw();
+  }
+
+  // ---- review table ----
+  const COLS = [["floor", "Floor"], ["location", "Room"], ["age", "Age"], ["name", "Name"], ["reason", "Admit reason"], ["los", "LOS (d)"], ["discharged", "Discharged"], ["pcp", "Family physician"]];
+  const LOWMAP = { floor: "location" };
+  function draw() {
+    $("review").hidden = !rows.length;
+    const order = PList.group(rows).flatMap((g) => g.patients);
+    $("tbl").innerHTML = `<tr><th title="Put this patient in the Excel file">In</th>${COLS.map(([, h]) => `<th>${h}</th>`).join("")}<th></th></tr>` +
+      order.map((r) => { const i = rows.indexOf(r); return `<tr class="${r.discharged ? "dc" : ""} ${r.include ? "" : "off"}">
+        <td><input type="checkbox" data-inc="${i}" ${r.include ? "checked" : ""}></td>
+        ${COLS.map(([k]) => `<td class="${(r.low || []).includes(LOWMAP[k] || k) ? "low" : ""} ${k === "floor" ? "floor" : ""}"><input data-i="${i}" data-k="${k}" value="${esc(r[k] == null ? "" : r[k])}" ${k === "age" || k === "los" ? 'style="width:52px"' : ""}></td>`).join("")}
+        <td><button class="ghost" data-del="${i}" title="Remove" style="padding:2px 8px">✕</button></td></tr>`; }).join("");
+    $("tbl").querySelectorAll("input[data-k]").forEach((x) => (x.onchange = () => {
+      const r = rows[+x.dataset.i], k = x.dataset.k;
+      r[k] = k === "age" ? (parseInt(x.value, 10) || null) : k === "los" ? (parseFloat(x.value) || null) : x.value.trim();
+      if (k === "location") r.floor = PList.floorOf(r.location);
+      r.low = (r.low || []).filter((f) => f !== (LOWMAP[k] || k));
+      draw();
+    }));
+    $("tbl").querySelectorAll("[data-inc]").forEach((x) => (x.onchange = () => { rows[+x.dataset.inc].include = x.checked; draw(); }));
+    $("tbl").querySelectorAll("[data-del]").forEach((x) => (x.onclick = () => { rows.splice(+x.dataset.del, 1); draw(); }));
+  }
+  $("clear").onclick = () => { rows = []; $("thumbs").innerHTML = ""; $("status").textContent = ""; $("dlmsg").textContent = ""; draw(); };
+
+  // ---- Excel out ----
+  $("dl").onclick = async () => {
+    const msg = $("dlmsg"); msg.className = "small muted"; msg.textContent = "Making the file…";
+    try {
+      await load(JSZIP, () => window.JSZip, "could not load the Excel writer (network blocked?)");
+      const taken = $("taken").value ? new Date($("taken").value) : new Date();
+      const keep = rows.filter((r) => r.include);
+      if (!keep.length) throw new Error("no patients are ticked");
+      const groups = PList.group(keep).map((g) => ({ floor: g.floor, patients: g.patients.map((r) => ({
+        name: r.name, location: r.location, age: r.age, admit: PList.admitText(r, taken), reason: r.reason,
+        fp: r.pcp ? "y" : "n", note: r.discharged ? "Discharged " + r.discharged : "" })) }));
+      const tpl = await (await fetch("template.xlsx?v=20261119a")).arrayBuffer();
+      const blob = await PListXlsx.build(JSZip, tpl, groups, { type: "blob", spare: $("spare").checked ? 3 : 0 });
+      const a = document.createElement("a"), d = taken;
+      a.href = URL.createObjectURL(blob); a.download = `VGH_patient_list_${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}.xlsx`;
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      msg.textContent = `Saved ${a.download} (${keep.length} patients) to Downloads.`;
+    } catch (e) { msg.className = "small err"; msg.textContent = "Could not make the file: " + (e.message || e); }
+  };
+})();
+</script>
+</body>
+</html>
