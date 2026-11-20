@@ -89,7 +89,26 @@
   const digits = (c) => { let d = String(c || "").replace(/[^\d+]/g, ""); if (/^\d{10}$/.test(d)) d = "+1" + d; else if (/^1\d{10}$/.test(d)) d = "+" + d; return d; };
   // iPhone Messages wants sms:NUMBER&body=… ; Android wants ?body=
   function smsLink(cell, text, ios) { return "sms:" + digits(cell) + (ios ? "&" : "?") + "body=" + encodeURIComponent(text || ""); }
-  window.ConsultWidget = { build, summarizeLabs, labLine, shortName, PERTINENT, parseContacts, smsLink, SERVICES };
+  // Contacts from the iPhone: vCard (.vcf) files shared from the Contacts app, or the Contact Picker where Safari has it.
+  const SVC_ALIAS = [[/\bID\b|infectio/i, "Infectious diseases"], [/gen(eral)?\.? ?surg/i, "General surgery"], [/cardio|\bcard\b/i, "Cardiology"], [/nephro|renal|kidney/i, "Nephrology"], [/neurosurg/i, "Neurosurgery"], [/neuro/i, "Neurology"],
+    [/\bGI\b|gastro/i, "Gastroenterology"], [/resp|pulm|lung/i, "Respirology"], [/hemat|haemat/i, "Hematology"], [/rheum/i, "Rheumatology"], [/onc/i, "Medical oncology"], [/endo|diabet/i, "Endocrinology"], [/geriat/i, "Geriatrics"],
+    [/palliat/i, "Palliative care"], [/psych/i, "Psychiatry"], [/ortho/i, "Orthopedics"], [/urol/i, "Urology"], [/vascular/i, "Vascular surgery"], [/thoracic/i, "Thoracic surgery"], [/\bIR\b|interv/i, "Interventional radiology"], [/\bICU\b|intensiv|critical care/i, "ICU"], [/internal med|\bIM\b/i, "Internal medicine"]];
+  const guessService = (t) => { const h = SVC_ALIAS.find(([re]) => re.test(t || "")); return h ? h[1] : ""; };
+  function parseVcards(txt) {
+    const out = [];
+    String(txt || "").replace(/\r?\n[ \t]/g, "").split(/BEGIN:VCARD/i).slice(1).forEach((card) => {
+      const lines = card.split(/\r?\n/), get = (k) => lines.filter((l) => new RegExp("^(item\\d+\\.)?" + k + "[;:]", "i").test(l));
+      const val = (l) => l.slice(l.indexOf(":") + 1).replace(/\\,/g, ",").replace(/\\;/g, ";").replace(/\\n/gi, " ").trim();
+      const n = (get("N")[0] && val(get("N")[0]).split(";")) || [], fn = get("FN")[0] ? val(get("FN")[0]) : "";
+      const tels = get("TEL"); const tel = tels.find((l) => /cell|mobile|iphone/i.test(l.split(":")[0])) || tels[0];
+      const extra = [...get("ORG"), ...get("TITLE"), ...get("NOTE")].map(val).join(" ") + " " + fn;
+      const name = (n[0] || fn.replace(/^dr\.?\s+/i, "").split(/\s+/).pop() || "").trim();
+      if (name && tel) out.push({ name, service: guessService(extra), cell: val(tel) });
+    });
+    return out;
+  }
+  const contactLine = (c) => [c.name, c.service || "", c.cell].join(" | ");
+  window.ConsultWidget = { build, summarizeLabs, labLine, shortName, PERTINENT, parseContacts, smsLink, SERVICES, parseVcards, guessService, contactLine };
   if (typeof document === "undefined") return;
 
   let pt = null, probs = [], labs = [], labsLoaded = false;
@@ -138,7 +157,9 @@
       <div class="muted">~50 words. Pick a specialist, then 💬 Text opens Messages with their number and this message filled in – you tap Send.</div>
       <div class="row"><label>Send to (your specialist list)<select id="cw-who"></select></label><label style="max-width:150px">Cell<input id="cw-cell" inputmode="tel" placeholder="250-555-1234"></label></div>
       <div id="cw-ed" style="display:none;margin:4px 0"><div class="muted">One per line: <b>Name | Service | cell</b> – e.g. <code>Smith | Infectious diseases | 250-555-1234</code>. Saved in this browser/phone only.</div>
-        <textarea id="cw-list" style="min-height:90px" placeholder="Smith | Infectious diseases | 250-555-1234"></textarea><div style="text-align:right"><button type="button" id="cw-save">Save list</button></div></div>
+        <textarea id="cw-list" style="min-height:90px" placeholder="Smith | Infectious diseases | 250-555-1234"></textarea>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:6px"><span><button type="button" class="ghost" id="cw-imp">📇 From Contacts</button><input type="file" id="cw-vcf" accept=".vcf,text/vcard,text/x-vcard" multiple style="display:none"></span><button type="button" id="cw-save">Save list</button></div>
+        <div class="muted" id="cw-impnote" style="margin-top:3px">On iPhone: Contacts → open the specialist → Share Contact → Save to Files, then tap 📇 From Contacts and pick the file. Check the service after importing.</div></div>
       <div class="row"><label>Service<select id="cw-svc">${SERVICES.map((s) => `<option>${s}</option>`).join("")}</select></label><label>Dr.<input id="cw-dr" placeholder="name"></label></div>
       <div class="row"><label>Patient<input id="cw-name"></label><label style="max-width:70px;min-width:60px">Age<input id="cw-age"></label><label style="max-width:120px">MRN<input id="cw-mrn"></label>
         <label style="max-width:90px;min-width:80px">Sex<select id="cw-sex"><option value="">–</option><option value="female">F</option><option value="male">M</option></select></label></div>
@@ -189,6 +210,21 @@
       if (c.service && c.service !== $("cw-svc").value) { $("cw-svc").value = c.service; picked = null; drawLabs(); }
       edited = false; refresh();
     };
+    const addImported = (list) => {
+      const have = new Set(parseContacts($("cw-list").value).map((c) => c.cell.replace(/\D/g, "").slice(-10)));
+      const fresh = list.filter((c) => c.cell && !have.has(c.cell.replace(/\D/g, "").slice(-10)));
+      if (fresh.length) $("cw-list").value = ($("cw-list").value.trim() ? $("cw-list").value.trim() + "\n" : "") + fresh.map(contactLine).join("\n");
+      $("cw-impnote").textContent = list.length ? `Added ${fresh.length} (${list.length - fresh.length} already in the list). Fill in any missing service, then Save list.` : "No name + phone number found in that file.";
+    };
+    $("cw-imp").onclick = async () => {
+      if (navigator.contacts && navigator.contacts.select) {
+        try { const r = await navigator.contacts.select(["name", "tel"], { multiple: true });
+          addImported(r.filter((c) => (c.tel || [])[0]).map((c) => { const fn = ((c.name || [])[0] || "").trim(); return { name: fn.replace(/^dr\.?\s+/i, "").split(/\s+/).pop(), service: guessService(fn), cell: c.tel[0] }; })); return;
+        } catch (e) {}
+      }
+      $("cw-vcf").click();
+    };
+    $("cw-vcf").onchange = async () => { let all = []; for (const f of $("cw-vcf").files) { try { all = all.concat(parseVcards(await f.text())); } catch (e) {} } $("cw-vcf").value = ""; addImported(all); };
     $("cw-save").onclick = () => { try { localStorage.setItem("consult-contacts", $("cw-list").value); } catch (e) {} loadContacts(); $("cw-ed").style.display = "none"; };
     $("cw-text").onclick = () => {
       const cell = $("cw-cell").value.trim();

@@ -32,4 +32,7 @@ const C = W.parseContacts("Smith | Infectious | 250-555-1234\nDr. Lee | nephrolo
 ok("contacts parsed", C.length === 3 && C[0].service === "Infectious diseases" && C[1].name === "Lee" && C[1].service === "Nephrology" && C[2].cell === "2505550000" && C[2].service === "", C);
 ok("iPhone sms link", W.smsLink("250-555-1234", "Hello Dr. Smith,\n\nThanks & bye", true) === "sms:+12505551234&body=Hello%20Dr.%20Smith%2C%0A%0AThanks%20%26%20bye", W.smsLink("250-555-1234", "Hello Dr. Smith,\n\nThanks & bye", true));
 ok("android sms link", W.smsLink("+1 250 555 1234", "Hi", false) === "sms:+12505551234?body=Hi");
+const V = W.parseVcards("BEGIN:VCARD\r\nVERSION:3.0\r\nN:Smith;Jane;;Dr.;\r\nFN:Dr. Jane Smith\r\nORG:VGH Infectious Diseases\r\nTEL;type=WORK:250-555-0000\r\nTEL;type=CELL;type=pref:(250) 555-1234\r\nEND:VCARD\r\nBEGIN:VCARD\r\nFN:Raj Patel\r\nitem1.TEL:250 555 9999\r\nNOTE:nephro\r\nEND:VCARD\r\nBEGIN:VCARD\r\nFN:No Phone\r\nEND:VCARD");
+ok("vcard import: surname, cell preferred, service guessed", V.length === 2 && V[0].name === "Smith" && V[0].cell === "(250) 555-1234" && V[0].service === "Infectious diseases" && V[1].name === "Patel" && V[1].service === "Nephrology", V);
+ok("imported line round-trips", W.parseContacts(W.contactLine(V[0]))[0].cell === "(250) 555-1234" && W.parseContacts(W.contactLine(V[0]))[0].service === "Infectious diseases");
 console.log(fail ? `\n${fail} FAILED` : "\nall passed"); process.exit(fail ? 1 : 0);
