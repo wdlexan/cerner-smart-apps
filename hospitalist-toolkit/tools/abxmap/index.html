@@ -22,17 +22,17 @@
   .crit { display:flex; flex-wrap:wrap; gap:6px 16px; align-items:center; }
   .crit label { display:inline-flex; gap:5px; align-items:center; }
   .from { font-size:11px; color:var(--b-ink); background:var(--b-bg); border-radius:8px; padding:0 6px; }
-  .layout { display:grid; grid-template-columns: 330px 1fr; gap:12px; align-items:start; }
+  .layout { display:grid; grid-template-columns: 380px 1fr; gap:12px; align-items:start; }
   @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
   .mapcard { position:sticky; top:8px; }
   svg#body { width:100%; height:auto; display:block; }
-  svg .skin { fill:url(#gSkin); stroke:#b89a7e; stroke-width:1.2; cursor:pointer; transition: fill .12s; }
-  svg .skinwrap:hover .skin, svg .skin.hov { filter: brightness(0.95) drop-shadow(0 0 3px #ffb000); }
-  svg .org { fill:#f0e6dc; stroke:#7d8fa6; stroke-width:1.2; cursor:pointer; transition: fill .12s; }
-  svg g:hover .org, svg .org.hov { filter: brightness(1.15) drop-shadow(0 0 3px #ffb000); stroke:#ff9500 !important; }
-  svg .on { stroke:var(--sel) !important; stroke-width:3.5 !important; filter: drop-shadow(0 0 4px var(--sel)); }
-  svg .chart { stroke:#d4380d; stroke-width:2.6; stroke-dasharray:4 2; }
-  svg text.lbl { font-size:9.5px; fill:var(--muted); pointer-events:none; }
+  svg .skin { fill:rgba(0,0,0,0); stroke:none; cursor:pointer; transition: fill .12s; }
+  svg .skinwrap:hover .skin, svg .skin.hov { fill:rgba(255,176,0,.10); stroke:#ffb000; stroke-width:1.5; }
+  svg .org { fill:rgba(0,0,0,0); stroke:rgba(0,0,0,0); stroke-width:1.5; cursor:pointer; transition: fill .12s; }
+  svg g:hover .org, svg .org.hov { fill:rgba(255,176,0,.30); stroke:#ff9500 !important; stroke-width:2; }
+  svg.outline .org { stroke:rgba(31,111,235,.55); stroke-dasharray:3 2; }
+  svg .on { fill:rgba(31,111,235,.22) !important; stroke:var(--sel) !important; stroke-width:3 !important; stroke-dasharray:none !important; }
+  svg .chart { stroke:#d4380d !important; stroke-width:2.6; stroke-dasharray:4 2; }
   #tip { position:absolute; pointer-events:none; background:#1f2933; color:#fff; font-size:12px; padding:3px 8px; border-radius:5px; display:none; white-space:nowrap; z-index:5; }
   .sites { display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; }
   .sites button { font-size:12px; padding:3px 8px; border-radius:12px; }
@@ -131,55 +131,29 @@
     <div class="card mapcard">
       <div style="position:relative">
         <div id="tip"></div>
-        <svg id="body" viewBox="0 0 300 640" role="img" aria-label="Body map: click a site">
-          <defs>
-            <radialGradient id="gSkin" cx="50%" cy="40%" r="70%"><stop offset="0" stop-color="#f6dcc4"/><stop offset="1" stop-color="#e7bf9c"/></radialGradient>
-            <radialGradient id="gLung" cx="40%" cy="40%" r="70%"><stop offset="0" stop-color="#f4b6b0"/><stop offset="1" stop-color="#d9827c"/></radialGradient>
-            <radialGradient id="gLiver" cx="40%" cy="35%" r="75%"><stop offset="0" stop-color="#b5523f"/><stop offset="1" stop-color="#7d2f24"/></radialGradient>
-            <radialGradient id="gBowel" cx="50%" cy="40%" r="70%"><stop offset="0" stop-color="#f2b8a6"/><stop offset="1" stop-color="#d98b77"/></radialGradient>
-            <radialGradient id="gBrain" cx="50%" cy="40%" r="70%"><stop offset="0" stop-color="#f7c3c5"/><stop offset="1" stop-color="#df9298"/></radialGradient>
-          </defs>
-          <!-- skin: whole body silhouette -->
-          <g data-site="skin" class="skinwrap">
-            <path class="skin" d="M138 100 h24 l2 20 h-28z"/>
-            <path class="skin" d="M100 124 Q150 112 200 124 Q214 128 216 146 L212 214 Q206 262 210 300 Q214 330 200 352 L100 352 Q86 330 90 300 Q94 262 88 214 L84 146 Q86 128 100 124Z"/>
-            <path class="skin" d="M100 126 Q78 130 72 156 L62 214 L56 262 L50 312 Q46 334 54 350 Q60 362 66 350 Q66 336 68 318 L76 266 L84 220 L90 170Z"/>
-            <path class="skin" d="M200 126 Q222 130 228 156 L238 214 L244 262 L250 312 Q254 334 246 350 Q240 362 234 350 Q234 336 232 318 L224 266 L216 220 L210 170Z"/>
-            <path class="skin" d="M102 350 Q124 362 148 356 L146 430 Q142 470 140 500 L138 590 Q140 610 128 616 Q112 618 112 606 L116 590 L114 500 Q108 470 106 430Z"/>
-            <path class="skin" d="M198 350 Q176 362 152 356 L154 430 Q158 470 160 500 L162 590 Q160 610 172 616 Q188 618 188 606 L184 590 L186 500 Q192 470 194 430Z"/>
-          </g>
-          <!-- head = meninges (meningitis); brain = encephalitis -->
-          <g data-site="mening"><path class="skin" d="M150 20 Q186 20 186 62 Q186 92 168 104 Q150 112 132 104 Q114 92 114 62 Q114 20 150 20Z"/><path class="org mening" d="M150 24 Q181 24 182 54 Q182 66 178 70 L122 70 Q118 66 118 54 Q119 24 150 24Z" style="fill:none;stroke:#7d8fa6;stroke-width:3.5"/></g>
-          <g data-site="enceph"><path class="org" style="fill:url(#gBrain)" d="M150 28 Q178 28 178 54 Q178 64 174 67 L126 67 Q122 64 122 54 Q122 28 150 28Z"/>
-            <path d="M150 30 V66 M134 38 q6 6 0 12 q-6 6 2 12 M166 38 q-6 6 0 12 q6 6 -2 12 M142 34 q4 8 -2 14 M158 34 q-4 8 2 14" stroke="#c2707a" stroke-width="1.2" fill="none" pointer-events="none"/></g>
-          <g data-site="sinus"><path class="org" d="M136 74 q6 -4 10 2 q-4 6 -10 -2Z M164 74 q-6 -4 -10 2 q4 6 10 -2Z"/><path class="org" d="M147 70 h6 v6 h-6z"/></g>
-          <g data-site="dental"><path class="org" d="M137 88 Q150 98 163 88 Q150 92 137 88Z" style="fill:#fff;stroke:#a0855f;stroke-width:3"/></g>
-          <!-- thorax -->
-          <g data-site="lung"><path class="org" style="fill:url(#gLung)" d="M143 134 Q118 128 108 156 Q100 186 104 214 Q118 222 136 214 Q142 200 144 186Z"/><path class="org" style="fill:url(#gLung)" d="M157 134 Q182 128 192 156 Q200 186 196 214 Q182 222 164 214 Q160 204 160 196Z"/>
-            <path d="M150 112 V140 M150 140 L138 152 M150 140 L162 152" stroke="#cfd8e3" stroke-width="4" fill="none" pointer-events="none"/></g>
-          <g data-site="sepsis"><path class="org" d="M150 168 Q140 156 132 166 Q126 178 140 192 L154 206 L166 190 Q176 176 168 164 Q160 156 150 168Z" style="fill:#c0392b;stroke:#7b1d16"/></g>
-          <!-- abdomen -->
-          <g data-site="biliary"><path class="org" style="fill:url(#gLiver)" d="M104 222 Q140 214 168 222 Q170 236 150 240 Q128 248 112 246 Q102 238 104 222Z"/><ellipse class="org" cx="132" cy="250" rx="6" ry="7" style="fill:#6aa84f;stroke:#3d6b2c"/></g>
-          <path d="M156 226 Q186 220 192 238 Q192 254 172 254 Q160 252 156 240Z" fill="#e8a27f" stroke="#b9775a" pointer-events="none"/>
-          <g data-site="uti" data-sub="kidneys"><path class="org" d="M104 262 q-10 10 0 26 q8 4 10 -6 q-4 -8 2 -14 q-2 -8 -12 -6Z" style="fill:#a0453a;stroke:#6d2a22"/><path class="org" d="M196 262 q10 10 0 26 q-8 4 -10 -6 q4 -8 -2 -14 q2 -8 12 -6Z" style="fill:#a0453a;stroke:#6d2a22"/></g>
-          <g data-site="cdiff" data-sub="colon"><path class="org" style="fill:#d98c7a" d="M112 312 L112 266 Q112 256 122 256 L180 256 Q190 256 190 266 L190 276 L182 276 L182 266 Q182 264 178 264 L124 264 Q120 264 120 268 L120 312Z"/></g>
-          <g data-site="divert" data-sub="sigmoid / intra-abdominal"><path class="org" style="fill:url(#gBowel)" d="M124 270 Q150 262 178 270 Q184 284 176 296 Q182 308 168 314 Q150 320 132 314 Q118 306 124 294 Q118 282 124 270Z"/>
-            <path d="M132 280 q8 -6 16 0 q8 6 16 0 M130 292 q10 6 20 0 q10 -6 20 0 M134 304 q8 -6 16 0 q8 6 16 0" stroke="#b9675a" stroke-width="1.3" fill="none" pointer-events="none"/>
-            <path class="org" style="fill:#d98c7a" d="M182 276 L190 276 L190 314 Q186 328 168 330 L160 330 L160 322 L168 322 Q182 320 182 310Z"/></g>
-          <g data-site="uti"><ellipse class="org" cx="150" cy="336" rx="15" ry="10" style="fill:#e9b9a0;stroke:#b58466"/></g>
-          <g data-site="prostate"><circle class="org" cx="150" cy="352" r="5" style="fill:#c98a6a;stroke:#8a5a40"/></g>
-          <g data-site="groin"><path class="org" d="M136 362 L164 362 L150 380Z" style="fill:#ead0b5;stroke:#b89a7e"/></g>
-          <!-- joints -->
-          <g data-site="joint"><circle class="org" cx="98" cy="134" r="8"/><circle class="org" cx="202" cy="134" r="8"/><circle class="org" cx="64" cy="236" r="6"/><circle class="org" cx="236" cy="236" r="6"/><circle class="org" cx="116" cy="350" r="7"/><circle class="org" cx="184" cy="350" r="7"/><circle class="org" cx="124" cy="476" r="10"/><circle class="org" cx="176" cy="476" r="10"/></g>
-          <text class="lbl" x="150" y="226" text-anchor="middle" style="fill:#fff;font-size:8px">heart/blood</text>
-          <text class="lbl" x="296" y="270" text-anchor="end">colon</text>
-          <text class="lbl" x="4" y="420">skin</text>
-          <text class="lbl" x="296" y="40" text-anchor="end">meninges</text>
-          <text class="lbl" x="296" y="52" text-anchor="end">brain</text>
+        <svg id="body" viewBox="0 0 477 733" role="img" aria-label="Body map: click a site">
+          <image href="body.jpg" x="0" y="0" width="477" height="733" pointer-events="none"/>
+          <!-- skin: body outline traced from the image -->
+          <g data-site="skin" class="skinwrap"><path class="skin" d="M216 0 L201 16 L198 25 L198 44 L193 46 L195 64 L203 72 L205 80 L205 104 L199 110 L176 122 L148 131 L140 139 L133 153 L129 173 L130 195 L124 219 L121 246 L110 278 L107 322 L101 352 L84 369 L76 383 L73 394 L77 396 L83 392 L88 393 L82 424 L86 426 L89 423 L93 423 L96 433 L99 433 L102 429 L112 430 L115 419 L122 421 L125 419 L128 382 L127 358 L151 293 L155 274 L156 254 L163 234 L167 234 L172 249 L174 271 L170 288 L171 307 L166 325 L161 363 L159 413 L164 455 L174 496 L175 533 L171 556 L172 582 L186 653 L185 686 L180 697 L171 707 L169 716 L179 721 L200 722 L209 715 L211 705 L216 699 L216 669 L213 662 L212 647 L215 611 L221 584 L217 534 L224 500 L224 465 L229 432 L234 431 L236 433 L240 459 L241 504 L248 536 L244 562 L244 585 L252 633 L249 700 L254 706 L255 714 L263 721 L269 723 L289 720 L296 715 L294 707 L285 697 L279 685 L279 651 L293 580 L294 561 L290 536 L291 493 L298 471 L305 418 L304 367 L298 322 L294 309 L294 285 L291 275 L291 258 L297 234 L303 235 L309 258 L309 273 L315 298 L331 336 L338 360 L337 385 L340 419 L342 421 L349 419 L352 429 L362 428 L366 433 L369 433 L372 424 L380 426 L383 423 L377 393 L382 392 L389 396 L392 392 L379 367 L364 354 L361 343 L355 282 L342 240 L340 218 L335 197 L335 169 L329 147 L323 137 L315 130 L284 120 L260 105 L258 98 L261 73 L267 68 L272 54 L271 46 L266 43 L267 30 L265 20 L260 11 L249 0Z"/></g>
+          <!-- clickable areas over the picture (transparent until hover/selected) -->
+          <g data-site="mening"><ellipse class="org" cx="231" cy="46" rx="35" ry="48"/></g>
+          <g data-site="enceph"><ellipse class="org" cx="232" cy="16" rx="27" ry="15"/></g>
+          <g data-site="sinus"><ellipse class="org" cx="220" cy="66" rx="6" ry="5"/><ellipse class="org" cx="244" cy="66" rx="6" ry="5"/><ellipse class="org" cx="232" cy="38" rx="6" ry="4"/></g>
+          <g data-site="dental"><ellipse class="org" cx="232" cy="75" rx="11" ry="4"/></g>
+          <g data-site="lung"><ellipse class="org" cx="201" cy="176" rx="21" ry="36"/><ellipse class="org" cx="264" cy="176" rx="21" ry="36"/></g>
+          <g data-site="biliary"><ellipse class="org" cx="226" cy="224" rx="24" ry="13"/><ellipse class="org" cx="206" cy="250" rx="5" ry="6"/></g>
+          <g data-site="cdiff" data-sub="colon"><polygon class="org" points="184,262 282,262 284,322 272,322 270,280 198,280 200,326 186,326"/></g>
+          <g data-site="divert" data-sub="sigmoid / intra-abdominal"><ellipse class="org" cx="234" cy="306" rx="32" ry="28"/><ellipse class="org" cx="263" cy="336" rx="13" ry="10"/></g>
+          <g data-site="uti" data-sub="kidneys"><ellipse class="org" cx="190" cy="256" rx="6" ry="11"/><ellipse class="org" cx="278" cy="256" rx="6" ry="11"/></g>
+          <g data-site="uti"><ellipse class="org" cx="233" cy="355" rx="13" ry="9"/></g>
+          <g data-site="groin"><polygon class="org" points="218,374 248,374 233,398"/></g>
+          <g data-site="prostate"><ellipse class="org" cx="233" cy="369" rx="5" ry="4"/></g>
+          <g data-site="sepsis"><ellipse class="org" cx="245" cy="197" rx="12" ry="11"/></g>
+          <g data-site="joint"><ellipse class="org" cx="158" cy="150" rx="10" ry="10"/><ellipse class="org" cx="307" cy="150" rx="10" ry="10"/><ellipse class="org" cx="138" cy="262" rx="8" ry="8"/><ellipse class="org" cx="334" cy="262" rx="8" ry="8"/><ellipse class="org" cx="112" cy="366" rx="8" ry="8"/><ellipse class="org" cx="352" cy="366" rx="8" ry="8"/><ellipse class="org" cx="192" cy="355" rx="10" ry="10"/><ellipse class="org" cx="275" cy="355" rx="10" ry="10"/><ellipse class="org" cx="200" cy="515" rx="13" ry="13"/><ellipse class="org" cx="270" cy="515" rx="13" ry="13"/><ellipse class="org" cx="200" cy="676" rx="9" ry="9"/><ellipse class="org" cx="265" cy="676" rx="9" ry="9"/></g>
         </svg>
       </div>
       <div class="sites" id="siteBtns"></div>
-      <div class="small muted" style="margin-top:6px">Red dashed outline = infection on the problem list.</div>
+      <div class="small muted" style="margin-top:6px"><label style="float:right"><input type="checkbox" id="outlineSpots" onchange="document.getElementById(\'body\').classList.toggle(\'outline\',this.checked)"> show clickable areas</label>Red dashed outline = infection on the problem list.</div>
     </div>
 
     <div>
