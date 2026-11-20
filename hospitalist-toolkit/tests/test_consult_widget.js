@@ -27,4 +27,9 @@ ok("still ~50 words", m.words <= 60, m.words);
 m = B({ dr: "Lee", problem: "AKI", sig: "Dr. Example Name · MSP 00000 · cell 000-000-0000" });
 ok("sign-off line under Thanks, Wayne", /Thanks,\nWayne\nDr\. Example Name · MSP 00000 · cell 000-000-0000$/.test(m.text), m.text);
 ok("no sign-off when blank", /Thanks,\nWayne$/.test(B({}).text));
+// specialist list + text link
+const C = W.parseContacts("Smith | Infectious | 250-555-1234\nDr. Lee | nephrology | (250) 555 9876\n\nPatel | 2505550000");
+ok("contacts parsed", C.length === 3 && C[0].service === "Infectious diseases" && C[1].name === "Lee" && C[1].service === "Nephrology" && C[2].cell === "2505550000" && C[2].service === "", C);
+ok("iPhone sms link", W.smsLink("250-555-1234", "Hello Dr. Smith,\n\nThanks & bye", true) === "sms:+12505551234&body=Hello%20Dr.%20Smith%2C%0A%0AThanks%20%26%20bye", W.smsLink("250-555-1234", "Hello Dr. Smith,\n\nThanks & bye", true));
+ok("android sms link", W.smsLink("+1 250 555 1234", "Hi", false) === "sms:+12505551234?body=Hi");
 console.log(fail ? `\n${fail} FAILED` : "\nall passed"); process.exit(fail ? 1 : 0);

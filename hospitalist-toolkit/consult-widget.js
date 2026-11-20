@@ -78,7 +78,18 @@
     const sig = String(o.sig || "").trim();
     return { text: `Hello Dr. ${o.dr || "___"},\n\nThis is Wayne, hospitalist. ${body}\n\nYour help is much appreciated.\n\nThanks,\nWayne${sig ? "\n" + sig : ""}`, words: words(body) + 4 };
   }
-  window.ConsultWidget = { build, summarizeLabs, labLine, shortName, PERTINENT };
+  // Specialist list: one per line "Name | Service | cell". Kept in this browser only (localStorage), never in the public code.
+  function parseContacts(txt) {
+    return String(txt || "").split(/\n/).map((l) => l.split("|").map((x) => x.trim())).filter((p) => p[0]).map(([name, svc, cell]) => {
+      if (!cell && /\d{3}/.test(svc || "")) { cell = svc; svc = ""; }
+      const s = svc ? SERVICES.find((x) => x.toLowerCase().startsWith(svc.toLowerCase())) || "" : "";
+      return { name: name.replace(/^dr\.?\s+/i, ""), service: s, cell: String(cell || "").trim() };
+    });
+  }
+  const digits = (c) => { let d = String(c || "").replace(/[^\d+]/g, ""); if (/^\d{10}$/.test(d)) d = "+1" + d; else if (/^1\d{10}$/.test(d)) d = "+" + d; return d; };
+  // iPhone Messages wants sms:NUMBER&body=… ; Android wants ?body=
+  function smsLink(cell, text, ios) { return "sms:" + digits(cell) + (ios ? "&" : "?") + "body=" + encodeURIComponent(text || ""); }
+  window.ConsultWidget = { build, summarizeLabs, labLine, shortName, PERTINENT, parseContacts, smsLink, SERVICES };
   if (typeof document === "undefined") return;
 
   let pt = null, probs = [], labs = [], labsLoaded = false;
@@ -124,7 +135,10 @@
     const btn = el("button", { id: "cw-btn", type: "button", title: "Draft a consult message (ID, surgery, any service)" }, "✉ Consult");
     const pan = el("div", { id: "cw-pan", role: "dialog" }, `
       <h3>Consult message</h3>
-      <div class="muted">~50 words to text or send by Teams. Edit anything. Nothing is sent from here.</div>
+      <div class="muted">~50 words. Pick a specialist, then 💬 Text opens Messages with their number and this message filled in – you tap Send.</div>
+      <div class="row"><label>Send to (your specialist list)<select id="cw-who"></select></label><label style="max-width:150px">Cell<input id="cw-cell" inputmode="tel" placeholder="250-555-1234"></label></div>
+      <div id="cw-ed" style="display:none;margin:4px 0"><div class="muted">One per line: <b>Name | Service | cell</b> – e.g. <code>Smith | Infectious diseases | 250-555-1234</code>. Saved in this browser/phone only.</div>
+        <textarea id="cw-list" style="min-height:90px" placeholder="Smith | Infectious diseases | 250-555-1234"></textarea><div style="text-align:right"><button type="button" id="cw-save">Save list</button></div></div>
       <div class="row"><label>Service<select id="cw-svc">${SERVICES.map((s) => `<option>${s}</option>`).join("")}</select></label><label>Dr.<input id="cw-dr" placeholder="name"></label></div>
       <div class="row"><label>Patient<input id="cw-name"></label><label style="max-width:70px;min-width:60px">Age<input id="cw-age"></label><label style="max-width:120px">MRN<input id="cw-mrn"></label>
         <label style="max-width:90px;min-width:80px">Sex<select id="cw-sex"><option value="">–</option><option value="female">F</option><option value="male">M</option></select></label></div>
@@ -136,7 +150,7 @@
         <div style="display:flex;gap:8px;align-items:center;margin-top:3px"><a href="#" id="cw-laball" style="font-size:12px;color:#0b6bcb">show all results</a><input id="cw-labx" placeholder="other results to add, e.g. CT: 4 cm abscess" style="flex:1"></div></div>
       <div class="row"><label>Sign-off line under "Thanks, Wayne" <span class="muted">(saved on this computer only – not in the app code)</span><input id="cw-sig" placeholder="e.g. Dr. Wayne Dong · MSP ##### · cell ###-###-####"></label></div>
       <textarea id="cw-msg"></textarea>
-      <div class="acts"><span id="cw-words" class="muted"></span><span><button class="ghost" id="cw-close" type="button">Close</button> <button id="cw-copy" type="button">Copy</button></span></div>`);
+      <div class="acts"><span id="cw-words" class="muted"></span><span><button class="ghost" id="cw-close" type="button">Close</button> <button class="ghost" id="cw-copy" type="button">Copy</button> <button id="cw-text" type="button">💬 Text</button></span></div>`);
     document.body.appendChild(btn); document.body.appendChild(pan);
     const $ = (id) => pan.querySelector("#" + id);
     let edited = false, showAll = false, picked = null; // picked: Set of lab keys the user ticked (null = use the service defaults)
@@ -162,6 +176,25 @@
     $("cw-sig").addEventListener("input", () => { try { localStorage.setItem("consult-signoff", $("cw-sig").value); } catch (e) {} edited = false; refresh(); });
     $("cw-laball").onclick = (e) => { e.preventDefault(); showAll = !showAll; drawLabs(); };
     $("cw-msg").addEventListener("input", () => { edited = true; $("cw-words").textContent = "edited by hand"; });
+    const IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    let contacts = [];
+    const loadContacts = () => { let t = ""; try { t = localStorage.getItem("consult-contacts") || ""; } catch (e) {} $("cw-list").value = t; contacts = parseContacts(t);
+      $("cw-who").innerHTML = `<option value="">${contacts.length ? "– pick a specialist –" : "– no list yet –"}</option>` + contacts.map((c, i) => `<option value="${i}">${c.name.replace(/</g, "&lt;")}${c.service ? " · " + c.service : ""}</option>`).join("") + `<option value="edit">✎ Add / edit list…</option>`; };
+    loadContacts();
+    $("cw-who").onchange = () => {
+      const v = $("cw-who").value;
+      if (v === "edit") { $("cw-ed").style.display = "block"; $("cw-who").value = ""; $("cw-list").focus(); return; }
+      const c = contacts[+v]; if (!c || v === "") return;
+      $("cw-dr").value = c.name; $("cw-cell").value = c.cell;
+      if (c.service && c.service !== $("cw-svc").value) { $("cw-svc").value = c.service; picked = null; drawLabs(); }
+      edited = false; refresh();
+    };
+    $("cw-save").onclick = () => { try { localStorage.setItem("consult-contacts", $("cw-list").value); } catch (e) {} loadContacts(); $("cw-ed").style.display = "none"; };
+    $("cw-text").onclick = () => {
+      const cell = $("cw-cell").value.trim();
+      if (!/\d{3}/.test(cell)) { $("cw-cell").focus(); $("cw-words").textContent = "Pick a specialist or type a cell number first."; return; }
+      window.location.href = smsLink(cell, $("cw-msg").value, IOS);
+    };
     $("cw-close").onclick = () => (pan.style.display = "none");
     document.addEventListener("keydown", (e) => { if (e.key === "Escape") pan.style.display = "none"; });
     $("cw-copy").onclick = () => { $("cw-msg").select(); try { navigator.clipboard.writeText($("cw-msg").value); } catch (e) { document.execCommand("copy"); } $("cw-copy").textContent = "Copied"; setTimeout(() => ($("cw-copy").textContent = "Copy"), 1200); };
