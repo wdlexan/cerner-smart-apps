@@ -9,7 +9,7 @@
   const CLASS_NAME = { pen: "Penicillins", ceph: "Cephalosporins", carb: "Carbapenems", mrsa: "Anti-MRSA", ag: "Aminoglycosides", fq: "Fluoroquinolones", mac: "Macrolides/tetracyclines", uti: "TMP-SMX/urinary", anaer: "Clindamycin/metronidazole", cdiff: "C. difficile" };
   const PDF = window.ABXMAP_PDF || "../abx/abx-classes.pdf?v=20261119a"; // standalone page sets ABXMAP_PDF
   const TIERS = [["mild", "Mild / outpatient"], ["moderate", "Moderate / ward"], ["severe", "Severe / sepsis / ICU"], ["", "Show all"]];
-  const state = { site: null, tier: "moderate", f: null, chartSites: [] };
+  const state = { site: null, tier: "moderate", f: null, chartSites: [], susc: null };
 
   // ---- body map: hover + click ----
   const svg = $("body"), tip = $("tip");
@@ -47,7 +47,7 @@
   function ctx() {
     const c = { allergy: $("cAllergy").value, crcl: $("cCrcl").value === "" ? null : +$("cCrcl").value,
       risks: { mrsa: $("rMrsa").checked, pseudo: $("rPseudo").checked, esbl: $("rEsbl").checked },
-      otherAllergyText: state.f ? state.f.allergies.map((a) => a.sub).join(" ") : "" };
+      otherAllergyText: state.f ? state.f.allergies.map((a) => a.sub).join(" ") : "", susc: state.susc };
     Object.entries(CK).forEach(([id, k]) => (c[k] = $(id).checked));
     return c;
   }
@@ -97,6 +97,72 @@
   }
   $("copy").onclick = () => { $("note").select(); try { navigator.clipboard.writeText($("note").value); } catch (e) { document.execCommand("copy"); } };
 
+
+  // ---- culture & sensitivities: screenshot (OCR in the browser) or pasted text ----
+  const TESS = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
+  function loadTess() { return window.Tesseract ? Promise.resolve() : new Promise((ok, bad) => { const sc = document.createElement("script"); sc.src = TESS; sc.onload = ok; sc.onerror = () => bad(new Error("could not load the OCR library (network blocked?) – paste the text instead")); document.head.appendChild(sc); }); }
+  // grey, erase table gridlines (long dark runs), enlarge, black/white – Tesseract reads screen tables much better this way
+  function prep(img) {
+    const W = img.naturalWidth, H = img.naturalHeight, c = document.createElement("canvas"); c.width = W; c.height = H;
+    const g = c.getContext("2d"); g.drawImage(img, 0, 0); const d = g.getImageData(0, 0, W, H), p = d.data, L = new Uint8Array(W * H);
+    for (let i = 0; i < W * H; i++) L[i] = 0.3 * p[4 * i] + 0.59 * p[4 * i + 1] + 0.11 * p[4 * i + 2];
+    const dark = (v) => v < 160;
+    for (let y = 0; y < H; y++) { let run = 0; for (let x = 0; x < W; x++) { run = dark(L[y * W + x]) ? run + 1 : 0; if (run > Math.max(40, W * 0.15)) { for (let xx = 0; xx < W; xx++) if (dark(L[y * W + xx])) L[y * W + xx] = 255; break; } } }
+    for (let x = 0; x < W; x++) { let run = 0; for (let y = 0; y < H; y++) { run = dark(L[y * W + x]) ? run + 1 : 0; if (run > Math.max(20, H * 0.25)) { for (let yy = 0; yy < H; yy++) if (dark(L[yy * W + x])) L[yy * W + x] = 255; break; } } }
+    for (let i = 0; i < W * H; i++) { p[4 * i] = p[4 * i + 1] = p[4 * i + 2] = L[i]; p[4 * i + 3] = 255; }
+    g.putImageData(d, 0, 0);
+    // enlarge the grey image smoothly first, then threshold (thresholding first gives blocky letters)
+    const k = Math.max(1, Math.min(3, 2400 / W)), out = document.createElement("canvas"); out.width = Math.round(W * k); out.height = Math.round(H * k);
+    const o = out.getContext("2d"); o.imageSmoothingEnabled = true; o.imageSmoothingQuality = "high"; o.drawImage(c, 0, 0, out.width, out.height);
+    const od = o.getImageData(0, 0, out.width, out.height), q = od.data;
+    for (let i = 0; i < q.length; i += 4) { const v = q[i] > 170 ? 255 : 0; q[i] = q[i + 1] = q[i + 2] = v; }
+    o.putImageData(od, 0, 0); return out;
+  }
+  async function readImage(file) {
+    const st = $("suscStatus"); st.textContent = "Reading the screenshot in this browser…";
+    try {
+      const url = URL.createObjectURL(file), img = new Image(); await new Promise((ok, bad) => { img.onload = ok; img.onerror = () => bad(new Error("not an image")); img.src = url; });
+      await loadTess(); st.textContent = "Recognizing text (first time downloads the OCR program, ~10 s)…";
+      const worker = await Tesseract.createWorker("eng"); await worker.setParameters({ tessedit_pageseg_mode: "6", preserve_interword_spaces: "1" });
+      const { data } = await worker.recognize(prep(img)); await worker.terminate(); URL.revokeObjectURL(url);
+      $("suscText").value = data.text; $("suscText").closest("details").open = true;
+      useText(data.text, "screenshot (OCR) – check every row against the result");
+    } catch (e) { st.textContent = "Could not read the image: " + (e.message || e); }
+  }
+  function useText(text, src) {
+    const p = R.expandSusc(R.parseSusc(text));
+    if (!p.rows.length) { $("suscStatus").textContent = "No antibiotic results found in that " + (src.startsWith("screenshot") ? "screenshot – try cropping to the table, or paste the text." : "text."); return; }
+    state.susc = p; state.suscSrc = src;
+    if (p.flags.mrsa) $("rMrsa").checked = true; if (p.flags.esbl) $("rEsbl").checked = true; if (p.organisms.some((o) => /pseudomonas/i.test(o))) $("rPseudo").checked = true;
+    drawSusc(); draw();
+  }
+  function drawSusc() {
+    const p = state.susc;
+    if (!p) { $("suscOut").innerHTML = ""; $("suscStatus").textContent = ""; return; }
+    const n = Math.max(1, p.organisms.length, ...p.rows.filter((r) => !r.derived).map((r) => r.results.length));
+    const orgs = Array.from({ length: n }, (_, i) => p.organisms[i] || "Organism " + (i + 1));
+    const sel = (ri, ci, v) => `<select data-r="${ri}" data-c="${ci}">${["", "S", "I", "R"].map((x) => `<option${x === (v || "") ? " selected" : ""}>${x}</option>`).join("")}</select>`;
+    const real = p.rows.map((r, i) => [r, i]).filter(([r]) => !r.derived), der = p.rows.filter((r) => r.derived);
+    $("suscStatus").textContent = `From ${state.suscSrc}. ${real.length} antibiotic result(s)${p.flags.mrsa ? " · MRSA" : ""}${p.flags.esbl ? " · ESBL" : ""}${p.flags.cre ? " · carbapenemase" : ""}. Edit any cell that is wrong.`;
+    $("suscOut").innerHTML = `<table class="stab"><tr><th>Antibiotic</th>${orgs.map((o) => `<th>${esc(o)}</th>`).join("")}<th>MIC</th></tr>${real.map(([r, i]) => `<tr><td>${esc(r.drug)}</td>${orgs.map((_, c) => `<td class="s${r.results[c] || ""}">${sel(i, c, r.results[c])}</td>`).join("")}<td class="muted">${esc(r.mic || "")}</td></tr>`).join("")}</table>
+      ${n > 1 ? '<div class="small muted">With 2+ organisms, a blank cell for the first organism can shift results into the wrong column – check against the report.</div>' : ""}
+      ${der.length ? `<div class="small muted" style="margin-top:4px">Inferred (not on the report): ${der.map((r) => `${esc(r.drug)} ${r.results[0]} (${esc(r.derived)})`).join(" · ")}</div>` : ""}`;
+    $("suscOut").querySelectorAll("select").forEach((x) => (x.onchange = () => { const r = p.rows[+x.dataset.r]; r.results[+x.dataset.c] = x.value; r.results = r.results.map((v) => v || ""); drawSusc(); draw(); }));
+  }
+  window.__abxPrep = prep; // for testing the image cleanup
+  const drop = $("drop");
+  ["dragenter", "dragover"].forEach((e) => drop.addEventListener(e, (ev) => { ev.preventDefault(); drop.classList.add("over"); }));
+  ["dragleave", "drop"].forEach((e) => drop.addEventListener(e, (ev) => { ev.preventDefault(); drop.classList.remove("over"); }));
+  drop.addEventListener("drop", (ev) => { const f = [...(ev.dataTransfer.files || [])].find((x) => /^image\//.test(x.type)); if (f) readImage(f); });
+  document.addEventListener("paste", (ev) => {
+    if (ev.target && /textarea|input/i.test(ev.target.tagName)) return;
+    const it = [...((ev.clipboardData && ev.clipboardData.items) || [])].find((x) => /^image\//.test(x.type));
+    if (it) { ev.preventDefault(); readImage(it.getAsFile()); } else { const t = ev.clipboardData && ev.clipboardData.getData("text"); if (t) { $("suscText").value = t; useText(t, "pasted text"); } }
+  });
+  $("suscFile").onchange = () => { const f = $("suscFile").files[0]; if (f) readImage(f); };
+  $("suscRead").onclick = () => useText($("suscText").value, "pasted text");
+  $("suscClear").onclick = () => { state.susc = null; $("suscText").value = ""; drawSusc(); draw(); };
+
   // ---- chart ----
   function prefill(f) {
     const set = (id, v) => ($(id).checked = !!v);
@@ -115,6 +181,9 @@
     if (f.pregnant) why.push("pregnancy on problem list");
     if (f.cls.abx.length) why.push("current antibiotics: " + f.cls.abx.join("; "));
     $("critFrom").textContent = "From the chart: " + why.join(" · ");
+    state.susc = null;
+    const rep = (f.microReports || []).find((m) => R.parseSusc(m.text).rows.length);
+    if (rep) { useText(rep.text, "chart micro report" + (rep.t ? " (" + new Date(rep.t).toLocaleDateString("en-CA") + ")" : "")); } else drawSusc();
     state.chartSites = SITES.filter((s) => s.match && f.probs.some((p) => s.match.test(p.text))).map((s) => s.id);
     if (state.chartSites.length) pick(state.chartSites[0]); else markMap();
   }

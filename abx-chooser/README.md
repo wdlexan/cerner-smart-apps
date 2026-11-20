@@ -8,3 +8,9 @@ Hover over the body map and click a site (lungs, skin, kidneys/bladder, prostate
 - Demo without a launch: `abx-chooser/index.html?demo=1` to `4`.
 - Code Console: add `https://wdlexan.github.io/cerner-smart-apps/abx-chooser/launch.html` as a launch URI and `https://wdlexan.github.io/cerner-smart-apps/abx-chooser/index.html` as a redirect URI.
 - Tests: `node hospitalist-toolkit/tests/test_abxmap.js`. UNVERIFIED draft.
+
+## Culture & sensitivities
+
+Paste (Ctrl+V), drop or choose a screenshot of the susceptibility result, or paste the result text. Screenshots are read in the browser with Tesseract OCR (tesseract.js loaded from jsDelivr on first use; the image is not uploaded). Before OCR the image is converted to grey, table gridlines are erased, it is enlarged up to 3x and thresholded. The parser finds organisms, MRSA/ESBL/carbapenemase flags and S/I/R per antibiotic (table rows or "resistant to ... / susceptible to ..." prose), shows an editable table, and infers unreported results (MRSA -> beta-lactams R; ESBL -> cephalosporins/aztreonam R; Enterococcus and Pseudomonas intrinsic resistance; ampicillin -> amoxicillin). Regimens get "susceptible on the culture" notes, and a first-choice drug that is R is marked avoid. The latest chart micro report with results is read automatically.
+
+Tested on a made-up 2-organism screenshot: 12/12 antibiotics found, 2 second-organism cells missed - always check the table against the report.

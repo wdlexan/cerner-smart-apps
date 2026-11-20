@@ -41,6 +41,7 @@
     });
     const microText = (raw.reports || []).map((r) => ({ t: tOf(r), text: [label(r.code), r.conclusion || ""].join(" — ") }))
       .concat((raw.obs || []).filter((o) => o.valueString || o.valueCodeableConcept).map((o) => ({ t: tOf(o), text: label(o.code) + " " + (o.valueString || label(o.valueCodeableConcept)) })));
+    f.microReports = microText.filter((m) => /culture|susceptib|sensitiv|organism|isolate/i.test(m.text)).sort((a, b) => (b.t || 0) - (a.t || 0));
     microText.forEach((m) => {
       if (/\bmrsa\b|methicillin.resistant|oxacillin.resistant/i.test(m.text) && !/not detected|negative|no mrsa/i.test(m.text)) f.micro.mrsa.push(m);
       if (/\besbl\b|extended.spectrum beta|carbapenemase|\bcre\b/i.test(m.text) && !/not detected|negative/i.test(m.text)) f.micro.esbl.push(m);

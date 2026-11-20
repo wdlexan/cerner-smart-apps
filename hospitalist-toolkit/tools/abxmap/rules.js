@@ -82,6 +82,7 @@
     if (ctx.pregnant && has("tmpsmx")) bump("caution", "Pregnancy: TMP-SMX – avoid in first trimester and near term.");
     if ((ctx.steroids || (ctx.age || 0) >= 65) && has("fq")) bump("caution", "Age ≥65 or steroids: fluoroquinolone tendon rupture, aortic aneurysm, delirium.");
     if (ctx.cdiffHx && (has("clinda") || has("fq"))) bump("caution", "Previous C. difficile: clindamycin and fluoroquinolones carry the highest risk.");
+    if (ctx.susc && ctx.susc.rows && ctx.susc.rows.length) suscNotes(text, ctx.susc).forEach((n) => (n.s === "good" ? notes.push(n) : bump(n.s, n.msg)));
     return { status, notes, classes: [...new Set(ds.map((d) => d.cls).filter(Boolean))] };
   }
 
@@ -127,6 +128,82 @@
     return L.join("\n");
   }
 
-  const api = { DRUGS, drugsIn, ivVanco, conditionsOf, assess, choose, allergyLines, crcl, note };
+
+  /* ---------- culture & sensitivity reading (from OCR'd screenshot or pasted text) ---------- */
+  const SUSC_DRUGS = [
+    ["ampicillin", /\bampicillin\b|\bampic/i], ["amoxicillin", /\bamoxicillin\b(?![\s\/-]*clav)/i], ["amoxicillin-clavulanate", /amoxicillin[\s\/-]*clav|amox[\s\/-]*clav|clavulan/i],
+    ["penicillin", /\bpenicillin\b|\bpen ?g\b/i], ["cloxacillin", /cloxacillin|oxacillin|methicillin/i], ["piperacillin-tazobactam", /piperacillin|pip[\s\/-]*tazo|tazocin/i],
+    ["cefazolin", /cefazolin/i], ["cephalexin", /cephalexin|cephalothin/i], ["cefuroxime", /cefuroxime/i], ["cefoxitin", /cefoxitin/i],
+    ["ceftriaxone", /ceftriaxone/i], ["cefotaxime", /cefotaxime/i], ["ceftazidime", /ceftazidime(?![\s\/-]*avi)/i], ["ceftazidime-avibactam", /ceftazidime[\s\/-]*avi|avycaz/i], ["cefepime", /cefepime/i], ["ceftaroline", /ceftaroline/i], ["cefixime", /cefixime/i],
+    ["ertapenem", /ertapenem/i], ["meropenem", /meropenem/i], ["imipenem", /imipenem/i], ["aztreonam", /aztreonam/i],
+    ["gentamicin", /gentamicin/i], ["tobramycin", /tobramycin/i], ["amikacin", /amikacin/i],
+    ["ciprofloxacin", /ciprofloxacin|\bcipro\b/i], ["levofloxacin", /levofloxacin/i], ["moxifloxacin", /moxifloxacin/i],
+    ["tmp-smx", /trimethoprim[\s\/-]*sulfa|sulfamethoxazole|tmp[\s\/-]*smx|co-?trimoxazole|septra|bactrim/i], ["trimethoprim", /\btrimethoprim\b(?![\s\/-]*sulfa)/i],
+    ["nitrofurantoin", /nitrofurantoin/i], ["fosfomycin", /fosfomycin/i], ["vancomycin", /vancomycin/i], ["linezolid", /linezolid/i], ["daptomycin", /daptomycin/i],
+    ["clindamycin", /clindamycin/i], ["erythromycin", /erythromycin/i], ["azithromycin", /azithromycin/i], ["doxycycline", /doxycycline/i], ["tetracycline", /\btetracycline/i],
+    ["tigecycline", /tigecycline/i], ["rifampin", /rifampin|rifampicin/i], ["metronidazole", /metronidazole/i]];
+  const ORG_RE = /(escherichia coli|e\. ?coli|klebsiella \w+|proteus \w+|enterobacter \w+|citrobacter \w+|serratia \w+|morganella \w+|pseudomonas aeruginosa|pseudomonas \w+|acinetobacter \w+|stenotrophomonas \w+|haemophilus influenzae|staphylococcus aureus|s\. ?aureus|coagulase[- ]negative staph\w*|staphylococcus \w+|enterococcus faecalis|enterococcus faecium|enterococcus \w*|streptococcus \w+|group [abcg] strep\w*|candida \w+)/i;
+  const INTERP = (t) => { t = t.replace(/[§$]/g, (c) => (c === "§" ? "S" : "")).replace(/^[=:.,;'"`]+|[=:.,;'"`]+$/g, "").toUpperCase(); if (/^(S|SUSC\w*|SENS\w*)$/.test(t)) return "S"; if (/^(R|RES\w*)$/.test(t)) return "R"; if (/^(I|INT\w*|SDD)$/.test(t)) return "I"; return null; };
+
+  function parseSusc(text) {
+    const out = { organisms: [], flags: { mrsa: false, esbl: false, cre: false }, rows: [] };
+    const lines = String(text || "").replace(/\r/g, "").split("\n").map((l) => l.replace(/[|]/g, " ").trim()).filter(Boolean);
+    lines.forEach((l) => { const m = l.match(ORG_RE); if (m && !SUSC_DRUGS.some(([, re]) => re.test(l)) && out.organisms.length < 3) { const o = m[1].replace(/\s+/g, " "); if (!out.organisms.some((x) => x.toLowerCase() === o.toLowerCase())) out.organisms.push(o); } });
+    const all = lines.join(" ");
+    if (/\bmrsa\b|methicillin[- ]resistant|oxacillin[- ]resistant/i.test(all)) out.flags.mrsa = true;
+    if (/\besbl\b|extended[- ]spectrum/i.test(all)) out.flags.esbl = true;
+    if (/carbapenemase|\bcre\b|\bcpo\b|\bkpc\b|\bndm\b|\boxa-48\b/i.test(all)) out.flags.cre = true;
+    const seen = {};
+    // table rows: "Ceftriaxone   >=64   R    <=1   S"
+    lines.forEach((l) => {
+      const hits = SUSC_DRUGS.filter(([, re]) => re.test(l));
+      if (hits.length !== 1) return;
+      const [name] = hits[0];
+      const after = l.replace(hits[0][1], " ").split(/\s+/);
+      const res = after.map(INTERP).filter(Boolean);
+      if (!res.length || res.length > 4) return;
+      const mic = (l.match(/[<>]=?\s*\d+(\.\d+)?|\b\d+(\.\d+)?\b/) || [""])[0];
+      if (!seen[name]) { seen[name] = 1; out.rows.push({ drug: name, results: res, mic }); }
+    });
+    // prose: "resistant to ceftriaxone and ciprofloxacin; susceptible to ertapenem, nitrofurantoin"
+    const prose = (word, r) => { const re = new RegExp(word + "\\s+to\\s+([^.;]+)", "gi"); let m; while ((m = re.exec(all))) SUSC_DRUGS.forEach(([n, dre]) => { if (dre.test(m[1]) && !seen[n]) { seen[n] = 1; out.rows.push({ drug: n, results: [r], mic: "" }); } }); };
+    prose("resistant", "R"); prose("(?:susceptible|sensitive)", "S"); prose("intermediate", "I");
+    return out;
+  }
+
+  /* Add what the report implies but does not list. */
+  function expandSusc(p) {
+    const has = (n) => p.rows.some((r) => r.drug === n), add = (n, r, why) => { if (!has(n)) p.rows.push({ drug: n, results: [r], mic: "", derived: why }); };
+    const res = (n) => { const r = p.rows.find((x) => x.drug === n); return r ? (r.results.includes("R") ? "R" : r.results.includes("I") ? "I" : "S") : null; };
+    const staph = p.organisms.some((o) => /aureus|staph/i.test(o));
+    if (p.flags.mrsa || (staph && res("cloxacillin") === "R")) {
+      p.flags.mrsa = true;
+      ["cloxacillin", "cefazolin", "cephalexin", "amoxicillin-clavulanate", "piperacillin-tazobactam", "ceftriaxone", "cefepime", "meropenem", "ertapenem", "penicillin", "ampicillin", "amoxicillin"].forEach((n) => add(n, "R", "MRSA"));
+    } else if (staph && res("cloxacillin") === "S") ["cefazolin", "cephalexin", "amoxicillin-clavulanate", "piperacillin-tazobactam"].forEach((n) => add(n, "S", "MSSA (cloxacillin S)"));
+    if (p.flags.esbl) ["ampicillin", "amoxicillin", "cefazolin", "cephalexin", "cefuroxime", "ceftriaxone", "cefotaxime", "ceftazidime", "cefepime", "aztreonam"].forEach((n) => add(n, "R", "ESBL"));
+    if (p.flags.cre) ["ertapenem", "meropenem", "imipenem"].forEach((n) => add(n, "R", "carbapenemase"));
+    if (res("ampicillin")) add("amoxicillin", res("ampicillin"), "same as ampicillin");
+    if (res("cefazolin") && p.organisms.length <= 1 && !p.organisms.some((o) => /aureus|staph/i.test(o))) add("cephalexin", res("cefazolin"), "same as cefazolin");
+    if (res("ceftriaxone")) add("cefotaxime", res("ceftriaxone"), "same as ceftriaxone");
+    if (p.organisms.some((o) => /enterococcus/i.test(o))) ["cefazolin", "cephalexin", "ceftriaxone", "cefepime", "cloxacillin", "clindamycin", "tmp-smx"].forEach((n) => add(n, "R", "Enterococcus: intrinsic"));
+    if (p.organisms.some((o) => /pseudomonas/i.test(o))) ["ampicillin", "amoxicillin", "amoxicillin-clavulanate", "cefazolin", "cephalexin", "ceftriaxone", "cefuroxime", "ertapenem", "tmp-smx", "doxycycline", "nitrofurantoin"].forEach((n) => add(n, "R", "Pseudomonas: intrinsic"));
+    return p;
+  }
+
+  /* Judge a regimen against culture results: returns notes [{s, msg}] - "avoid" only if the first-choice drug is R. */
+  function suscNotes(text, susc) {
+    const notes = [], first = String(text || "").split(/\bor\b|\(|;|step(?:\s|-)?down|\+\/-|±/i)[0];
+    (susc.rows || []).forEach((r) => {
+      const d = SUSC_DRUGS.find(([n]) => n === r.drug); if (!d || !d[1].test(text)) return;
+      const worst = r.results.includes("R") ? "R" : r.results.includes("I") ? "I" : r.results.length ? "S" : null;
+      const src = r.derived ? ` (inferred: ${r.derived})` : " on the culture";
+      if (worst === "R") notes.push({ s: d[1].test(first) ? "avoid" : "caution", msg: `${d[1].test(first) ? "" : "Alternative in this line: "}${r.drug} RESISTANT${src}.` });
+      else if (worst === "I") notes.push({ s: "caution", msg: `${r.drug} intermediate / dose-dependent${src} – use high dose or another agent.` });
+      else if (worst === "S") notes.push({ s: "good", msg: `${r.drug} susceptible${src}.` });
+    });
+    return notes;
+  }
+
+  const api = { parseSusc, expandSusc, suscNotes, SUSC_DRUGS, DRUGS, drugsIn, ivVanco, conditionsOf, assess, choose, allergyLines, crcl, note };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else window.AbxMapRules = api;
 })();

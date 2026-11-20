@@ -68,4 +68,21 @@ ok("C. diff and sepsis are in the shared infections data", window.INF_SITES.some
 ok("oral vanco taper not flagged as IV", st("Fidaxomicin or vancomycin taper and pulse", { crcl: 20 }) === "ok");
 ok("IV vanco still flagged", st("Piperacillin-tazobactam 4.5 g IV q6h + vancomycin IV", { crcl: 20 }) === "caution");
 ok("ivVanco: 'vancomycin 500 mg PO/NG QID' is oral", !R.ivVanco("Vancomycin 500 mg PO/NG QID + metronidazole 500 mg IV q8h"));
+// culture & sensitivities
+const ocr = require("fs").readFileSync(__dirname + "/fixtures-susc-ocr.txt", "utf8"); // real Tesseract output of a made-up 2-organism screenshot
+let sp = R.parseSusc(ocr);
+ok("OCR: 2 organisms", sp.organisms.length === 2, sp.organisms);
+ok("OCR: 12 antibiotics", sp.rows.length === 12, sp.rows.map((r) => r.drug));
+ok("OCR: cefepime S/R, cipro S/I", sp.rows.find((r) => r.drug === "cefepime").results.join("/") === "S/R" && sp.rows.find((r) => r.drug === "ciprofloxacin").results.join("/") === "S/I");
+sp = R.expandSusc(sp);
+ok("Pseudomonas -> ertapenem inferred R", sp.rows.some((r) => r.drug === "ertapenem" && r.derived && r.results[0] === "R"));
+let as = R.assess("Cefepime 2 g IV q8h or piperacillin-tazobactam", { allergy: "none", risks: {}, susc: sp });
+ok("first-choice cefepime R -> avoid; pip-tazo S noted", as.status === "avoid" && as.notes.some((n) => n.s === "good" && /piperacillin/.test(n.msg)));
+as = R.assess("Piperacillin-tazobactam 4.5 g IV q6h (or cefepime 2 g IV q8h)", { allergy: "none", risks: {}, susc: sp });
+ok("cefepime only as alternative -> caution", as.status === "caution");
+sp = R.expandSusc(R.parseSusc("Staphylococcus aureus\nOxacillin  >=4  R\nVancomycin  1  S\nClindamycin  R\nTrimethoprim/Sulfamethoxazole  S"));
+ok("oxacillin R -> MRSA, cefazolin inferred R", sp.flags.mrsa && sp.rows.some((r) => r.drug === "cefazolin" && r.results[0] === "R"));
+sp = R.expandSusc(R.parseSusc("Escherichia coli, ESBL producer. Resistant to ceftriaxone and ciprofloxacin; susceptible to ertapenem, nitrofurantoin, TMP-SMX."));
+ok("prose report: ESBL, cipro R, nitrofurantoin S", sp.flags.esbl && sp.rows.find((r) => r.drug === "ciprofloxacin").results[0] === "R" && sp.rows.find((r) => r.drug === "nitrofurantoin").results[0] === "S");
+ok("OCR noise 'S$' / '§$' read as S", R.parseSusc("Gentamicin <=1 §$\nTobramycin <=1 S$").rows.every((r) => r.results[0] === "S"));
 console.log(fail ? `\n${fail} FAILED` : "\nall passed"); process.exit(fail ? 1 : 0);

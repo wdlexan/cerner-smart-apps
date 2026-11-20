@@ -46,7 +46,10 @@
   .rx .set { font-size:12px; color:var(--muted); } .rx .reg { font-weight:600; margin:2px 0; }
   .badge { display:inline-block; font-size:11.5px; font-weight:700; border-radius:9px; padding:1px 8px; margin-right:6px; }
   .b-ok { background:var(--g-bg); color:var(--g-ink); } .b-caution { background:var(--a-bg); color:var(--a-ink); } .b-avoid { background:var(--r-bg); color:var(--r-ink); }
-  .rx ul { margin:4px 0 0 18px; padding:0; font-size:12.5px; } .rx li.avoid { color:var(--r-ink); } .rx li.caution { color:var(--a-ink); }
+  .rx ul { margin:4px 0 0 18px; padding:0; font-size:12.5px; } .rx li.avoid { color:var(--r-ink); } .rx li.caution { color:var(--a-ink); } .rx li.good { color:var(--g-ink); }
+  #drop.over { border-color:var(--accent); background:var(--b-bg); }
+  .stab { border-collapse:collapse; font-size:12.5px; margin-top:6px; } .stab td, .stab th { border:1px solid var(--line); padding:2px 6px; text-align:left; } .stab select { padding:1px 3px; font-size:12px; }
+  .sR { background:var(--r-bg); } .sI { background:var(--a-bg); } .sS { background:var(--g-bg); }
   .rx .acts { margin-top:5px; display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
   .chip { font-size:11.5px; text-decoration:none; border:1px solid var(--line); border-radius:10px; padding:1px 7px; color:var(--accent); }
   details { border:1px solid var(--line); border-radius:8px; padding:0 10px; margin:6px 0; background:var(--card); }
@@ -105,6 +108,23 @@
       <label><input type="checkbox" id="cCdiff"> Prior C. difficile</label>
     </div>
     <div id="critFrom" class="small muted" style="margin-top:4px"></div>
+  </div>
+
+  <div class="card" id="suscCard">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+      <b>Culture &amp; sensitivities <span class="muted small">(optional – marks each regimen R / S)</span></b>
+      <span><button id="suscClear">Clear</button></span>
+    </div>
+    <div id="drop" tabindex="0" style="margin-top:6px;border:2px dashed var(--line);border-radius:8px;padding:12px;text-align:center;cursor:pointer">
+      <b>Paste (Ctrl+V) or drop a screenshot</b> of the sensitivity result here, or <label style="color:var(--accent);cursor:pointer;text-decoration:underline">choose an image<input type="file" id="suscFile" accept="image/*" hidden></label>
+      <div class="small muted">Read in this browser with OCR (Tesseract) – the image is not uploaded. Crop to the organism names and the antibiotic table for best results.</div>
+    </div>
+    <details style="margin-top:6px"><summary>…or paste the result text (most reliable: copy the micro result in PowerChart)</summary>
+      <textarea id="suscText" style="min-height:90px" placeholder="Escherichia coli  ESBL&#10;Ampicillin  >=32  R&#10;Ceftriaxone  >=64  R&#10;Nitrofurantoin  <=16  S"></textarea>
+      <button class="primary" id="suscRead">Read text</button>
+    </details>
+    <div id="suscStatus" class="small muted" style="margin-top:6px"></div>
+    <div id="suscOut"></div>
   </div>
 
   <div class="layout">
@@ -177,9 +197,9 @@
 <script src="../hospitalist-toolkit/tools/infections/infections-data.js?v=20261119c"></script>
 <script src="../hospitalist-toolkit/tools/abxmap/extra-sites.js?v=20261119c"></script>
 <script src="../hospitalist-toolkit/tools/abx/abx-classes-pages.js?v=20261119b"></script>
-<script src="../hospitalist-toolkit/tools/abxmap/rules.js?v=20261119d"></script>
-<script src="../hospitalist-toolkit/tools/abxmap/chart.js?v=20261119b"></script>
+<script src="../hospitalist-toolkit/tools/abxmap/rules.js?v=20261119f"></script>
+<script src="../hospitalist-toolkit/tools/abxmap/chart.js?v=20261119c"></script>
 <script src="../hospitalist-toolkit/tools/abxmap/samples.js?v=20261119b"></script>
-<script src="../hospitalist-toolkit/tools/abxmap/app.js?v=20261119b"></script>
+<script src="../hospitalist-toolkit/tools/abxmap/app.js?v=20261119d"></script>
 </body>
 </html>

@@ -1,0 +1,19 @@
+Microbiology - Blood Culture Collecteti 18-Nov-2026 06:40 TEST, MADE-UP
+1. Klebsiella pneumoniae
+2. Pseudomonas aeruginosa
+Antibiotic IMIC i1interp 2 MIC 2 Interp
+
+Ampicillin >=32 R
+Amoxicillin/Clavulanate 4 S
+Piperacillin/Tazobactam <=4 S 16 S
+Cefazolin <=4 S
+
+Ceftriaxone <=1 s
+
+Ceftazidime <=1 s 4 S
+Cefepime <=] S >=32 R
+Meropenem <=0.25 S 2 S
+Ciprofloxacin <=0.25 S$ 2 I
+Gentamicin <=1 S <=1 §$
+Tobramycin <=1 S <=1 =S
+Trimethoprim/Sulfamethoxazole <=20 S$
