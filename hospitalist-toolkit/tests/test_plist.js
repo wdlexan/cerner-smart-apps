@@ -56,6 +56,34 @@ eq("admit from discharge", P.admitText({ los: 2, discharged: "18-Nov-2026 10:10"
 // merge keeps one copy per FIN
 eq("merge", P.merge([{ fin: "1", name: "A" }], [{ fin: "1", name: "A" }, { fin: "2", name: "B" }]).length, 2);
 
+
+// Chart info (made-up note and banner text)
+const C = require("../tools/plist/chart.js");
+eq("eGFR CKD-EPI 2021 M 80 Cr 68", C.egfr(68, 80, "M"), 91);
+eq("eGFR F 70 Cr 110", C.egfr(110, 70, "F"), 47);
+const banner = "Alerts:\nPrecautions:\nMOST: C2 – ICU/Intub/CPR PRN, Ordered on: 01-NOV-2026\nAllergies: No Known Allergies\nCreatinine Level: 68 umol/L\nrivaroxaban 10 mg tab 10 mg 1 tab, oral, DAILY\nNS at 75 mL/hr";
+let c = C.parse(banner, { age: 80, sex: "M" }).fields;
+eq("banner fields", [c.most, c.allergy, c.gfr, c.vtep, c.iv, c.isolation], ["C2", "n", 91, "y", "NS 75 mL/h", undefined]);
+eq("OCR typo anticoag", C.parse("apbxaban 2.5 mg tab").fields.vtep, "y");
+eq("allergy listed", C.parse("Allergies: penicillin (rash)").fields.allergy, "y");
+eq("contact precautions", C.parse("On contact precautions for MRSA").fields.isolation, "contact");
+const note = ["Past Medical History/Chronic Problems", "Ongoing", "Atrial fibrillation", "COPD", "Historical", "No problems recorded",
+  "Assessment/Plan", "1. Pneumonia (community acquired)", "Ceftriaxone day 3. Repeat CXR in 6 weeks.", "2. Urinary retention",
+  " Has a Foley in situ. Trial of void Friday plan.", "CHF", "  - Euvolemic, no changes", "Blood cultures pending", "Disposition", "Home with home care."].join("\n");
+c = C.parse(note, { age: 70, sex: "F" }).fields;
+eq("issues", c.issues, ["Pneumonia", "Urinary retention"]);
+eq("pmhx", c.pmhx, "Atrial fibrillation, COPD");
+eq("foley", c.foley, "y");
+eq("todo", c.todo, ["Dispo: Home with home care", "Pneumonia: Repeat CXR in 6 weeks", "Urinary retention: Trial of void Friday plan", "CHF: Blood cultures pending"]);
+eq("pending", c.lab, "Blood cultures pending");
+eq("foley removed later", C.parse("Foley inserted Nov 2.\nFoley removed Nov 5, voiding.").fields.foley, "n");
+eq("right patient by name", C.mentions("Mr. Testman is 70", { name: "Testman, Al" }), true);
+eq("right patient by MRN", C.mentions("MRN:01234567", { name: "Testman, Al", mrn: "01234567" }), true);
+eq("wrong patient", C.mentions("Mrs. Other, MRN:07654321", { name: "Testman, Al", mrn: "01234567" }), false);
+const X0 = require("../tools/plist/xlsx.js");
+eq("spread 3", X0.spread(["a", "b", "c"]), ["a", "b", "c"]);
+eq("spread 5", X0.spread("a; b; c; d; e"), ["a; b", "c; d", "e"]);
+
 // Excel: rows copied from the template, colour rules stretched
 let JSZip = null; try { JSZip = require("jszip"); } catch (e) { try { JSZip = require("/opt/node-tools/node_modules/jszip"); } catch (e2) {} }
 const done = () => { console.log(fail ? fail + " FAILED" : "all passed"); process.exit(fail ? 1 : 0); };
@@ -63,14 +91,17 @@ if (!JSZip) { console.log("skip Excel test (jszip not installed)"); done(); }
 else {
   const X = require("../tools/plist/xlsx.js"), fs = require("fs");
   X.build(JSZip, fs.readFileSync(__dirname + "/../tools/plist/template.xlsx"), [
-    { floor: "S7B", patients: [{ name: "Sample, Ann & Co", location: "S7B-VGH S715 A", age: 82, admit: "≈ 28-Oct (LOS 22 d)", reason: "Altered <LOC>", fp: "y" }] },
+    { floor: "S7B", patients: [{ name: "Sample, Ann & Co", location: "S7B-VGH S715 A", age: 82, admit: "≈ 28-Oct (LOS 22 d)", reason: "Altered <LOC>", fp: "y",
+      most: "C2", allergy: "n", gfr: 91, vtep: "y", issues: ["A", "B", "C", "D"], todo: ["t1"], pmhx: "COPD" }] },
     { floor: "HAH", patients: [{ name: "Sample, Bo", location: "HAH-VGH HAH1 A", age: 35, admit: "", reason: "Abdominal pain", fp: "n" }] }], { spare: 1 })
     .then((u8) => JSZip.loadAsync(u8)).then((z) => z.file("xl/worksheets/sheet1.xml").async("string")).then((x) => {
       eq("rows written", (x.match(/<row /g) || []).length, 1 + 2 * 4 + 3);
       eq("floor in A2", /<c r="A2"[^>]*t="inlineStr"><is><t[^>]*>S7B<\/t>/.test(x), true);
       eq("name escaped in F3", x.includes("Sample, Ann &amp; Co") && x.includes("Altered &lt;LOC&gt;"), true);
       eq("age is a number", /<c r="E3"[^>]*><v>82<\/v><\/c>/.test(x), true);
-      eq("pmhx row", /<c r="F4"[^>]*><is><t[^>]*>pmhx:/.test(x), true);
+      eq("pmhx row", /<c r="F4"[^>]*><is><t[^>]*>pmhx: COPD</.test(x), true);
+      eq("MOST, gfr number", /<c r="I3"[^>]*><is><t[^>]*>C2</.test(x) && /<c r="K3"[^>]*><v>91<\/v>/.test(x), true);
+      eq("issues over 3 rows", /<c r="O3"[^>]*><is><t[^>]*>A; B</.test(x) && /<c r="O4"[^>]*><is><t[^>]*>C; D</.test(x), true);
       eq("second floor at row 6", /<c r="A6"[^>]*><is><t[^>]*>HAH</.test(x), true);
       eq("dimension", /<dimension ref="A1:S12"\/>/.test(x), true);
       eq("colour rules to last row", /sqref="K1:K12"/.test(x) && !/sqref="[^"]*H26/.test(x), true);

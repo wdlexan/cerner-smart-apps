@@ -31,6 +31,17 @@
     return x;
   }
 
+  // a list (or "a; b; c" text) split over up to 3 cells, one item per cell when it fits
+  function spread(list) {
+    if (!list) return [];
+    if (!Array.isArray(list)) list = String(list).split(/\s*;\s*/);
+    list = list.map((x) => String(x).trim()).filter(Boolean);
+    if (list.length <= 3) return list;
+    const per = Math.ceil(list.length / 3), out = [];
+    for (let i = 0; i < list.length; i += per) out.push(list.slice(i, i + per).join("; "));
+    return out;
+  }
+
   // groups: [{ floor, patients: [{ name, location, age, admit, reason, fp, note }] }]
   async function build(JSZip, template, groups, opts) {
     opts = opts || {};
@@ -44,9 +55,13 @@
     groups.forEach((g) => {
       out.push(cloneRow(proto[2], n++, { A: g.floor }));
       g.patients.forEach((p) => {
-        out.push(cloneRow(proto[3], n++, { D: p.location, E: p.age == null ? "" : +p.age, F: p.name, G: p.admit, H: p.reason, M: p.fp, S: p.note }));
-        out.push(cloneRow(proto[4], n++, { F: "pmhx:" }));
-        out.push(cloneRow(proto[5], n++, {}));
+        // issues and to-do lists use the patient's three rows (column O and column S)
+        const iss = spread(p.issues), todo = spread([].concat(p.note ? [p.note] : [], p.todo || []));
+        const gfr = p.gfr === "" || p.gfr == null || isNaN(+p.gfr) ? p.gfr : +p.gfr;
+        out.push(cloneRow(proto[3], n++, { A: p.contact, B: p.hc, C: p.nurse, D: p.location, E: p.age == null ? "" : +p.age, F: p.name, G: p.admit, H: p.reason,
+          I: p.most, J: p.allergy, K: gfr, L: p.vtep, M: p.fp, N: p.isolation, O: iss[0], P: p.iv, Q: p.foley, R: p.lab, S: todo[0] }));
+        out.push(cloneRow(proto[4], n++, { F: "pmhx:" + (p.pmhx ? " " + p.pmhx : ""), O: iss[1], S: todo[1] }));
+        out.push(cloneRow(proto[5], n++, { O: iss[2], S: todo[2] }));
       });
     });
     for (let i = 0; i < (opts.spare == null ? 3 : opts.spare); i++) { // empty patient rows for new admissions
@@ -62,6 +77,6 @@
     return zip.generateAsync({ type: opts.type || "uint8array", compression: "DEFLATE" });
   }
 
-  const api = { build, cloneRow };
+  const api = { build, cloneRow, spread };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.PListXlsx = api;
 })(this);

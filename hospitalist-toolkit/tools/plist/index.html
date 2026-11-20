@@ -32,6 +32,15 @@
     #thumbs img { max-height:70px; border:1px solid #dde3ea; border-radius:4px; margin-right:6px; }
     textarea { width:100%; min-height:90px; font:12px ui-monospace,Consolas,monospace; }
     details summary { cursor:pointer; color:#0b6bcb; }
+    tr.detail > td { background:#f7fafd; padding:10px 12px 14px; border-bottom:2px solid #c9d8ea; }
+    .cgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:6px 12px; margin-top:8px; }
+    .cgrid label { font-size:12px; color:#52606d; display:flex; flex-direction:column; gap:2px; }
+    .cgrid label.wide { grid-column:span 3; }
+    .cgrid input { border:1px solid #cdd7e1 !important; background:#fff !important; padding:4px 6px; font:inherit; font-size:13px; border-radius:4px; }
+    .cgrid input.got { background:#e7f6ea !important; border-color:#9ccfa6 !important; }
+    .warn { background:#fde8e8; color:#7a1b1b; border-radius:6px; padding:6px 10px; margin-top:6px; font-size:13px; }
+    .found { font-size:12px; color:#52606d; margin-top:6px; }
+    button.chart { padding:2px 8px; font-size:12px; white-space:nowrap; }
   </style>
 </head>
 <body>
@@ -56,7 +65,9 @@
   <div class="card" id="review" hidden>
     <h2>Check the list</h2>
     <div class="small muted"><span class="key"></span>Yellow = the picture was hard to read there. Check names, rooms and ages against PowerChart. Click any cell to fix it.
-      Discharged patients are left out unless you tick them.</div>
+      Discharged patients are left out unless you tick them.<br>
+      <b>Chart info</b> (button on each row): paste that patient's note, or a screenshot of their chart (banner, medications), to fill MOST, allergy, gfr, vtep, iv, foley, isolation, issues, lab, to do and pmhx.
+      Nothing is saved: if you reload or close this tab the list is gone, so download the Excel first.</div>
     <div class="row">
       <label>Screenshot taken <input id="taken" type="datetime-local"></label>
       <span class="small muted">(admit date is counted back from here using length of stay)</span>
@@ -71,8 +82,9 @@
   </div>
 </main>
 
-<script src="parse.js?v=20261119a"></script>
-<script src="xlsx.js?v=20261119a"></script>
+<script src="parse.js?v=20261119b"></script>
+<script src="xlsx.js?v=20261119b"></script>
+<script src="chart.js?v=20261119a"></script>
 <script>
 (function () {
   "use strict";
@@ -119,7 +131,13 @@
     const W = img.naturalWidth, H = img.naturalHeight, c = document.createElement("canvas"); c.width = W; c.height = H;
     const g = c.getContext("2d"); g.drawImage(img, 0, 0); const d = g.getImageData(0, 0, W, H), p = d.data, L = new Float32Array(W * H);
     for (let i = 0; i < W * H; i++) L[i] = 0.3 * p[4 * i] + 0.59 * p[4 * i + 1] + 0.11 * p[4 * i + 2];
-    for (let y = 0; y < H; y++) { let s = 0; for (let x = 0; x < W; x++) s += L[y * W + x]; if (s / W < 128) for (let x = 0; x < W; x++) L[y * W + x] = 255 - L[y * W + x]; }
+    // dark rows (selected patient, PowerChart's blue banner): flip to dark-on-light and stretch the background to white
+    const hist = new Uint32Array(256);
+    for (let y = 0; y < H; y++) {
+      hist.fill(0); for (let x = 0; x < W; x++) hist[L[y * W + x] | 0]++;
+      let med = 0; for (let acc = 0; med < 256; med++) { acc += hist[med]; if (acc >= W / 2) break; }
+      if (med < 128) { const bg = Math.max(1, 255 - med); for (let x = 0; x < W; x++) L[y * W + x] = Math.min(255, (255 - L[y * W + x]) * 255 / bg); }
+    }
     const dark = (v) => v < 160;
     for (let y = 0; y < H; y++) { let run = 0; for (let x = 0; x < W; x++) { run = dark(L[y * W + x]) ? run + 1 : 0; if (run > Math.max(40, W * 0.15)) { for (let xx = 0; xx < W; xx++) if (dark(L[y * W + xx])) L[y * W + xx] = 255; break; } } }
     for (let x = 0; x < W; x++) { let run = 0; for (let y = 0; y < H; y++) { run = dark(L[y * W + x]) ? run + 1 : 0; if (run > Math.max(20, H * 0.25)) { for (let yy = 0; yy < H; yy++) if (dark(L[yy * W + x])) L[yy * W + x] = 255; break; } } }
@@ -147,17 +165,18 @@
     try {
       const img = new Image(); await new Promise((ok, bad) => { img.onload = ok; img.onerror = () => bad(new Error("that file is not a picture")); img.src = url; });
       const th = document.createElement("img"); th.src = url; th.alt = "screenshot"; $("thumbs").appendChild(th);
-      st.textContent = "Loading the text reader…";
-      await load(TESS, () => window.Tesseract, "could not load the text reader (network blocked?) – paste the list as text instead");
       st.textContent = "Reading the screenshot (first time takes ~10 s)…";
-      const worker = await Tesseract.createWorker("eng");
-      await worker.setParameters({ tessedit_pageseg_mode: "6", preserve_interword_spaces: "1" });
-      const { data } = await worker.recognize(prep(img), {}, { text: true, blocks: true });
-      await worker.terminate();
+      const data = await ocr(img, "6");
       let found = PList.parseWords(wordsOf(data));
       if (!found || !found.length) found = PList.parse(data.text);       // no header row in the picture: read line by line
       addRows(found, "screenshot");
     } catch (e) { st.className = "small err"; st.textContent = "Could not read the picture: " + (e.message || e); }
+  }
+  async function ocr(img, psm) {
+    await load(TESS, () => window.Tesseract, "could not load the text reader (network blocked?) – paste the text instead");
+    const worker = await Tesseract.createWorker("eng");
+    await worker.setParameters({ tessedit_pageseg_mode: psm, preserve_interword_spaces: "1" });
+    try { return (await worker.recognize(prep(img), {}, { text: true, blocks: true })).data; } finally { await worker.terminate(); }
   }
   $("useTxt").onclick = () => addRows(PList.parse($("txt").value), "text");
 
@@ -181,7 +200,8 @@
       order.map((r) => { const i = rows.indexOf(r); return `<tr class="${r.discharged ? "dc" : ""} ${r.include ? "" : "off"}">
         <td><input type="checkbox" data-inc="${i}" ${r.include ? "checked" : ""}></td>
         ${COLS.map(([k]) => `<td class="${(r.low || []).includes(LOWMAP[k] || k) ? "low" : ""} ${k === "floor" ? "floor" : ""}"><input data-i="${i}" data-k="${k}" value="${esc(r[k] == null ? "" : r[k])}" ${k === "age" || k === "los" ? 'style="width:52px"' : ""}></td>`).join("")}
-        <td><button class="ghost" data-del="${i}" title="Remove" style="padding:2px 8px">✕</button></td></tr>`; }).join("");
+        <td style="white-space:nowrap"><button class="ghost chart" data-open="${i}" title="Add MOST, allergy, gfr, issues, to do … from a note or chart screenshot">${r.open ? "▾" : "▸"} Chart info${filled(r) ? " ✓" + filled(r) : ""}</button>
+          <button class="ghost" data-del="${i}" title="Remove" style="padding:2px 8px">✕</button></td></tr>${r.open ? detail(r, i) : ""}`; }).join("");
     $("tbl").querySelectorAll("input[data-k]").forEach((x) => (x.onchange = () => {
       const r = rows[+x.dataset.i], k = x.dataset.k;
       r[k] = k === "age" ? (parseInt(x.value, 10) || null) : k === "los" ? (parseFloat(x.value) || null) : x.value.trim();
@@ -191,6 +211,70 @@
     }));
     $("tbl").querySelectorAll("[data-inc]").forEach((x) => (x.onchange = () => { rows[+x.dataset.inc].include = x.checked; draw(); }));
     $("tbl").querySelectorAll("[data-del]").forEach((x) => (x.onclick = () => { rows.splice(+x.dataset.del, 1); draw(); }));
+    $("tbl").querySelectorAll("[data-open]").forEach((x) => (x.onclick = () => { const r = rows[+x.dataset.open]; r.open = !r.open; draw(); if (r.open) { const t = document.querySelector(`[data-ctext="${x.dataset.open}"]`); if (t) t.focus(); } }));
+    $("tbl").querySelectorAll("[data-cf]").forEach((x) => (x.onchange = () => {
+      const r = rows[+x.dataset.i], k = x.dataset.cf; r.c = r.c || {};
+      r.c[k] = LISTS.includes(k) ? x.value.split(/\s*;\s*/).filter(Boolean) : x.value.trim();
+      (r.got = r.got || {})[k] = false; draw();
+    }));
+    $("tbl").querySelectorAll("[data-ctext]").forEach((ta) => {
+      const i = +ta.dataset.ctext;
+      ta.oninput = () => { rows[i].ctext = ta.value; };
+      ta.onpaste = (e) => {
+        const img = Array.from((e.clipboardData || {}).items || []).find((it) => it.type.startsWith("image/"));
+        if (img) { e.preventDefault(); chartImage(i, img.getAsFile()); }
+      };
+    });
+    $("tbl").querySelectorAll("[data-cread]").forEach((b) => (b.onclick = () => chartText(+b.dataset.cread)));
+    $("tbl").querySelectorAll("[data-cfile]").forEach((f) => (f.onchange = () => { if (f.files[0]) chartImage(+f.dataset.cfile, f.files[0]); }));
+  }
+
+  // ---- Chart info for one patient ----
+  const CF = [["contact", "contact (family)"], ["hc", "hc (home care)"], ["nurse", "nurse"], ["most", "MOST"], ["allergy", "Allergy (y/n)"], ["gfr", "gfr"],
+              ["vtep", "vtep (y/n)"], ["iv", "iv (fluid, rate)"], ["foley", "foley (y/n)"], ["isolation", "isolation"], ["lab", "lab (pending)"],
+              ["issues", "issues (separate with ;)"], ["todo", "to do (separate with ;)"], ["pmhx", "pmhx"]];
+  const LISTS = ["issues", "todo"], WIDE = ["issues", "todo", "pmhx", "lab"];
+  const filled = (r) => Object.values(r.c || {}).filter((v) => (Array.isArray(v) ? v.length : v !== "" && v != null)).length || "";
+  function detail(r, i) {
+    const c = r.c || {}, got = r.got || {};
+    const val = (k) => (Array.isArray(c[k]) ? c[k].join("; ") : c[k] == null ? "" : c[k]);
+    return `<tr class="detail"><td colspan="${COLS.length + 2}">
+      <div class="small"><b>${esc(r.name)}</b> – paste the note text below, or click in the box and paste a chart screenshot (Ctrl+V). Green = filled from what you pasted; check it.</div>
+      <textarea data-ctext="${i}" placeholder="Paste a progress note / discharge summary, or a screenshot of the chart (banner with MOST and allergies, medication list) …" style="min-height:70px;margin-top:6px">${esc(r.ctext || "")}</textarea>
+      <div class="row" style="margin-top:4px"><button class="ghost" data-cread="${i}">Read pasted text</button>
+        <label class="small ghost" style="cursor:pointer;color:#0b6bcb">or choose a screenshot… <input type="file" accept="image/*" data-cfile="${i}" hidden></label>
+        <span class="small muted" id="cst${i}">${esc(r.cstatus || "")}</span></div>
+      ${r.cwarn ? `<div class="warn">${esc(r.cwarn)}</div>` : ""}
+      <div class="cgrid">${CF.map(([k, h]) => `<label class="${WIDE.includes(k) ? "wide" : ""}">${esc(h)}<input data-i="${i}" data-cf="${k}" class="${got[k] ? "got" : ""}" value="${esc(val(k))}"></label>`).join("")}</div>
+      ${r.cfound && r.cfound.length ? `<div class="found">Found: ${r.cfound.map((f) => `<b>${esc(f.field)}</b> ← “${esc(f.from)}”`).join(" · ")}</div>` : ""}
+    </td></tr>`;
+  }
+  function chartText(i) {
+    const r = rows[i], ta = document.querySelector(`[data-ctext="${i}"]`);
+    if (ta) r.ctext = ta.value;
+    applyChart(r, r.ctext || "");
+    draw();
+  }
+  function applyChart(r, text) {
+    if (!text.trim()) { r.cstatus = "Nothing pasted yet."; return; }
+    const res = PChart.parse(text, { age: r.age, sex: r.sex });
+    r.c = r.c || {}; r.got = r.got || {};
+    res.found.forEach((f) => { r.c[f.field] = f.value; r.got[f.field] = true; });
+    r.cfound = res.found;
+    r.cwarn = PChart.mentions(text, r) ? "" : `This text doesn't mention ${r.name.split(",")[0]} or their MRN/FIN – make sure it is the right patient.`;
+    r.cstatus = res.found.length ? `Filled ${res.found.length} field(s).` : "Nothing recognised – type the values in.";
+  }
+  async function chartImage(i, file) {
+    const r = rows[i]; r.cstatus = "Reading the screenshot…"; draw();
+    const url = URL.createObjectURL(file);
+    try {
+      const img = new Image(); await new Promise((ok, bad) => { img.onload = ok; img.onerror = () => bad(new Error("not a picture")); img.src = url; });
+      const data = await ocr(img, "3");   // whole-screen layout (banner, panes)
+      r.ctext = ((r.ctext || "").trim() + "\n" + data.text).trim();
+      applyChart(r, r.ctext);
+      r.cstatus = "Screenshot read. " + r.cstatus;
+    } catch (e) { r.cstatus = "Could not read the picture: " + (e.message || e); }
+    finally { URL.revokeObjectURL(url); draw(); }
   }
   $("clear").onclick = () => { rows = []; $("thumbs").innerHTML = ""; $("status").textContent = ""; $("dlmsg").textContent = ""; draw(); };
 
@@ -204,7 +288,7 @@
       if (!keep.length) throw new Error("no patients are ticked");
       const groups = PList.group(keep).map((g) => ({ floor: g.floor, patients: g.patients.map((r) => ({
         name: r.name, location: r.location, age: r.age, admit: PList.admitText(r, taken), reason: r.reason,
-        fp: r.pcp ? "y" : "n", note: r.discharged ? "Discharged " + r.discharged : "" })) }));
+        fp: r.pcp ? "y" : "n", note: r.discharged ? "Discharged " + r.discharged : "", ...(r.c || {}) })) }));
       const tpl = await (await fetch("template.xlsx?v=20261119a")).arrayBuffer();
       const blob = await PListXlsx.build(JSZip, tpl, groups, { type: "blob", spare: $("spare").checked ? 3 : 0 });
       const a = document.createElement("a"), d = taken;
