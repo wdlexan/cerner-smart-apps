@@ -86,6 +86,8 @@ eq("right patient by name", C.mentions("Mr. Testman is 70", { name: "Testman, Al
 eq("right patient by MRN", C.mentions("MRN:01234567", { name: "Testman, Al", mrn: "01234567" }), true);
 eq("wrong patient", C.mentions("Mrs. Other, MRN:07654321", { name: "Testman, Al", mrn: "01234567" }), false);
 const X0 = require("../tools/plist/xlsx.js");
+eq("pmhx short one row", X0.halves("COPD, AF"), ["COPD, AF", ""]);
+eq("pmhx long two rows", X0.halves("Cardiac Amyloidosis, DVT lower limb 2021, Iron defic anemia, Osteoporosis, UTI"), ["Cardiac Amyloidosis, DVT lower limb 2021", "Iron defic anemia, Osteoporosis, UTI"]);
 eq("spread 3", X0.spread(["a", "b", "c"]), ["a", "b", "c"]);
 eq("spread 5", X0.spread("a; b; c; d; e"), ["a; b", "c; d", "e"]);
 

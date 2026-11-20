@@ -42,6 +42,20 @@
     return out;
   }
 
+  // pmhx uses the two rows under the name: a long list is split at a comma into two lines
+  function halves(text) {
+    const t = String(text || "").trim();
+    if (t.length <= 40) return [t, ""];
+    const parts = t.split(/\s*[,;]\s*/).filter(Boolean);
+    if (parts.length < 2) return [t, ""];
+    let best = 1, diff = Infinity;
+    for (let i = 1; i < parts.length; i++) {
+      const d = Math.abs(parts.slice(0, i).join(", ").length - parts.slice(i).join(", ").length);
+      if (d < diff) { diff = d; best = i; }
+    }
+    return [parts.slice(0, best).join(", "), parts.slice(best).join(", ")];
+  }
+
   // groups: [{ floor, patients: [{ name, location, age, admit, reason, fp, note }] }]
   async function build(JSZip, template, groups, opts) {
     opts = opts || {};
@@ -60,8 +74,9 @@
         const gfr = p.gfr === "" || p.gfr == null || isNaN(+p.gfr) ? p.gfr : +p.gfr;
         out.push(cloneRow(proto[3], n++, { A: p.contact, B: p.hc, C: p.nurse, D: p.location, E: p.age == null ? "" : +p.age, F: p.name, G: p.admit, H: p.reason,
           I: p.most, J: p.allergy, K: gfr, L: p.vtep, M: p.fp, N: p.isolation, O: iss[0], P: p.iv, Q: p.foley, R: p.lab, S: todo[0] }));
-        out.push(cloneRow(proto[4], n++, { F: "pmhx:" + (p.pmhx ? " " + p.pmhx : ""), O: iss[1], S: todo[1] }));
-        out.push(cloneRow(proto[5], n++, { O: iss[2], S: todo[2] }));
+        const pm = halves(p.pmhx);
+        out.push(cloneRow(proto[4], n++, { F: "pmhx:" + (pm[0] ? " " + pm[0] : ""), O: iss[1], S: todo[1] }));
+        out.push(cloneRow(proto[5], n++, { F: pm[1], O: iss[2], S: todo[2] }));
       });
     });
     for (let i = 0; i < (opts.spare == null ? 3 : opts.spare); i++) { // empty patient rows for new admissions
@@ -77,6 +92,6 @@
     return zip.generateAsync({ type: opts.type || "uint8array", compression: "DEFLATE" });
   }
 
-  const api = { build, cloneRow, spread };
+  const api = { build, cloneRow, spread, halves };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.PListXlsx = api;
 })(this);
