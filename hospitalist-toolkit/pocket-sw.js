@@ -33,7 +33,7 @@ self.addEventListener("fetch", (e) => {
     if (!(await fromPocket(e))) return fetch(e.request);             // normal (Cerner) use: untouched
     const cache = await caches.open(CACHE);
     try {
-      const r = await fetch(e.request);
+      const r = await fetch(e.request.mode === "navigate" ? e.request.url : e.request, { cache: "no-cache" });         // check GitHub for a newer copy every time (no 10-min browser cache)
       if (r && r.ok) cache.put(e.request, r.clone()).catch(() => {});
       return r;
     } catch (err) {                                                  // offline: saved copy (ignore ?v=… cache-busting)
