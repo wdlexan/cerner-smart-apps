@@ -75,7 +75,8 @@
     const ask = why ? (o.service === "Infectious diseases" || /advice|recommend|antibiotic|dose|which/i.test(why) ? `Could you see ${pro} for advice on ${why.replace(/^[A-Z](?=[a-z])/, (c) => c.toLowerCase())}?` : `Could you see ${pro} to ${/^(assess|review|help|consider|see|evaluate|manage)\b/i.test(why) ? why.replace(/^[A-Z]/, (c) => c.toLowerCase()) : "assess " + why.replace(/^[A-Z](?=[a-z])/, (c) => c.toLowerCase())}?`) : `Could you see ${pro}? ___`;
     const labs = String(o.labs || "").trim().replace(/([^.])$/, "$1.");
     const body = `I have ${who}, a ${sexWord} with ${art}${prob}. ${hx} ${labs === "." ? "" : labs} ${ask}`.replace(/\s+/g, " ").trim();
-    return { text: `Hello Dr. ${o.dr || "___"},\n\nThis is Wayne, hospitalist. ${body}\n\nYour help is much appreciated.\n\nThanks,\nWayne`, words: words(body) + 4 };
+    const sig = String(o.sig || "").trim();
+    return { text: `Hello Dr. ${o.dr || "___"},\n\nThis is Wayne, hospitalist. ${body}\n\nYour help is much appreciated.\n\nThanks,\nWayne${sig ? "\n" + sig : ""}`, words: words(body) + 4 };
   }
   window.ConsultWidget = { build, summarizeLabs, labLine, shortName, PERTINENT };
   if (typeof document === "undefined") return;
@@ -133,6 +134,7 @@
       <div class="row" style="flex-direction:column;align-items:stretch"><label style="flex:none">Labs to include <span id="cw-labnote"></span></label>
         <div id="cw-labs" style="display:flex;flex-wrap:wrap;gap:3px 10px;font-size:12.5px;max-height:120px;overflow:auto"></div>
         <div style="display:flex;gap:8px;align-items:center;margin-top:3px"><a href="#" id="cw-laball" style="font-size:12px;color:#0b6bcb">show all results</a><input id="cw-labx" placeholder="other results to add, e.g. CT: 4 cm abscess" style="flex:1"></div></div>
+      <div class="row"><label>Sign-off line under "Thanks, Wayne" <span class="muted">(saved on this computer only – not in the app code)</span><input id="cw-sig" placeholder="e.g. Dr. Wayne Dong · MSP ##### · cell ###-###-####"></label></div>
       <textarea id="cw-msg"></textarea>
       <div class="acts"><span id="cw-words" class="muted"></span><span><button class="ghost" id="cw-close" type="button">Close</button> <button id="cw-copy" type="button">Copy</button></span></div>`);
     document.body.appendChild(btn); document.body.appendChild(pan);
@@ -150,11 +152,14 @@
     const refresh = () => {
       if (edited) return;
       const m = build({ dr: $("cw-dr").value.trim(), service: $("cw-svc").value, name: $("cw-name").value.trim(), age: $("cw-age").value.trim(), sex: $("cw-sex").value, mrn: $("cw-mrn").value.trim(), problem: $("cw-prob").value, hx: $("cw-hx").value, why: $("cw-why").value,
+        sig: $("cw-sig").value,
         labs: [labLine(pickedLabs()).replace(/\.$/, ""), $("cw-labx").value.trim()].filter(Boolean).join("; ") });
       $("cw-msg").value = m.text; $("cw-words").textContent = `~${m.words} words` + (m.words > 60 ? " – a bit long, trim the history" : "");
     };
     ["cw-svc", "cw-dr", "cw-name", "cw-age", "cw-mrn", "cw-sex", "cw-prob", "cw-hx", "cw-why", "cw-labx"].forEach((id) => { $(id).addEventListener("input", () => { edited = false; refresh(); }); $(id).addEventListener("change", () => { edited = false; refresh(); }); });
     $("cw-svc").addEventListener("change", () => { picked = null; drawLabs(); refresh(); });
+    try { $("cw-sig").value = localStorage.getItem("consult-signoff") || ""; } catch (e) {}
+    $("cw-sig").addEventListener("input", () => { try { localStorage.setItem("consult-signoff", $("cw-sig").value); } catch (e) {} edited = false; refresh(); });
     $("cw-laball").onclick = (e) => { e.preventDefault(); showAll = !showAll; drawLabs(); };
     $("cw-msg").addEventListener("input", () => { edited = true; $("cw-words").textContent = "edited by hand"; });
     $("cw-close").onclick = () => (pan.style.display = "none");

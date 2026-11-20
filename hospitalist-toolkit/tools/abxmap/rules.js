@@ -231,7 +231,8 @@
       body = `I have ${who}, ${bits[0]}. ${optional.slice(0, n).join(" ")} ${ask}`.replace(/\s+/g, " ").trim();
       if (words(body) <= 55) break;
     }
-    return { text: `Hello Dr. ${o.drName || "___"},\n\nThis is Wayne, hospitalist. ${body}\n\nYour help is much appreciated.\n\nThanks,\nWayne`, words: words(body) + 4 };
+    const sig = String(o.sig || "").trim();
+    return { text: `Hello Dr. ${o.drName || "___"},\n\nThis is Wayne, hospitalist. ${body}\n\nYour help is much appreciated.\n\nThanks,\nWayne${sig ? "\n" + sig : ""}`, words: words(body) + 4 };
   }
 
   const api = { consultMsg, CONSULT_NOUN, parseSusc, expandSusc, suscNotes, SUSC_DRUGS, DRUGS, drugsIn, ivVanco, conditionsOf, assess, choose, allergyLines, crcl, note };

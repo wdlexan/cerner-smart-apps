@@ -24,4 +24,7 @@ ok("lab line", W.labLine(neph.filter((l) => l.key !== "Na")) === "Labs: Cr 410 (
 m = B({ dr: "Singh", service: "Nephrology", name: "Alma TEST", age: 81, sex: "female", mrn: "TEST0001", problem: "AKI", hx: "Oliguric despite fluids", labs: "Labs: Cr 410 (prev 150), K 6.1", why: "possible need for dialysis" });
 ok("labs in message before the ask", /Oliguric despite fluids\. Labs: Cr 410 \(prev 150\), K 6\.1\. Could you see her/.test(m.text), m.text);
 ok("still ~50 words", m.words <= 60, m.words);
+m = B({ dr: "Lee", problem: "AKI", sig: "Dr. Example Name · MSP 00000 · cell 000-000-0000" });
+ok("sign-off line under Thanks, Wayne", /Thanks,\nWayne\nDr\. Example Name · MSP 00000 · cell 000-000-0000$/.test(m.text), m.text);
+ok("no sign-off when blank", /Thanks,\nWayne$/.test(B({}).text));
 console.log(fail ? `\n${fail} FAILED` : "\nall passed"); process.exit(fail ? 1 : 0);

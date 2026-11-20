@@ -71,7 +71,7 @@
     const prob = f && f.probs.find((p) => s.match && s.match.test(p.text));
     const m = R.consultMsg({ drName: $("cDr").value.trim(), service: $("cSvc").value, name: f ? f.name : "", age: f ? f.age : null, sex: f ? f.sex : "", mrn: f ? f.mrn : "",
       site: s, problem: prob ? prob.text.replace(/\s+[A-Z]\d{2}(\.\d+)?$/, "").replace(/\s+Z\d\d.*$/, "") : "", tier: state.tier, abx: f ? f.cls.abx : [], susc: state.susc, allergy: c.allergy,
-      reason: why === "other" ? "" : reasons[+why] || "", extra: $("cExtra").value });
+      reason: why === "other" ? "" : reasons[+why] || "", extra: $("cExtra").value, sig: (() => { try { return localStorage.getItem("consult-signoff") || ""; } catch (e) { return ""; } })() });
     $("cMsg").value = m.text; $("cWords").textContent = `~${m.words} words` + (m.words > 60 ? " – a bit long; trim before sending" : "");
   }
   function draw() {
