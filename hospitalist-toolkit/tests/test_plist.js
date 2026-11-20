@@ -65,6 +65,11 @@ const banner = "Alerts:\nPrecautions:\nMOST: C2 – ICU/Intub/CPR PRN, Ordered o
 let c = C.parse(banner, { age: 80, sex: "M" }).fields;
 eq("banner fields", [c.most, c.allergy, c.gfr, c.vtep, c.iv, c.isolation], ["C2", "n", 91, "y", "NS 75 mL/h", undefined]);
 eq("OCR typo anticoag", C.parse("apbxaban 2.5 mg tab").fields.vtep, "y");
+eq("NKDA wide spacing", C.parse("Allergies:   No Known  Drug  Allergies").fields.allergy, "n");
+eq("NKDA run together", C.parse("Allergies: NoKnown Drug Allergies").fields.allergy, "n");
+eq("NKDA OCR 0", C.parse("No Kn0wn Drug Alleraies").fields.allergy, "n");
+eq("NKDA short", C.parse("Allergies: NKDA").fields.allergy, "n");
+eq("allergy both -> blank", C.parse("Allergies: penicillin\nNo Known Allergies").fields.allergy, undefined);
 eq("allergy listed", C.parse("Allergies: penicillin (rash)").fields.allergy, "y");
 eq("contact precautions", C.parse("On contact precautions for MRSA").fields.isolation, "contact");
 const note = ["Past Medical History/Chronic Problems", "Ongoing", "Atrial fibrillation", "COPD", "Historical", "No problems recorded",

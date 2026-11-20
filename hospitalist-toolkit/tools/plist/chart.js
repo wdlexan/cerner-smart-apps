@@ -38,9 +38,19 @@
     let m = t.match(/\bMOST\b\s*(?:status)?\s*[:\-]?\s*([MC])\s*-?\s*([0-3])\b/i);
     if (m) note("most", (m[1] + m[2]).toUpperCase(), m[0]);
 
-    m = t.match(/\b(No Known (?:Drug )?Allergies|NKDA|NKA)\b/i);
-    if (m) note("allergy", "n", m[0]);
-    else if ((m = t.match(/\bAllerg(?:y|ies)[ \t]*:[ \t]*([^\n]+)/i)) && !/^\s*(none|nil|no\b)/i.test(m[1]) && /[a-z]{3}/i.test(m[1])) note("allergy", "y", m[0]);
+    // Allergy: "No Known (Drug) Allergies" in any spacing (screenshots keep wide gaps, or run words together) means n.
+    // A listed allergy means y. If the text says both, the field is left empty for you to check.
+    const neg = t.match(/\bno\s*kn[o0]wn\s*(?:drug\s*|medication\s*|med\s*)?al+er\w*|\bNKD?A\b|\ballerg(?:y|ies)\s*[:\-]?\s*(?:none|nil)\b/i);
+    let pos = null;
+    const pre = /\ballerg(?:y|ies)[ \t]*:[ \t]*([^\n]+)/gi;
+    let am; while ((am = pre.exec(t))) {
+      const v = am[1].trim();
+      if (/^(none|nil|no\b|no\s*kn|nk|not (?:recorded|assessed)|unknown|n\/a)/i.test(v) || !/[a-z]{3}/i.test(v) || /^(alerts|precautions|dosing|most)\b/i.test(v)) continue;
+      pos = am; break;
+    }
+    if (neg && pos) found.push({ field: "allergy", value: "", from: "both “" + squash(neg[0]) + "” and “" + squash(pos[0]).slice(0, 50) + "” – check" });
+    else if (neg) note("allergy", "n", neg[0]);
+    else if (pos) note("allergy", "y", pos[0]);
 
     m = t.match(/\beGFR\b[^0-9\n]{0,20}(\d{1,3})\b/i);
     if (m) note("gfr", +m[1], m[0]);
