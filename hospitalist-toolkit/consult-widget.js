@@ -171,6 +171,9 @@
         <div style="display:flex;gap:8px;align-items:center;margin-top:3px"><a href="#" id="cw-laball" style="font-size:12px;color:#0b6bcb">show all results</a><input id="cw-labx" placeholder="other results to add, e.g. CT: 4 cm abscess" style="flex:1"></div></div>
       <div class="row"><label>Sign-off line under "Thanks, Wayne" <span class="muted">(saved on this computer only – not in the app code)</span><input id="cw-sig" placeholder="e.g. Dr. Wayne Dong · MSP ##### · cell ###-###-####"></label></div>
       <textarea id="cw-msg"></textarea>
+      <div id="cw-qr" style="display:none;text-align:center;margin:8px 0;padding:8px;border:1px solid #cfd6df;border-radius:8px">
+        <div style="font-weight:600;margin-bottom:4px">Scan with your iPhone camera</div><div id="cw-qrimg" style="background:#fff;display:inline-block;padding:6px;border-radius:6px"></div>
+        <div class="muted" style="margin-top:4px">Messages opens on your phone with the number and message filled in – tap Send.<br><a href="#" id="cw-sms-here" style="color:#0b6bcb">or open this computer's messaging app</a> · <a href="#" id="cw-qrx" style="color:#0b6bcb">hide</a></div></div>
       <div class="acts"><span id="cw-words" class="muted"></span><span><button class="ghost" id="cw-close" type="button">Close</button> <button class="ghost" id="cw-copy" type="button">Copy</button> <button id="cw-text" type="button">💬 Text</button></span></div>`);
     document.body.appendChild(btn); document.body.appendChild(pan);
     const $ = (id) => pan.querySelector("#" + id);
@@ -198,6 +201,19 @@
     $("cw-laball").onclick = (e) => { e.preventDefault(); showAll = !showAll; drawLabs(); };
     $("cw-msg").addEventListener("input", () => { edited = true; $("cw-words").textContent = "edited by hand"; });
     const IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    const MAC = !IOS && /Macintosh|Mac OS X/.test(navigator.userAgent);   // Mac Messages (iMessage + iPhone text forwarding)
+    const PHONE = IOS || /Android/i.test(navigator.userAgent);
+    let qrLib = null;
+    const loadQr = () => qrLib || (qrLib = new Promise((ok, no) => { if (window.qrcode) return ok(window.qrcode); const sc = document.createElement("script");
+      sc.src = "https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"; sc.onload = () => (window.qrcode ? ok(window.qrcode) : no()); sc.onerror = () => { qrLib = null; no(); }; document.head.appendChild(sc); }));
+    const showQr = async (link, hereLink) => {
+      $("cw-qr").style.display = "block"; $("cw-qrimg").textContent = "Making QR code…";
+      try { const qrcode = await loadQr(); const q = qrcode(0, "L"); q.addData(link); q.make();
+        const cell = Math.max(2, Math.min(5, Math.floor(260 / q.getModuleCount()))); $("cw-qrimg").innerHTML = q.createSvgTag(cell, 8);
+      } catch (e) { $("cw-qrimg").textContent = "Couldn't load the QR maker (no internet?). Use Copy instead."; }
+      $("cw-sms-here").onclick = (ev) => { ev.preventDefault(); window.location.href = hereLink || link; };
+    };
+    $("cw-qrx").onclick = (ev) => { ev.preventDefault(); $("cw-qr").style.display = "none"; };
     let contacts = [];
     const loadContacts = () => { let t = ""; try { t = localStorage.getItem("consult-contacts") || ""; } catch (e) {} $("cw-list").value = t; contacts = parseContacts(t);
       $("cw-who").innerHTML = `<option value="">${contacts.length ? "– pick a specialist –" : "– no list yet –"}</option>` + contacts.map((c, i) => `<option value="${i}">${c.name.replace(/</g, "&lt;")}${c.service ? " · " + c.service : ""}</option>`).join("") + `<option value="edit">✎ Add / edit list…</option>`; };
@@ -229,7 +245,9 @@
     $("cw-text").onclick = () => {
       const cell = $("cw-cell").value.trim();
       if (!/\d{3}/.test(cell)) { $("cw-cell").focus(); $("cw-words").textContent = "Pick a specialist or type a cell number first."; return; }
-      window.location.href = smsLink(cell, $("cw-msg").value, IOS);
+      const msg = $("cw-msg").value;
+      if (PHONE || MAC) window.location.href = smsLink(cell, msg, IOS || MAC);
+      else showQr(smsLink(cell, msg, true), smsLink(cell, msg, false));   // QR is scanned by the iPhone; the "this computer" link is for Windows Phone Link
     };
     $("cw-close").onclick = () => (pan.style.display = "none");
     document.addEventListener("keydown", (e) => { if (e.key === "Escape") pan.style.display = "none"; });
