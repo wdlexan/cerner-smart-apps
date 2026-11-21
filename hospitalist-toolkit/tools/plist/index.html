@@ -192,7 +192,7 @@
   }
 
   // ---- review table ----
-  const COLS = [["floor", "Floor"], ["location", "Room"], ["age", "Age"], ["name", "Name"], ["reason", "Admit reason"], ["los", "LOS (d)"], ["discharged", "Discharged"], ["pcp", "Family physician"]];
+  const COLS = [["floor", "Floor"], ["location", "Room"], ["age", "Age"], ["name", "Name"], ["mrn", "MRN"], ["sex", "Sex"], ["reason", "Admit reason"], ["los", "LOS (d)"], ["discharged", "Discharged"], ["pcp", "Family physician"]];
   const LOWMAP = { floor: "location" };
   function draw() {
     $("review").hidden = !rows.length;
@@ -200,7 +200,7 @@
     $("tbl").innerHTML = `<tr><th title="Put this patient in the Excel file">In</th>${COLS.map(([, h]) => `<th>${h}</th>`).join("")}<th></th></tr>` +
       order.map((r) => { const i = rows.indexOf(r); return `<tr class="${r.discharged ? "dc" : ""} ${r.include ? "" : "off"}">
         <td><input type="checkbox" data-inc="${i}" ${r.include ? "checked" : ""}></td>
-        ${COLS.map(([k]) => `<td class="${(r.low || []).includes(LOWMAP[k] || k) ? "low" : ""} ${k === "floor" ? "floor" : ""}"><input data-i="${i}" data-k="${k}" value="${esc(r[k] == null ? "" : r[k])}" ${k === "age" || k === "los" ? 'style="width:52px"' : ""}></td>`).join("")}
+        ${COLS.map(([k]) => `<td class="${(r.low || []).includes(LOWMAP[k] || k) ? "low" : ""} ${k === "floor" ? "floor" : ""}"><input data-i="${i}" data-k="${k}" value="${esc(r[k] == null ? "" : r[k])}" ${k === "age" || k === "los" || k === "sex" ? 'style="width:52px"' : ""}></td>`).join("")}
         <td style="white-space:nowrap"><button class="ghost chart" data-open="${i}" title="Add MOST, allergy, gfr, issues, to do … from a note or chart screenshot">${r.open ? "▾" : "▸"} Chart info${filled(r) ? " ✓" + filled(r) : ""}</button>
           <button class="ghost" data-del="${i}" title="Remove" style="padding:2px 8px">✕</button></td></tr>${r.open ? detail(r, i) : ""}`; }).join("");
     $("tbl").querySelectorAll("input[data-k]").forEach((x) => (x.onchange = () => {
@@ -296,9 +296,9 @@
       const keep = rows.filter((r) => r.include);
       if (!keep.length) throw new Error("no patients are ticked");
       const groups = PList.group(keep).map((g) => ({ floor: g.floor, patients: g.patients.map((r) => ({
-        name: r.name, location: PList.roomOf(r.location), age: r.age, admit: PList.admitText(r, taken), reason: r.reason,
+        name: r.name, location: PList.roomOf(r.location), age: r.age, mrn: r.mrn, sex: r.sex === "U" ? "" : r.sex, admit: PList.admitText(r, taken), reason: r.reason,
         fp: r.pcp ? "y" : r.hasPcpCol ? "n" : "", note: r.discharged ? "Discharged " + r.discharged : "", ...(r.c || {}) })) }));
-      const tpl = await (await fetch("template.xlsx?v=20261119c")).arrayBuffer();
+      const tpl = await (await fetch("template.xlsx?v=20261120m")).arrayBuffer();
       const blob = await PListXlsx.build(JSZip, tpl, groups, { type: "blob", spare: $("spare").checked ? 3 : 0 });
       const a = document.createElement("a"), d = taken;
       a.href = URL.createObjectURL(blob); a.download = `VGH_patient_list_${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}.xlsx`;

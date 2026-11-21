@@ -128,7 +128,7 @@ else {
   const X = require("../tools/plist/xlsx.js"), fs = require("fs");
   X.build(JSZip, fs.readFileSync(__dirname + "/../tools/plist/template.xlsx"), [
     { floor: "S7B", patients: [{ name: "Sample, Ann & Co", location: "S7B-VGH S715 A", age: 82, admit: "≈ 28-Oct (LOS 22 d)", reason: "Altered <LOC>", fp: "y",
-      most: "C2", allergy: "n", gfr: 91, vtep: "y", issues: ["A", "B", "C", "D"], todo: ["t1"], pmhx: "COPD" }] },
+      most: "C2", allergy: "n", gfr: 91, vtep: "y", issues: ["A", "B", "C", "D"], todo: ["t1"], pmhx: "COPD", mrn: "0012345", sex: "F" }] },
     { floor: "HAH", patients: [{ name: "Sample, Bo", location: "HAH-VGH HAH1 A", age: 35, admit: "", reason: "Abdominal pain", fp: "n" }] }], { spare: 1 })
     .then((u8) => JSZip.loadAsync(u8)).then((z) => z.file("xl/worksheets/sheet1.xml").async("string")).then((x) => {
       eq("rows written", (x.match(/<row /g) || []).length, 1 + 2 + 2 * 4 + 4);
@@ -139,7 +139,10 @@ else {
       eq("MOST, gfr number", /<c r="I3"[^>]*><is><t[^>]*>C2</.test(x) && /<c r="K3"[^>]*><v>91<\/v>/.test(x), true);
       eq("issues over 4 rows", /<c r="O3"[^>]*><is><t[^>]*>A</.test(x) && /<c r="O6"[^>]*><is><t[^>]*>D</.test(x), true);
       eq("second floor at row 7", /<c r="A7"[^>]*><is><t[^>]*>HAH</.test(x), true);
-      eq("dimension", /<dimension ref="A1:S15"\/>/.test(x), true);
+      eq("dimension", /<dimension ref="A1:U15"\/>/.test(x), true);
+      eq("mrn (leading zeros kept) and sex columns", /<c r="T1"[^>]*><is><t[^>]*>mrn</.test(x) && /<c r="U1"[^>]*><is><t[^>]*>sex</.test(x) && /<c r="T3"[^>]*><is><t[^>]*>0012345</.test(x) && /<c r="U3"[^>]*><is><t[^>]*>F</.test(x), true);
+      global.window = global.window || {}; require("../consult-widget.js"); const cp = window.ConsultWidget.listPatients(window.ConsultWidget.readSheet(x, ""));
+      eq("consult picker reads the file", cp.length >= 2 && cp[0].name === "Ann & Co Sample" && cp[0].mrn === "0012345" && cp[0].sex === "female" && cp[0].pmhx[0] === "COPD", true);
       eq("colour rules to last row", /sqref="K1:K15"/.test(x) && !/sqref="[^"]*H26/.test(x), true);
       done();
     }).catch((e) => { fail++; console.log("FAIL excel: " + e.message); done(); });

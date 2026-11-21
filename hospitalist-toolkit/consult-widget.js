@@ -108,7 +108,38 @@
     return out;
   }
   const contactLine = (c) => [c.name, c.service || "", c.cell].join(" | ");
-  window.ConsultWidget = { build, summarizeLabs, labLine, shortName, PERTINENT, parseContacts, smsLink, SERVICES, parseVcards, guessService, contactLine };
+  // Patients from Wayne's VGH list Excel (tools/plist format): D room, E age, F name ("Smith, Ann"), H admit reason, O issues, pmhx rows under the name.
+  // Read in the browser only; nothing from the file is saved.
+  const unx = (t) => String(t).replace(/<[^>]+>/g, "").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, "&");
+  function readSheet(sheetXml, sstXml) {
+    const sst = []; String(sstXml || "").replace(/<si>([\s\S]*?)<\/si>/g, (m, x) => { sst.push(unx((x.match(/<t[^>]*>[\s\S]*?<\/t>/g) || []).join(""))); return m; });
+    const rows = {};
+    String(sheetXml).replace(/<c r="([A-Z]+)(\d+)"([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g, (m, col, r, attrs, body) => {
+      if (!body) return m; const t = (attrs.match(/t="(\w+)"/) || [])[1]; let v;
+      if (t === "inlineStr") v = unx((body.match(/<t[^>]*>[\s\S]*?<\/t>/g) || []).join(""));
+      else { const x = (body.match(/<v>([\s\S]*?)<\/v>/) || [])[1]; if (x == null) return m; v = t === "s" ? sst[+x] || "" : unx(x); }
+      v = String(v).trim(); if (v) (rows[r] = rows[r] || {})[col] = v; return m;
+    });
+    return rows;
+  }
+  function listPatients(rows) {
+    const nums = Object.keys(rows).map(Number).sort((a, b) => a - b), hdr = rows[nums[0]] || {};
+    const colOf = (re) => Object.keys(hdr).find((c) => re.test(hdr[c]));
+    const cMrn = colOf(/\bmrn\b|medical record/i), cSex = colOf(/^\s*(sex|gender)\s*$/i);
+    const out = []; let cur = null;
+    nums.slice(1).forEach((n) => {
+      const r = rows[n], f = r.F || "";
+      if (/^pmhx:?/i.test(f) || (!f && cur && !r.E && !r.D)) { if (cur) { const t = f.replace(/^pmhx:?\s*/i, ""); if (t) cur.pmhx.push(t); if (r.O) cur.issues.push(r.O); } return; }
+      if (!f || /^(name|patient)$/i.test(f)) { cur = null; return; }
+      let name = f; if (/,/.test(name)) name = name.split(",").map((x) => x.trim()).filter(Boolean).reverse().join(" ");
+      const sx = String(cSex ? r[cSex] || "" : "").toLowerCase();
+      cur = { name, age: r.E && /^\d+(\.\d+)?$/.test(r.E) ? String(Math.floor(+r.E)) : (r.E || ""), room: r.D || "", reason: r.H || "", mrn: cMrn ? r[cMrn] || "" : "",
+        sex: /^f/.test(sx) ? "female" : /^m/.test(sx) ? "male" : "", issues: r.O ? [r.O] : [], pmhx: [] };
+      out.push(cur);
+    });
+    return out;
+  }
+  window.ConsultWidget = { build, summarizeLabs, labLine, shortName, PERTINENT, parseContacts, smsLink, SERVICES, parseVcards, guessService, contactLine, readSheet, listPatients };
   if (typeof document === "undefined") return;
 
   let pt = null, probs = [], labs = [], labsLoaded = false;
@@ -161,6 +192,7 @@
         <div style="display:flex;justify-content:space-between;align-items:center;gap:6px"><span><button type="button" class="ghost" id="cw-imp">📇 From Contacts</button><input type="file" id="cw-vcf" accept=".vcf,text/vcard,text/x-vcard" multiple style="display:none"></span><button type="button" id="cw-save">Save list</button></div>
         <div class="muted" id="cw-impnote" style="margin-top:3px">On iPhone: Contacts → open the specialist → Share Contact → Save to Files, then tap 📇 From Contacts and pick the file. Check the service after importing.</div></div>
       <div class="row"><label>Service<select id="cw-svc">${SERVICES.map((s) => `<option>${s}</option>`).join("")}</select></label><label>Dr.<input id="cw-dr" placeholder="name"></label></div>
+      <div class="row"><label>Patient from my Excel list<select id="cw-xp"><option value="">– choose the list file first –</option></select></label><span style="align-self:flex-end"><button type="button" class="ghost" id="cw-xbtn">📋 Excel list…</button><input type="file" id="cw-xf" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none"></span></div>
       <div class="row"><label>Patient<input id="cw-name"></label><label style="max-width:70px;min-width:60px">Age<input id="cw-age"></label><label style="max-width:120px">MRN<input id="cw-mrn"></label>
         <label style="max-width:90px;min-width:80px">Sex<select id="cw-sex"><option value="">–</option><option value="female">F</option><option value="male">M</option></select></label></div>
       <div class="row"><label>Problem<input id="cw-prob" list="cw-probs" placeholder="e.g. ESBL pyelonephritis"><datalist id="cw-probs"></datalist></label></div>
@@ -212,6 +244,31 @@
         const cell = Math.max(2, Math.min(5, Math.floor(260 / q.getModuleCount()))); $("cw-qrimg").innerHTML = q.createSvgTag(cell, 8);
       } catch (e) { $("cw-qrimg").textContent = "Couldn't load the QR maker (no internet?). Use Copy instead."; }
       $("cw-sms-here").onclick = (ev) => { ev.preventDefault(); window.location.href = hereLink || link; };
+    };
+    let xPts = [], zipLib = null;
+    const loadZip = () => zipLib || (zipLib = new Promise((ok, no) => { if (window.JSZip) return ok(window.JSZip); const sc = document.createElement("script");
+      sc.src = "https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"; sc.onload = () => (window.JSZip ? ok(window.JSZip) : no()); sc.onerror = () => { zipLib = null; no(); }; document.head.appendChild(sc); }));
+    $("cw-xbtn").onclick = () => $("cw-xf").click();
+    $("cw-xf").onchange = async () => {
+      const f = $("cw-xf").files[0]; $("cw-xf").value = ""; if (!f) return;
+      $("cw-words").textContent = "Reading " + f.name + "…";
+      try {
+        const zip = await (await loadZip()).loadAsync(await f.arrayBuffer());
+        const first = Object.keys(zip.files).filter((k) => /^xl\/worksheets\/sheet\d+\.xml$/.test(k)).sort((a, b) => parseInt(a.match(/\d+/)) - parseInt(b.match(/\d+/)))[0];
+        const sst = zip.file("xl/sharedStrings.xml") ? await zip.file("xl/sharedStrings.xml").async("string") : "";
+        xPts = listPatients(readSheet(await zip.file(first).async("string"), sst));
+        $("cw-xp").innerHTML = `<option value="">– pick a patient (${xPts.length}) –</option>` + xPts.map((p, i) => `<option value="${i}">${[p.room, p.name, p.age].filter(Boolean).join(" · ").replace(/</g, "&lt;")}</option>`).join("");
+        $("cw-words").textContent = xPts.length ? `${xPts.length} patients from ${f.name}` : "No patients found in that file (expects your VGH list format).";
+      } catch (e) { $("cw-words").textContent = "Couldn't read that Excel file" + (window.JSZip ? "." : " (no internet to load the reader?)."); }
+    };
+    $("cw-xp").onchange = () => {
+      const p = xPts[+$("cw-xp").value]; if (!p || $("cw-xp").value === "") return;
+      $("cw-name").value = p.name; $("cw-age").value = p.age; $("cw-mrn").value = p.mrn; $("cw-sex").value = p.sex;
+      $("cw-prob").value = p.reason;
+      const hx = [p.issues.join("; "), p.pmhx.length ? "PMHx " + p.pmhx.join(", ") : ""].filter(Boolean).join(". ");
+      $("cw-hx").value = hx.length > 160 ? hx.slice(0, 157).replace(/[,;\s]+\S*$/, "") + "…" : hx;
+      edited = false; refresh();
+      if (!p.mrn) $("cw-words").textContent = "MRN and sex aren't in the list – type them in.";
     };
     $("cw-qrx").onclick = (ev) => { ev.preventDefault(); $("cw-qr").style.display = "none"; };
     let contacts = [];

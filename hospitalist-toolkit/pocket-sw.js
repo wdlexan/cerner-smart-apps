@@ -23,7 +23,7 @@ async function fromPocket(e) {
   return !!(c && isPocketUrl(c.url));                                // a script, style or file loaded by a pocket page
 }
 // only cache our own files and the three CDN libraries the tabs load
-const CACHEABLE = (u) => u.origin === self.location.origin || /^https:\/\/cdn\.jsdelivr\.net\/npm\/(fhirclient|pdfjs-dist|pdf-lib)/.test(u.href);
+const CACHEABLE = (u) => u.origin === self.location.origin || /^https:\/\/cdn\.jsdelivr\.net\/npm\/(fhirclient|pdfjs-dist|pdf-lib|jszip|qrcode-generator)/.test(u.href);
 
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;

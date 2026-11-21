@@ -77,7 +77,7 @@
         const iss = spread(p.issues, 4), todo = spread([].concat(p.note ? [p.note] : [], p.todo || []), 4), pm = lines(p.pmhx, 3);
         const gfr = p.gfr === "" || p.gfr == null || isNaN(+p.gfr) ? p.gfr : +p.gfr;
         out.push(cloneRow(proto[3], n++, { A: p.contact, B: p.hc, C: p.nurse, D: p.location, E: p.age == null ? "" : +p.age, F: p.name, G: p.admit, H: p.reason,
-          I: p.most, J: p.allergy, K: gfr, L: p.vtep, M: p.fp, N: p.isolation, O: iss[0], P: p.iv, Q: p.foley, R: p.lab, S: todo[0] }));
+          I: p.most, J: p.allergy, K: gfr, L: p.vtep, M: p.fp, N: p.isolation, O: iss[0], P: p.iv, Q: p.foley, R: p.lab, S: todo[0], T: p.mrn == null ? "" : String(p.mrn), U: p.sex }));
         for (let k = 0; k < 3; k++)
           out.push(cloneRow(proto[4], n++, { F: k === 0 ? "pmhx:" + (pm[0] ? " " + pm[0] : "") : pm[k], O: iss[k + 1], S: todo[k + 1] }));
       });
@@ -87,7 +87,7 @@
     }
     const last = n - 1;
     xml = xml.replace(/<sheetData>[\s\S]*<\/sheetData>|<sheetData\/>/, "<sheetData>" + out.join("") + "</sheetData>");
-    xml = xml.replace(/<dimension ref="[^"]*"\/>/, `<dimension ref="A1:S${last}"/>`);
+    xml = xml.replace(/<dimension ref="[^"]*"\/>/, `<dimension ref="A1:U${last}"/>`);
     // colour rules: stretch every column range to the last row; drop stray single cells left from the old sheet
     xml = xml.replace(/(<conditionalFormatting[^>]*sqref=")([^"]*)(")/g, (m, a, refs, b) =>
       a + refs.split(" ").filter((r) => r.includes(":")).map((r) => r.replace(/^([A-Z]+)\d+:([A-Z]+)\d+$/, `$1${1}:$2${last}`)).join(" ") + b);

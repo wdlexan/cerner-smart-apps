@@ -35,4 +35,16 @@ ok("android sms link", W.smsLink("+1 250 555 1234", "Hi", false) === "sms:+12505
 const V = W.parseVcards("BEGIN:VCARD\r\nVERSION:3.0\r\nN:Smith;Jane;;Dr.;\r\nFN:Dr. Jane Smith\r\nORG:VGH Infectious Diseases\r\nTEL;type=WORK:250-555-0000\r\nTEL;type=CELL;type=pref:(250) 555-1234\r\nEND:VCARD\r\nBEGIN:VCARD\r\nFN:Raj Patel\r\nitem1.TEL:250 555 9999\r\nNOTE:nephro\r\nEND:VCARD\r\nBEGIN:VCARD\r\nFN:No Phone\r\nEND:VCARD");
 ok("vcard import: surname, cell preferred, service guessed", V.length === 2 && V[0].name === "Smith" && V[0].cell === "(250) 555-1234" && V[0].service === "Infectious diseases" && V[1].name === "Patel" && V[1].service === "Nephrology", V);
 ok("imported line round-trips", W.parseContacts(W.contactLine(V[0]))[0].cell === "(250) 555-1234" && W.parseContacts(W.contactLine(V[0]))[0].service === "Infectious diseases");
+// patients from the VGH list Excel (shared strings, as Excel saves it, plus inline strings, as the toolkit writes it)
+const sst = '<sst><si><t>room</t></si><si><t>age</t></si><si><t>Smith, Ann</t></si><si><t>Urosepsis</t></si><si><t>pmhx: CKD3, AF on apixaban</t></si><si><t>ESBL E. coli; Cr up</t></si><si><t>MRN</t></si><si><t>Sex</t></si></sst>';
+const sheet = '<sheetData><row r="1"><c r="D1" t="s"><v>0</v></c><c r="E1" t="s"><v>1</v></c><c r="T1" t="s"><v>6</v></c><c r="U1" t="s"><v>7</v></c></row>' +
+  '<row r="2"><c r="A2" t="inlineStr"><is><t>S7B</t></is></c></row>' +
+  '<row r="3"><c r="D3" t="inlineStr"><is><t>S7B 12</t></is></c><c r="E3"><v>81</v></c><c r="F3" t="s"><v>2</v></c><c r="H3" t="s"><v>3</v></c><c r="O3" t="s"><v>5</v></c><c r="T3"><v>12345</v></c><c r="U3" t="inlineStr"><is><t>F</t></is></c></row>' +
+  '<row r="4"><c r="F4" t="s"><v>4</v></c><c r="O4" t="inlineStr"><is><t>delirium &amp; falls</t></is></c></row><row r="5"><c r="F5"/></row>' +
+  '<row r="7"><c r="D7" t="inlineStr"><is><t>S7B 14</t></is></c><c r="E7"><v>67</v></c><c r="F7" t="inlineStr"><is><t>Jones, Bob</t></is></c></row></sheetData>';
+const P = W.listPatients(W.readSheet(sheet, sst));
+ok("excel: 2 patients, floor row skipped", P.length === 2, P);
+ok("excel: name flipped, age, room, reason, MRN, sex", P[0].name === "Ann Smith" && P[0].age === "81" && P[0].room === "S7B 12" && P[0].reason === "Urosepsis" && P[0].mrn === "12345" && P[0].sex === "female", P[0]);
+ok("excel: issues and pmhx from rows under the name", P[0].issues.join("|") === "ESBL E. coli; Cr up|delirium & falls" && P[0].pmhx[0] === "CKD3, AF on apixaban", P[0]);
+ok("excel: second patient", P[1].name === "Bob Jones" && P[1].age === "67" && P[1].mrn === "");
 console.log(fail ? `\n${fail} FAILED` : "\nall passed"); process.exit(fail ? 1 : 0);
