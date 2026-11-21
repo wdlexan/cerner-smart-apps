@@ -203,4 +203,23 @@ ok("HE4 read", val("he4") === 640);
 const dx = r.items.filter((i) => i.kind === "condition").map((i) => i.label);
 ok("colon primary, carcinomatosis, obstruction, ascites", ["Malignant neoplasm of colon/rectum", "Peritoneal carcinomatosis", "Bowel obstruction", "Ascites"].every((n) => dx.includes(n)), dx);
 ok("'No liver metastases' not a problem", !dx.includes("Liver metastases"), dx);
+// editable summary (MADE-UP CareConnect-style note, label:value header with no blank lines between rows, as OCR gives it)
+{
+  const cc = `                 Patient:          TEST, MADEUP ANNE
+                 PHN:              9999 999 999            Gender:     FEMALE
+                 Date of Birth:    1950 JAN 02             Age:        76Y
+Document Type:              Onc. Medical Follow-Up Clinic Note
+Service Date/Time:          01-Dec-2026 10:00
+Sign Information:           Doctor,Made Up,MD (01-Dec-2026 11:00)
+Oncologic Diagnosis
+Metastatic breast cancer involving bone, made-up example for testing the summary only.
+AI Disclaimer: the patient agreed to an AI scribe for this visit, which is a made-up sentence.
+Impression and Plan
+Doing well on treatment. Sodium 131 mmol/L today. Continue the current plan and review in four weeks time.`;
+  const rr = X.fromText(cc, { fileName: "madeup.pdf" }); rr.ocr = true; const sm = X.summarize(rr);
+  ok("summary: name from label:value header", X.demographics(rr.text).family === "Test" && /Patient: Madeup Anne Test/.test(sm), sm);
+  ok("summary: document type, date, signer", /^Onc\. Medical Follow-Up Clinic Note \| 01-Dec-2026 10:00 \| Doctor,Made Up,MD/.test(sm), sm.split("\n")[0]);
+  ok("summary: diagnosis section stops at AI disclaimer", /ONCOLOGIC DIAGNOSIS\nMetastatic breast cancer[^\n]*testing the summary only\.\n/.test(sm) && !/scribe/i.test(sm), sm);
+  ok("summary: impression section and OCR note", /IMPRESSION AND PLAN\nDoing well/.test(sm) && /read by OCR/.test(sm), sm);
+}
 console.log(`\n${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);

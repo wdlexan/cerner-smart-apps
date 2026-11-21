@@ -45,7 +45,12 @@
   #pdfbox .bad { color:#b00020; } #pdfbox .src { color:#6b7785; font-family:ui-monospace,Consolas,monospace; font-size:11.5px; max-width:340px; }
   #pdfbox button { font:inherit; font-size:13px; padding:5px 12px; border:1px solid #cbd5e0; border-radius:6px; background:#fff; cursor:pointer; }
   #pdfbox button.primary { border-color:#0b6bcb; color:#0b6bcb; font-weight:600; } #pdfbox button:disabled { opacity:.45; cursor:default; }
-  #pdfbox .grp td { background:#f1f4f8; font-weight:700; }`;
+  #pdfbox .grp td { background:#f1f4f8; font-weight:700; }
+  #pdfbox details.pdfsec { border:1px solid #dde3ea; border-radius:8px; padding:6px 12px; margin:8px 0; }
+  #pdfbox details.pdfsec > summary { cursor:pointer; padding:2px 0; }
+  #pdfbox textarea { width:100%; box-sizing:border-box; font:13px/1.45 system-ui,sans-serif; padding:6px 8px; border:1px solid #cbd5e0; border-radius:6px; margin:6px 0 4px; resize:vertical; }
+  #pdfbox textarea.mono { font:12px/1.4 ui-monospace,Consolas,monospace; white-space:pre; overflow-x:auto; }
+  #pdfbox .row { margin:2px 0 4px; }`;
   document.head.appendChild(css);
 
   const bar = document.createElement("div"); bar.id = "pdfbar";
@@ -192,6 +197,17 @@
     let h = `<h2>Review what was found</h2>
       <div class="warn"><b>Check before adding.</b> Reading a PDF is imperfect: values, units and dates can be wrong or missing, and a name can match the wrong test. Untick anything doubtful and fix values here. Added items appear in every tab marked as imported from PDF, not from Cerner.</div>
       ${problems.length ? `<div class="warn bad">${problems.map(esc).join("<br>")}</div>` : ""}`;
+    // per file: an editable summary, and the text that was read (OCR or text layer) to check and correct
+    results.forEach((r, k) => {
+      if (r.summary == null) r.summary = X().summarize(r);
+      h += `<details open class="pdfsec"><summary><b>Summary: ${esc(r.fileName)}</b> <span class="muted">editable: correct it, then copy it or keep it as a note</span></summary>
+        <textarea id="pdfsum${k}" rows="14" spellcheck="true">${esc(r.summary)}</textarea>
+        <div class="row"><button data-copy="${k}">Copy summary</button> <label><input type="checkbox" class="sumkeep" data-k="${k}" checked> Keep this summary as a note for the patient</label></div></details>
+        <details${r.ocr ? " open" : ""} class="pdfsec"><summary><b>Text read from ${esc(r.fileName)}</b>${r.ocr ? ' <span class="bad">(OCR)</span>' : ""} <span class="muted">${r.lines} lines${r.edited ? ", corrected by you" : ""}</span></summary>
+        <div class="muted">${r.ocr ? "This is what OCR read from the page pictures. " : ""}Fix misread words or numbers here, then press Re-read: the items table and summary are rebuilt from your corrected text.</div>
+        <textarea id="pdftxt${k}" rows="18" class="mono" spellcheck="false">${esc(r.text)}</textarea>
+        <div class="row"><button data-reread="${k}">Re-read corrected text</button> <button data-copytxt="${k}">Copy text</button></div></details>`;
+    });
     if (!all.length) { h += `<p>Nothing recognisable was found.${results.length ? " You can still keep the PDF text as a note below." : ""}</p>`; }
     else {
       h += `<table><tr><th></th><th>Type</th><th>Item</th><th>Value</th><th>Unit</th><th>Date</th><th>Line in the PDF</th></tr>`;
@@ -225,6 +241,15 @@
       </div>
       <p><button class="primary" id="pdfadd" disabled>Add ticked items</button> <button id="pdfback">Back</button> <button id="pdfx2">Cancel</button> <span class="muted" id="pdfres"></span></p>`;
     box.innerHTML = h;
+    const copy = async (b, ta, label) => { try { await navigator.clipboard.writeText(ta.value); } catch (e) { ta.select(); document.execCommand("copy"); } b.textContent = "Copied"; setTimeout(() => (b.textContent = label), 1500); };
+    box.querySelectorAll("button[data-copy]").forEach((b) => (b.onclick = () => copy(b, document.getElementById("pdfsum" + b.dataset.copy), "Copy summary")));
+    box.querySelectorAll("button[data-copytxt]").forEach((b) => (b.onclick = () => copy(b, document.getElementById("pdftxt" + b.dataset.copytxt), "Copy text")));
+    box.querySelectorAll("textarea[id^=pdfsum]").forEach((t) => (t.oninput = () => { results[+t.id.slice(6)].summary = t.value; }));
+    box.querySelectorAll("button[data-reread]").forEach((b) => (b.onclick = () => {
+      const k = +b.dataset.reread, old = results[k], txt = document.getElementById("pdftxt" + k).value;
+      const nr = X().fromText(txt, { fileName: old.fileName }); nr.ocr = old.ocr; nr.edited = true; results[k] = nr; // summary is rebuilt from the corrected text
+      review(results, problems);
+    }));
     const addBtn = document.getElementById("pdfadd"), pt = document.getElementById("pdfpt");
     const dest = () => (box.querySelector('input[name="pdfdest"]:checked') || {}).value || "current";
     const refreshDest = () => {
@@ -262,7 +287,11 @@
         const res = X().toResource(it, Object.assign({ fileName: r.fileName }, ctxBase)); if (!res) return;
         if (!st.items.some((x) => x.id === res.id)) { st.items.push(res); added.push(res); (filesAdded[r.fileName] = filesAdded[r.fileName] || []).push(res.id); }
       });
-      if (document.getElementById("pdfkeep").checked) results.forEach((r) => { const d = X().docResource(r.text, Object.assign({ fileName: r.fileName }, ctxBase), r.docT); if (!st.items.some((x) => x.id === d.id)) { st.items.push(d); added.push(d); (filesAdded[r.fileName] = filesAdded[r.fileName] || []).push(d.id); } });
+      const keepDoc = (text, name, r) => { if (!String(text || "").trim()) return; const d = X().docResource(text, Object.assign({ fileName: name }, ctxBase), r.docT); if (!st.items.some((x) => x.id === d.id)) { st.items.push(d); added.push(d); (filesAdded[r.fileName] = filesAdded[r.fileName] || []).push(d.id); } };
+      results.forEach((r, k) => {
+        if (document.getElementById("pdfkeep").checked) keepDoc((document.getElementById("pdftxt" + k) || {}).value || r.text, r.fileName, r); // the text as corrected on screen
+        const sk = box.querySelector('.sumkeep[data-k="' + k + '"]'); if (sk && sk.checked) keepDoc((document.getElementById("pdfsum" + k) || {}).value, r.fileName + " (summary)", r);
+      });
       Object.keys(filesAdded).forEach((n) => st.files.push({ name: n, ids: filesAdded[n], at: Date.now() }));
       if (!added.length) { document.getElementById("pdfres").textContent = "Nothing was added."; return; }
       saveFor(target, st);

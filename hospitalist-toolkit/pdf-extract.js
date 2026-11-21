@@ -484,6 +484,48 @@
       description: "Imported PDF: " + ctx.fileName, date: when, content: [{ attachment: { contentType: "text/plain", data: b64, title: ctx.fileName } }] };
   }
 
-  root.PdfExtract = { layoutLines, structure, cells, demographics, LABS, CONDITIONS, findDate, fromLines, fromText, toResource, docResource, iso };
+  /* ---------- plain-text summary of one read PDF (rule-based, no AI), for the physician to edit ---------- */
+  const SUM_KEY = /^(?:[A-Za-z]+\s+)?(?:diagnos[ie]s|oncologic diagnosis|reason for (?:referral|visit|admission|consult(?:ation)?)|chief complaint|history of present(?:ing)? illness|hpi|interval history|assessment(?: and plan)?|impression(?: and plan)?|plan|recommendations?|summary|conclusions?|findings|discharge diagnos[ie]s|follow[- ]?up)\b/i;
+  const HEADLIKE = /^[A-Z][A-Za-z /&()\-]{2,50}:?$/;
+  function summarize(r) {
+    const text = String(r.text || ""), lines = text.split(/\r?\n/).map((l) => l.trim()), out = [];
+    const field = (re) => { const m = re.exec(text); return m ? m[1].split(/\s{3,}/)[0].trim() : ""; };
+    const docType = field(/document (?:type|subject):\s+(.+)/i) || field(/^\s*(?:report|note) type:\s+(.+)/im);
+    const when = field(/service date(?:\/time)?:\s+(.+)/i) || (r.docT ? iso(r.docT) : "");
+    const by = field(/sign(?:ed)? (?:information|by):\s+(.+)/i) || field(/(?:dictated|author|physician):\s+(.+)/i);
+    out.push([docType || "PDF report", when, by].filter(Boolean).join(" | "));
+    out.push("Source: " + (r.fileName || "PDF") + (r.ocr ? " (read by OCR: check values against the PDF)" : ""));
+    const d = demographics(text);
+    if (d.name || d.birthDate || d.phn) out.push("Patient: " + [d.name, d.sex, d.birthDate ? "DOB " + d.birthDate + (d.age != null ? " (" + d.age + " y)" : "") : d.age != null ? d.age + " y" : "", d.phn ? "PHN " + d.phn : ""].filter(Boolean).join(", "));
+    const seen = new Set();
+    for (let i = 0; i < lines.length; i++) {
+      const ln = lines[i]; if (ln.length > 60 || !SUM_KEY.test(ln) || !HEADLIKE.test(ln)) continue;
+      const name = ln.replace(/:$/, ""); if (seen.has(name.toLowerCase())) continue;
+      const body = []; let n = 0;
+      for (let j = i + 1; j < lines.length && n < 900; j++) {
+        const b = lines[j]; if (!b) continue;
+        if (HEADLIKE.test(b) && b.length <= 50 && !/[.,]$/.test(b)) break; // next heading
+        if (/^(?:ai|al) (?:disclaimer|scribe)\b|^(?:disclaimer|electronically signed|additional copies to)\b/i.test(b)) break; // "AI Disclaimer: …" and similar side paragraphs
+        if (/^(?:page \d+|report tracking id|if you have received|this printed report|printed (?:by|on))/i.test(b)) continue; // page furniture
+        body.push(b); n += b.length;
+      }
+      if (!body.length) continue;
+      seen.add(name.toLowerCase());
+      let s = body.join(" ").replace(/\s+/g, " ").trim(); if (n >= 900) s = s.slice(0, 900).replace(/\s\S*$/, "") + " …";
+      out.push("", name.toUpperCase(), s);
+    }
+    const items = r.items || [], pick = (k) => items.filter((it) => it.kind === k);
+    const meds = pick("med"); if (meds.length) out.push("", "MEDICATIONS MENTIONED", ...meds.map((m) => "- " + m.text.replace(/\s+/g, " ").trim()));
+    const labs = pick("lab"), vit = pick("vital");
+    if (labs.length || vit.length) out.push("", "LABS / VITALS FOUND",
+      ...labs.map((l) => "- " + l.label + " " + (l.text != null ? l.text : (l.cmp || "") + l.value + (l.unit ? " " + l.unit : "")) + (l.flag ? " (" + l.flag + ")" : "") + (l.t ? "  " + iso(l.t) : "")),
+      ...vit.map((v) => "- " + v.label + " " + (v.key === "bp" ? v.value + "/" + v.value2 : v.value) + (v.unit ? " " + v.unit : "")));
+    const dx = pick("condition"); if (dx.length) out.push("", "DIAGNOSES CODED", ...dx.map((c) => "- " + c.label));
+    const rep = pick("report").filter((x) => !out.some((o) => o.length > 40 && x.text && x.text.includes(o.slice(0, 40))));
+    if (rep.length) out.push("", "REPORTS", ...rep.map((x) => "- " + x.label + ": " + String(x.text || "").replace(/\s+/g, " ").slice(0, 400)));
+    return out.join("\n");
+  }
+
+  root.PdfExtract = { layoutLines, structure, cells, demographics, LABS, CONDITIONS, findDate, fromLines, fromText, toResource, docResource, iso, summarize };
   if (typeof module !== "undefined" && module.exports) module.exports = root.PdfExtract;
 })(typeof window !== "undefined" ? window : globalThis);
