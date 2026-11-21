@@ -69,7 +69,7 @@
     af: /atrial fib|flutter|I48/i, vte: /pulmonary embol|I26|deep vein thromb|\bdvt\b|I82\.4|venous thromboembol/i, stroke: /stroke|cerebral infarct|I6[3-4]|transient ischemic|\btia\b|G45/i,
     dm: /diabetes|E1[0-4]/i, gib: /gastrointestinal (hemorrhage|bleed)|gi bleed|K92\.[0-2]|melena|hematemesis|peptic ulcer.*bleed|upper gi bleed/i,
     aki: /acute kidney injury|\baki\b|N17|acute renal failure/i, ckd: /chronic kidney|N18/i, hip: /hip fracture|fracture of (the )?(neck of )?femur|S72|intertrochanteric|femoral neck/i,
-    falls: /\bfalls?\b|W1[0-9]|R29\.6/i, delirium: /delirium|F05/i, hypona: /hyponatremia|E87\.1/i, cirrhosis: /cirrho|K74|K70\.3/i };
+    falls: /\bfalls?\b|W1[0-9]|R29\.6/i, catheter: /catheter (?:in situ|at discharge|at home)|indwelling (?:urinary )?catheter|foley|discharged? (?:home )?with (?:a |an )?(?:indwelling |urinary )?catheter|catheter changes/i, retention: /urinary retention|urine retention|R33|bladder outlet obstruction/i, delirium: /delirium|F05/i, hypona: /hyponatremia|E87\.1/i, cirrhosis: /cirrho|K74|K70\.3/i };
   const MEDCLASS = {
     anticoag: /apixaban|eliquis|rivaroxaban|xarelto|edoxaban|lixiana|dabigatran|pradaxa|warfarin|coumadin|enoxaparin (?:[5-9]\d|1\d\d) ?mg|dalteparin (?:[1-9]\d{4})|tinzaparin (?:[1-9]\d{4})/i,
     warfarin: /warfarin|coumadin/i, insulin: /insulin|glargine|lantus|basaglar|toujeo|detemir|levemir|degludec|tresiba|lispro|humalog|aspart|novorapid|fiasp|humulin|novolin/i,
@@ -138,6 +138,11 @@
       call: ["The wound gets red, hot, more painful, or drains fluid.", "Your calf is swollen or painful.", "You are constipated for more than 3 days."],
       er: ["You cannot put weight on the leg when you could before, or the leg looks shorter or turned out.", "Sudden shortness of breath or chest pain.", "Another fall with a new injury."],
       fp: ["Bone health: start or continue osteoporosis treatment (e.g. bisphosphonate or denosumab) after vitamin D and calcium are replete; BMD if needed.", "Falls risk review (medicines, vision, home safety); confirm orthopedic follow-up and staple removal."] },
+    { id: "catheter", name: "Urinary catheter at home", prob: ["catheter", "retention"],
+      home: ["Keep the drainage bag below your bladder and the tubing free of kinks. Empty the bag when it is half full.", "Wash around the catheter with soap and water every day. Wash your hands before and after touching it.", "Drink plenty of fluids (unless you were told to limit fluids), so your urine stays pale.", "Your home care nurse will change the catheter: {cathChange}."],
+      call: ["Urine is cloudy, smells bad, or you have burning or pain in your lower belly.", "Urine is leaking around the catheter, or the catheter comes out.", "Blood in the urine that is getting worse, or small clots."],
+      er: ["No urine has drained for 2 hours or more and your lower belly is swollen or painful, and the nurse cannot fix it.", "Fever with shaking chills, or new confusion.", "Large clots or bright red urine that does not clear."],
+      fp: ["Catheter care and changes by home care; trial of void / urology plan as arranged."] },
     { id: "opioid", name: "Opioid pain medicine", med: "opioid",
       home: ["Take the lowest dose you need and stop as the pain improves. Use acetaminophen (Tylenol) regularly first if you can.", "Do not drive, drink alcohol, or take sleeping pills or cannabis with this medicine.", "Take a laxative every day while on it.", "Keep it locked away from children and others. Return unused pills to a pharmacy.", "Ask your pharmacist for a free take-home naloxone kit."],
       call: ["You are constipated for more than 3 days, or very sleepy during the day."],
@@ -175,7 +180,9 @@
     f.reports = (raw.reports || []).map((r) => ({ name: label(r.code), status: r.status || "", t: tOf(r), cat: (r.category || []).map((c) => codes(c).concat(label(c)).join(" ")).join(" ").toLowerCase(), text: [r.conclusion].concat(r._text || []).filter(Boolean).join("\n"), id: r.id, basedOn: (r.basedOn || []).map((b) => b.reference) }));
     f.pendingObs = (raw.obs || []).filter((o) => /registered|preliminary/.test(o.status || "")).map((o) => ({ name: label(o.code), status: o.status, t: tOf(o), value: o.valueString || (o.valueCodeableConcept && label(o.valueCodeableConcept)) || (o.valueQuantity ? o.valueQuantity.value + " " + (o.valueQuantity.unit || "") : "") }));
     f.orders = (raw.orders || []).filter((s) => /active|on-hold|draft/.test(s.status || "")).map((s) => ({ name: label(s.code), status: s.status, t: tOf(s), cat: (s.category || []).map((c) => label(c) + " " + codes(c).join(" ")).join(" "), ref: "ServiceRequest/" + s.id }));
-    f.notes = (raw.notes || []).map((n) => ({ name: n.name || "Note", t: n.t || null, text: n.text || "" })).filter((n) => n.text);
+    // notes; leave out the drafts and summaries this toolkit wrote itself (kept from Import), so they are not read back as sources
+    f.notes = (raw.notes || []).map((n) => ({ name: n.name || "Note", t: n.t || null, text: n.text || "" }))
+      .filter((n) => n.text && !/\((?:summary|draft discharge note)\)\s*$/i.test(n.name) && !/^\s*(?:DISCHARGE NOTE \(DRAFT\)|DISCHARGE SUMMARY - KEY POINTS|YOUR HOSPITAL STAY)/.test(n.text));
     return f;
   }
 
@@ -242,13 +249,13 @@
     const blocks = []; let cur = "";
     const head = (l) => l.length <= 50 && !/[.,;]$/.test(l) && /^[A-Z]/.test(l) && !/^\d/.test(l);
     String(text || "").split(/\r?\n/).map((l) => l.trim()).forEach((l, i, a) => {
-      if (!l) { if (cur) blocks.push(cur); cur = ""; return; }
+      if (!l || /^[-=_*~.]{5,}$/.test(l)) { if (cur) blocks.push(cur); cur = ""; return; } // blank or divider line
       const prev = cur ? a[i - 1] || "" : "";
       if (cur && (/[.:;!?]$/.test(prev) || /^(?:\d+[.)]|[-•*])\s/.test(l) || head(l) || head(prev))) { blocks.push(cur); cur = l; } else cur = cur ? cur + " " + l : l;
     });
     if (cur) blocks.push(cur);
     const ABBR = /\b(Dr|Drs|Mr|Mrs|Ms|St|Jr|Sr|vs|approx|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec|No|Fig|e\.g|i\.e|etc)\.(?=\s)/g;
-    return blocks.flatMap((b) => b.replace(/\s+/g, " ").replace(ABBR, "$1\u2024").split(/(?<=[.!?])\s+(?=[A-Z0-9])|;\s+(?=[A-Z])/)).map((s) => s.replace(/\u2024/g, ".").trim()).filter((s) => s.length > 8 && !/^\d+[.)]?$/.test(s));
+    return blocks.flatMap((b) => b.replace(/\s*\[\d+(?:\s*[-,]\s*\d+)*\]/g, "").replace(/\s+/g, " ").replace(ABBR, "$1\u2024").replace(/\b([A-Z])\.(?=\s+[A-Z])/g, "$1\u2024").split(/(?<=[.!?])\s+(?=[A-Z0-9])|;\s+(?=[A-Z])/)).map((s) => s.replace(/\u2024/g, ".").trim()).filter((s) => s.length > 8 && !/^\d+[.)]?$/.test(s));
   }
   function incidentals(f) {
     const out = [], seen = new Set(), since = (f.admit || f.now - 14 * DAY) - 30 * DAY;
@@ -272,18 +279,22 @@
   /* ---------- follow-up in the community, found in note text: referrals, imaging/procedures, lab tests ---------- */
   const SPEC = /\b(internal medicine|general internal medicine|internist|hospital at home|\bhah\b|gi central|ent|cardiology|cardiologist|heart function clinic|hf clinic|heart failure clinic|nephrology|nephrologist|kidney (?:care )?clinic|neurology|neurologist|stroke (?:prevention )?clinic|tia clinic|gastroenterology|gastroenterologist|\bgi\b(?! bleed)|hepatology|liver clinic|respirology|respirologist|pulmonology|hematology|hematologist|medical oncology|oncology|oncologist|bc cancer|radiation oncology|rheumatology|rheumatologist|endocrinology|endocrinologist|diabetes (?:clinic|education|educator|centre|center)|urology|urologist|orthopaedics?|orthopedics?|orthopaedic|orthopedic|fracture clinic|general surgery|surgeon|surgical clinic|vascular surgery|plastic surgery|dermatology|ophthalmology|ophthalmologist|\bent\b|otolaryngology|psychiatry|psychiatrist|mental health (?:team|clinic)|geriatrics?|geriatrician|memory clinic|falls (?:prevention )?clinic|palliative(?: care)?|infectious diseases?|\bid clinic\b|anticoagulation clinic|wound (?:care )?clinic|pulmonary rehab\w*|cardiac rehab\w*|physiotherapy|physio\b|occupational therapy|home (?:care|health|support)|community (?:nursing|health)|dietitian|nutritionist|social work(?:er)?|speech[- ]language|sleep clinic|pain clinic|addictions?(?: medicine)?|rapid access addiction|opioid agonist|osteoporosis clinic|fracture liaison|transplant clinic|heart rhythm|electrophysiology|arrhythmia clinic|pacemaker clinic|lipid clinic|hypertension clinic)\b/i;
   const IMG = /\b(ct(?: scan| chest| abdomen| head| angio\w*)?|cta|mri|mra|mrcp|ultrasound|u\/s|sonogra\w*|echo(?:cardiogram)?|tte|tee|x-?rays?|cxr|chest (?:x-?ray|radiograph|film)|radiographs?|bone scan|pet(?:\/ct| scan)?|dexa|bmd|bone density|holter|loop recorder|event monitor|colonoscopy|endoscopy|gastroscopy|egd|ercp|mammogra\w*|spirometry|pfts?|pulmonary function|sleep study|polysomnogra\w*|eeg|emg|nerve conduction|stress test|mibi|myocardial perfusion|angiogra\w*|cystoscopy|biopsy|carotid doppler|dopplers?|venous duplex)\b/i;
+  const US = { test: (t) => /\bUS\b/.test(t) && /\bUS\s+(?:renal|abdo\w*|pelvis|kidneys?|bladder|liver|thyroid|doppler|carotid)\b|\b(?:renal|abdominal|pelvic|bladder) US\b/i.test(t) }; // "US Renal": "US" in capitals only, so the word "us" is not read as ultrasound
   const LABW = /\b(cbc|hgb|hemoglobin|blood count|lytes|electrolytes|bmp|creatinine|\bcr\b|egfr|renal function|kidney function|potassium|sodium|inr|tsh|a1c|hba1c|lipids?|lipid panel|lfts?|liver (?:enzymes|tests|function)|ferritin|iron studies|b12|folate|psa|cea|ca-?125|vitamin d|calcium|magnesium|phosphate|urinalysis|urine (?:culture|test)|drug levels?|trough|bloodwork|blood work|blood tests?|labs?|lab work|nt-?pro ?bnp)\b/i;
-  const INTENT = /\b(refer(?:red|ral)?|follow[- ]?up|f\/u|repeat|recheck|re-check|outpatient|arrange[ds]?|book(?:ed)?|(?:is|been|be|has a|have a|already|now) scheduled|scheduled (?:for|on|follow|appointment|visit|with|in)|schedule (?:a|an|the|follow)|to see|will see|see (?:dr|the)|appointment|in \d+\s*(?:-|to)?\s*\d*\s*(?:days?|weeks?|wks?|months?|mos?)|within \d+|after discharge|post[- ]discharge|on discharge|recommend(?:ed|s)?|should (?:have|get|be)|needs? (?:a |an |to (?:see|have|get|be|follow)|repeat|follow|outpatient|referral)|consider|to be done|requisition|will call|will contact|will phone)\b/i;
+  const INTENT = /\b(cc\b[^;]{0,40}?summary|refer(?:red|ral)?|follow[- ]?up|f\/u|repeat|recheck|re-check|outpatient|arrange[ds]?|book(?:ed)?|(?:is|been|be|has a|have a|already|now) scheduled|scheduled (?:for|on|follow|appointment|visit|with|in)|schedule (?:a|an|the|follow)|to see|will see|see (?:dr|the)|appointment|in \d+\s*(?:-|to)?\s*\d*\s*(?:days?|weeks?|wks?|months?|mos?)|within \d+|after discharge|post[- ]discharge|on discharge|recommend(?:ed|s)?|should (?:have|get|be)|needs? (?:a |an |to (?:see|have|get|be|follow)|repeat|follow|outpatient|referral)|consider|to be done|requisition|will call|will contact|will phone)\b/i;
   const NEGF = /\b(?:no (?:need|further|follow[- ]?up|referral)|not (?:required|needed|necessary|indicated)|declined|cancel(?:led|ed)?|already (?:done|seen|completed))\b/i;
   const WHEN = /\b(?:(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*\.? \d{1,2}(?:st|nd|rd|th)?(?:,? \d{4})?|(?:in )?(?:early|mid|late|spring|summer|fall|winter)[- ]\d{4}|(?:in|within|after|at|by)\s+(?:about\s+)?\d+\s*(?:(?:-|to)\s*\d+\s*)?(?:days?|weeks?|wks?|months?|mos?|years?)|tomorrow|next week|(?:on|for)\s+(?:[A-Z][a-z]+\.? \d{1,2}(?:st|nd|rd|th)?(?:,? \d{4})?|\d{4}-\d{2}-\d{2}|\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4})(?:\s*(?:and|&)\s*\d{1,2}(?:st|nd|rd|th)?)?)\b/;
   const FTYPES = { referral: "Specialist follow-up, referrals and services", imaging: "Imaging and procedures", lab: "Lab tests", other: "Other follow-up" };
   // "nephrology (Dr. MacDonald)", "Dr. Bartlett (ENT)", "internal medicine (McArdle)" -> { macdonald: "nephrology", bartlett: "ENT", mcardle: "internal medicine" }
   function whoIs(text) {
     const map = {}, t = String(text || "");
-    let re = new RegExp("(" + SPEC.source.replace(/^\\b\(|\)\\b$/g, "") + ")\\s*\\((?:Dr\\.?\\s*)?([A-Z][a-zA-Z'’-]+)", "gi"), m;
+    let re = new RegExp("(" + SPEC.source.replace(/^\\b\(|\)\\b$/g, "") + ")\\s*\\((?:Dr\\.?\\s*)?(?:[A-Z]\\.\\s*)*([A-Z][a-zA-Z'’-]+)", "gi"), m;
     while ((m = re.exec(t))) map[m[2].toLowerCase()] = m[1];
-    re = new RegExp("Dr\\.?\\s*([A-Z][a-zA-Z'’-]+)\\s*\\((" + SPEC.source.replace(/^\\b\(|\)\\b$/g, "") + ")\\)", "gi");
+    re = new RegExp("Dr\\.?\\s*(?:[A-Z]\\.\\s*)*([A-Z][a-zA-Z'’-]+)\\s*\\((" + SPEC.source.replace(/^\\b\(|\)\\b$/g, "") + ")\\)", "gi");
     while ((m = re.exec(t))) map[m[1].toLowerCase()] = m[2];
+    // "Urology: Dr. J. McCracken" (Specialists Consulted list)
+    re = new RegExp("(" + SPEC.source.replace(/^\\b\(|\)\\b$/g, "") + ")\\s*[:\\-–]\\s*(?:Dr\\.?\\s*)?(?:[A-Z]\\.\\s*)*([A-Z][a-zA-Z'’-]+)", "gi");
+    while ((m = re.exec(t))) if (!map[m[2].toLowerCase()]) map[m[2].toLowerCase()] = m[1];
     return map;
   }
   const PAST = /\b(?:has been seen|was seen|were seen|has had|was given|received|was referred .* (?:in|on) (?:19|20)\d\d)\b/i;
@@ -299,7 +310,8 @@
   const statusOf = (sen) => /\b(?:unable to (?:keep|attend)|missed|no[- ]show)\b/i.test(sen) || /\blast (?:week|monday|tuesday|wednesday|thursday|friday|saturday|sunday|month)\b/i.test(sen) ? "missed appointment" + ((/\blast \w+/i.exec(sen) || [""])[0] ? " " + (/\blast \w+/i.exec(sen) || [""])[0] : "") + ": rebook"
     : /\b(?:completed a referral|referral (?:has been |was )?(?:sent|faxed|done|made|completed)|re-?referred|have referred|has been referred|was referred)\b/i.test(sen) ? "referral sent"
     : /\b(?:scheduled|booked|has an appointment|appointment (?:is )?(?:on|for)|confirmed)\b/i.test(sen) ? "booked"
-    : /\b(?:will (?:refer|arrange|book)|please (?:refer|arrange|book)|to be referred|needs? (?:a )?referral|recommend(?:ed)? referral|refer to)\b/i.test(sen) ? "to refer" : "";
+    : /\b(?:will (?:refer|arrange|book)|please (?:refer|arrange|book)|to be referred|needs? (?:a )?referral|recommend(?:ed)? referral|refer to|referral at discharge)\b/i.test(sen) ? "to refer"
+    : /\boutpatient\b[^.;]{0,30}\bconsult|\bconsult\b[^.;]{0,30}\boutpatient\b/i.test(sen) ? "outpatient consult" : "";
   const plainCase = (t) => t.replace(/\b(?:her|his|their)\s+(?=[a-z])/gi, "").replace(/\s+/g, " ").trim();
   // plan sentence without the patient as subject: "She has a follow up with…" -> "Follow up with…"
   const depronoun = (t) => plainCase(t.replace(/^\s*(?:\d+[.)]|[-•*])\s*/, "").replace(/^(?:she|he|they|the patient|patient|pt)\s+(?:has|have|had|is|was|will|needs?|should|would)\s+(?:been\s+|be\s+|a\s+|an\s+)*/i, "").replace(/^(?:i|we)\s+(?:have\s+)?/i, "")).replace(/^\w/, (c) => c.toUpperCase()).replace(/[.\s]+$/, "");
@@ -308,19 +320,20 @@
     (sources || []).forEach((src) => { const who = whoIs(src.text), ss = sentences(src.text); ss.forEach((sen, si) => {
       if (PAST.test(sen) && !/\b(?:refer(?:ral)?|follow[- ]?up|appointment|will|repeat|outpatient)\b/i.test(sen)) return;
       if (/\b(?:clinic note|progress note|document (?:type|subject)|service date|sign(?:ed)? information|result status|\bmrn\b|\bphn\b|date of birth|encounter (?:#|type)|copies to|printed (?:by|on)|report tracking)\b/i.test(sen)) return; // page header, not a plan
-      if (sen.length < 12 || sen.length > 400 || !INTENT.test(sen) || NEGF.test(sen) || /\bpending\b|\bresult(?:s)? to follow\b/i.test(sen)) return;
+      if (sen.length < 8 || sen.length > 400 || !INTENT.test(sen) || NEGF.test(sen) || /\bpending\b|\bresult(?:s)? to follow\b/i.test(sen)) return;
       if (/\b(?:showed|revealed|demonstrated|was (?:normal|unremarkable|negative))\b/i.test(sen) && !/\b(?:repeat|follow[- ]?up|outpatient|refer)\b/i.test(sen)) return; // a result, not a plan
       const base = { when: (WHEN.exec(sen) || [""])[0], status: statusOf(sen), source: src.name || "", t: src.t || null, src: sen };
       const purpose = (/\bfor (?:consideration of |ongoing |further )?([^.;()]{3,80})/i.exec(sen) || [])[1], via = (/\b(?:through|via) ([A-Z][A-Za-z]{1,20}(?: (?!(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b)[A-Z][A-Za-z]+)?)/.exec(sen) || [])[1];
-      const detail = [purpose ? plainCase(purpose).replace(/\s+(?:as an outpatient|while .*)$/i, (m) => m) : "", via && !/GI Central/i.test(via) ? "via " + via : ""].filter(Boolean);
+      const cons = /\bconsult(?:ation)?\s+(?:as an outpatient\s+)?(?:for|with)\s+([^.;,()]{3,60})/i.exec(sen);
+      const detail = [cons ? "consult for " + plainCase(cons[1]) : purpose ? plainCase(purpose) : "", via && !/GI Central/i.test(via) ? "via " + via : "", /\bcc\b[^;]{0,40}?(?:dc|discharge) summary/i.test(sen) ? "cc on discharge summary" : ""].filter(Boolean);
       // specialists / services: one target per service or doctor named
       const targets = [], gre = new RegExp(SPEC.source, "gi"); let m;
-      while ((m = gre.exec(sen))) { const after = sen.slice(m.index + m[0].length, m.index + m[0].length + 30), dm = /^\s*\((?:Dr\.?\s*)?([A-Z][a-zA-Z'’-]+)\)/.exec(after); targets.push({ svc: svcOf(m[0]), dr: dm ? dm[1] : "" }); }
-      [...sen.matchAll(/\bDr\.?\s*([A-Z][a-zA-Z'’-]+)/g)].map((x) => x[1]).forEach((d) => { if (targets.some((tg) => tg.dr === d)) return; const sp = who[d.toLowerCase()]; const tg = sp ? targets.find((x) => svcKey(x.svc) === svcKey(svcOf(sp)) && !x.dr) : null; if (tg) tg.dr = d; else targets.push({ svc: sp ? svcOf(sp) : "", dr: d }); });
-      if (!targets.length && /\b(?:him|her|them)\b/i.test(sen) && si > 0) { const prev = ss[si - 1], sp = SPEC.exec(prev), d = /\bDr\.?\s*([A-Z][a-zA-Z'’-]+)/.exec(prev); if (sp || d) targets.push({ svc: sp ? svcOf(sp[0]) : d && who[d[1].toLowerCase()] ? svcOf(who[d[1].toLowerCase()]) : "", dr: d ? d[1] : "" }); }
-      const isFollow = /\b(?:follow[- ]?up|f\/u|appointment|refer|referral|re-?referred|clinic|scheduled|booked|see)\b/i.test(sen);
-      if (targets.length && (isFollow || !IMG.test(sen) && !LABW.test(sen))) { targets.forEach((tg) => raw.push(Object.assign({ type: "referral", svc: tg.svc, dr: tg.dr, detail: IMG.test(sen) && !purpose ? [] : detail }, base))); if (!IMG.test(sen) || purpose) return; }
-      const type = IMG.test(sen) ? "imaging" : LABW.test(sen) ? "lab" : /\b(?:follow[- ]?up|f\/u|appointment|clinic)\b/i.test(sen) ? "other" : null;
+      while ((m = gre.exec(sen))) { const after = sen.slice(m.index + m[0].length, m.index + m[0].length + 30), dm = /^\s*\((?:Dr\.?\s*)?(?:[A-Z]\.\s*)*([A-Z][a-zA-Z'’-]+)\)/.exec(after); targets.push({ svc: svcOf(m[0]), dr: dm ? dm[1] : "" }); }
+      [...sen.matchAll(/\bDr\.?\s*(?:[A-Z]\.\s*)*([A-Z][a-zA-Z'’-]+)/g)].map((x) => x[1]).forEach((d) => { if (targets.some((tg) => tg.dr === d)) return; const sp = who[d.toLowerCase()]; const tg = sp ? targets.find((x) => svcKey(x.svc) === svcKey(svcOf(sp)) && !x.dr) : null; if (tg) tg.dr = d; else targets.push({ svc: sp ? svcOf(sp) : "", dr: d }); });
+      if (!targets.length && /\b(?:him|her|them)\b/i.test(sen) && si > 0) { const prev = ss[si - 1], sp = SPEC.exec(prev), d = /\bDr\.?\s*(?:[A-Z]\.\s*)*([A-Z][a-zA-Z'’-]+)/.exec(prev); if (sp || d) targets.push({ svc: sp ? svcOf(sp[0]) : d && who[d[1].toLowerCase()] ? svcOf(who[d[1].toLowerCase()]) : "", dr: d ? d[1] : "" }); }
+      const isFollow = /\b(?:follow[- ]?up|f\/u|appointment|refer|referral|re-?referred|clinic|scheduled|booked|see|consult(?:ation)?|cc)\b/i.test(sen);
+      if (targets.length && (isFollow || !IMG.test(sen) && !LABW.test(sen))) { targets.forEach((tg) => raw.push(Object.assign({ type: "referral", svc: tg.svc, dr: tg.dr, detail }, base))); return; }
+      const type = IMG.test(sen) || US.test(sen) ? "imaging" : LABW.test(sen) ? "lab" : /\b(?:follow[- ]?up|f\/u|appointment|clinic)\b/i.test(sen) ? "other" : null;
       if (type) raw.push(Object.assign({ type, text: depronoun(sen) }, base));
     }); });
     // merge: one line per service (or doctor); identical imaging / lab / other lines once
@@ -336,7 +349,7 @@
       if (/GI Central/.test(x.svc || "")) g.svc = x.svc;
       if (x.when && !g.whens.includes(x.when)) g.whens.push(x.when);
       if (x.status && !g.statuses.includes(x.status)) g.statuses.push(x.status);
-      (x.detail || []).forEach((d) => { if (d && !g.details.some((e) => e.toLowerCase() === d.toLowerCase())) g.details.push(d); });
+      (x.detail || []).forEach((d) => { if (!d) return; const lo = d.toLowerCase(); if (g.details.some((e) => e.toLowerCase().includes(lo))) return; g.details = g.details.filter((e) => !lo.includes(e.toLowerCase())); g.details.push(d); });
       g.srcs.push(x.src);
     });
     out.filter((g) => g.type === "referral").forEach((g) => {
@@ -344,6 +357,8 @@
       const st = g.statuses.filter((x) => !(booked && /^missed/.test(x) && future.length) && !(booked && x === "to refer"));
       g.when = future[0] || "";
       g.past = !!missed && !booked || undefined;
+      const cf = g.details.find((d) => /^consult for /.test(d));
+      if (cf && st.includes("outpatient consult")) { st.splice(st.indexOf("outpatient consult"), 1, "outpatient " + cf); g.details = g.details.filter((d) => d !== cf); }
       const parts = st.map((x) => (x === "booked" && g.when ? "booked " + g.when : x)).concat(g.details);
       if (g.when && !parts.some((p) => p.includes(g.when))) parts.push((parts.length ? "" : "follow-up ") + g.when);
       g.text = (g.svc || "Follow-up") + (g.dr ? " (Dr. " + g.dr + ")" : "") + ": " + (parts.length ? parts.join("; ") : "follow-up");
@@ -410,10 +425,10 @@
       glucose: v.glucose || "as your team showed you", sglt2: f && f.medClass.sglt2 ? "Stop " + f.medClass.sglt2 + " on sick days and 3 days before surgery, and restart when you are eating and drinking normally." : "",
       sglt2er: f && f.medClass.sglt2 ? "Vomiting, belly pain or fast, deep breathing while taking " + f.medClass.sglt2 + ", even if your blood sugar is normal (a rare but serious acid problem)." : "",
       driving: v.driving || "do not drive until your doctor tells you it is safe", ppi: (f && f.medClass.ppi) || "as prescribed", hbDays: v.hbDays || "7", crDays: v.crDays || "7",
-      wb: v.wb || "as advised by orthopedics", staples: v.staples || "____ (at your family doctor's office)", vteWeeks: v.vteWeeks || "____" };
+      wb: v.wb || "as advised by orthopedics", cathChange: v.cathChange || "as arranged (usually every 4 to 12 weeks)", staples: v.staples || "____ (at your family doctor's office)", vteWeeks: v.vteWeeks || "____" };
     return line.replace(/\{(\w+)\}/g, (_, k) => (F[k] != null ? F[k] : "")).trim();
   }
-  const lines = (arr, v, f) => (arr || []).map((l) => fill(l, v, f)).filter(Boolean);
+  const lines = (arr, v, f) => (arr || []).map((l) => fill(l, v, f)).filter((l) => l && !(v && v.sex === "male" && /\bperiods?\b/i.test(l)));
 
   /* ---------- outputs ---------- */
   const STATUS = { new: "NEW", changed: "CHANGED", stopped: "STOPPED", held: "HELD", continue: "CONTINUE", inpatient: "STOP (hospital only)" };

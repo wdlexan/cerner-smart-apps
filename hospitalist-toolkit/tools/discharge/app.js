@@ -25,7 +25,7 @@ function build(raw, key, sv) {
   const f = R.parse(Object.assign({ now: Date.now() }, raw));
   const chg = R.changes(f); chg.labs.forEach((x) => (x.on = x.n > 1 && (x.big || ["cr", "hb", "wt", "k", "na"].includes(x.id)))); chg.newProbs.forEach((x) => (x.on = true));
   const pr = f.patient || {}, nm = pr.name && pr.name[0] ? pr.name[0].text || [(pr.name[0].given || []).join(" "), pr.name[0].family].filter(Boolean).join(" ") : "";
-  const v = Object.assign({ admit: f.admit, dc: Date.now(), fpDays: 7, dx: chg.newProbs.map((x) => x.name).join("; ") || f.encReason || "", ptName: nm }, sv || {});
+  const v = Object.assign({ admit: f.admit, dc: Date.now(), fpDays: 7, sex: pr.gender || "", dx: chg.newProbs.map((x) => x.name).join("; ") || f.encReason || "", ptName: nm }, sv || {});
   S = { key, f, chg, v, meds: R.reconcile(f).map((r) => Object.assign(r, { on: r.status !== "inpatient" })),
     pend: R.pending(f).map((p) => Object.assign(p, { status: [p.status, p.detail].filter(Boolean).join(" - "), detail: "", on: true, owner: /micro|path|culture|biopsy/i.test(p.kind + " " + p.what) ? "Hospitalist (me)" : "Family physician" })),
     inc: R.incidentals(f).map((x) => Object.assign(x, { on: true, owner: "Family physician" })),

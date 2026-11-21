@@ -261,7 +261,7 @@
       patient: [d.name, d.sex, d.birthDate ? "DOB " + d.birthDate : d.age != null ? d.age + " y" : "", d.phn ? "PHN " + d.phn : ""].filter(Boolean).join(", "),
       sections: X().sections(text, 1200), meds: items.filter((i) => i.kind === "med").map((i) => i.text.replace(/\s+/g, " ").trim()),
       labs: items.filter((i) => i.kind === "lab").map((i) => i.label + " " + (i.text != null ? i.text : (i.cmp || "") + i.value + (i.unit ? " " + i.unit : "")) + (i.flag ? " (" + i.flag + ")" : "") + (i.t ? " " + X().iso(i.t) : "")),
-      follow: r.draft.follow, pending, mods, v: { fpDays: r.draft.fpDays }, f: det });
+      follow: r.draft.follow, pending, mods, v: { fpDays: r.draft.fpDays, sex: d.sex }, f: det });
   }
   function draftCard(r, k) {
     draftInit(r); if (!r.draft) return "";

@@ -72,4 +72,17 @@ ok("medKey drops salts", R.medKey("metoprolol tartrate 25 mg PO BID") === "metop
   const note = R.draftNote({ sections: [{ name: "Hospital Course", body: "Course text." }], follow: fu, mods: ["general"], v: {} });
   ok("hc: course in SUMMARY; missed appointment marked to rebook", /SUMMARY\nCourse text\./.test(note) && /missed appointment last Friday: rebook/.test(note), note);
 }
+// discharge-summary style note (MADE-UP): consults, initials, cc lines, "US Renal", divider, own drafts not read back
+{
+  const t = "Plan\nLeave catheter in situ at discharge\n- Home Care referral at discharge for catheter changes\nUrology consult as an outpatient for cystoscopy\n- cc Dr. Madeup on DC Summary\nUS Renal booked [1]\nOutpatient urology consult for cystoscopy.\n- cc Dr. J. Madeup on DC summary[2]\nSpecialists Consulted\nUrology: Dr. J. Madeup\nDisposition\nOutpatient urology consult with cystoscopy. CC Dr. Madeup on discharge summary\n------------------------------\nNB: This document has been created with Dragon Dictate.";
+  const fu = R.followups([{ name: "n", text: t }]), txt = fu.map((x) => x.text);
+  ok("dc: urology once, with cystoscopy and cc; home care; US renal", JSON.stringify(txt) === JSON.stringify(["Home and community care: to refer; catheter changes", "Urology (Dr. Madeup): outpatient consult for cystoscopy; cc on discharge summary", "US Renal booked"]), txt);
+  const det = R.detect(t + " Discharge with urinary catheter. On apixaban for atrial fibrillation.");
+  ok("dc: catheter plan applies", R.modules(det).some((m) => m.id === "catheter"));
+  const w = R.watchFor(["general"].concat(R.modules(det).map((m) => m.id)), { sex: "male" }, det);
+  ok("dc: catheter blocked = Emergency; no 'periods' line for a male patient", w.er.some((x) => /No urine has drained/.test(x)) && !w.call.some((x) => /periods/.test(x)));
+  ok("dc: 'us' as a word is not ultrasound", R.followups([{ name: "n", text: "Please call us to book a follow up appointment." }]).every((x) => x.type !== "imaging"));
+  const f = R.parse({ notes: [{ name: "Imported PDF: x (draft discharge note)", text: "DISCHARGE NOTE (DRAFT)\nFOLLOW-UP IN THE COMMUNITY" }, { name: "Imported PDF: y", text: "DISCHARGE SUMMARY - KEY POINTS FOR FAMILY PHYSICIAN" }, { name: "Progress note", text: "Refer to urology." }] });
+  ok("dc: the toolkit's own drafts are not read back as notes", f.notes.length === 1 && f.notes[0].name === "Progress note");
+}
 console.log(`\n${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);
