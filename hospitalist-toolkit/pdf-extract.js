@@ -200,6 +200,25 @@
     if (out.age == null) { const m = /(?<![\d.])(\d{1,3})\s?(?:y\/?o|yo|yrs?|years?)?\s?-?\s?([MF])\b/.exec(headTxt); if (m && +m[1] >= 15 && +m[1] < 115) out.age = +m[1]; }
     if (!out.sex) { let m = /(?<![\d.])\d{1,3}\s?(?:y\/?o|yo|yrs?|years?(?:[- ]old)?|-year-old)?\s?-?\s?([MF])\b/.exec(headTxt) || /\b(male|female|man|woman|gentleman|lady)\b/i.exec(headTxt) || /\b(Mr|Mrs|Ms|Miss)\.?\s+[A-Z]/.exec(headTxt);
       if (m) out.sex = /^(?:f|female|woman|lady|mrs|ms|miss)$/i.test(m[1]) ? "female" : "male"; }
+    // phone and address (labelled, or an address block under the name: "2048 Some Road" / "Victoria, British Columbia V9B 0A0")
+    const tel = (re) => { for (const l of head) { const m = re.exec(l); if (m) { const d = m[1].replace(/\D/g, ""); if (d.length === 10) return d.slice(0, 3) + "-" + d.slice(3, 6) + "-" + d.slice(6); } } return ""; };
+    const PH = "(\\(?\\d{3}\\)?[\\s.-]*\\d{3}[\\s.-]*\\d{4})\\b";
+    const mob = tel(new RegExp("\\b(?:cell(?:ular)?|mobile)(?: phone)?\\s*[:#.]?\\s*" + PH, "i")); if (mob && !out.mobile) out.mobile = mob;
+    const hph = tel(new RegExp("\\b(?:home phone|phone|tel(?:ephone)?|ph)\\s*[:#.]?\\s*" + PH, "i")); if (hph && !out.phone) out.phone = hph;
+    if (!out.street) {
+      const PROV = "British Columbia|BC|B\\.C\\.|Alberta|AB|Saskatchewan|SK|Manitoba|MB|Ontario|ON|Quebec|QC|Yukon|YT|Nunavut|NU|Northwest Territories|NT|New Brunswick|NB|Nova Scotia|NS|Prince Edward Island|PE|Newfoundland and Labrador|NL";
+      const CITY = new RegExp("^([A-Z][A-Za-z.'’ -]{1,40}?),?\\s+(" + PROV + ")\\.?,?\\s+([A-Z]\\d[A-Z]\\s?\\d[A-Z]\\d)\\b", "i");
+      const STREET = /^(?:(?:unit|suite|apt\.?|#)\s*\w+\s*[-,]?\s*)?\d{1,6}[A-Za-z]?\s+(?:[A-Za-z0-9.'’-]+\s+){0,4}?(?:street|st|road|rd|avenue|ave|drive|dr|crescent|cres|way|place|pl|court|ct|lane|ln|boulevard|blvd|crossing|terrace|trail|close|circle|highway|hwy|row|gate|grove|heights|hts|park|square|sq|parkway|pkwy|landing|walk|view|ridge|green)\b\.?(?:\s+(?:north|south|east|west|[NSEW]))?(?:\s*(?:#|unit|suite|apt\.?)\s*\w+)?/i;
+      for (let i = 0; i < head.length; i++) {
+        let l = head[i].replace(/^(?:address|home address|addr)\s*[:#.]?\s*/i, ""), m = STREET.exec(l);
+        if (!m) continue;
+        let c = CITY.exec(l.slice(m[0].length).replace(/^[\s,]+/, "")) || CITY.exec(head[i + 1] || "");
+        out.street = m[0].replace(/[,\s]+$/, "");
+        if (c) { out.city = c[1].trim(); out.province = /^(?:british columbia|b\.?c\.?)$/i.test(c[2]) ? "BC" : c[2]; out.postal = c[3].toUpperCase().replace(/^(\w{3})\s?(\w{3})$/, "$1 $2"); }
+        break;
+      }
+      if (out.street) out.address = [out.street, out.city, [out.province, out.postal].filter(Boolean).join(" ")].filter(Boolean).join(", ");
+    }
     if (!out.age && out.birthDate) { const b = new Date(out.birthDate), n = new Date(); out.age = n.getFullYear() - b.getFullYear() - (n < new Date(n.getFullYear(), b.getMonth(), b.getDate()) ? 1 : 0); }
     return out;
   }

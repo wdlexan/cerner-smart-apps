@@ -25,7 +25,10 @@
     const identifier = [];
     if (f.phn) identifier.push({ type: { text: "PHN" }, system: "urn:bc:phn", value: f.phn });
     if (f.mrn) identifier.push({ type: { coding: [{ code: "MR" }], text: "MRN (outside)" }, value: f.mrn });
-    return { resourceType: "Patient", id, meta: { tag: [{ system: "urn:toolkit:import", code: "pdf-only-patient", display: "Created from PDF" }] }, name, gender: f.sex || undefined, birthDate, birthDateApproximate: !f.birthDate && !!f.age || undefined, identifier: identifier.length ? identifier : undefined };
+    const telecom = [f.phone && { system: "phone", use: "home", value: f.phone }, f.mobile && { system: "phone", use: "mobile", value: f.mobile }].filter(Boolean);
+    const address = f.street || f.city || f.postal ? [{ use: "home", line: f.street ? [f.street] : undefined, city: f.city || undefined, state: f.province || undefined, postalCode: f.postal || undefined, country: "Canada",
+      text: [f.street, f.city, [f.province, f.postal].filter(Boolean).join(" ")].filter(Boolean).join(", ") }] : undefined;
+    return { resourceType: "Patient", id, meta: { tag: [{ system: "urn:toolkit:import", code: "pdf-only-patient", display: "Created from PDF" }] }, name, gender: f.sex || undefined, birthDate, birthDateApproximate: !f.birthDate && !!f.age || undefined, identifier: identifier.length ? identifier : undefined, telecom: telecom.length ? telecom : undefined, address };
   }
 
   const css = document.createElement("style");
@@ -359,7 +362,9 @@
           <table style="width:auto"><tr><td>Name</td><td><input type="text" id="np-given" placeholder="First name" value="${esc(demo.given || "")}" size="16"> <input type="text" id="np-family" placeholder="Last name" value="${esc(demo.family || "")}" size="16"></td></tr>
             <tr><td>Sex</td><td><select id="np-sex"><option value="">Unknown</option><option value="female"${demo.sex === "female" ? " selected" : ""}>Female</option><option value="male"${demo.sex === "male" ? " selected" : ""}>Male</option></select></td></tr>
             <tr><td>Date of birth</td><td><input type="date" id="np-dob" value="${esc(demo.birthDate || "")}"> or age <input type="text" id="np-age" size="4" value="${demo.birthDate ? "" : esc(demo.age || "")}">${demo.birthAmbiguous ? ' <span class="bad">check day/month</span>' : ""}</td></tr>
-            <tr><td>PHN / outside MRN</td><td><input type="text" id="np-phn" placeholder="PHN" value="${esc(demo.phn || "")}" size="12"> <input type="text" id="np-mrn" placeholder="MRN" value="${esc(demo.mrn || "")}" size="12"></td></tr></table>
+            <tr><td>PHN / outside MRN</td><td><input type="text" id="np-phn" placeholder="PHN" value="${esc(demo.phn || "")}" size="12"> <input type="text" id="np-mrn" placeholder="MRN" value="${esc(demo.mrn || "")}" size="12"></td></tr>
+            <tr><td>Phone / cell</td><td><input type="text" id="np-phone" placeholder="Home phone" value="${esc(demo.phone || "")}" size="14"> <input type="text" id="np-mobile" placeholder="Cell" value="${esc(demo.mobile || "")}" size="14"></td></tr>
+            <tr><td>Address</td><td><input type="text" id="np-street" placeholder="Street" value="${esc(demo.street || "")}" size="30"> <input type="text" id="np-city" placeholder="City" value="${esc(demo.city || "")}" size="14"> <input type="text" id="np-prov" placeholder="Prov" value="${esc(demo.province || "")}" size="4"> <input type="text" id="np-postal" placeholder="Postal code" value="${esc(demo.postal || "")}" size="8"></td></tr></table>
         </div>
       </div>
       <p><button class="primary" id="pdfadd" disabled>Add ticked items</button> <button id="pdfback">Back</button> <button id="pdfx2">Cancel</button> <span class="muted" id="pdfres"></span></p>`;
@@ -388,7 +393,8 @@
     ["np-given", "np-family"].forEach((id) => (document.getElementById(id).oninput = refreshDest));
     pt.onchange = refreshDest; refreshDest();
     // patient details follow the (edited) text: refill boxes the physician has not changed by hand
-    const NP = { "np-given": "given", "np-family": "family", "np-sex": "sex", "np-dob": "birthDate", "np-age": "age", "np-phn": "phn", "np-mrn": "mrn" };
+    const NP = { "np-given": "given", "np-family": "family", "np-sex": "sex", "np-dob": "birthDate", "np-age": "age", "np-phn": "phn", "np-mrn": "mrn",
+      "np-phone": "phone", "np-mobile": "mobile", "np-street": "street", "np-city": "city", "np-prov": "province", "np-postal": "postal" };
     Object.keys(NP).forEach((id) => { const el = document.getElementById(id); if (el) el.dataset.auto = el.value; });
     const refill = () => {
       const txt = results.map((r, k) => (document.getElementById("pdftxt" + k) || {}).value || r.text).join("\n");
@@ -404,7 +410,9 @@
       if (d === "existing") target = document.getElementById("pdfexist").value;
       if (d === "new") {
         const f = { given: document.getElementById("np-given").value.trim(), family: document.getElementById("np-family").value.trim(), sex: document.getElementById("np-sex").value,
-          birthDate: document.getElementById("np-dob").value, age: document.getElementById("np-age").value.trim(), phn: document.getElementById("np-phn").value.trim(), mrn: document.getElementById("np-mrn").value.trim() };
+          birthDate: document.getElementById("np-dob").value, age: document.getElementById("np-age").value.trim(), phn: document.getElementById("np-phn").value.trim(), mrn: document.getElementById("np-mrn").value.trim(),
+          phone: document.getElementById("np-phone").value.trim(), mobile: document.getElementById("np-mobile").value.trim(), street: document.getElementById("np-street").value.trim(), city: document.getElementById("np-city").value.trim(),
+          province: document.getElementById("np-prov").value.trim(), postal: document.getElementById("np-postal").value.trim().toUpperCase() };
         target = "pdfpt-" + hash([f.given, f.family, f.birthDate, Date.now()].join("|"));
         created = patientResource(target, f);
       }

@@ -248,4 +248,13 @@ Doing well on treatment. Sodium 131 mmol/L today. Continue the current plan and 
   ok("typed: 'Phone Report' is not a name", !D("Phone Report\nNa 131").family);
   ok("typed: 'Temp 38.5 F' is not sex", !D("Temp 38.5 F\nNa 131").sex);
 }
+// phone and address from typed/pasted text (MADE-UP)
+{
+  let d = X.demographics("Madeup Testpatient\n123 Fake Crossing\nVictoria, British Columbia V9B 0A0\nPhone: (250) 555-0133\nDOB: 02-JUL-1940");
+  ok("address block under the name + phone", d.street === "123 Fake Crossing" && d.city === "Victoria" && d.province === "BC" && d.postal === "V9B 0A0" && d.phone === "250-555-0133", d);
+  d = X.demographics("Patient: TEST, MADEUP\nAddress: 45 Elm St, Nanaimo, BC V9R 1A1\nCell: 250.555.0144\nHome phone 250 555 0145");
+  ok("labelled address on one line, cell and home phone", d.address === "45 Elm St, Nanaimo, BC V9R 1A1" && d.mobile === "250-555-0144" && d.phone === "250-555-0145", d);
+  ok("unit number kept", X.demographics("Unit 4 - 980 Testing Road\nLangford, BC V9B 1B1").address === "Unit 4 - 980 Testing Road, Langford, BC V9B 1B1");
+  ok("lab line is not an address", !X.demographics("Sodium 128 mmol/L\n2 units given").street);
+}
 console.log(`\n${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);
