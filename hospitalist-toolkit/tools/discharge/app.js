@@ -129,7 +129,18 @@ $("addinc").onclick = () => { if (!S) return; S.inc.push({ finding: "", source: 
   $("rb-" + k).onclick = () => { if (!S) return; if (S.dirty[k] && !confirm("Rebuild from the sections above? Your edits in this box will be lost.")) return; outputs(k); save(); };
 });
 async function copy(btn, ta) { try { await navigator.clipboard.writeText(ta.value); } catch (e) { ta.select(); document.execCommand("copy"); } const t = btn.textContent; btn.textContent = "Copied"; setTimeout(() => (btn.textContent = t), 1500); }
-$("copy-fp").onclick = (e) => copy(e.target, $("out-fp")); $("copy-pt").onclick = (e) => copy(e.target, $("out-pt"));
+$("copy-fp").onclick = (e) => copy(e.target, $("out-fp"));
+$("ai-fp").onclick = () => {
+  if (!S) return; if (!$("ai-panel").hidden) { $("ai-panel").hidden = true; return; }
+  const pr = S.f.patient || {}, n = (pr.name && pr.name[0]) || {}, ids = (pr.identifier || []).map((i) => i.value).filter(Boolean);
+  const demo = { given: (n.given || []).join(" "), family: n.family || "", birthDate: pr.birthDate };
+  const src = ["DRAFT DISCHARGE NOTE (from the chart):", $("out-fp").value, "", "NOTES AND REPORTS:"].concat(S.f.notes.map((x) => x.name + ":\n" + x.text), S.f.reports.filter((r) => r.text).map((r) => r.name + ": " + r.text)).join("\n").slice(0, 14000);
+  let note = R.deidentify(src, demo); ids.forEach((id) => { note = note.split(id).join("[ID]"); });
+  const age = pr.birthDate ? Math.floor((Date.now() - new Date(pr.birthDate)) / (365.25 * DAY)) : "";
+  $("ai-text").value = R.aiPrompt({ note, found: S.fol.filter((x) => x.on !== false).map((x) => x.text).concat(S.pend.filter((p) => p.on !== false).map((p) => "Pending: " + p.what)), age: age >= 90 ? "90+" : age, sex: pr.gender || "" });
+  $("ai-panel").hidden = false;
+};
+$("ai-go").onclick = async () => { const ta = $("ai-text"); try { await navigator.clipboard.writeText(ta.value); } catch (e) { ta.select(); document.execCommand("copy"); } const url = R.claudeUrl(ta.value); window.open(url, "_blank", "noopener"); $("ai-msg").textContent = url.includes("?q=") ? "Copied and opened. If the message box in Claude is empty, paste (Ctrl+V)." : "Copied. The text is long: paste it into Claude (Ctrl+V)."; }; $("copy-pt").onclick = (e) => copy(e.target, $("out-pt"));
 $("print-pt").onclick = () => {
   const body = esc($("out-pt").value).split("\n").map((l) => (/^[A-Z0-9][A-Z0-9 ,'()\-:/.]+:?$/.test(l.trim()) && l.trim().length > 3 ? `<h2>${l}</h2>` : /^\s+- /.test(l) ? `<li>${l.replace(/^\s+- /, "")}</li>` : l.trim() ? `<p>${l}</p>` : "")).join("\n").replace(/(<li>[\s\S]*?<\/li>)(?!\s*<li>)/g, "$1</ul>").replace(/(?<!<\/li>\s*)<li>/g, "<ul><li>");
   const w = window.open("", "_blank"); if (!w) return alert("Allow pop-ups to print.");

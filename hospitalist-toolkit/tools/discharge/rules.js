@@ -139,10 +139,10 @@
       er: ["You cannot put weight on the leg when you could before, or the leg looks shorter or turned out.", "Sudden shortness of breath or chest pain.", "Another fall with a new injury."],
       fp: ["Bone health: start or continue osteoporosis treatment (e.g. bisphosphonate or denosumab) after vitamin D and calcium are replete; BMD if needed.", "Falls risk review (medicines, vision, home safety); confirm orthopedic follow-up and staple removal."] },
     { id: "catheter", name: "Urinary catheter at home", prob: ["catheter", "retention"],
-      home: ["Keep the drainage bag below your bladder and the tubing free of kinks. Empty the bag when it is half full.", "Wash around the catheter with soap and water every day. Wash your hands before and after touching it.", "Drink plenty of fluids (unless you were told to limit fluids), so your urine stays pale.", "Your home care nurse will change the catheter: {cathChange}."],
-      call: ["Urine is cloudy, smells bad, or you have burning or pain in your lower belly.", "Urine is leaking around the catheter, or the catheter comes out.", "Blood in the urine that is getting worse, or small clots."],
-      er: ["No urine has drained for 2 hours or more and your lower belly is swollen or painful, and the nurse cannot fix it.", "Fever with shaking chills, or new confusion.", "Large clots or bright red urine that does not clear."],
-      fp: ["Catheter care and changes by home care; trial of void / urology plan as arranged."] },
+      home: ["Keep the drainage bag below your bladder and the tubing free of kinks. Empty the bag when it is half full. Use a night bag at bedtime.", "Wash around the catheter with soap and water every day. Wash your hands before and after touching it.", "Drink plenty of fluids (unless you were told to limit fluids), so your urine stays pale.", "Avoid constipation (it can block the catheter or make it leak): take your laxative and eat fibre.", "Do not pull on the catheter or try to put it back in yourself. Your home care nurse will change it: {cathChange}.", "If the urine stops draining: check the tubing for kinks, that the bag is below your bladder, and that you are not lying on the tube."],
+      call: ["Fever, burning or pain in your lower belly or back, or new confusion (signs of infection). Cloudy or smelly urine alone is common with a catheter and is not an infection by itself.", "Urine is leaking around the catheter, or you have painful bladder cramps.", "Pink urine that is not clearing, or small clots.", "Pain, redness or discharge where the catheter goes in, or a swollen, painful scrotum.", "You feel dizzy or light-headed when you stand up (the prostate medicine and water pills can lower your blood pressure)."],
+      er: ["No urine has drained for 2 hours or more and your lower belly is swollen or painful, and the nurse cannot fix it.", "The catheter falls out and you cannot pee within a few hours, or your lower belly becomes full and painful.", "Bright red urine or large clots that do not clear, especially on a blood thinner.", "Fever with shaking chills, back pain, vomiting, or new confusion."],
+      fp: ["Catheter: home care changes (every 4 to 12 weeks by type); treat constipation; for bypassing check blockage and constipation first (mirabegron rather than anticholinergic for spasm in older adults).", "Do not culture or treat cloudy/smelly urine without symptoms (catheters are always colonized); if symptomatic, culture from a new catheter or the sampling port.", "Urology: trial of void (after several weeks of an alpha-blocker) and cystoscopy as arranged.", "PSA taken during retention/catheterization is falsely high: repeat about 6 weeks or more after the catheter is out, or leave to urology.", "Tamsulosin: orthostatic dizziness and falls; tell the eye surgeon before cataract surgery (floppy iris)."] },
     { id: "opioid", name: "Opioid pain medicine", med: "opioid",
       home: ["Take the lowest dose you need and stop as the pain improves. Use acetaminophen (Tylenol) regularly first if you can.", "Do not drive, drink alcohol, or take sleeping pills or cannabis with this medicine.", "Take a laxative every day while on it.", "Keep it locked away from children and others. Return unused pills to a pharmacy.", "Ask your pharmacist for a free take-home naloxone kit."],
       call: ["You are constipated for more than 3 days, or very sleepy during the day."],
@@ -289,7 +289,7 @@
   function whoIs(text) {
     const map = {}, t = String(text || "");
     let re = new RegExp("(" + SPEC.source.replace(/^\\b\(|\)\\b$/g, "") + ")\\s*\\((?:Dr\\.?\\s*)?(?:[A-Z]\\.\\s*)*([A-Z][a-zA-Z'’-]+)", "gi"), m;
-    while ((m = re.exec(t))) map[m[2].toLowerCase()] = m[1];
+    while ((m = re.exec(t))) if (!/^(?:tbd|tba|na|n\/a)$/i.test(m[2])) map[m[2].toLowerCase()] = m[1];
     re = new RegExp("Dr\\.?\\s*(?:[A-Z]\\.\\s*)*([A-Z][a-zA-Z'’-]+)\\s*\\((" + SPEC.source.replace(/^\\b\(|\)\\b$/g, "") + ")\\)", "gi");
     while ((m = re.exec(t))) map[m[1].toLowerCase()] = m[2];
     // "Urology: Dr. J. McCracken" (Specialists Consulted list)
@@ -405,6 +405,44 @@
     return L.join("\n");
   }
 
+  /* ---------- ask Claude: remove identifiers, then build the request ---------- */
+  // demo: {given, family, phn, mrn, birthDate}. Removes the patient's names, PHN, MRN, DOB, phone, email, address/residence, doctors' names, long ID numbers, age 90+.
+  function deidentify(text, demo) {
+    let t = String(text || ""); const d = demo || {};
+    const names = [d.family, d.given].concat(String(d.given || "").split(/\s+/)).filter((n) => n && n.length > 1);
+    names.forEach((n) => { t = t.replace(new RegExp("\\b" + n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b", "gi"), "[patient]"); });
+    // doctors' surnames written elsewhere without "Dr." ("nephrology (MacDonald)")
+    const drs = new Set([...t.matchAll(/\b(?:Dr|Drs)\.?\s*(?:[A-Z]\.\s*)*([A-Z][a-zA-Z'’-]{2,})/g)].map((m) => m[1]).concat(Object.keys(whoIs(t)).map((k) => k)));
+    drs.forEach((n) => { if (/^(?:the|and|for|with)$/i.test(n)) return; t = t.replace(new RegExp("\\b" + n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b", "gi"), "[name]"); });
+    t = t.replace(/\b(?:dob|d\.o\.b\.?|date of birth|birth ?date)\b\s*[:#]?\s*[^\n]{0,24}/gi, "DOB: [removed]")
+      .replace(/\b(?:phn|personal health number|hcn)\b\s*[:#]?\s*[\d\s]{9,14}/gi, "PHN: [removed]")
+      .replace(/\b(?:mrn|medical record(?: number| no\.?)?|fin|encounter\s*#|encounter number|account(?: number| #)?)\b\s*[:#]?\s*[A-Z0-9-]{4,}/gi, "$1: [removed]".replace("$1", "ID"))
+      .replace(/\b\d{3}[-.\s]\d{3}[-.\s]\d{4}\b/g, "[phone]").replace(/[\w.+-]+@[\w-]+\.[\w.]+/g, "[email]")
+      .replace(/\b\d{7,}\b|\b\d{4}\s\d{3}\s\d{3}\b/g, "[number]")
+      .replace(/\b(?:Dr|Drs)\.?\s*(?:[A-Z]\.\s*)*[A-Z][a-zA-Z'’-]+(?:,\s*[A-Z][a-zA-Z'’-]+(?:\s+[A-Z][a-zA-Z'’-]+)*(?:,\s*MD)?)?/g, "Dr. [name]")
+      .replace(/\b[A-Z][a-zA-Z'’-]+,\s*[A-Z][a-zA-Z'’-]+(?:\s+[A-Z][a-zA-Z'’-]+)?,\s*MD\b/g, "Dr. [name]")
+      .replace(/\b[A-Z][a-zA-Z'’-]+\s+DR\b,?\s*(?:[A-Z][a-zA-Z'’-]+\s*){1,4}/g, "Dr. [name] ")
+      .replace(/\b(9\d|1[01]\d)[- ]?(?:year[- ]old|yo|y\/o|y)\b/gi, "90+ year old")
+      .replace(/^(\s*(?:type of residence|address|residence|lives at)\s*:?)[ \t]*(\S[^\n]*)?\n?([^\n]*)/gim, (m, h, a, b) => h + " [removed]\n")
+      .replace(/\b(?:printed by|electronically signed by|sign(?:ed)? information|dictated by)\b[^\n]*/gi, "[signature removed]");
+    return t;
+  }
+  function aiPrompt(o) { // o = { note (already de-identified), found: [lines], sex, age }
+    return [
+      "I am a hospitalist in British Columbia, Canada, writing the follow-up part of a discharge summary. The hospital note below has had identifiers removed.",
+      "", "Please give, concisely and without repeating yourself (bullet points, no patient pronouns):",
+      "1. FOLLOW-UP IN THE COMMUNITY: specialist referrals, imaging/procedures and lab tests, with timing and who arranges each. Include follow-up the note implies but does not state (for example labs after medicine changes, repeat tests, device care).",
+      "2. TASKS FOR THE FAMILY PHYSICIAN, with timing.",
+      "3. PROBLEMS THE PATIENT MAY HAVE AT HOME from these conditions, devices and medicines: (a) go to Emergency or call 9-1-1; (b) see the family doctor or call 8-1-1 (HealthLink BC) the same day.",
+      "4. The same return precautions in plain language for the patient (about grade 6 reading level).",
+      "Use Canadian/BC practice. Do not invent findings that are not in the note; flag anything uncertain. Avoid advice that leads to treating asymptomatic findings.",
+      o.age || o.sex ? "Patient: " + [o.age ? o.age + " years" : "", o.sex || ""].filter(Boolean).join(", ") + "." : "",
+      o.found && o.found.length ? "\nAlready found in the note:\n" + o.found.map((x) => "- " + x).join("\n") : "",
+      "\n--- NOTE ---\n" + String(o.note || "").trim()].filter((x) => x !== "").join("\n");
+  }
+  const CLAUDE_NEW = "https://claude.ai/new";
+  function claudeUrl(prompt) { const q = encodeURIComponent(prompt); return q.length <= 7000 ? CLAUDE_NEW + "?q=" + q : CLAUDE_NEW; }
+
   /* ---------- which condition modules apply ---------- */
   function modules(f) {
     const has = (x, map) => (Array.isArray(x) ? x : [x]).some((k) => k && map[k]);
@@ -499,6 +537,6 @@
     return L.join("\n");
   }
 
-  const api = { parse, reconcile, changes, pending, incidentals, modules, fpNote, patientText, followups, detect, watchFor, draftNote, FTYPES, fill, medKey, doseOf, MODULES, KEYLABS, PROB, MEDCLASS, STATUS, DAY, fmtD, sentences };
+  const api = { parse, reconcile, changes, pending, incidentals, modules, fpNote, patientText, followups, detect, watchFor, draftNote, deidentify, aiPrompt, claudeUrl, FTYPES, fill, medKey, doseOf, MODULES, KEYLABS, PROB, MEDCLASS, STATUS, DAY, fmtD, sentences };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else window.DcRules = api;
 })();

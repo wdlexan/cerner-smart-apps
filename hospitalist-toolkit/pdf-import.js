@@ -274,6 +274,11 @@
         <td><input type="text" class="dctext" data-k="${k}" data-i="${i}" value="${esc(x.text)}" style="width:100%"></td><td><input type="text" class="dcwhen" data-k="${k}" data-i="${i}" value="${esc(x.when)}" size="14" placeholder="e.g. in 1 week"></td></tr>`).join("") || `<tr><td colspan="4" class="muted">None found in the note.</td></tr>`}</table>
       <div class="row"><button data-dcadd="${k}">Add a follow-up</button> <label>See family doctor within <input type="text" class="dcfp" data-k="${k}" value="${esc(r.draft.fpDays)}" size="3"> days</label></div>
       <textarea id="pdfdc${k}" rows="20" class="mono" spellcheck="true" style="white-space:pre-wrap">${esc(r.draft.out)}</textarea>
+      <div class="row"><button data-dcai="${k}" title="Opens Claude with this note (identifiers removed) and asks for more follow-up detail">Ask Claude for more follow-up detail</button></div>
+      <div id="pdfai${k}" hidden style="border:1px solid #f0c27b;background:#fff8ec;border-radius:8px;padding:8px 10px;margin:6px 0">
+        <div style="font-size:12.5px">Sends text to Claude (claude.ai), outside Island Health. Names, PHN, MRN, DOB, phone, address and doctors\u2019 names are removed automatically: <b>read the text below before sending</b>. Use made-up or sandbox notes until Island Health approves real data. Claude\u2019s answer is a draft: check it before it goes in the chart.</div>
+        <textarea id="pdfaitext${k}" rows="12" class="mono" spellcheck="false"></textarea>
+        <div class="row"><button class="primary" data-dcaigo="${k}">Copy and open Claude</button> <span class="muted" id="pdfaimsg${k}"></span></div></div>
       <div class="row"><button data-dccopy="${k}">Copy draft note</button> <button data-dcrb="${k}">Rebuild from above</button> <label><input type="checkbox" class="dckeep" data-k="${k}" checked> Keep this draft as a note for the patient</label> <span class="muted" id="pdfdcmsg${k}">${r.draft.dirty ? "Edited by you: changes above no longer update it (Rebuild to start again)." : ""}</span></div>
       <div class="muted">"What to watch for" uses standard return-precaution text for the conditions and medicines named in the note (heart failure, COPD, infection, blood thinner, diabetes…): check it fits this patient. UNVERIFIED draft written by Claude.</div></details>`;
   }
@@ -288,6 +293,19 @@
     box.querySelectorAll("button[data-dcadd]").forEach((b) => (b.onclick = () => { const r = results[+b.dataset.dcadd]; r.draft.follow.push({ type: "referral", text: "", when: "", on: true }); review(results, problems); }));
     box.querySelectorAll("textarea[id^=pdfdc]").forEach((t) => (t.oninput = () => { const r = results[+t.id.slice(5)]; r.draft.out = t.value; r.draft.dirty = true; const m = document.getElementById("pdfdcmsg" + t.id.slice(5)); if (m) m.textContent = "Edited by you: changes above no longer update it (Rebuild to start again)."; saveLast(results, problems); }));
     box.querySelectorAll("button[data-dcrb]").forEach((b) => (b.onclick = () => { const r = results[+b.dataset.dcrb]; if (r.draft.dirty && !confirm("Rebuild the draft note? Your edits in it will be lost.")) return; r.draft.dirty = false; redo(b.dataset.dcrb); const m = document.getElementById("pdfdcmsg" + b.dataset.dcrb); if (m) m.textContent = ""; }));
+    box.querySelectorAll("button[data-dcai]").forEach((b) => (b.onclick = () => {
+      const k = b.dataset.dcai, r = results[+k], panel = document.getElementById("pdfai" + k);
+      if (!panel.hidden) { panel.hidden = true; return; }
+      const text = r.textDraft != null ? r.textDraft : r.text, d = X().demographics(text);
+      document.getElementById("pdfaitext" + k).value = D().aiPrompt({ note: D().deidentify(text, d), found: r.draft.follow.filter((x) => x.on !== false).map((x) => x.text), age: d.age != null ? (d.age >= 90 ? "90+" : d.age) : "", sex: d.sex || "" });
+      panel.hidden = false;
+    }));
+    box.querySelectorAll("button[data-dcaigo]").forEach((b) => (b.onclick = async () => {
+      const k = b.dataset.dcaigo, ta = document.getElementById("pdfaitext" + k), msg = document.getElementById("pdfaimsg" + k);
+      try { await navigator.clipboard.writeText(ta.value); } catch (e) { ta.select(); document.execCommand("copy"); }
+      const url = D().claudeUrl(ta.value); window.open(url, "_blank", "noopener");
+      msg.textContent = url.includes("?q=") ? "Copied and opened. If the message box in Claude is empty, paste (Ctrl+V)." : "Copied. The note is long: paste it into Claude (Ctrl+V).";
+    }));
     box.querySelectorAll("button[data-dccopy]").forEach((b) => (b.onclick = async () => { const ta = document.getElementById("pdfdc" + b.dataset.dccopy); try { await navigator.clipboard.writeText(ta.value); } catch (e) { ta.select(); document.execCommand("copy"); } b.textContent = "Copied"; setTimeout(() => (b.textContent = "Copy draft note"), 1500); }));
   }
   const fmtVal = (it) => (it.kind === "lab" ? (it.text != null ? it.text : (it.cmp || "") + it.value) : it.kind === "vital" ? (it.key === "bp" ? it.value + "/" + it.value2 : String(it.value)) : it.kind === "med" ? it.text : it.kind === "condition" ? "" : "");

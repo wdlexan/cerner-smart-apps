@@ -137,7 +137,11 @@
     <details class="card" open>
       <summary><span>Discharge note for the family doctor</span><span class="muted">edit, then copy into the PowerChart discharge summary</span></summary>
       <div class="body"><textarea class="out" id="out-fp" spellcheck="true"></textarea>
-        <div class="row"><button class="primary" id="copy-fp">Copy note</button> <button id="rb-fp">Rebuild from above</button> <span class="dirty" id="dirty-fp"></span></div></div>
+        <div class="row"><button class="primary" id="copy-fp">Copy note</button> <button id="rb-fp">Rebuild from above</button> <button id="ai-fp" title="Opens Claude with the notes and this draft (identifiers removed) and asks for more follow-up detail">Ask Claude for more follow-up detail</button> <span class="dirty" id="dirty-fp"></span></div>
+        <div id="ai-panel" hidden style="border:1px solid var(--warn-line);background:var(--warn-bg);border-radius:8px;padding:8px 10px;margin-top:6px">
+          <div style="font-size:12.5px">Sends text to Claude (claude.ai), outside Island Health. Names, PHN, MRN, DOB, phone, address and doctors\u2019 names are removed automatically: <b>read the text below before sending</b>. Use made-up or sandbox notes until Island Health approves real data. Claude\u2019s answer is a draft: check it before it goes in the chart.</div>
+          <textarea class="out" id="ai-text" spellcheck="false" style="min-height:220px"></textarea>
+          <div class="row"><button class="primary" id="ai-go">Copy and open Claude</button> <span class="muted" id="ai-msg"></span></div></div></div>
     </details>
 
     <details class="card" open>
@@ -148,9 +152,9 @@
   </main>
   <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
   <script src="../../pdf-overlay.js?v=20261120p"></script>
-  <script src="rules.js?v=20261121g"></script>
+  <script src="rules.js?v=20261121h"></script>
   <script src="chart.js?v=20261121a"></script>
   <script src="samples.js?v=20261121b"></script>
-  <script src="app.js?v=20261121f"></script>
+  <script src="app.js?v=20261121g"></script>
 </body>
 </html>

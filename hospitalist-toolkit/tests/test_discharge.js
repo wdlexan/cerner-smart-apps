@@ -85,4 +85,16 @@ ok("medKey drops salts", R.medKey("metoprolol tartrate 25 mg PO BID") === "metop
   const f = R.parse({ notes: [{ name: "Imported PDF: x (draft discharge note)", text: "DISCHARGE NOTE (DRAFT)\nFOLLOW-UP IN THE COMMUNITY" }, { name: "Imported PDF: y", text: "DISCHARGE SUMMARY - KEY POINTS FOR FAMILY PHYSICIAN" }, { name: "Progress note", text: "Refer to urology." }] });
   ok("dc: the toolkit's own drafts are not read back as notes", f.notes.length === 1 && f.notes[0].name === "Progress note");
 }
+// ask Claude: identifiers removed (MADE-UP note) and the request
+{
+  const t = "Patient: TESTER, Annie\nDOB: 1950-02-03  PHN: 9999 999 999  MRN: 7654321\nType of Residence\nOwn home in Sometown. Phone 250-555-0199.\nFollowed by nephrology (Dr. Madeup) and internal medicine (Dr. Q. Fakeman). Follow up will be with nephrology (Madeup).\nAnnie is 93 year old.\n[1] Consult Note; Testdoc DR, Anne Marie 11/18/2026";
+  const di = R.deidentify(t, { given: "Annie", family: "Tester" });
+  ok("deidentify: patient name, DOB, PHN, MRN, phone, residence, doctors (with and without Dr.), signature, age 90+",
+    !/Tester|Annie|1950-02-03|9999 999 999|7654321|250-555-0199|Sometown|Madeup|Fakeman|Testdoc|Anne Marie|93 year/.test(di) && /\[patient\]/.test(di) && /90\+ year old/.test(di), di);
+  const pr = R.aiPrompt({ note: di, found: ["Nephrology: follow-up"], age: 80, sex: "male" });
+  ok("aiPrompt: asks for community follow-up, FP tasks, 9-1-1 / family doctor, plain language; includes found items and note", /FOLLOW-UP IN THE COMMUNITY/.test(pr) && /TASKS FOR THE FAMILY PHYSICIAN/.test(pr) && /9-1-1/.test(pr) && /8-1-1/.test(pr) && /grade 6/.test(pr) && /- Nephrology: follow-up/.test(pr) && /--- NOTE ---/.test(pr));
+  ok("claudeUrl: short text prefilled, long text plain link", /^https:\/\/claude\.ai\/new\?q=/.test(R.claudeUrl("hello")) && R.claudeUrl("x".repeat(9000)) === "https://claude.ai/new");
+  const w = R.watchFor(["catheter"], {}, { medClass: {} });
+  ok("catheter: cloudy/smelly urine alone is not a reason to call; symptoms are; catheter out is Emergency", w.call.some((x) => /not an infection by itself/.test(x)) && !w.call.some((x) => /^Urine is cloudy/.test(x)) && w.er.some((x) => /falls out/.test(x)));
+}
 console.log(`\n${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);
