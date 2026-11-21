@@ -180,6 +180,83 @@
 
         // =====================================================================
         {
+            // Fillable PDF (Island Health 9-90982 V3 AUG 2025): values go into the PDF's own fields (acro), so it stays editable.
+            id: "hfc",
+            title: "Heart Function Clinic Referral (Island Health)",
+            description: "Victoria / Nanaimo / Campbell River Heart Function Clinic (form 9-90982 V3, Aug 2025)",
+            category: "Referral",
+            template: "HeartFunctionReferral.pdf",
+            acro: true,
+            filePrefix: "HeartFunctionReferral",
+            fileNameFrom: "patientName",
+            footer: "Attach: echo (past 6 months), CBC, urea, creatinine, eGFR, Na, K, BNP/NT-proBNP (past 3 months) and the current medication list. Fax to the clinic ticked. For immediate advice: RACE line (Cardiology).",
+            sections: [
+                {
+                    legend: "Referral", fields: [
+                        { id: "date", label: "Referral date", type: "date", src: "today", fmt: "dmon", acro: "Referral Date ddMmmyyyy" },
+                        { id: "urgency", label: "Category", type: "radio", important: true, span: 4, options: [
+                            { value: "urgent", label: "URGENT (2 weeks): worsening HF, post HF hospitalization, new HF and unstable, post-MI HF", acro: "Check Box2" },
+                            { value: "semi", label: "Semi-urgent (4 weeks): new HF and stable, or symptomatic but not decompensated", acro: "Check Box3" }] },
+                        { id: "clinic", label: "Send to", type: "radio", important: true, value: "victoria", span: 4, options: [
+                            { value: "victoria", label: "Victoria HFC, Cardiology (ph 250-519-1601, fax 250-370-8267)", acro: "Victoria Heart Function Clinic" },
+                            { value: "nanaimo", label: "Nanaimo HFC, Cardiology/IM (ph 250-740-6989, fax 250-716-1852)", acro: "Nanaimo Heart Function Clinic" },
+                            { value: "campbell", label: "Campbell River HFC, IM (ph 250-286-7153, fax 250-850-2127)", acro: "Campbell River Heart Function Clinic" }] },
+                        { id: "source", label: "Referral source", type: "radio", value: "ed", span: 4, options: [
+                            { value: "pcp", label: "PCP", acro: "PCP" }, { value: "im", label: "Internal Medicine", acro: "Internal Medicine" }, { value: "cardio", label: "Cardiology", acro: "Cardiology" },
+                            { value: "ed", label: "ED/Hospital", acro: "EDHospital" }, { value: "walkin", label: "Walk In Clinic", acro: "Walk In Clinic" }] },
+                        { id: "rereferral", label: "Re-referral?", type: "radio", value: "no", options: [
+                            { value: "yes", label: "Yes", acro: "undefined" }, { value: "no", label: "No", acro: "undefined_2" }] }
+                    ]
+                },
+                {
+                    legend: "Patient", fields: [
+                        { id: "patientName", label: "Patient name", type: "text", src: "pt.fullName", required: true, acro: "Patient Name" },
+                        { id: "dob", label: "Date of birth", type: "date", src: "pt.dob", required: true, fmt: "dmon", acro: "Date of birth ddMmmyyyy" },
+                        { id: "phn", label: "PHN", type: "text", src: "pt.phn", phn: true, acro: "PHN" },
+                        { id: "ptPhone", label: "Patient telephone", type: "text", src: "pt.homePhone", acro: "Patient Telephone" },
+                        { id: "address", label: "Patient address", type: "text", src: "pt.addressOneLine", span: 4, acro: "Patient Address", size: 8 },
+                        { id: "email", label: "Patient email", type: "text", src: "pt.email", acro: "Patient Email" },
+                        { id: "support", label: "Support person / relationship", type: "text", acro: "Support PersonRelationship" },
+                        { id: "supportContact", label: "Support person contact", type: "text", acro: "Support Person Contact" }
+                    ]
+                },
+                {
+                    legend: "Referred by", fields: [
+                        { id: "refName", label: "Referring physician", type: "fixed", src: "cfg.shortName", acro: "Referring Physician" },
+                        { id: "refMsp", label: "MSP #", type: "fixed", src: "cfg.msp", acro: "Text1" },
+                        { id: "refPhone", label: "Telephone", type: "fixed", src: "cfg.phone", acro: "Telephone" },
+                        { id: "refFax", label: "Fax", type: "text", src: "cfg.fax", acro: "Fax" },
+                        { id: "locum", label: "Locum", type: "check", acro: "Locum" },
+                        { id: "pcp", label: "Primary care provider (family doctor / NP)", type: "text", span: 3, acro: "Primary Care Provider Same as referring practitioner", size: 8 },
+                        { id: "pcpSame", label: "PCP same as referring practitioner", type: "check", acro: "undefined_3" },
+                        { id: "copies", label: "Specialists / care providers to copy on consultations", type: "textarea", span: 4, acro: "SpecialistsAdditional Care Providers to be Copied on Consultations", size: 8 }
+                    ]
+                },
+                {
+                    legend: "Specific question", fields: [
+                        { id: "question", label: "Specific question to be addressed (about 4 lines on the form)", type: "textarea", important: true, span: 4,
+                          acro: "SPECIFIC QUESTION THE REFERRING PROVIDER WOULD LIKE ADDRESSED Consider RACE Line Cardiology for immediate support", size: 9 }
+                    ]
+                },
+                {
+                    legend: "Attached", fields: [
+                        { id: "required", label: "All referrals require", type: "checks", important: true, span: 4, options: [
+                            { value: "echo", label: "Echocardiogram (past 6 months)", acro: "Echocardiogram in past 6 months" },
+                            { value: "labs", label: "CBC, urea, creatinine, eGFR, Na, K, BNP/NT-proBNP (past 3 months)", acro: "CBC urea creatinine eGFR Na K BNPNTproBNP in the past 3 months" },
+                            { value: "meds", label: "Current medication list", acro: "Current medication list" }] },
+                        { id: "outside", label: "Supporting documents outside Island Health", type: "checks", span: 4, options: [
+                            { value: "consult", label: "Consultants notes", acro: "Consultants notes" },
+                            { value: "labsOut", label: "Labs and diagnostics not in LifeLabs or Cerner", acro: "Labs and diagnostics not available life labs or Cerner" }] },
+                        { id: "amyloid", label: "If suspected / confirmed cardiac amyloidosis", type: "checks", span: 4, options: [
+                            { value: "amyLabs", label: "Troponin, SPEP/UPEP with immunofixation, serum free light chains (past 3 months)", acro: "Troponin SPEPUPEP with immunofixation serum free light chains in the past 3 months" },
+                            { value: "pyp", label: "Technetium PYP scan", acro: "Technetium PYP Scan" },
+                            { value: "cmr", label: "Cardiac MRI", acro: "Cardiac MRI" }] }
+                    ]
+                }
+            ]
+        },
+        // =====================================================================
+        {
             id: "pulse",
             title: "Pulse – Cardiology & Respirology Referral",
             description: "Pulse Complete Cardiac Care (Version: March 2026, fax 250-595-1000)",

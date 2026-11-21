@@ -343,6 +343,35 @@ async function genericFill(PDFLib, bytes, form, v) {
         page.drawText("X", { x: (x0 + x1) / 2 - w / 2, y: PAGE_H - (top + bottom) / 2 - size * 0.35, size, font, color: ink });
     };
 
+    // Fillable PDFs (form.acro): write into the PDF's own fields, so the saved PDF can still be edited in Acrobat / Edge.
+    //   text: f.acro = field name;  check: f.acro;  radio / checks: option.acro = check-box name
+    const acro = form.acro ? pdf.getForm() : null;
+    const acroText = (name, str, f) => {
+        try {
+            const t = acro.getTextField(name);
+            if (f.type === "textarea") t.enableMultiline();
+            t.setFontSize(f.size || (f.type === "textarea" ? 9 : 10));
+            t.setText(cleanText(String(str)));
+        } catch (e) { notes.push(`Could not fill “${f.label}” (${e.message}).`); }
+    };
+    // tick, and redraw the tick as a plain vector check (some forms use a ZapfDingbats tick that not every viewer shows)
+    const acroCheck = (name) => { try { const cb = acro.getCheckBox(name); cb.check();
+        try { cb.acroField.getWidgets().forEach((w) => { const mk = w.getAppearanceCharacteristics(); if (mk && mk.getBorderColor() && mk.getBorderColor().length) w.getOrCreateBorderStyle().setWidth(1); }); cb.updateAppearances(); } catch (e) {} } catch (e) { notes.push(`Could not tick “${name}”.`); } };
+    if (acro) {
+        for (const f of allFields(form)) {
+            const val = v[f.id];
+            if (f.type === "check") { if (val && f.acro) acroCheck(f.acro); continue; }
+            if (f.type === "radio" || f.type === "select") { const o = (f.options || []).find(o => o.value === val); if (o && o.acro) acroCheck(o.acro); continue; }
+            if (f.type === "checks") { for (const o of f.options) if ((val || []).includes(o.value) && o.acro) acroCheck(o.acro); continue; }
+            if (!f.acro) continue;
+            let str = f.text ? f.text(v) : val;
+            if (f.type === "date" || f.fmt) str = fmtDate(str, f.fmt);
+            if (str) acroText(f.acro, str, f);
+        }
+        try { acro.updateFieldAppearances(font); } catch (e) {}
+        return { bytes: await pdf.save(), notes };
+    }
+
     for (const f of allFields(form)) {
         const page = pages[(f.put && f.put.p) || 0];
         const val = v[f.id];
