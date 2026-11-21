@@ -176,6 +176,8 @@
   function topic() { const c = window.CONSULT_CTX; try { return (c && c.topic && c.topic()) || document.title.replace(/\s*[–-]\s*(Hospitalist Toolkit|launching).*$/i, ""); } catch (e) { return document.title; } }
   function defaultService() {
     const c = window.CONSULT_CTX; let k = ""; try { k = (c && c.tabKey && c.tabKey()) || ""; } catch (e) {}
+    // a tab can name a better service for the loaded patient (e.g. Oncology tab → Hematology for leukemia/lymphoma)
+    const ov = window.CONSULT_SERVICE_OVERRIDE || {}; if (k && ov[k]) return ov[k]; if (!k && window.CONSULT_SERVICE) return window.CONSULT_SERVICE;
     if (BY_TAB[k]) return BY_TAB[k];
     const t = topic(); const hit = BY_TITLE.find(([re]) => re.test(t)); return hit ? hit[1] : "Internal medicine";
   }

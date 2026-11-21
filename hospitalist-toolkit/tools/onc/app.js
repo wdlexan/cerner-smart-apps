@@ -4,7 +4,9 @@
   const R = window.OncRules, C = window.OncChart, K = window.OncContent, DR = window.OncDrugs;
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
   const fmtD = (t) => (t ? new Date(t).toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "2-digit" }) : "");
-  const CNAME = { lung: "Lung", breast: "Breast", crc: "Colorectal", prostate: "Prostate" };
+  const CNAME = { lung: "Lung", breast: "Breast", crc: "Colorectal", prostate: "Prostate", leuk: "Leukemia", lymph: "Lymphoma" };
+  const subTxt = (c) => (c && c.sub && c.sub.length ? c.sub.map((x) => R.SUBNAME[x] || x).join(", ") : "");
+  const noteName = (k, c) => (k === "leuk" ? "Leukemia" + (subTxt(c) ? " (" + subTxt(c) + ")" : "") : k === "lymph" ? "Lymphoma" + (subTxt(c) ? " (" + subTxt(c) + ")" : "") : CNAME[k] + (k === "lung" && c.sclc ? " (small cell)" : "") + " cancer");
   const TKNAME = { tox: "Oncology toxicity", bsab: "CRS/ICANS", pc: "Peritoneal carcinomatosis", hypona: "Sodium", lytes: "Electrolytes", g6pd: "G6PD", aki: "AKI" };
   const state = { f: null };
 
@@ -96,7 +98,7 @@
   }
 
   // ---- chart ----
-  const LAB_ORDER = ["anc", "wbc", "hb", "plt", "na", "k", "mg", "po4", "ca", "alb", "cr", "urate", "ldh", "glu", "alt", "bili", "tsh", "cortisol", "trop", "lactate"];
+  const LAB_ORDER = ["anc", "wbc", "blasts", "hb", "plt", "inr", "fib", "na", "k", "mg", "po4", "ca", "alb", "cr", "urate", "ldh", "glu", "alt", "bili", "lipase", "ferritin", "tsh", "cortisol", "trop", "lactate"];
   function render() {
     const f = state.f;
     K.CANCERS.forEach((c) => ($("ptBanner-" + c.key).innerHTML = ""));
@@ -116,11 +118,11 @@
     // cancer
     const ck = Object.keys(f.cancers || {});
     $("chartCancer").innerHTML = ck.length ? ck.map((k) => { const c = f.cancers[k];
-      $("ptBanner-" + k).innerHTML = `<div class="flag green"><b>This patient:</b> ${esc(c.from.join("; ") || "suggested by " + c.drugs.join(", "))}${k === "lung" && c.sclc ? " (small cell)" : ""}. Current drugs: ${esc(f.drugs.filter((d) => d.cancers.includes(k)).map((d) => d.name).join(", ") || "none found")}.</div>`;
+      $("ptBanner-" + k).innerHTML = `<div class="flag green"><b>This patient:</b> ${esc(c.from.join("; ") || "suggested by " + c.drugs.join(", "))}${k === "lung" && c.sclc ? " (small cell)" : ""}${subTxt(c) ? " – " + esc(subTxt(c)) : ""}. Current drugs: ${esc(f.drugs.filter((d) => d.cancers.includes(k)).map((d) => d.name).join(", ") || "none found")}.</div>`;
       document.querySelector(`nav button[data-t="${k}"]`).insertAdjacentHTML("beforeend", '<span class="dot pt" title="this patient"></span>');
-      return `<p><b>${esc(CNAME[k])}</b>${k === "lung" && c.sclc ? " – small cell" : ""} <a href="#" data-goto="${k}">open card →</a><br><span class="muted">${c.from.length ? "Problem list: " + esc(c.from.join("; ")) : "Not on the problem list; suggested by: " + esc(c.drugs.join(", "))}</span></p>`; }).join("")
+      return `<p><b>${esc(CNAME[k])}</b>${k === "lung" && c.sclc ? " – small cell" : ""}${subTxt(c) ? " – " + esc(subTxt(c)) : ""} <a href="#" data-goto="${k}">open card →</a><br><span class="muted">${c.from.length ? "Problem list: " + esc(c.from.join("; ")) : "Not on the problem list; suggested by: " + esc(c.drugs.join(", "))}</span></p>`; }).join("")
       + siteLine(f)
-      : '<span class="muted">None of lung, breast, colorectal or prostate cancer found on the problem list or suggested by the medications. The Emergencies tab still applies to any cancer.</span>' + siteLine(f);
+      : '<span class="muted">None of lung, breast, colorectal, prostate cancer, leukemia or lymphoma found on the problem list or suggested by the medications. The Emergencies tab still applies to any cancer.</span>' + siteLine(f);
 
     // labs
     const rows = [];
@@ -151,9 +153,14 @@
     drawCa(); drawTls(); drawMascc();
     // handout and note defaults
     const hd = R.handoutDefaults(f.drugs, f.meds.map((m) => m.text));
-    hd.bonemets = !!(f.sites.bone); hd.radiation = false;
+    hd.bonemets = !!(f.sites.bone); hd.radiation = false; hd.blood = !!(f.cancers.leuk || f.cancers.lymph); hd.cellular = f.drugs.some((d) => d.tags.includes("bispec"));
     document.querySelectorAll("#hoChk [data-ho]").forEach((i) => (i.checked = !!hd[i.dataset.ho]));
-    $("nCancer").value = ck.map((k) => CNAME[k] + (k === "lung" && f.cancers.lung.sclc ? " (small cell)" : "") + " cancer").join(" + ");
+    $("nCancer").value = ck.map((k) => noteName(k, f.cancers[k])).join(" + ");
+    // consult button: Hematology for blood cancers (unless a solid cancer is also present)
+    const svc = ck.length && ck.every((k) => k === "leuk" || k === "lymph") ? "Hematology" : "Medical oncology";
+    window.CONSULT_SERVICE = svc;
+    try { const P = window.parent; (P.CONSULT_SERVICE_OVERRIDE = P.CONSULT_SERVICE_OVERRIDE || {}).onc = svc; } catch (e) {}
+    $("wbcBox").innerHTML = f.latest.wbc ? `<div class="flag ${f.latest.wbc.v >= 100 ? "red" : f.latest.wbc.v >= 50 ? "amber" : "green"}">This patient: WBC ${f.latest.wbc.v} ×10⁹/L${f.latest.blasts ? `, blasts ${f.latest.blasts.v}%` : ""} (${fmtD(f.latest.wbc.t)}).</div>` : "";
     drawHandout(); buildNote(true);
   }
   function siteLine(f) {
@@ -172,6 +179,8 @@
     steroid: `<h3>Steroids (dexamethasone or prednisone)</h3><ul><li><b>Do not stop suddenly.</b> Follow the taper you were given.</li><li>They raise blood sugar: watch for thirst and passing lots of urine; check sugars if you have diabetes.</li><li>Take with food. Trouble sleeping and mood change can happen.</li></ul>`,
     anticoag: `<h3>Blood thinner</h3><ul><li>Call 911 for: vomiting blood, black or bloody stools, a severe headache, or any fall with a head injury.</li><li>Go to the ER for: bleeding that will not stop after 10 minutes of pressure, blood in urine, large bruises.</li><li>Tell every doctor and dentist you take a blood thinner.</li></ul>`,
     bone: `<h3>Bone-strengthening drug (denosumab or zoledronic acid)</h3><ul><li>Take calcium and vitamin D as advised.</li><li>See your dentist before dental work; tell them about this drug. Report jaw pain or loose teeth.</li><li>Muscle cramps or tingling around the mouth can mean low calcium: call the same day.</li></ul>`,
+    blood: `<h3>Leukemia or lymphoma</h3><ul><li>Low platelets: watch for bleeding gums, nosebleeds, tiny red or purple spots on the skin, blood in urine or stool – go to the ER for bleeding that will not stop.</li><li>Low blood counts: avoid crowds and sick contacts, wash hands, no raw or undercooked meat, eggs or fish.</li><li>Take your preventive pills (for infection, gout/uric acid) exactly as prescribed.</li><li>New headache, confusion, or vision change: go to the ER.</li></ul>`,
+    cellular: `<h3>CAR-T cells or bispecific antibody</h3><ul><li>Stay within the distance your team gave you and keep a caregiver with you for the first weeks.</li><li><b>Fever, shivering, dizziness or feeling faint</b>: go to the ER and show your wallet card – this may be cytokine release syndrome.</li><li><b>Confusion, trouble finding words, shaky handwriting, very sleepy or a seizure</b>: call 911.</li><li>No driving for 8 weeks after CAR-T.</li></ul>`,
     bonemets: `<h3>Cancer in the bones</h3><ul><li><b>New back or neck pain</b>, pain around the chest like a band, weakness or numbness in the legs, or trouble passing urine or stool: <b>go to the ER now</b> – this can be pressure on the spinal cord and early treatment saves walking.</li><li>Sudden severe pain in a bone after a small injury: you may have a fracture – go to the ER.</li><li>Very thirsty, confused, constipated or sick to your stomach can mean high calcium: go to the ER.</li></ul>` };
   function drawHandout() {
     const on = {}; document.querySelectorAll("#hoChk [data-ho]").forEach((i) => (on[i.dataset.ho] = i.checked));

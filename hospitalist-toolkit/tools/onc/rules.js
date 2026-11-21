@@ -9,9 +9,20 @@
     lung: { re: /\blung\b|bronch|nsclc|sclc|small cell|non-?small|pulmonary (adeno|carcinoma|malignan|neoplasm)|C34(\.\d+)?\b/i },
     breast: { re: /breast|C50(\.\d+)?\b/i },
     crc: { re: /colon|colorectal|rectum|rectal|rectosigmoid|sigmoid|caecum|cecum|cecal|hepatic flexure|splenic flexure|C1[89](\.\d+)?\b|C20\b/i },
-    prostate: { re: /prostat|C61\b/i } };
-  const CANCERWORD = /cancer|carcinoma|adenocarcinoma|malignan|neoplasm|tumou?r|nsclc|sclc|\bC\d\d/i;
-  const NOTCANCER = /benign|hyperplasia|\bbph\b|polyp|adenoma(?!.*carcinoma)|screening|family history|fh of|fibroadenoma|cyst|prostatitis|nodule(?!.*malig)|\bD[0-4]\d/i;
+    prostate: { re: /prostat|C61\b/i },
+    leuk: { re: /leuka?emia|\b(aml|cml|cll|apl)\b|promyelocytic|lymphoblastic|myeloblastic|C9[1-5](\.\d+)?\b/i },
+    lymph: { re: /lymphoma|hodgkin|\bdlbcl\b|burkitt|mycosis fungoides|C8[1-6](\.\d+)?\b|C88(\.\d+)?\b/i } };
+  // heme subtypes (shown on the cancer card and used by rules)
+  const SUB = {
+    leuk: [["apl", /promyelocytic|\bapl\b|pml-?rara|C92\.4/i], ["aml", /acute myeloid|acute myelogenous|\baml\b|myeloblastic|C92\.0|C93\.0/i],
+      ["all", /lymphoblastic|\bB-?ALL\b|\bT-?ALL\b|C91\.0/i], ["cml", /chronic myeloid|chronic myelogenous|\bcml\b|C92\.1/i],
+      ["cll", /chronic lymphocytic|\bcll\b|small lymphocytic|C91\.1/i]],
+    lymph: [["hodgkin", /^(?!.*non-?hodgkin).*hodgkin|C81/i], ["dlbcl", /diffuse large|\bdlbcl\b|C83\.3/i], ["burkitt", /burkitt|C83\.7/i],
+      ["pcnsl", /central nervous system lymphoma|cns lymphoma|primary cns|brain lymphoma|cerebral lymphoma|intraocular lymphoma/i],
+      ["follicular", /follicular|C82/i], ["mantle", /mantle cell|C83\.1/i], ["marginal", /marginal zone|malt|C88\.4/i], ["tcell", /t-?cell lymphoma|peripheral t|anaplastic large|C84|C86/i]] };
+  const SUBNAME = { apl: "APL", aml: "AML", all: "ALL", cml: "CML", cll: "CLL", hodgkin: "Hodgkin", dlbcl: "DLBCL", burkitt: "Burkitt", pcnsl: "primary CNS", follicular: "follicular", mantle: "mantle cell", marginal: "marginal zone", tcell: "T-cell" };
+  const CANCERWORD = /cancer|carcinoma|adenocarcinoma|malignan|neoplasm|tumou?r|nsclc|sclc|leuka?emia|lymphoma|hodgkin|\b(aml|cml|cll|apl|dlbcl)\b|\bALL\b|\bC\d\d/i;
+  const NOTCANCER = /benign|hyperplasia|\bbph\b|polyp|adenoma(?!.*carcinoma)|screening|family history|fh of|fibroadenoma|cyst|prostatitis|nodule(?!.*malig)|leukemoid|lymphadenopathy|lymphocytosis|\bD[0-4]\d/i;
   const SECONDARY = /secondary|metasta|\bmets?\b|C7[7-9]/i;
 
   function detectCancers(probTexts, drugHits) {
@@ -34,6 +45,18 @@
     });
     const sclc = (probTexts || []).some((t) => /small cell/i.test(t) && !/non-?small/i.test(t));
     if (out.lung) out.lung.sclc = sclc;
+    // the uppercase word "ALL" alone (case-sensitive) also means acute lymphoblastic leukemia
+    (probTexts || []).forEach((t) => { if (/\bALL\b/.test(t) && !NOTCANCER.test(t)) (out.leuk = out.leuk || { from: [], drugs: [] }).from.push(t); });
+    ["leuk", "lymph"].forEach((k) => {
+      if (!out[k]) return;
+      const txt = out[k].from.join(" | ");
+      out[k].sub = SUB[k].filter(([, re]) => re.test(txt) || (k === "leuk" && re.source.includes("ALL") && /\bALL\b/.test(txt))).map(([id]) => id);
+      if (k === "leuk" && out[k].sub.includes("apl")) out[k].sub = out[k].sub.filter((x) => x !== "aml");
+      if (k === "leuk" && !out[k].sub.length && out[k].drugs.length) {
+        const dn = out[k].drugs.join(" ");
+        if (/ATRA|Arsenic/i.test(dn)) out[k].sub.push("apl"); else if (/Venetoclax|Azacitidine|Cytarabine|FLT3|IDH/i.test(dn)) out[k].sub.push("aml");
+      }
+    });
     return out;
   }
 
@@ -147,7 +170,7 @@
 
     // kidney
     if (f.crRise) out.push({ level: "amber", tk: "aki", text: `Creatinine ${f.crRise.from} → ${f.crRise.to} µmol/L (AKI): dehydration from diarrhea/vomiting, obstruction (hydronephrosis), hypercalcemia, nephrotoxic drugs, TLS. Recheck doses of renally cleared drugs.` });
-    if (f.crRise && (has(/cisplatin|pemetrexed|methotrexate|zoledronic|capecitabine/i))) out.push({ level: "amber", text: `Creatinine rise on ${meds.filter((m) => /cisplatin|pemetrexed|methotrexate|zoledronic|capecitabine/i.test(m)).map((m) => m.split(" ")[0]).join(", ")}: kidney-dosed or nephrotoxic – oncology/pharmacy to review before the next dose.` });
+    if (f.crRise && (has(/cisplatin|pemetrexed|zoledronic|capecitabine/i) || (has(/methotrexate/i) && !drugs.some((d) => /Methotrexate \(high/.test(d.name))))) out.push({ level: "amber", text: `Creatinine rise on ${meds.filter((m) => /cisplatin|pemetrexed|methotrexate|zoledronic|capecitabine/i.test(m)).map((m) => m.split(" ")[0]).join(", ")}: kidney-dosed or nephrotoxic – oncology/pharmacy to review before the next dose.` });
     if (f.crRise && has(/tucatinib|abemaciclib/i)) out.push({ level: "info", text: "Tucatinib/abemaciclib raise creatinine by blocking secretion without true kidney injury: check cystatin C or urine output before calling it AKI." });
 
     // sites / text
@@ -161,6 +184,51 @@
     if (sites.obstruction) out.push({ level: "amber", tk: "pc", text: `Bowel obstruction${tag("vegf").length ? " on anti-VEGF (perforation risk)" : ""}.` });
     if (sites.diarrhea && (has(/irinotecan|folfiri|fluorouracil|5-?fu\b|capecitabine|abemaciclib|neratinib|sacituzumab|ipilimumab/i) || tag("ici").length)) out.push({ level: "red", text: `Diarrhea on ${drugs.filter((d) => /irinotecan|fluorouracil|capecitabine|abemaciclib|neratinib|sacituzumab/i.test(d.name) || d.tags.includes("ici")).map((d) => d.name).join(", ") || "anticancer treatment"}: grade it (stools/day over baseline), fluids, K/Mg, C. difficile; ${tag("ici").length ? "immunotherapy colitis → steroids (Oncology toxicity tab); " : ""}irinotecan → high-dose loperamide; admit/IV if neutropenic, febrile or dehydrated.` });
     if (sites.hydro) out.push({ level: "amber", text: "Hydronephrosis: US, urology/IR for stent or nephrostomy if it fits goals." });
+
+    // ---- blood cancers ----
+    const leuk = f.cancers && f.cancers.leuk, lymph = f.cancers && f.cancers.lymph, sub = [].concat((leuk && leuk.sub) || [], (lymph && lymph.sub) || []);
+    const wbc = L.wbc && L.wbc.v;
+    if (wbc != null && wbc >= 100) out.push({ level: sub.includes("cll") && !sub.some((x) => /aml|all|apl/.test(x)) ? "amber" : "red", go: "emerg",
+      text: sub.includes("cll") && !sub.some((x) => /aml|all|apl/.test(x)) ? `WBC ${wbc} in CLL: leukostasis is rare in CLL even >400, but watch K (pseudohyperkalemia) and TLS with treatment.` : `WBC ${wbc}: hyperleukocytosis – leukostasis risk (hypoxia, confusion, vision change). Hydroxyurea, urgent hematology, TLS prevention; avoid RBC transfusion unless needed.` });
+    else if (wbc != null && wbc >= 50 && leuk && !sub.includes("cll") && !sub.includes("cml")) out.push({ level: "amber", go: "emerg", text: `WBC ${wbc} in acute leukemia: leukostasis possible (especially monocytic AML) – check O2, neuro symptoms; hematology.` });
+    if (wbc != null && wbc >= 100 && L.k && L.k.v >= 5.5) out.push({ level: "info", text: `K ${L.k.v} with WBC ${wbc}: could be pseudohyperkalemia – repeat on a heparin/whole blood sample (no pneumatic tube) before treating, unless ECG changes.` });
+    const fib = L.fib && L.fib.v, inr = L.inr && L.inr.v;
+    if (fib != null && fib < 1.5) out.push({ level: fib < 1.0 || sub.includes("apl") || (L.plt && L.plt.v < 50) ? "red" : "amber", go: "emerg",
+      text: `Fibrinogen ${fib} g/L${inr ? `, INR ${inr}` : ""}${L.plt ? `, platelets ${L.plt.v}` : ""}: DIC${has(/asparaginase|pegaspargase|oncaspar|erwinia|rylaze/i) ? " or asparaginase effect" : ""}? Cryoprecipitate to keep fibrinogen >1.5, platelets >30–50; no LP/central line until corrected.` });
+    if (sub.includes("apl") && !has(/tretinoin|\batra\b|vesanoid/i)) out.push({ level: "red", go: "emerg", text: "APL on the problem list but no ATRA (tretinoin) on the medication list: start ATRA now unless hematology says otherwise." });
+    const dsDrug = drugs.filter((d) => /ATRA|Arsenic|IDH inhibitor|FLT3/.test(d.name));
+    if (dsDrug.length) {
+      const signs = [tmax != null && tmax >= 38.0 && `fever ${tmax}`, f.crRise && "rising creatinine", (sites.pneumonitis || sites.pleural || sites.pericard) && "infiltrates/effusion in the chart"].filter(Boolean);
+      out.push(signs.length ? { level: "red", go: "emerg", text: `Possible differentiation syndrome on ${dsDrug.map((d) => d.name.split(" (")[0]).join(", ")} (${signs.join(", ")}): dexamethasone 10 mg IV q12h now, hematology.` }
+        : { level: "info", go: "emerg", text: `${dsDrug.map((d) => d.name.split(" (")[0]).join(", ")}: watch for differentiation syndrome (fever, hypoxia, infiltrates, weight gain, AKI).` });
+    }
+    if ((leuk || lymph) && ((L.ldh && L.ldh.v >= 500) || (wbc != null && wbc >= 25 && leuk && sub.some((x) => /aml|all/.test(x))) || sub.includes("burkitt")) && !t.lab)
+      out.push({ level: "amber", go: "emerg", text: `High tumour lysis risk (${[sub.includes("burkitt") && "Burkitt", L.ldh && L.ldh.v >= 500 && `LDH ${L.ldh.v}`, wbc >= 25 && `WBC ${wbc}`].filter(Boolean).join(", ")}): fluids, allopurinol or rasburicase (check G6PD), TLS labs every 8–12 h.` });
+    if (has(/venetoclax|venclexta/i)) {
+      if (has(S.azole) || has(/clarithromycin|ritonavir|cobicistat|nirmatrelvir/i)) out.push({ level: "amber", text: `Venetoclax with a strong CYP3A4 inhibitor (${meds.filter((m) => S.azole.test(m) || /clarithromycin|ritonavir|cobicistat|nirmatrelvir/i.test(m)).map((m) => m.split(" ")[0]).join(", ")}): venetoclax dose must be cut a lot (e.g. ~75% with posaconazole) – pharmacy/hematology.` });
+      const vs = (f.meds || []).filter((m) => /venetoclax|venclexta/i.test(m.text) && m.t).map((m) => m.t).sort()[0];
+      if (vs && now - vs < 35 * DAY) out.push({ level: "amber", go: "emerg", text: `Venetoclax started ~${Math.round((now - vs) / DAY)} days ago (ramp-up): TLS labs before and 6–8 h and 24 h after each new dose, hydration, allopurinol.` });
+    }
+    if (has(/vincristine|oncovin|chop|epoch|cvp/i) && has(/posaconazole|voriconazole|itraconazole|ketoconazole/i)) out.push({ level: "red", text: "Vincristine with an azole (posaconazole/voriconazole/itraconazole): severe neurotoxicity and ileus – change the azole (e.g. to an echinocandin) around vincristine doses; ask pharmacy." });
+    const hdmtx = drugs.find((d) => /Methotrexate \(high-dose/.test(d.name));
+    if (hdmtx) {
+      const bad = meds.filter((m) => S.mtxInteract.test(m));
+      if (f.crRise) out.push({ level: "red", text: `High-dose methotrexate with a creatinine rise (${f.crRise.from} → ${f.crRise.to}): check methotrexate level now; leucovorin per nomogram; glucarpidase if delayed clearance; hematology/pharmacy.` });
+      if (bad.length) out.push({ level: "amber", text: `High-dose methotrexate with ${bad.map((m) => m.split(" ")[0]).join(", ")}: slows clearance – stop or swap (PPI → H2 blocker or none; no NSAIDs, TMP-SMX or penicillins) until the level is cleared.` });
+    }
+    if (has(/mercaptopurine|purinethol|6-?mp\b|thioguanine/i) && has(S.xo)) out.push({ level: "red", text: "Mercaptopurine/thioguanine with allopurinol or febuxostat: life-threatening myelosuppression unless the thiopurine dose is cut to ~25–33% – check with hematology/pharmacy." });
+    const btk = drugs.find((d) => /BTK inhibitor/.test(d.name));
+    if (btk && has(S.warfarin)) out.push({ level: "red", text: "BTK inhibitor with warfarin: avoid (major bleeding) – discuss switching anticoagulant with hematology." });
+    else if (btk && (has(S.anticoag) || has(S.antiplatelet))) out.push({ level: "amber", text: `BTK inhibitor with ${[has(S.anticoag) && "an anticoagulant", has(S.antiplatelet) && "an antiplatelet"].filter(Boolean).join(" and ")}: higher bleeding risk; hold the BTK inhibitor 3–7 days around procedures.` });
+    const cd20 = drugs.find((d) => /Anti-CD20/.test(d.name));
+    if (cd20 && L.alt && L.alt.v >= 120) out.push({ level: "amber", text: `ALT ${L.alt.v} on anti-CD20 therapy: check HBV DNA, HBsAg (hepatitis B reactivation) as well as drug causes.` });
+    else if (cd20 && !has(S.hbv)) out.push({ level: "info", text: "Rituximab/obinutuzumab: confirm HBsAg and anti-HBc were checked; prophylaxis (entecavir/tenofovir) if either is positive." });
+    const pjpNeed = drugs.filter((d) => /Bendamustine|Purine analogue|PI3K-delta|CAR-T|Blinatumomab/.test(d.name) || (/Asparaginase|Mercaptopurine/.test(d.name)));
+    if (pjpNeed.length && !has(S.tmpsmx)) out.push({ level: "amber", text: `${pjpNeed.map((d) => d.name.split(" (")[0]).join(", ")}: PJP prophylaxis is usually expected (TMP-SMX or alternative) – none on the medication list.` });
+    if (pjpNeed.length && !has(S.antiviral)) out.push({ level: "info", text: "Zoster/HSV prophylaxis (acyclovir or valacyclovir) is usually given with these drugs – none on the medication list." });
+    if (has(/asparaginase|pegaspargase|oncaspar|erwinia|rylaze/i)) out.push({ level: "info", text: "Asparaginase: watch lipase (pancreatitis), fibrinogen, glucose, triglycerides; new headache or seizure → think cerebral venous thrombosis." });
+    if (drugs.some((d) => /Bleomycin/.test(d.name))) out.push({ level: "info", text: "Bleomycin: new cough/dyspnea → stop and CT; give the lowest FiO2 that keeps sats 88–92%." });
+    if (sub.includes("pcnsl") && has(S.dex) && !hdmtx) out.push({ level: "info", text: "Primary CNS lymphoma on dexamethasone: steroids before the biopsy can make it non-diagnostic – confirm the tissue diagnosis is done or ask neurosurgery/hematology before continuing." });
 
     // ---- drug safety ----
     if (tag("ici").length) out.push({ level: "info", tk: "tox", text: `On immunotherapy (${tag("ici").map((d) => d.name).join(", ")}): any new symptom may be an immune side effect. Check TSH, cortisol, glucose, LFTs, creatinine, troponin if chest symptoms.` });
@@ -222,6 +290,6 @@
     return L.join("\n");
   }
 
-  const api = { detectCancers, findSites, corrCa, caLevel, tls, mascc, flags, handoutDefaults, note, SITES, PRIMARY };
+  const api = { SUBNAME, detectCancers, findSites, corrCa, caLevel, tls, mascc, flags, handoutDefaults, note, SITES, PRIMARY };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else window.OncRules = api;
 })();

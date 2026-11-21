@@ -59,7 +59,7 @@
 <body>
 <header>
   <h1>Oncology (common cancers)</h1>
-  <span class="pt">Lung, breast, colorectal, prostate: intent, treatment for cure and palliation, what to watch for, emergencies. Read-only.</span>
+  <span class="pt">Lung, breast, colorectal, prostate, leukemia, lymphoma: intent, treatment for cure and palliation, what to watch for, emergencies. Read-only.</span>
 </header>
 <nav id="nav">
   <button data-t="chart" class="on">Chart</button>
@@ -68,6 +68,8 @@
   <button data-t="breast">Breast</button>
   <button data-t="crc">Colorectal</button>
   <button data-t="prostate">Prostate</button>
+  <button data-t="leuk">Leukemia</button>
+  <button data-t="lymph">Lymphoma</button>
   <button data-t="handout">Handout</button>
   <button data-t="note">Note draft</button>
 </nav>
@@ -109,6 +111,8 @@
 <section class="tab" id="tab-breast"></section>
 <section class="tab" id="tab-crc"></section>
 <section class="tab" id="tab-prostate"></section>
+<section class="tab" id="tab-leuk"></section>
+<section class="tab" id="tab-lymph"></section>
 
 <!-- ================= HANDOUT ================= -->
 <section class="tab" id="tab-handout">
@@ -124,6 +128,8 @@
       <label><input type="checkbox" data-ho="anticoag"> Blood thinner</label>
       <label><input type="checkbox" data-ho="bone"> Bone-strengthening drug</label>
       <label><input type="checkbox" data-ho="bonemets"> Cancer in the bones</label>
+      <label><input type="checkbox" data-ho="blood"> Leukemia / lymphoma</label>
+      <label><input type="checkbox" data-ho="cellular"> CAR-T / bispecific</label>
     </div>
     <div class="calc"><label>Cancer centre / oncology phone <input id="hoPhone" placeholder="e.g. 250-___-____" style="width:170px"></label>
       <button class="btn" onclick="window.print()">Print handout</button></div>
@@ -155,11 +161,11 @@
 
 </main>
 <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script><script src="../../pdf-overlay.js?v=20261120p"></script>
-<script src="drugs.js?v=20261120a"></script>
-<script src="rules.js?v=20261120a"></script>
-<script src="chart.js?v=20261120a"></script>
-<script src="content.js?v=20261120a"></script>
-<script src="samples.js?v=20261120a"></script>
-<script src="app.js?v=20261120a"></script>
+<script src="drugs.js?v=20261120b"></script>
+<script src="rules.js?v=20261120b"></script>
+<script src="chart.js?v=20261120b"></script>
+<script src="content.js?v=20261120b"></script>
+<script src="samples.js?v=20261120b"></script>
+<script src="app.js?v=20261120b"></script>
 </body>
 </html>

@@ -5,7 +5,7 @@
   const BC = "https://www.bccancer.bc.ca/health-professionals/clinical-resources/chemotherapy-protocols/";
   const LINKS = {
     lung: BC + "lung", breast: BC + "breast", crc: BC + "gastrointestinal", prostate: BC + "genitourinary",
-    supportive: BC + "supportive-care",
+    supportive: BC + "supportive-care", leuk: BC + "leukemia-bone-marrow-transplant", lymph: BC + "lymphoma-myeloma",
     fn: "https://www.bccancer.bc.ca/health-professionals/clinical-resources/cancer-management-manual/supportive-care/febrile-neutropenia" };
   const go = (k, t) => `<a href="#" data-goto="${k}">${t}</a>`;
   const tk = (k, t) => `<a href="#" data-toolkit="${k}">${t}</a>`; // another toolkit tab
@@ -258,7 +258,136 @@
         <tr><td>Localized low/intermediate risk</td><td>10-year prostate-cancer survival &gt;95%</td></tr>
         <tr><td>High-risk localized</td><td>Most cured or controlled for many years</td></tr>
         <tr><td>mHSPC (doublet/triplet era)</td><td>Median ~5–7 years</td></tr>
-        <tr><td>mCRPC</td><td>Median ~2–3 years; visceral (liver) mets shorter</td></tr></table>` } ] } ];
+        <tr><td>mCRPC</td><td>Median ~2–3 years; visceral (liver) mets shorter</td></tr></table>` } ] },
+
+  // =====================================================================================
+  { key: "leuk", name: "Leukemia", full: "Leukemia (AML, APL, ALL, CML, CLL)", link: LINKS.leuk,
+    intro: `<b>Acute (AML, ALL) = emergency, usually admitted for induction. Chronic (CML, CLL) = often found on a routine CBC.</b> APL is the AML you must not miss: it bleeds (DIC) but is >90% curable – start ATRA on suspicion.`,
+    sections: [
+    { t: "At a glance: types and intent", open: true, h: `
+      <table><tr><th>Type</th><th>Who / clue</th><th>Intent</th></tr>
+        <tr><td><b>AML</b></td><td>Median age ~68; cytopenias, blasts, Auer rods, gum hypertrophy (monocytic)</td><td><b>Curative</b> if fit for intensive chemo ± transplant; unfit → disease control (venetoclax + azacitidine)</td></tr>
+        <tr><td><b>APL</b> (AML with PML-RARA)</td><td>Bleeding, DIC, low fibrinogen, often low WBC</td><td><b>Curative</b> (>90%) if the first 2 weeks are survived</td></tr>
+        <tr><td><b>ALL</b></td><td>Children and older adults; nodes, mediastinal mass, CNS; ~25–30% of adults Ph+ (BCR-ABL)</td><td><b>Curative</b> intent</td></tr>
+        <tr><td><b>CML</b></td><td>High WBC with all stages of granulocytes, basophilia, big spleen; BCR-ABL</td><td>TKI → near-normal life expectancy; some can stop (treatment-free remission)</td></tr>
+        <tr><td><b>CLL</b></td><td>Older adults; lymphocytosis, smudge cells, nodes</td><td>Not cured with standard therapy, but long survival; many never need treatment</td></tr></table>
+      <h4>Work-up of a suspected acute leukemia</h4>
+      <ul><li>CBC + <b>blood film</b>, <b>PT/INR, PTT, fibrinogen</b> (DIC), LDH, urate, K, PO4, Ca, creatinine (TLS).</li>
+        <li>Peripheral flow cytometry; bone marrow with cytogenetics and molecular tests (FLT3, NPM1, IDH1/2, TP53, BCR-ABL).</li>
+        <li>HLA typing (transplant candidates), echo before anthracycline, HBV/HCV/HIV, CMV, pregnancy test; CT head if neuro signs or severe coagulopathy.</li>
+        <li>CLL: flow cytometry of blood is enough; IGHV status and del(17p)/TP53 before treatment.</li></ul>` },
+    { t: "Treatment for cure", open: false, h: `
+      <table><tr><th>Type</th><th>Usual approach</th></tr>
+        <tr><td>AML, fit</td><td><b>"7+3"</b> induction (cytarabine 7 days + daunorubicin or idarubicin 3 days) ± midostaurin or quizartinib (FLT3), ± gemtuzumab (favourable risk). CPX-351 for therapy-related or MDS-related AML. Consolidation: high-dose cytarabine, or <b>allogeneic stem cell transplant</b> for intermediate/adverse risk. Maintenance oral azacitidine in selected patients.</td></tr>
+        <tr><td>APL</td><td><b>ATRA + arsenic trioxide</b>, no chemo (WBC ≤10). High risk (WBC >10): ATRA + arsenic + idarubicin or gemtuzumab. Start ATRA as soon as APL is suspected.</td></tr>
+        <tr><td>ALL</td><td>Multi-agent pediatric-inspired regimens (vincristine, steroid, asparaginase, anthracycline, cyclophosphamide, methotrexate, cytarabine) with <b>intrathecal CNS prophylaxis</b>, then ~2 years maintenance (mercaptopurine, methotrexate). <b>Blinatumomab</b> added in consolidation. Ph+: <b>TKI (dasatinib or ponatinib) + steroid ± blinatumomab</b>. Transplant for high risk or MRD-positive.</td></tr>
+        <tr><td>CML</td><td>TKI: imatinib, dasatinib, nilotinib, bosutinib, asciminib. BCR-ABL PCR every 3 months; treatment-free remission trial after a deep, sustained response.</td></tr></table>` },
+    { t: "Unfit, relapsed and palliative options", open: false, h: `
+      <ul>
+        <li><b>AML unfit/older</b>: venetoclax + azacitidine (or decitabine); IDH1 → ivosidenib + azacitidine; relapsed FLT3 → gilteritinib; IDH2 → enasidenib; menin inhibitors for KMT2A-rearranged or NPM1-mutated relapse where available; low-dose cytarabine; or supportive care (hydroxyurea, transfusion, antibiotics, palliative care).</li>
+        <li><b>ALL relapse</b>: blinatumomab, inotuzumab, CAR-T (brexucabtagene/tisagenlecleucel), transplant.</li>
+        <li><b>CLL</b> – treat only if indicated (progressive marrow failure Hb &lt;100 or plt &lt;100, bulky/progressive nodes or spleen, lymphocyte doubling &lt;6 months, B symptoms, autoimmune cytopenia not responding to steroids):
+          continuous <b>BTK inhibitor</b> (acalabrutinib, zanubrutinib, ibrutinib) or fixed-duration <b>venetoclax + obinutuzumab</b> (1 year) or venetoclax + BTK inhibitor. TP53/del(17p): no chemo. Later: pirtobrutinib, CAR-T, transplant.</li>
+        <li><b>CML</b> resistant or accelerated: switch TKI by mutation (ponatinib/asciminib for T315I), transplant.</li>
+      </ul>` },
+    { t: "What to watch for in hospital", open: true, h: `
+      <table><tr><th>Problem</th><th>Clue</th><th>Do</th></tr>
+        <tr><td><b>Febrile neutropenia</b></td><td>AML induction: ANC &lt;0.5 for 3–4 weeks</td><td>${go("emerg", "Emergencies")}; antifungal prophylaxis (posaconazole) is common – check interactions</td></tr>
+        <tr><td><b>Leukostasis</b></td><td>WBC &gt;100 (AML; ALL &gt;400): hypoxia, confusion, headache, vision change, priapism</td><td>Hydroxyurea, urgent hematology, avoid RBC transfusion unless needed (viscosity), TLS prevention. ${go("emerg", "Emergencies")}</td></tr>
+        <tr><td><b>DIC / bleeding</b></td><td>APL, monocytic AML: low fibrinogen, high INR, low platelets</td><td>Keep platelets &gt;30–50, fibrinogen &gt;1.5 g/L (cryo), FFP for INR; no LP or central line until corrected</td></tr>
+        <tr><td><b>Tumour lysis</b></td><td>High WBC, high LDH, ALL, venetoclax ramp-up</td><td>${go("emerg", "Emergencies")}: fluids, allopurinol or rasburicase (G6PD)</td></tr>
+        <tr><td><b>Differentiation syndrome</b></td><td>ATRA, arsenic, IDH inhibitors, gilteritinib: fever, hypoxia, infiltrates, effusions, weight gain, AKI</td><td>Dexamethasone 10 mg IV q12h; hold drug if severe; hematology</td></tr>
+        <tr><td>Spurious lab results</td><td>Very high WBC</td><td>Low PaO2 on ABG (cells use the oxygen – trust pulse oximetry) and high K (pseudohyperkalemia – repeat on heparin/whole blood)</td></tr>
+        <tr><td>CLL infections and autoimmunity</td><td>Low IgG, recurrent infections; AIHA, ITP</td><td>IVIG if recurrent serious infection with low IgG; DAT; steroids for AIHA/ITP</td></tr>
+        <tr><td>Richter transformation</td><td>CLL with a fast-growing node, B symptoms, high LDH</td><td>PET-CT and biopsy</td></tr>
+        <tr><td>CNS leukemia</td><td>ALL, monocytic AML: headache, cranial nerve palsy</td><td>MRI, LP (after coagulopathy and blasts in blood are addressed)</td></tr>
+        <tr><td>Asparaginase</td><td>Pancreatitis, cerebral venous thrombosis (headache, seizure), low fibrinogen</td><td>Lipase, CT venogram, replace fibrinogen per protocol</td></tr>
+      </table>
+      <ul>
+        <li><b>Interactions</b>: azoles (posaconazole, voriconazole) with venetoclax, vincristine (severe neurotoxicity), midostaurin, TKIs; <b>mercaptopurine + allopurinol</b>; high-dose methotrexate with PPIs, NSAIDs, TMP-SMX, penicillins; QTc with arsenic, nilotinib, quizartinib, gilteritinib, azoles, ondansetron.</li>
+        <li>Blood products: irradiated after purine analogues, in transplant candidates and recipients; ask hematology.</li>
+        <li>Do not stop a TKI, BTK inhibitor or venetoclax without hematology.</li>
+      </ul>` },
+    { t: "When to call hematology urgently", open: false, h: `<ul>
+      <li>Blasts on the film or a new unexplained high WBC with cytopenias: same day.</li>
+      <li><b>Suspected APL</b> (blasts/promyelocytes + DIC or low fibrinogen): now – ATRA is started before confirmation.</li>
+      <li>WBC &gt;100 or leukostasis symptoms, DIC, febrile neutropenia, differentiation syndrome, TLS.</li>
+      <li>Blinatumomab or CAR-T side effects; before stopping a TKI, BTK inhibitor or venetoclax.</li></ul>` },
+    { t: "Prognosis (rough) and goals of care", open: false, h: `
+      <table><tr><th>Setting</th><th>Rough outlook</th></tr>
+        <tr><td>AML, intensive treatment</td><td>5-year survival ~40–50% under 60; ~10–20% over 60</td></tr>
+        <tr><td>AML, venetoclax + azacitidine</td><td>Median ~15 months; some long remissions</td></tr>
+        <tr><td>AML untreated</td><td>Weeks to a few months</td></tr>
+        <tr><td>APL</td><td>&gt;90% cured; early deaths are mostly bleeding in the first 2 weeks</td></tr>
+        <tr><td>Adult ALL</td><td>~40–60% long-term (better if younger; Ph+ improving with TKI + blinatumomab)</td></tr>
+        <tr><td>CML chronic phase</td><td>Near-normal life expectancy</td></tr>
+        <tr><td>CLL</td><td>Often &gt;10 years; TP53 shorter</td></tr></table>
+      <p class="muted">Older patients with AML and poor performance status: goals-of-care talk early – intensive and low-intensity treatment both mean many hospital days.</p>` } ] },
+
+  // =====================================================================================
+  { key: "lymph", name: "Lymphoma", full: "Lymphoma (Hodgkin and non-Hodgkin)", link: LINKS.lymph,
+    intro: `<b>Aggressive</b> (DLBCL, Burkitt, Hodgkin, CNS lymphoma, most T-cell) = treat now, curative intent. <b>Indolent</b> (follicular, marginal zone, small lymphocytic) = often watch-and-wait, long survival, usually not cured. <b>No steroids before the biopsy</b> unless life-threatening (they can melt the tumour and spoil the diagnosis).`,
+    sections: [
+    { t: "At a glance: types and intent", open: true, h: `
+      <table><tr><th>Type</th><th>Behaviour</th><th>Intent</th></tr>
+        <tr><td><b>DLBCL</b> (most common)</td><td>Aggressive</td><td><b>Curative</b>: ~60–70% cured first line</td></tr>
+        <tr><td><b>Hodgkin</b></td><td>Young adults and &gt;60; mediastinal mass, itch, alcohol-induced node pain</td><td><b>Curative</b>: ~85–90%</td></tr>
+        <tr><td>Burkitt / high-grade (double-hit)</td><td>Very aggressive, highest TLS risk</td><td><b>Curative</b> with intensive chemo</td></tr>
+        <tr><td>Primary CNS lymphoma</td><td>Confusion, focal deficits, eye involvement</td><td><b>Curative</b> intent with high-dose methotrexate</td></tr>
+        <tr><td>Follicular, marginal zone</td><td>Indolent</td><td>Control; median survival &gt;15–20 years; early-stage follicular can be cured with RT</td></tr>
+        <tr><td>Mantle cell</td><td>Variable</td><td>Mostly control, years of survival</td></tr>
+        <tr><td>Peripheral T-cell</td><td>Aggressive</td><td>Curative intent but poorer outcomes</td></tr></table>
+      <h4>Work-up</h4>
+      <ul><li><b>Excisional or core biopsy</b> (not fine needle aspirate). PET-CT for staging (Lugano).</li>
+        <li>CBC, LDH, urate, creatinine, LFTs; <b>HBsAg, anti-HBc</b>, HCV, HIV before rituximab; echo before anthracycline.</li>
+        <li>IPI (age &gt;60, high LDH, ECOG ≥2, stage III–IV, &gt;1 extranodal site). CNS risk (high CNS-IPI, testis, kidney/adrenal, breast) → MRI ± LP.</li>
+        <li>B symptoms: fever, drenching night sweats, weight loss &gt;10% in 6 months.</li></ul>` },
+    { t: "Treatment for cure", open: false, h: `
+      <table><tr><th>Type</th><th>Usual approach</th></tr>
+        <tr><td>DLBCL</td><td><b>R-CHOP × 6</b> (4 + 2 rituximab if limited, low risk), or <b>Pola-R-CHP</b> (IPI 2–5). Limited stage: shorter chemo ± RT. Double/triple-hit: DA-EPOCH-R or R-CHOP. Over 80: R-mini-CHOP. Older/frail: prednisone prephase (1 week) lowers early toxicity.<br>Relapse within 12 months or refractory: <b>CAR-T</b> (axicabtagene, lisocabtagene). Later relapse: salvage (R-ICE, R-GDP) + autologous transplant; bispecifics (glofitamab, epcoritamab), polatuzumab-BR, tafasitamab-lenalidomide, loncastuximab.</td></tr>
+        <tr><td>Hodgkin</td><td>Early: ABVD × 2–4 ± involved-site RT (PET-adapted). Advanced: <b>nivolumab-AVD</b>, brentuximab-AVD, or ABVD with PET-adapted bleomycin drop; escalated BEACOPP-type regimens in younger patients in some centres. Relapse: salvage + autologous transplant ± brentuximab maintenance; checkpoint inhibitors.</td></tr>
+        <tr><td>Burkitt</td><td>DA-EPOCH-R or CODOX-M/IVAC with CNS prophylaxis; rasburicase and aggressive TLS prevention.</td></tr>
+        <tr><td>Primary CNS</td><td><b>High-dose methotrexate</b>-based induction (with rituximab, cytarabine, thiotepa) → thiotepa-based autologous transplant or whole-brain RT; older: methotrexate-rituximab ± maintenance.</td></tr>
+        <tr><td>Follicular stage I–II</td><td>Involved-site RT (can be curative)</td></tr>
+        <tr><td>Mantle cell, young fit</td><td>BTK inhibitor-containing induction ± autologous transplant; rituximab maintenance</td></tr></table>` },
+    { t: "Indolent, relapsed and palliative options", open: false, h: `
+      <ul>
+        <li><b>Follicular, advanced</b>: watch-and-wait if low tumour burden. Treat if bulky, symptomatic or cytopenias: bendamustine-rituximab, R-CHOP/R-CVP, obinutuzumab-based; rituximab maintenance; lenalidomide + rituximab. Later: bispecifics (mosunetuzumab, epcoritamab), CAR-T. Sudden growth or high LDH = <b>transformation</b> to DLBCL (biopsy, treat as DLBCL).</li>
+        <li><b>Marginal zone</b>: gastric MALT → H. pylori eradication; rituximab; BTK inhibitors.</li>
+        <li><b>Mantle cell, older</b>: bendamustine-rituximab ± acalabrutinib; BTK inhibitors; venetoclax; brexucabtagene CAR-T.</li>
+        <li><b>Older/frail aggressive lymphoma</b>: R-mini-CHOP, palliative RT, steroids, bispecifics; palliative care.</li>
+        <li><b>T-cell</b>: CHOP, or brentuximab-CHP if CD30+; transplant in first remission for fit patients.</li>
+      </ul>` },
+    { t: "What to watch for in hospital", open: true, h: `
+      <table><tr><th>Problem</th><th>Clue</th><th>Do</th></tr>
+        <tr><td><b>Tumour lysis</b></td><td>Burkitt, bulky DLBCL, high LDH, first cycle</td><td>${go("emerg", "Emergencies")}: fluids, allopurinol or rasburicase (G6PD), labs q6–12h</td></tr>
+        <tr><td><b>Febrile neutropenia</b></td><td>Day 7–14 after R-CHOP</td><td>${go("emerg", "Emergencies")}; G-CSF prophylaxis is common (age &gt;65, curative intent)</td></tr>
+        <tr><td><b>Mediastinal mass</b></td><td>Hodgkin, primary mediastinal B-cell, lymphoblastic: orthopnea, stridor, SVC</td><td>Do not lie flat for procedures; anesthesia early (general anesthesia can collapse the airway); biopsy under local if possible. ${go("emerg", "SVC card")}</td></tr>
+        <tr><td>Cord compression, bowel obstruction or perforation</td><td>GI lymphoma can perforate after chemo starts</td><td>${go("emerg", "Emergencies")}; surgical review</td></tr>
+        <tr><td>Hypercalcemia</td><td>Calcitriol-driven</td><td>Steroids work well; ${go("emerg", "Emergencies")}</td></tr>
+        <tr><td><b>Hepatitis B reactivation</b></td><td>Rituximab/obinutuzumab: rising ALT</td><td>HBsAg/anti-HBc positive → entecavir or tenofovir before and for ≥12 months after; check HBV DNA if ALT rises</td></tr>
+        <tr><td>Steroid hyperglycemia</td><td>Prednisone 100 mg days 1–5 of R-CHOP</td><td>Glucose checks, prandial insulin on steroid days</td></tr>
+        <tr><td>Vincristine</td><td>Constipation/ileus, neuropathy, SIADH</td><td>Bowel regimen from day 1; avoid azoles</td></tr>
+        <tr><td>Bleomycin lung</td><td>Cough, dyspnea, crackles (ABVD)</td><td>Stop drug, CT; lowest FiO2 for sats 88–92%</td></tr>
+        <tr><td>CRS / ICANS</td><td>CAR-T, glofitamab, epcoritamab, mosunetuzumab</td><td>${tk("bsab", "CRS/ICANS tab")}; call the CAR-T team before treating</td></tr>
+        <tr><td>Infections</td><td>PJP (bendamustine, purine analogues, steroids, CAR-T), zoster, low IgG, CMV</td><td>PJP and antiviral prophylaxis per protocol</td></tr>
+        <tr><td><b>HLH</b></td><td>Persistent fever, cytopenias, very high ferritin, big spleen, high triglycerides, low fibrinogen</td><td>Ferritin, triglycerides, fibrinogen, sCD25; HScore; urgent hematology</td></tr>
+        <tr><td>High-dose methotrexate (CNS lymphoma)</td><td>AKI, mucositis, delayed clearance</td><td>Alkalinized fluids, levels, leucovorin; glucarpidase if AKI; no PPIs, NSAIDs, TMP-SMX, penicillins</td></tr>
+      </table>` },
+    { t: "When to call hematology urgently", open: false, h: `<ul>
+      <li>Suspected new aggressive lymphoma (rapidly growing nodes, high LDH, B symptoms): arrange biopsy quickly and <b>ask before giving steroids</b>.</li>
+      <li>Mediastinal mass with airway or SVC symptoms; cord compression; TLS; febrile neutropenia.</li>
+      <li>CRS/ICANS after CAR-T or a bispecific; HBV reactivation; HLH; methotrexate AKI (glucarpidase).</li></ul>` },
+    { t: "Prognosis (rough) and goals of care", open: false, h: `
+      <table><tr><th>Setting</th><th>Rough outlook</th></tr>
+        <tr><td>DLBCL</td><td>~60–70% cured; IPI 0–1 ~90%, IPI 4–5 ~50% or less</td></tr>
+        <tr><td>DLBCL relapsed, CAR-T</td><td>~40% long-term remission</td></tr>
+        <tr><td>Hodgkin</td><td>~85–90% cured (lower over 60)</td></tr>
+        <tr><td>Follicular</td><td>Median survival &gt;15–20 years; progression within 2 years of treatment is worse</td></tr>
+        <tr><td>Mantle cell</td><td>Median ~5–10 years with modern treatment</td></tr>
+        <tr><td>Primary CNS lymphoma</td><td>~30–50% long-term if fit; older patients worse</td></tr>
+        <tr><td>Peripheral T-cell</td><td>5-year ~30–40%</td></tr></table>` } ] }
+ ];
 
   // =====================================================================================
   const EMERG = [
@@ -305,18 +434,40 @@
     { key: "tls", t: "Tumour lysis syndrome", open: false, h: `
       <div id="tlsBox"></div>
       <ul>
-        <li>Mostly heme cancers; in solid tumours: <b>SCLC</b>, bulky chemo-sensitive tumours, germ cell, high LDH, extensive liver mets. Can happen before treatment.</li>
+        <li><b>Highest risk</b>: Burkitt, ALL, AML with WBC &gt;100 or high LDH, bulky DLBCL, CLL during venetoclax ramp-up or obinutuzumab. Solid tumours: SCLC, bulky chemo-sensitive tumours, germ cell, extensive liver mets. Can happen before treatment.</li>
+        <li>High risk: rasburicase up front (after G6PD), fluids, labs every 6–8 h; intermediate risk: allopurinol, fluids, labs every 8–12 h.</li>
         <li><b>Lab TLS (Cairo-Bishop)</b>: ≥2 of urate ≥476 µmol/L, K ≥6.0 mmol/L, PO4 ≥1.45 mmol/L, corrected Ca ≤1.75 mmol/L, within 3 days before to 7 days after treatment. <b>Clinical TLS</b>: lab TLS plus creatinine ≥1.5 × ULN, arrhythmia or seizure.</li>
         <li>IV fluids (aim urine output &gt;100 mL/h) if no overload; allopurinol for prevention.</li>
         <li><b>Rasburicase</b> for high urate or established TLS – <b>check G6PD first</b> (${tk("g6pd", "G6PD tab")}).</li>
         <li>Treat high K; do not treat asymptomatic low Ca (calcium-phosphate precipitation). No urine alkalinization.</li>
         <li>Labs every 6–8 h, telemetry; nephrology early if oliguric or K/PO4 rising.</li>
       </ul>` },
+    { key: "leukostasis", t: "Hyperleukocytosis / leukostasis", open: false, h: `
+      <div id="wbcBox"></div>
+      <ul><li><b>Hyperleukocytosis</b>: WBC (blasts) &gt;100 ×10⁹/L. Leukostasis = symptoms from sludging: hypoxia, infiltrates, confusion, headache, vision change, stroke, priapism, limb ischemia. Mostly AML (can occur &gt;50 in monocytic AML); ALL needs much higher counts; CLL rarely causes it even &gt;400.</li>
+        <li><b>Now</b>: urgent hematology; <b>hydroxyurea</b> 50–100 mg/kg/day (split doses) until definitive chemo; IV fluids; TLS prevention (rasburicase if high risk); correct DIC.</li>
+        <li>Avoid RBC transfusion unless needed (raises viscosity); transfuse platelets as needed (do not raise viscosity much). Leukapheresis only in selected cases (not APL).</li>
+        <li>Lab traps: <b>low PaO2</b> on a blood gas from oxygen use by cells (trust the oximeter) and <b>pseudohyperkalemia</b> (repeat K on a heparin/whole blood sample, no pneumatic tube).</li></ul>` },
+    { key: "apl", t: "APL and DIC", open: false, h: `
+      <div class="flag red"><b>Suspect APL → start ATRA now</b> (tretinoin 45 mg/m²/day PO in 2 doses), before genetic confirmation. Most early APL deaths are from bleeding.</div>
+      <ul><li>Clues: new leukemia with bleeding/bruising, low fibrinogen, high INR, high D-dimer, often low WBC; abnormal promyelocytes with Auer rods (faggot cells) on the film.</li>
+        <li>Support: platelets &gt;30–50 ×10⁹/L, <b>fibrinogen &gt;1.5 g/L</b> (cryoprecipitate), FFP for high INR; check coagulation every 6–8 h at first.</li>
+        <li>No LP, central line or invasive procedure until the coagulopathy is corrected. Avoid tranexamic acid and heparin unless hematology advises.</li>
+        <li>CT head for any headache or neuro change (intracranial bleeding).</li>
+        <li>Watch for <b>differentiation syndrome</b> (below) and QTc on arsenic (ECG; K ≥4, Mg ≥0.9).</li></ul>` },
+    { key: "diffs", t: "Differentiation syndrome", open: false, h: `
+      <ul><li>After ATRA, arsenic trioxide, IDH inhibitors (ivosidenib, enasidenib, olutasidenib), gilteritinib, menin inhibitors – days to weeks after starting.</li>
+        <li>Fever, dyspnea, hypoxia, pulmonary infiltrates, pleural/pericardial effusions, weight gain &gt;5 kg, edema, hypotension, AKI. Often mistaken for pneumonia or heart failure.</li>
+        <li><b>Dexamethasone 10 mg IV q12h</b> at the first signs (continue until resolved, then taper); diuretics if overloaded; hold the drug if severe; hydroxyurea if WBC rising. Hematology now.</li></ul>` },
+    { key: "hlh", t: "HLH (hemophagocytic lymphohistiocytosis)", open: false, h: `
+      <ul><li>Lymphoma (especially T-cell), infections (EBV), after CAR-T. Persistent fever, cytopenias, very high ferritin (often &gt;10,000), hepatosplenomegaly, high triglycerides, low fibrinogen, high LFTs, high sCD25.</li>
+        <li>HScore; bone marrow. Urgent hematology: dexamethasone ± etoposide, anakinra; treat the trigger.</li></ul>` },
     { key: "svc", t: "Superior vena cava (SVC) syndrome", open: false, h: `
       <ul>
         <li>Face, neck and arm swelling, distended chest-wall veins, dyspnea, worse lying or bending. Causes: lung cancer (SCLC), lymphoma, line-related clot.</li>
         <li><b>Emergency if</b> stridor, laryngeal edema or confusion (cerebral edema): urgent endovascular stent (IR), airway.</li>
         <li>Otherwise: CT chest with contrast; head up, O2; <b>get tissue first</b> (steroids can hide lymphoma); then RT or chemo by histology; anticoagulate if clot.</li>
+        <li><b>Mediastinal mass</b> (lymphoma, lymphoblastic leukemia): sedation or general anesthesia can collapse the airway – anesthesia review before any procedure, keep upright, biopsy under local if possible.</li>
       </ul>` },
     { key: "brain", t: "Brain mets / raised intracranial pressure", open: false, h: `
       <ul>

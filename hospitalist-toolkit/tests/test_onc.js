@@ -71,6 +71,39 @@ eq("ANC /uL → 10^9/L", g.latest.anc.v, 0.4);
 eq("°F → °C", g.tmax48, 38.6);
 ok("docetaxel + ANC 0.4 + fever → FN red", has(R.flags(g, now), /Febrile neutropenia/, "red"));
 
+// ---- leukemia / lymphoma ----
+const dc = (t) => R.detectCancers(t, []);
+eq("AML detected", Object.keys(dc(["Acute myeloid leukemia"])).join(), "leuk");
+eq("AML subtype", dc(["Acute myeloid leukemia"]).leuk.sub.join(), "aml");
+eq("APL not also AML", dc(["Acute promyelocytic leukemia"]).leuk.sub.join(), "apl");
+eq("'ALL' uppercase = leukemia", dc(["Pre-B ALL in remission"]).leuk.sub.join(), "all");
+eq("'all' lowercase is not leukemia", Object.keys(dc(["Pain in all joints"])).join(), "");
+eq("leukemoid reaction is not leukemia", Object.keys(dc(["Leukemoid reaction"])).join(), "");
+eq("lymphadenopathy is not lymphoma", Object.keys(dc(["Generalized lymphadenopathy"])).join(), "");
+eq("non-Hodgkin is not Hodgkin", dc(["Non-Hodgkin lymphoma, diffuse large B-cell"]).lymph.sub.join(), "dlbcl");
+eq("Hodgkin", dc(["Classical Hodgkin lymphoma"]).lymph.sub.join(), "hodgkin");
+eq("topical tretinoin is not ATRA", m("tretinoin 0.05% cream topical"), "");
+eq("low-dose weekly methotrexate is not chemo", m("methotrexate 15 mg PO weekly"), "");
+eq("high-dose methotrexate", m("methotrexate 3.5 g/m2 IV"), "Methotrexate (high-dose or intrathecal)");
+eq("ice chips are not R-ICE", m("ice chips PRN"), "");
+ok("G: hyperleukocytosis red", has(FL[6], /WBC 142: hyperleukocytosis/, "red"));
+ok("G: DIC red", has(FL[6], /Fibrinogen 1.2/, "red"));
+ok("G: TLS red", has(FL[6], /tumour lysis/, "red"));
+ok("G: pseudohyperkalemia note", has(FL[6], /pseudohyperkalemia/));
+ok("H: differentiation syndrome red", has(FL[7], /differentiation syndrome/, "red"));
+ok("H: QTc arsenic + ondansetron", has(FL[7], /QTc: Arsenic trioxide with ondansetron/));
+ok("I: venetoclax + posaconazole", has(FL[8], /Venetoclax with a strong CYP3A4 inhibitor/, "amber"));
+ok("I: venetoclax ramp-up", has(FL[8], /ramp-up/));
+ok("I: CLL WBC 86 no leukostasis flag", !has(FL[8], /hyperleukocytosis/));
+ok("J: febrile neutropenia", has(FL[9], /Febrile neutropenia: ANC 0.2/, "red"));
+ok("J: vincristine + azole red", has(FL[9], /Vincristine with an azole/, "red"));
+ok("K: HD-MTX + creatinine rise red", has(FL[10], /High-dose methotrexate with a creatinine rise/, "red"));
+ok("K: HD-MTX interactions", has(FL[10], /pantoprazole, sulfamethoxazole/));
+ok("K: no duplicate generic methotrexate kidney flag", !has(FL[10], /Creatinine rise on methotrexate/));
+ok("APL without ATRA → start ATRA", has(R.flags(C.parse({ patient: {}, conditions: [{ code: { text: "Acute promyelocytic leukemia" } }], medreqs: [], obs: [] }, { now }), now), /start ATRA now/, "red"));
+const mp = C.parse({ patient: {}, conditions: [{ code: { text: "B-cell acute lymphoblastic leukemia" } }], obs: [], medreqs: [{ status: "active", medicationCodeableConcept: { text: "mercaptopurine 50 mg PO daily" } }, { status: "active", medicationCodeableConcept: { text: "allopurinol 100 mg PO daily" } }] }, { now });
+ok("mercaptopurine + allopurinol red", has(R.flags(mp, now), /Mercaptopurine\/thioguanine with allopurinol/, "red"));
+
 // note
 const n = R.note({ cancer: "Lung cancer", intent: "palliative", treatment: ["Osimertinib"], flags: ["x"], code: "M2", decision: "hold osimertinib" });
 ok("note has intent, drug, decision", /Intent: palliative/.test(n) && /Osimertinib/.test(n) && /My decision: hold osimertinib/.test(n));

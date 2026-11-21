@@ -4,7 +4,7 @@
    A tab is only loaded the first time you open it, and stays loaded when you switch away. */
 
 // To add a tool: put its files in tools/<folder>/ and add a line here.
-const TOOL_V = "20261120r"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
+const TOOL_V = "20261120s"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
 const TOOLS = [
   { key: "today", label: "Today (what changed)", tags: "what changed daily trends vitals overnight summary", path: "tools/today/index.html" },
   { key: "plist", label: "Patient list (screenshot)", tags: "patient list screenshot excel spreadsheet rounding list census floor ward ocr", path: "tools/plist/index.html" },
@@ -27,7 +27,7 @@ const TOOLS = [
   { key: "calc",  label: "Calculators", tags: "calculators scores egfr curb chads wells",          path: "tools/calc/index.html" },
   { key: "ai",    label: "AI summary", tags: "ai summary draft llm",           path: "tools/ai/index.html" },
   { key: "pc",    label: "Peritoneal carcinomatosis", tags: "peritoneal carcinomatosis peritoneum metastases omental cake pci sugarbaker hipec crs cytoreduction malignant bowel obstruction mbo sbo octreotide buscopan venting peg malignant ascites paracentesis pleurx indwelling catheter colorectal gastric ovarian pseudomyxoma cea ca-125 chemo oncology prognosis", path: "tools/pc/index.html" },
-  { key: "onc",   label: "Oncology (common cancers)", tags: "oncology cancer lung nsclc sclc small cell breast colorectal colon rectal prostate metastatic palliative curative chemotherapy immunotherapy targeted egfr alk her2 adt abiraterone enzalutamide febrile neutropenia cord compression mscc hypercalcemia tumour lysis tls svc brain mets mascc emergencies", path: "tools/onc/index.html" },
+  { key: "onc",   label: "Oncology (common cancers)", tags: "oncology cancer leukemia leukaemia aml apl all cml cll lymphoma hodgkin dlbcl follicular mantle burkitt cns lymphoma car-t venetoclax rituximab r-chop leukostasis differentiation syndrome dic hlh lung nsclc sclc small cell breast colorectal colon rectal prostate metastatic palliative curative chemotherapy immunotherapy targeted egfr alk her2 adt abiraterone enzalutamide febrile neutropenia cord compression mscc hypercalcemia tumour lysis tls svc brain mets mascc emergencies", path: "tools/onc/index.html" },
   { key: "tox",   label: "Oncology toxicity", tags: "oncology toxicity chemotherapy immunotherapy cancer",    path: "tools/tox/index.html", keepHeader: true }, // its header holds the draft/version note
   { key: "watch", label: "Watch-ahead", tags: "watch ahead deterioration early warning",          path: "tools/watch/index.html", keepHeader: true }, // its header holds the draft/version note
   { key: "bsab",  label: "CRS/ICANS (bispecific)", tags: "crs icans bispecific teclistamab myeloma cytokine release", path: "tools/bispecific/index.html" },
