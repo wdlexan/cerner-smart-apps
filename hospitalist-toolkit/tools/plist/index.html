@@ -51,8 +51,9 @@
       The picture is read <b>in this browser</b>. Nothing is uploaded, nothing is saved in the toolkit or on GitHub, and the Excel file goes to your computer's Downloads.</div>
     <div id="drop" tabindex="0" style="margin-top:12px">
       <div><b>Paste a screenshot (Ctrl+V)</b>, drag one here, or click to choose a picture</div>
+      <div class="small" style="margin-top:4px">📂 Drop your <b>Excel list</b> here too (with or before the screenshot) to add only the new patients to it</div>
       <div class="muted small" style="margin-top:4px">Add more screenshots if the list is longer than the screen. Repeated patients are kept once.</div>
-      <input id="file" type="file" accept="image/*" multiple hidden>
+      <input id="file" type="file" accept="image/*,.xlsx" multiple hidden>
     </div>
     <div class="row" style="margin-top:10px;align-items:center">
       <button class="ghost" id="oldbtn">📂 Add to my existing Excel list…</button><input id="oldf" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
@@ -129,6 +130,8 @@
 
   let busy = Promise.resolve();
   function handle(files) {
+    const isX = (f) => /\.xlsx$/i.test(f.name || "") || /spreadsheetml/.test(f.type || "");
+    files.filter((f) => f && isX(f)).slice(0, 1).forEach((f) => { busy = busy.then(() => loadOld(f)); });   // the list file to add to
     files.filter((f) => f && f.type.startsWith("image/")).forEach((f) => { busy = busy.then(() => readImage(f)); });
   }
 
@@ -187,8 +190,8 @@
   }
   // ---- an existing list file to add to ----
   $("oldbtn").onclick = () => $("oldf").click();
-  $("oldf").onchange = async (e) => {
-    const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  $("oldf").onchange = (e) => { const f = e.target.files[0]; e.target.value = ""; if (f) loadOld(f); };
+  async function loadOld(f) {
     const m = $("oldmsg"); m.className = "small muted"; m.textContent = "Reading " + f.name + "…";
     try {
       await load(JSZIP, () => window.JSZip, "could not load the Excel reader (network blocked?)");
@@ -198,7 +201,7 @@
       m.innerHTML = `Adding to <b>${esc(f.name)}</b> (${list.patients.length} patients already in it). Now paste the screenshot.`;
       $("oldx").hidden = false; draw();
     } catch (err) { old = null; m.className = "small err"; m.textContent = "Could not read that file: " + (err.message || err); }
-  };
+  }
   $("oldx").onclick = (e) => { e.preventDefault(); old = null; $("oldx").hidden = true; $("oldmsg").className = "small muted"; $("oldmsg").textContent = "Making a new file."; draw(); };
   const inOld = (r) => !!(old && old.list.patients.some((ep) => PListXlsx.sameP(r, { name: ep.name, mrn: ep.mrn })));
 
