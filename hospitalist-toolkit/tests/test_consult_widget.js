@@ -47,4 +47,9 @@ ok("excel: 2 patients, floor row skipped", P.length === 2, P);
 ok("excel: name flipped, age, room, reason, MRN, sex", P[0].name === "Ann Smith" && P[0].age === "81" && P[0].room === "S7B 12" && P[0].reason === "Urosepsis" && P[0].mrn === "12345" && P[0].sex === "female", P[0]);
 ok("excel: issues and pmhx from rows under the name", P[0].issues.join("|") === "ESBL E. coli; Cr up|delirium & falls" && P[0].pmhx[0] === "CKD3, AF on apixaban", P[0]);
 ok("excel: second patient", P[1].name === "Bob Jones" && P[1].age === "67" && P[1].mrn === "");
+const P2 = W.listPatients(W.readSheet('<sheetData><row r="1"><c r="D1" t="inlineStr"><is><t>room</t></is></c></row>' +
+  '<row r="3"><c r="D3" t="inlineStr"><is><t>HAH16 A</t></is></c><c r="E3"><v>78</v></c><c r="F3" t="inlineStr"><is><t>Barbara Lynn Gossman</t></is></c></row>' +
+  '<row r="4"><c r="F4" t="inlineStr"><is><t>Thyroid carcinoma Hypothyroid</t></is></c></row><row r="5"><c r="F5" t="inlineStr"><is><t>itp htn ckd pvd rta cad</t></is></c><c r="E5"><v>3</v></c></row>' +
+  '<row r="7"><c r="D7" t="inlineStr"><is><t>HAH17 A</t></is></c><c r="E7"><v>88</v></c><c r="F7" t="inlineStr"><is><t>Angelina Tokay</t></is></c></row><row r="8"><c r="F8" t="inlineStr"><is><t>ischemic colitis oct 2026</t></is></c></row></sheetData>', ""));
+ok("excel: only names with a room are patients; lines under are pmhx", P2.map((p) => p.name).join("|") === "Barbara Lynn Gossman|Angelina Tokay" && P2[0].pmhx.join("; ") === "Thyroid carcinoma Hypothyroid; itp htn ckd pvd rta cad", P2);
 console.log(fail ? `\n${fail} FAILED` : "\nall passed"); process.exit(fail ? 1 : 0);

@@ -133,8 +133,9 @@
     rows.forEach((r, i) => {
       if (r === hdr) return;
       const f = txt(r, "F"), next = rows[i + 1], nextPm = next && /^pmhx:?/i.test(txt(next, "F"));
-      if (/^pmhx:?/i.test(f) || (cur && !f && !nextPm && !txt(r, "A") && !txt(r, "D") && !txt(r, "E") && r.n - cur.last <= 1 && cur.rows < 4)) { if (cur) { cur.last = r.n; cur.rows++; } return; }
-      if (f || nextPm) { cur = { first: r.n, last: r.n, rows: 1, name: f, mrn: hcols.mrn ? txt(r, hcols.mrn) : "", age: txt(r, "E"), room: txt(r, "D"), spare: !f, floor: floors.length ? floors[floors.length - 1].name : "", rowRef: r };
+      // rows under a patient (pmhx lines, issues, to do) have no room in D; a name with a room starts the next patient
+      if (/^pmhx:?/i.test(f) || (cur && !txt(r, "D") && !nextPm && !(!f && txt(r, "A") && !/<v>|<t[ >]/.test(r.xml.replace(/<c r="A\d+"[^>]*?(?:\/>|>[\s\S]*?<\/c>)/, ""))) && r.n - cur.last <= 1 && cur.rows < 4)) { if (cur) { cur.last = r.n; cur.rows++; } return; }
+      if ((f && txt(r, "D")) || nextPm) { cur = { first: r.n, last: r.n, rows: 1, name: f, mrn: hcols.mrn ? txt(r, hcols.mrn) : "", age: txt(r, "E"), room: txt(r, "D"), spare: !f, floor: floors.length ? floors[floors.length - 1].name : "", rowRef: r };
         if (f) patients.push(cur); else (floors.length ? floors[floors.length - 1] : { spares: [] }).spares.push(cur); return; }
       cur = null;
       const a = txt(r, "A"), others = r.xml.replace(/<c r="A\d+"[^>]*?(?:\/>|>[\s\S]*?<\/c>)/, "");

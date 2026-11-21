@@ -129,8 +129,9 @@
     const out = []; let cur = null;
     nums.slice(1).forEach((n) => {
       const r = rows[n], f = r.F || "";
-      if (/^pmhx:?/i.test(f) || (!f && cur && !r.E && !r.D)) { if (cur) { const t = f.replace(/^pmhx:?\s*/i, ""); if (t) cur.pmhx.push(t); if (r.O) cur.issues.push(r.O); } return; }
-      if (!f || /^(name|patient)$/i.test(f)) { cur = null; return; }
+      // a patient is a name with a room (D) on the same row; text in the name column without a room is that patient's pmhx
+      if (/^pmhx:?/i.test(f) || (cur && !r.D)) { if (cur) { const t = f.replace(/^pmhx:?\s*/i, ""); if (t) cur.pmhx.push(t); if (r.O) cur.issues.push(r.O); } return; }
+      if (!f || !r.D || /^(name|patient)$/i.test(f)) { cur = null; return; }
       let name = f; if (/,/.test(name)) name = name.split(",").map((x) => x.trim()).filter(Boolean).reverse().join(" ");
       const sx = String(cSex ? r[cSex] || "" : "").toLowerCase();
       cur = { name, age: r.E && /^\d+(\.\d+)?$/.test(r.E) ? String(Math.floor(+r.E)) : (r.E || ""), room: r.D || "", reason: r.H || "", mrn: cMrn ? r[cMrn] || "" : "",
