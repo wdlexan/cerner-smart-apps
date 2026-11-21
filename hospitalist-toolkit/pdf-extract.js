@@ -399,7 +399,9 @@
       const colOf = (c) => { let k = 0; cols.forEach((s, i) => { if (s <= c.start + 3) k = i; }); return k; };
       const key = (cs) => cs.map(colOf).join(",");
       const same = cl.every((cs) => key(cs) === key(cl[0])), prose = cl.some((cs) => cs.length === 1 && cs[0].text.length >= 70);
-      if (grp.length >= 2 && grp.length <= 6 && cols.length >= 2 && !same && !prose) {
+      // "Label:   value" form rows (CareConnect / Cerner report headers: Patient:, PHN:, Date of Birth:) are separate rows, not one wrapped row
+      const labelRows = cl.filter((cs) => cs.some((c, k) => /:$/.test(c.text) && k < cs.length - 1)).length, form = labelRows >= 2 && labelRows * 2 >= grp.length;
+      if (grp.length >= 2 && grp.length <= 6 && cols.length >= 2 && !same && !prose && !form) {
         const merged = cols.map(() => "");
         cl.forEach((cs) => cs.forEach((c) => { const k = colOf(c); merged[k] = merged[k] ? merged[k] + (/-$/.test(merged[k]) ? "" : " ") + c.text : c.text; }));
         res.push(pad(cols.map((s, k) => ({ start: s, text: merged[k] })).filter((c) => c.text)), ""); return;

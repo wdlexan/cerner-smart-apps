@@ -1,8 +1,11 @@
 /* Hospitalist Toolkit shell: "Import PDF" button. Reads a PDF in the browser (pdf.js), finds labs, vitals, medications, procedures and diagnoses,
    shows them for the physician to tick and correct, then stores the accepted items for this browser tab so every tool tab can see them (pdf-overlay.js).
-   No PDF content leaves the browser. Text PDFs only (scanned images have no text and need OCR, which is not included). UNVERIFIED draft written by Claude. */
+   No PDF content leaves the browser. Text PDFs are read directly; PDFs that are only pictures of text (scans, faxes, "Microsoft Print to PDF"
+   of a CareConnect page) are read with OCR (Tesseract.js) running in this browser: the OCR library and English language data are downloaded
+   from the CDN, the page images are not uploaded anywhere. UNVERIFIED draft written by Claude. */
 (function () {
   const PDFJS = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js", WORKER = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+  const TESS = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js", OCR_SCALE = 3; // 3 x 72 = 216 dpi page images for OCR
   const KEY = (pid) => "pdfimport:" + pid;
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const X = () => window.PdfExtract;
@@ -63,7 +66,7 @@
       ${msg ? `<div class="warn">${msg}</div>` : ""}
       <div id="pdfdrop"><div style="font-size:15px">Drop PDF files here</div><div class="muted">or</div><input type="file" id="pdffile" accept="application/pdf,.pdf" multiple></div>
       ${sampleBlock()}
-      <div class="muted">Works for PDFs that contain real text. Scanned pages or faxes (pictures of text) cannot be read yet. Everything found is shown to you to tick and correct before it is used.</div>
+      <div class="muted">Text PDFs are read directly. Scanned pages, faxes or printed-to-PDF CareConnect pages (pictures of text) are read with OCR in your browser, which takes about 5-10 seconds a page (the first time also downloads about 10 MB of OCR data). Everything found is shown to you to tick and correct before it is used.</div>
       <p><button id="pdfx">Close</button></p>`;
     modal.classList.add("on");
     const dz = document.getElementById("pdfdrop"), fi = document.getElementById("pdffile");
@@ -108,14 +111,59 @@
     });
     return libP;
   }
+  /* OCR (Tesseract.js) for PDFs with no text layer */
+  let tessP = null, ocrW = null, ocrMsg = null;
+  function loadTess() {
+    if (window.Tesseract) return Promise.resolve(window.Tesseract);
+    if (tessP) return tessP;
+    tessP = new Promise((res, rej) => {
+      const s = document.createElement("script"); s.src = TESS; s.onload = () => res(window.Tesseract);
+      s.onerror = () => { tessP = null; rej(new Error("Could not load the OCR library (cdn.jsdelivr.net) needed for scanned PDFs. Check internet or ad-blocker.")); };
+      document.head.appendChild(s);
+    });
+    return tessP;
+  }
+  async function ocrWorker() {
+    if (ocrW) return ocrW;
+    const T = await loadTess();
+    ocrW = T.createWorker("eng", 1, { logger: (m) => { if (ocrMsg && m && m.status && /loading|initializ/i.test(m.status)) ocrMsg("Preparing OCR: " + m.status + (m.progress ? " " + Math.round(m.progress * 100) + "%" : "")); } })
+      .catch((e) => { ocrW = null; throw new Error("Could not start OCR: " + (e && e.message || e)); });
+    return ocrW;
+  }
+  /* render each page to a canvas, OCR it, and return words as {s, x, y, w, h} in PDF points (y from the bottom), like pdf.js text items,
+     so layoutLines() keeps columns and label/value rows. All words on one OCR line share that line's baseline. */
+  async function ocrPages(doc, name) {
+    const say = (t) => { const el = document.getElementById("pdfprog"); if (el) el.textContent = t; };
+    ocrMsg = say; say(name + ": no text layer, starting OCR…");
+    const w = await ocrWorker(), pages = []; let chars = 0;
+    for (let p = 1; p <= doc.numPages; p++) {
+      say(name + ": OCR page " + p + " of " + doc.numPages + "…");
+      const page = await doc.getPage(p), vp = page.getViewport({ scale: OCR_SCALE }), cv = document.createElement("canvas");
+      cv.width = Math.ceil(vp.width); cv.height = Math.ceil(vp.height);
+      const ctx = cv.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, cv.width, cv.height);
+      await page.render({ canvasContext: ctx, viewport: vp }).promise;
+      const { data } = await w.recognize(cv);
+      const items = [];
+      (data.lines || []).forEach((ln) => {
+        const ws = (ln.words || []).filter((x) => x.text && x.text.trim()); if (!ws.length) return;
+        const yb = Math.max(...ws.map((x) => x.bbox.y1)), yt = Math.min(...ws.map((x) => x.bbox.y0));
+        ws.forEach((x) => { chars += x.text.length; items.push({ s: x.text, x: x.bbox.x0 / OCR_SCALE, y: (vp.height - yb) / OCR_SCALE, w: (x.bbox.x1 - x.bbox.x0) / OCR_SCALE, h: (yb - yt) / OCR_SCALE }); });
+      });
+      pages.push(items); cv.width = cv.height = 0; // free the canvas memory
+    }
+    ocrMsg = null;
+    return { pages, chars };
+  }
   async function pdfLines(file) {
-    const lib = await loadLib(), buf = await file.arrayBuffer(), doc = await lib.getDocument({ data: buf }).promise, pages = []; let chars = 0;
+    const lib = await loadLib(), buf = await file.arrayBuffer(), doc = await lib.getDocument({ data: buf }).promise; let pages = [], chars = 0, ocr = false;
     for (let p = 1; p <= doc.numPages; p++) {
       const tc = await (await doc.getPage(p)).getTextContent();
       pages.push(tc.items.filter((it) => it.str && it.str.trim()).map((it) => { chars += it.str.length; return { s: it.str, x: it.transform[4], y: it.transform[5], w: it.width || 0, h: it.height || Math.abs(it.transform[3]) || 0 }; }));
     }
+    // no real text layer: pictures of text (scan, fax, Microsoft Print to PDF) -> OCR
+    if (chars < 40 * doc.numPages) { const o = await ocrPages(doc, file.name); if (o.chars > chars) { pages = o.pages; chars = o.chars; ocr = true; } }
     // keep columns and table rows (pdf-extract.js layoutLines), so two-column notes and wrapped table cells read correctly
-    return { lines: X().layoutLines(pages), chars, pages: doc.numPages };
+    return { lines: X().layoutLines(pages), chars, pages: doc.numPages, ocr };
   }
 
   /* ---------- step 2: read and review ---------- */
@@ -126,9 +174,10 @@
     for (const f of files) {
       try {
         document.getElementById("pdfprog").textContent = "Reading " + f.name + "…";
-        const { lines, chars, pages } = await pdfLines(f);
-        if (chars < 40 * pages) { problems.push(f.name + ": almost no text found. It looks like a scanned image, which this version cannot read."); if (chars < 20) continue; }
-        const r = X().fromLines(lines, { fileName: f.name }); results.push(r);
+        const { lines, chars, pages, ocr } = await pdfLines(f);
+        if (chars < 20 * pages) { problems.push(f.name + ": almost no text found" + (ocr ? " even with OCR (blank, handwritten or very poor scan)." : ".")); if (chars < 20) continue; }
+        const r = X().fromLines(lines, { fileName: f.name }); if (ocr) { r.ocr = true; problems.push(f.name + ": this PDF is pictures of text, so it was read with OCR. OCR can misread numbers and units (e.g. 0/O, 1/l, 5/S): check every value against the PDF before accepting."); }
+        results.push(r);
       } catch (e) { problems.push(f.name + ": " + (e.message || e)); }
     }
     review(results, problems);
