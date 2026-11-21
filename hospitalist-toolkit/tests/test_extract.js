@@ -238,4 +238,14 @@ Doing well on treatment. Sodium 131 mmol/L today. Continue the current plan and 
   ok("screenshot: sodium row under a header row is read", na && na.value === 128 && na.flag === "L", sr.items);
   ok("screenshot: NT-proBNP row not merged with the Medications line", nt && nt.value === 5420 && med && med.text === "furosemide 40 mg PO BID", sr.items);
 }
+// patient details from typed text (MADE-UP names)
+{
+  const D = (t) => X.demographics(t);
+  let d = D("SMITH, John, 76 M\nadmitted with CHF"); ok("typed: 'SMITH, John, 76 M'", d.family === "Smith" && d.given === "John" && d.sex === "male" && d.age === 76, d);
+  d = D("John Smith 76F DOB 1950-01-02"); ok("typed: 'John Smith 76F DOB …'", d.family === "Smith" && d.sex === "female" && d.birthDate === "1950-01-02", d);
+  d = D("Mrs. Mary Ann Jones (PHN 9059372139)"); ok("typed: 'Mrs. Mary Ann Jones' -> female, PHN", d.given === "Mary Ann" && d.family === "Jones" && d.sex === "female" && d.phn === "9059372139", d);
+  d = D("Phone report from outside hospital\nPt: Robert Brown, 82 yo male"); ok("typed: title line skipped, 'Pt: Robert Brown, 82 yo male'", d.family === "Brown" && d.sex === "male" && d.age === 82, d);
+  ok("typed: 'Phone Report' is not a name", !D("Phone Report\nNa 131").family);
+  ok("typed: 'Temp 38.5 F' is not sex", !D("Temp 38.5 F\nNa 131").sex);
+}
 console.log(`\n${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);

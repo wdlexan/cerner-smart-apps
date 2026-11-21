@@ -184,6 +184,22 @@
       if (!out.phn && (m = ln.match(/\b(?:phn|personal health number|hcn)\s*[:#]?\s*(\d[\d\s]{8,14}\d)/i))) { const d = m[1].replace(/\s/g, ""); if (d.length === 10) out.phn = d; }
       if (!out.mrn && (m = ln.match(/\b(?:mrn|medical record(?: number| no\.?| #)?|chart(?: number| no\.?| #))\s*[:#]?\s*([A-Z0-9][A-Z0-9-]{3,14})\b/i))) out.mrn = m[1];
     }
+    // typed notes: "SMITH, John, 76 M", "John Smith 76F", "Mrs. Mary Jones (DOB …)", "76 yo male"
+    const head = lines.slice(0, 15).map((l) => l.trim()).filter(Boolean);
+    const NOTNAME = /^(?:phone|report|note|notes|summary|history|plan|admission|admit|discharge|consult|consultation|patient|pt|labs?|from|the|hospital|clinic|dr|doctor|progress|assessment|impression|outside|referral|letter|re|subject|date|today|chief|complaint|hpi|ed|er|emergency|ward|unit|bed|room|mrn|phn|dob|sex|age|test|tests|result|results|medications?|meds|allergies|vitals?|imaging|ct|mri|cbc|na|hgb|pmh|social|family|exam|reason|called|spoke|seen|new|old|lab|test)$/i;
+    const okName = (...ws) => ws.join(" ").split(/\s+/).every((w) => w.length > 1 && !NOTNAME.test(w.replace(/[.,]/g, "")));
+    const TAILOK = /^\s*$|^\s*[,(\-–:;]|^\s+\d{1,3}\s?(?:y|yo|y\/o|yrs?|years?|-year|m|f)\b|^\s+(?:dob|phn|mrn|age|male|female|born|aged?)\b/i;
+    if (!out.family) for (const l of head) {
+      let m = /^(?:(?:Re|RE|Pt|PT|Patient)\s*:?\s*)?([A-Z][a-zA-Z'’-]+)\s*,\s*([A-Z][a-zA-Z'’-]+(?:\s+[A-Z][a-zA-Z'’.-]+)?)(.*)$/.exec(l);
+      if (m && TAILOK.test(m[3]) && okName(m[1], m[2])) { out.family = title(m[1]); out.given = title(m[2]); break; }
+      m = /^(?:(?:Re|RE|Pt|PT|Patient)\s*:?\s*)?(?:(Mr|Mrs|Ms|Miss|MR|MRS|MS|MISS)\.?\s+)?([A-Z][a-zA-Z'’-]+(?:\s+[A-Z][a-zA-Z'’.-]+)?)\s+([A-Z][a-zA-Z'’-]+)(.*)$/.exec(l);
+      if (m && TAILOK.test(m[4]) && okName(m[2], m[3])) { out.family = title(m[3]); out.given = title(m[2]); if (!out.sex && m[1]) out.sex = /^mr$/i.test(m[1]) ? "male" : "female"; break; }
+    }
+    if (out.family && !out.name) out.name = out.given + " " + out.family;
+    const headTxt = head.join("\n");
+    if (out.age == null) { const m = /(?<![\d.])(\d{1,3})\s?(?:y\/?o|yo|yrs?|years?)?\s?-?\s?([MF])\b/.exec(headTxt); if (m && +m[1] >= 15 && +m[1] < 115) out.age = +m[1]; }
+    if (!out.sex) { let m = /(?<![\d.])\d{1,3}\s?(?:y\/?o|yo|yrs?|years?(?:[- ]old)?|-year-old)?\s?-?\s?([MF])\b/.exec(headTxt) || /\b(male|female|man|woman|gentleman|lady)\b/i.exec(headTxt) || /\b(Mr|Mrs|Ms|Miss)\.?\s+[A-Z]/.exec(headTxt);
+      if (m) out.sex = /^(?:f|female|woman|lady|mrs|ms|miss)$/i.test(m[1]) ? "female" : "male"; }
     if (!out.age && out.birthDate) { const b = new Date(out.birthDate), n = new Date(); out.age = n.getFullYear() - b.getFullYear() - (n < new Date(n.getFullYear(), b.getMonth(), b.getDate()) ? 1 : 0); }
     return out;
   }

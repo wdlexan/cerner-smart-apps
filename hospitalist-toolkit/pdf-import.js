@@ -66,7 +66,7 @@
   const LAST = "pdflastreview";
   const saveLast = (results, problems) => { try { sessionStorage.setItem(LAST, JSON.stringify({ results, problems, at: Date.now() })); } catch (e) {} };
   const loadLast = () => { try { return JSON.parse(sessionStorage.getItem(LAST) || "null"); } catch (e) { return null; } };
-  const patientName = () => { const el = document.getElementById("patient"); return el ? el.textContent.trim() : ""; };
+  const patientName = () => { const el = document.getElementById("patient"); return el ? Array.from(el.childNodes).map((n) => n.textContent.trim()).filter(Boolean).filter((t) => !/^test mode\b/i.test(t)).join(" ") : ""; };
 
   /* ---------- step 1: choose files ---------- */
   function drop(msg) {
@@ -260,7 +260,7 @@
       h += `<details open class="pdfsec"><summary><b>Summary: ${esc(r.fileName)}</b> <span class="muted">editable: correct it, then copy it or keep it as a note</span></summary>
         <textarea id="pdfsum${k}" rows="14" spellcheck="true">${esc(r.summary)}</textarea>
         <div class="row"><button data-copy="${k}">Copy summary</button> <label><input type="checkbox" class="sumkeep" data-k="${k}"${r.typed ? "" : " checked"}> Keep this summary as a note for the patient</label></div></details>
-        <details${r.ocr ? " open" : ""} class="pdfsec"><summary><b>${r.typed ? "Your text" : "Text read from " + esc(r.fileName)}</b>${r.ocr ? ' <span class="bad">(OCR)</span>' : ""} <span class="muted">${r.lines} lines${r.edited ? ", corrected by you" : ""}</span></summary>
+        <details${r.ocr || r.typed ? " open" : ""} class="pdfsec"><summary><b>${r.typed ? "Your text" : "Text read from " + esc(r.fileName)}</b>${r.ocr ? ' <span class="bad">(OCR)</span>' : ""} <span class="muted">${r.lines} lines${r.edited ? ", corrected by you" : ""}</span></summary>
         <div class="muted">${r.ocr ? "This is what OCR read from the page pictures. " : ""}Fix misread words or numbers here, then press Re-read: the items table and summary are rebuilt from your corrected text.</div>
         <textarea id="pdftxt${k}" rows="18" class="mono" spellcheck="false">${esc(r.textDraft != null ? r.textDraft : r.text)}</textarea>
         <div class="row"><button data-reread="${k}">Re-read corrected text</button> <button data-copytxt="${k}">Copy text</button></div></details>`;
@@ -289,7 +289,7 @@
         ${others.length ? `<div><label><input type="radio" name="pdfdest" value="existing"> Add to another PDF-only patient: <select id="pdfexist">${others.map((p) => `<option value="${esc(p.id)}">${esc(p.label)}</option>`).join("")}</select></label></div>` : ""}
         <div id="pdfcur" style="margin-top:6px"><label><b><input type="checkbox" id="pdfpt"> This ${results.every((r) => r.typed) ? "text" : "PDF"} is for ${esc(patientName())}</b></label></div>
         <div id="pdfnew" hidden style="margin-top:6px">
-          <div class="muted">Details found in the PDF are filled in: check them. Nothing here goes to Cerner; this patient exists only in this browser tab.</div>
+          <div class="muted">Details found in the ${results.every((r) => r.typed) ? "text" : "PDF"} are filled in and update as you edit the text above (a box you change yourself is left alone): check them. Nothing here goes to Cerner; this patient exists only in this browser tab.</div>
           <table style="width:auto"><tr><td>Name</td><td><input type="text" id="np-given" placeholder="First name" value="${esc(demo.given || "")}" size="16"> <input type="text" id="np-family" placeholder="Last name" value="${esc(demo.family || "")}" size="16"></td></tr>
             <tr><td>Sex</td><td><select id="np-sex"><option value="">Unknown</option><option value="female"${demo.sex === "female" ? " selected" : ""}>Female</option><option value="male"${demo.sex === "male" ? " selected" : ""}>Male</option></select></td></tr>
             <tr><td>Date of birth</td><td><input type="date" id="np-dob" value="${esc(demo.birthDate || "")}"> or age <input type="text" id="np-age" size="4" value="${demo.birthDate ? "" : esc(demo.age || "")}">${demo.birthAmbiguous ? ' <span class="bad">check day/month</span>' : ""}</td></tr>
@@ -320,6 +320,16 @@
     box.querySelectorAll('input[name="pdfdest"]').forEach((r) => (r.onchange = refreshDest));
     ["np-given", "np-family"].forEach((id) => (document.getElementById(id).oninput = refreshDest));
     pt.onchange = refreshDest; refreshDest();
+    // patient details follow the (edited) text: refill boxes the physician has not changed by hand
+    const NP = { "np-given": "given", "np-family": "family", "np-sex": "sex", "np-dob": "birthDate", "np-age": "age", "np-phn": "phn", "np-mrn": "mrn" };
+    Object.keys(NP).forEach((id) => { const el = document.getElementById(id); if (el) el.dataset.auto = el.value; });
+    const refill = () => {
+      const txt = results.map((r, k) => (document.getElementById("pdftxt" + k) || {}).value || r.text).join("\n");
+      const d = X().demographics(txt); if (d.birthDate) d.age = "";
+      Object.entries(NP).forEach(([id, key]) => { const el = document.getElementById(id); if (!el || el.value !== el.dataset.auto) return; const v = d[key] == null ? "" : String(d[key]); el.value = v; el.dataset.auto = el.value; });
+      refreshDest();
+    };
+    let rt = null; box.querySelectorAll("textarea[id^=pdftxt]").forEach((t) => t.addEventListener("input", () => { clearTimeout(rt); rt = setTimeout(refill, 400); }));
     document.getElementById("pdfback").onclick = () => drop(); document.getElementById("pdfx2").onclick = close;
     addBtn.onclick = () => {
       const d = dest(); let target = pid(), created = null;
