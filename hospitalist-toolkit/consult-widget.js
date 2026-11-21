@@ -11,7 +11,7 @@
   // toolkit tab key -> usual service
   const BY_TAB = { abx: "Infectious diseases", abxmap: "Infectious diseases", infections: "Infectious diseases", aki: "Nephrology", transplant: "Nephrology", hypona: "Nephrology", lytes: "Nephrology", acidbase: "Nephrology",
     stroke: "Neurology", neuro: "Neurology", seizure: "Neurology", ae: "Neurology", dementia: "Geriatrics", pd: "Neurology", chf: "Cardiology", af: "Cardiology", liver: "Gastroenterology", ibd: "Gastroenterology",
-    pc: "Medical oncology", onc: "Medical oncology", tox: "Medical oncology", bispecific: "Medical oncology", g6pd: "Hematology", sero: "Rheumatology", hip: "Orthopedics", pain: "Palliative care", diabetes: "Endocrinology", ed: "Psychiatry", edr: "Psychiatry",
+    pc: "Medical oncology", onc: "Medical oncology", ild: "Respirology", tox: "Medical oncology", bispecific: "Medical oncology", g6pd: "Hematology", sero: "Rheumatology", hip: "Orthopedics", pain: "Palliative care", diabetes: "Endocrinology", ed: "Psychiatry", edr: "Psychiatry",
     opioid: "Palliative care", hah: "Internal medicine", mobility: "Geriatrics", falls: "Geriatrics" };
   const BY_TITLE = [[/serolog|rheumat|lupus|vasculitis/i, "Rheumatology"], [/infect|antibiot|abx|sepsis/i, "Infectious diseases"], [/\baki\b|kidney|renal|transplant|electrolyte|sodium|acid/i, "Nephrology"], [/stroke|seizure|neuro|encephalit/i, "Neurology"],
     [/dementia|falls|mobility/i, "Geriatrics"], [/heart|chf|atrial|cardi/i, "Cardiology"], [/liver|cirrho|ibd|crohn|colitis/i, "Gastroenterology"], [/carcinomatosis|oncolog|myeloma|bispecific|toxicit/i, "Medical oncology"],
