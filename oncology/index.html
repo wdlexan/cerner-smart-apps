@@ -51,6 +51,7 @@
   .calc{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin:4px 0 6px}
   .calc input{width:80px}
   .score{font-size:26px;font-weight:700;color:var(--accent)}
+  tr.mine td{background:var(--green-soft)}
   .ho h3{margin-top:12px} .ho .box{border:2px solid var(--red);border-radius:8px;padding:8px 12px;margin:8px 0}
   .ho .box.amber{border-color:#d4a72c}
   @media print{nav,header,.noprint,#cw-btn,#cw-panel{display:none!important} section.tab{display:none!important} #tab-handout{display:block!important} body{background:#fff;color:#000} .ho .box{break-inside:avoid}}
@@ -64,6 +65,7 @@
 <nav id="nav">
   <button data-t="chart" class="on">Chart</button>
   <button data-t="emerg">Emergencies</button>
+  <button data-t="drugs">Drug list</button>
   <button data-t="lung">Lung</button>
   <button data-t="breast">Breast</button>
   <button data-t="crc">Colorectal</button>
@@ -109,6 +111,18 @@
   <div class="tools noprint"><button class="btn ghost small" data-expand="tab-emerg">Expand all</button><button class="btn ghost small" data-collapse="tab-emerg">Collapse all</button>
     <a class="muted" href="https://www.bccancer.bc.ca/health-professionals/clinical-resources/chemotherapy-protocols/supportive-care" target="_blank" rel="noopener">BC Cancer supportive care protocols</a></div>
   <div id="emergCards"></div>
+</section>
+
+<!-- ================= DRUG LIST ================= -->
+<section class="tab" id="tab-drugs">
+  <h2>Cancer drugs by class</h2>
+  <div class="flag info">Typical schedules only – they vary by protocol, cancer, line of therapy and dose changes. <b>The BC Cancer protocol and the patient's treatment record are the source of truth.</b> Rows highlighted in green are on this patient's medication list.</div>
+  <div class="tools noprint">
+    <input id="dlSearch" placeholder="Search drug, class or side effect…" style="width:280px">
+    <label><input type="checkbox" id="dlMine"> Only this patient's drugs</label>
+    <button class="btn ghost small" data-expand="tab-drugs">Expand all</button><button class="btn ghost small" data-collapse="tab-drugs">Collapse all</button>
+  </div>
+  <div id="dlBody"></div>
 </section>
 
 <!-- ================= CANCER TABS (filled by app.js) ================= -->
@@ -174,9 +188,10 @@
 <script src="../hospitalist-toolkit/tools/onc/drugs.js?v=20261120c"></script>
 <script src="../hospitalist-toolkit/tools/onc/rules.js?v=20261120c"></script>
 <script src="../hospitalist-toolkit/tools/onc/chart.js?v=20261120c"></script>
-<script src="../hospitalist-toolkit/tools/onc/content.js?v=20261120c"></script>
+<script src="../hospitalist-toolkit/tools/onc/content.js?v=20261121a"></script>
+<script src="../hospitalist-toolkit/tools/onc/druglist.js?v=20261121a"></script>
 <script src="../hospitalist-toolkit/tools/onc/samples.js?v=20261120c"></script>
-<script src="../hospitalist-toolkit/tools/onc/app.js?v=20261120c"></script>
+<script src="../hospitalist-toolkit/tools/onc/app.js?v=20261121a"></script>
 <script src="../hospitalist-toolkit/consult-widget.js?v=20261120g"></script>
 </body>
 </html>

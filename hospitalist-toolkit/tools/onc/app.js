@@ -98,6 +98,27 @@
     $("tlsOut").innerHTML = `<div class="flag ${t.clinical ? "red" : t.lab ? "red" : t.n ? "amber" : "green"}">${t.n} of 4 lab criteria${t.n ? ": " + esc(t.crit.join(", ")) : ""}. ${t.clinical ? "<b>Clinical TLS.</b>" : t.lab ? "<b>Laboratory TLS.</b>" : t.n ? "Not TLS yet – repeat labs in 6–8 h if at risk." : "No TLS criteria met."}</div>`;
   }
 
+  // ---- drug list by class ----
+  function drawDrugList() {
+    const D = window.OncDrugList; if (!D) return;
+    const meds = state.f ? state.f.meds.map((m) => m.text) : [];
+    const mine = D.forPatient(meds), q = ($("dlSearch").value || "").trim().toLowerCase(), onlyMine = $("dlMine").checked;
+    const strip = (h) => h.replace(/<[^>]+>/g, "");
+    let shown = 0;
+    $("dlBody").innerHTML = D.GROUPS.map((g, gi) => {
+      const rows = g.rows.map((r, ri) => ({ r, me: mine.has(gi + ":" + ri) })).filter(({ r, me }) => (!onlyMine || me) && (!q || (g.t + " " + r.n + " " + r.sched + " " + strip(r.common) + " " + strip(r.watch)).toLowerCase().includes(q)));
+      if (!rows.length) return "";
+      shown += rows.length;
+      const n = rows.filter((x) => x.me).length, open = q || onlyMine || n;
+      return `<details data-k="dl-${gi}"${open ? " open" : ""}><summary>${esc(g.t)} <span class="muted">(${rows.length})</span>${n ? ` <span class="pill" style="background:var(--green-soft)">this patient: ${n}</span>` : ""}</summary>
+        ${g.note ? `<p class="muted">${esc(g.note)}</p>` : ""}
+        <table><tr><th style="width:20%">Drug</th><th style="width:24%">How it's usually given</th><th style="width:24%">Common side effects</th><th>Watch for</th></tr>
+        ${rows.map(({ r, me }) => `<tr${me ? ' class="mine"' : ""}><td><b>${esc(r.n)}</b>${me ? '<div class="muted">on this patient\'s list</div>' : ""}</td><td>${esc(r.sched)}</td><td>${r.common}</td><td>${r.watch}</td></tr>`).join("")}</table></details>`;
+    }).join("") || '<p class="muted">No drugs match.</p>';
+    wireDetails($("dlBody"));
+  }
+  $("dlSearch").oninput = drawDrugList; $("dlMine").onchange = drawDrugList;
+
   // ---- chart ----
   const LAB_ORDER = ["anc", "wbc", "blasts", "hb", "plt", "inr", "fib", "na", "k", "hco3", "mg", "po4", "ca", "alb", "cr", "urate", "ldh", "glu", "alt", "bili", "lipase", "ferritin", "tsh", "cortisol", "trop", "lactate"];
   function render() {
@@ -107,7 +128,7 @@
     if (!f) {
       $("chartFlags").innerHTML = '<span class="muted">No patient loaded.</span>'; $("emergFlags").innerHTML = "";
       ["chartCancer", "chartLabs", "chartDrugs", "chartMarkers", "chartReports"].forEach((id) => ($(id).innerHTML = '<span class="muted">No patient loaded.</span>'));
-      return;
+      drawDrugList(); return;
     }
     const fl = R.flags(f);
     $("chartFlags").innerHTML = fl.length ? flagHtml(fl) : '<div class="flag green">No emergency or drug-safety flags from the data found.</div>';
@@ -162,7 +183,7 @@
     window.CONSULT_SERVICE = svc;
     try { const P = window.parent; (P.CONSULT_SERVICE_OVERRIDE = P.CONSULT_SERVICE_OVERRIDE || {}).onc = svc; } catch (e) {}
     $("wbcBox").innerHTML = f.latest.wbc ? `<div class="flag ${f.latest.wbc.v >= 100 ? "red" : f.latest.wbc.v >= 50 ? "amber" : "green"}">This patient: WBC ${f.latest.wbc.v} ×10⁹/L${f.latest.blasts ? `, blasts ${f.latest.blasts.v}%` : ""} (${fmtD(f.latest.wbc.t)}).</div>` : "";
-    drawHandout(); buildNote(true);
+    drawHandout(); buildNote(true); drawDrugList();
   }
   function siteLine(f) {
     const s = f.sites || {}, names = { bone: "bone", brain: "brain", liver: "liver", lungmet: "lung", pleural: "pleural effusion", peritoneal: "peritoneum" };
@@ -256,7 +277,7 @@
     } catch (e) { $("pstatus").textContent = "Could not read the chart: " + (e && e.message ? e.message : e) + ". The made-up patients still work."; return false; }
   }
 
-  drawCancerTabs(); drawEmerg(); wireDetails(document); render(); drawHandout(); buildNote(true);
+  drawCancerTabs(); drawEmerg(); wireDetails(document); render(); drawDrugList(); drawHandout(); buildNote(true);
   const q = new URLSearchParams(location.search), demo = q.get("demo");
   if (q.get("tab") && document.getElementById("tab-" + q.get("tab"))) show(q.get("tab"));
   fromChart().then((ok) => { if (!ok && demo && SAMPLES[+demo - 1]) { $("testsel").value = +demo - 1; $("testsel").onchange(); } });

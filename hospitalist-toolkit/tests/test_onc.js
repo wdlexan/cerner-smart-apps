@@ -133,6 +133,18 @@ ok("P: cholangitis red", has(FL[15], /cholangitis/, "red"));
 ok("P: no enzymes info", has(FL[15], /pancrelipase/));
 ok("P: VTE risk", has(FL[15], /highest VTE risks/));
 
+// ---- drug list by class ----
+const DL = require("../tools/onc/druglist.js");
+ok("drug list: every row has name, schedule, common, watch", DL.GROUPS.every((g) => g.rows.every((r) => r.n && r.sched && r.common && r.watch && r.m instanceof RegExp)));
+ok("drug list: at least 15 classes and 80 drugs", DL.GROUPS.length >= 15 && DL.GROUPS.reduce((a, g) => a + g.rows.length, 0) >= 80);
+const pick = (meds) => [...DL.forPatient(meds)].map((k) => { const [g, r] = k.split(":"); return DL.GROUPS[g].rows[r].n; });
+ok("drug list: FOLFIRI highlights 5-FU and irinotecan", (() => { const n = pick(["FOLFIRI every 2 weeks"]); return n.includes("5-Fluorouracil (5-FU)") && n.includes("Irinotecan"); })());
+ok("drug list: R-CHOP highlights rituximab, cyclophosphamide, doxorubicin, vincristine", (() => { const n = pick(["R-CHOP every 21 days"]).join("|"); return /Rituximab/.test(n) && /Cyclophosphamide/.test(n) && /Doxorubicin/.test(n) && /Vincristine/.test(n); })());
+ok("drug list: T-DXd is not plain trastuzumab", (() => { const n = pick(["trastuzumab deruxtecan 5.4 mg/kg"]); return n.length === 1 && /deruxtecan/.test(n[0]); })());
+ok("drug list: nab-paclitaxel is not paclitaxel", (() => { const n = pick(["nab-paclitaxel 125 mg/m2"]); return n.length === 1 && n[0] === "Nab-paclitaxel"; })());
+ok("drug list: topical tretinoin not ATRA", pick(["tretinoin 0.05% cream"]).length === 0);
+ok("drug list: acetaminophen matches nothing", pick(["acetaminophen 650 mg PO q6h"]).length === 0);
+
 // note
 const n = R.note({ cancer: "Lung cancer", intent: "palliative", treatment: ["Osimertinib"], flags: ["x"], code: "M2", decision: "hold osimertinib" });
 ok("note has intent, drug, decision", /Intent: palliative/.test(n) && /Osimertinib/.test(n) && /My decision: hold osimertinib/.test(n));
