@@ -144,6 +144,15 @@ else {
       global.window = global.window || {}; require("../consult-widget.js"); const cp = window.ConsultWidget.listPatients(window.ConsultWidget.readSheet(x, ""));
       eq("consult picker reads the file", cp.length >= 2 && cp[0].name === "Ann & Co Sample" && cp[0].mrn === "0012345" && cp[0].sex === "female" && cp[0].pmhx[0] === "COPD", true);
       eq("colour rules to last row", /sqref="K1:K15"/.test(x) && !/sqref="[^"]*H26/.test(x), true);
-      done();
+      return X.update(JSZip, fs.readFileSync(__dirname + "/../tools/plist/template.xlsx"), []).then(() => { throw new Error("blank template should be refused"); }, () => true)
+        .then(() => X.build(JSZip, fs.readFileSync(__dirname + "/../tools/plist/template.xlsx"), [{ floor: "S7B", patients: [{ name: "SMITH, ANN", location: "S715 A", age: 82, todo: ["call daughter"] }] }], { spare: 1 }))
+        .then((u8) => X.update(JSZip, u8, [{ floor: "S7B", patients: [{ name: "Smith, Ann", mrn: "0012", sex: "F" }, { name: "NEW, PAT", location: "S720 B", age: 60, mrn: "9", sex: "M" }] },
+                                          { floor: "N6D", patients: [{ name: "FAR, AWAY", location: "N601 A", age: 40 }] }]))
+        .then((r) => { eq("update: new patients added, existing only filled", r.added.join("|") + " / " + r.filled.join("|"), "NEW, PAT|FAR, AWAY / SMITH, ANN");
+          return X.readList(JSZip, r.data); })
+        .then((L) => { eq("update: typed to-do kept, mrn filled", /call daughter/.test(L.rows.find((r) => r.n === 3).xml) && L.patients[0].mrn === "0012", true);
+          eq("update: new floor added at the end", L.floors.map((f) => f.name).join(","), "S7B,N6D");
+          eq("update: patients and floors", L.patients.map((p) => p.floor + ":" + p.name).join("|"), "S7B:SMITH, ANN|S7B:NEW, PAT|N6D:FAR, AWAY");
+          done(); });
     }).catch((e) => { fail++; console.log("FAIL excel: " + e.message); done(); });
 }
