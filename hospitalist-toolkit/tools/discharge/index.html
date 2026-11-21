@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Discharge note</title>
+  <style>
+    :root { --bg:#f5f7fa; --card:#fff; --ink:#1f2933; --muted:#5f6c7b; --accent:#0b6bcb; --line:#dde3ea;
+            --r-bg:#fde8e8; --r-ink:#9b1c1c; --a-bg:#fff1d6; --a-ink:#8a5200; --b-bg:#e3eefc; --b-ink:#0b4a99; --g-bg:#e4f4ea; --g-ink:#1d6b3a; --warn-bg:#fff4e5; --warn-line:#f0c27b; }
+    @media (prefers-color-scheme: dark) { :root { --bg:#111418; --card:#1a1f26; --ink:#e8edf2; --muted:#9aa7b5; --accent:#6aa9ff; --line:#2b333d;
+            --r-bg:#4a1d1d; --r-ink:#ffb3b3; --a-bg:#4a3511; --a-ink:#ffd38a; --b-bg:#14325c; --b-ink:#a9cdff; --g-bg:#16361f; --g-ink:#9be0b1; --warn-bg:#3a2e15; --warn-line:#6b5420; } }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); }
+    header { padding:14px 20px; border-bottom:1px solid var(--line); background:var(--card); }
+    header h1 { margin:0; font-size:19px; } header .sub { font-size:13px; color:var(--muted); margin-top:2px; }
+    main { max-width:980px; margin:16px auto 40px; padding:0 16px; display:grid; gap:14px; }
+    .banner { background:var(--warn-bg); border:1px solid var(--warn-line); border-radius:8px; padding:10px 14px; font-size:13px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:10px; font-size:13.5px; }
+    .card > summary { padding:10px 16px; font-weight:700; font-size:15px; cursor:pointer; display:flex; justify-content:space-between; gap:10px; }
+    .card > .body { padding:0 16px 14px; }
+    select, input, button { font:inherit; font-size:13px; padding:5px 8px; border:1px solid var(--line); border-radius:6px; background:var(--card); color:var(--ink); }
+    button { cursor:pointer; } button.primary { border-color:var(--accent); color:var(--accent); }
+    input[type=number] { width:80px; }
+    .row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:8px 0; }
+    .inl { display:inline-flex; gap:6px; align-items:center; }
+    .muted { color:var(--muted); } .err { color:var(--r-ink); }
+    .tiles { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px; }
+    .tile { border-radius:10px; padding:10px 14px; border:1px solid var(--line); background:var(--card); }
+    .tile .k { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; }
+    .tile .big { font-size:26px; font-weight:700; margin:2px 0; }
+    .tile .s { font-size:12.5px; }
+    .t0 { background:var(--g-bg); color:var(--g-ink); } .t1 { background:var(--b-bg); color:var(--b-ink); } .t2 { background:var(--a-bg); color:var(--a-ink); } .t3 { background:var(--r-bg); color:var(--r-ink); }
+    .t0 .k, .t1 .k, .t2 .k, .t3 .k { color:inherit; opacity:.8; }
+    .alert { border-left:4px solid; border-radius:6px; padding:8px 12px; margin:6px 0; }
+    .alert b { margin-right:6px; }
+    .alert.urgent { background:var(--r-bg); color:var(--r-ink); } .alert.action { background:var(--a-bg); color:var(--a-ink); } .alert.info { background:var(--b-bg); color:var(--b-ink); }
+    table { border-collapse:collapse; width:100%; font-size:13px; }
+    th, td { border-bottom:1px solid var(--line); padding:5px 8px; text-align:left; white-space:nowrap; }
+    th { color:var(--muted); font-weight:600; }
+    td.num { text-align:right; font-variant-numeric:tabular-nums; } td.wrap { white-space:normal; }
+    td.hi { color:var(--r-ink); font-weight:600; } td.old { color:var(--a-ink); }
+    .scroll { overflow-x:auto; }
+    .plan h3 { font-size:14px; margin:12px 0 4px; } .plan ul { margin:4px 0 8px 18px; padding:0; } .plan li { margin:3px 0; }
+    .plan .urgent h3 { color:var(--r-ink); } .plan .action h3 { color:var(--a-ink); }
+    .chip { display:inline-block; padding:1px 8px; border-radius:10px; font-size:12px; font-weight:600; }
+    .c-yes { background:var(--g-bg); color:var(--g-ink); } .c-no { background:var(--r-bg); color:var(--r-ink); } .c-unknown { background:var(--a-bg); color:var(--a-ink); }
+    .src { font-size:12px; color:var(--muted); margin-top:8px; }
+    svg text { fill:var(--muted); font-size:11px; }
+    .summary { font-size:14.5px; line-height:1.55; }
+    .chip.c-rec { background:var(--b-bg); color:var(--b-ink); }
+    details.q summary { cursor:pointer; color:var(--accent); font-size:12.5px; }
+    details.q pre { white-space:pre-wrap; font-size:12.5px; background:var(--bg); border:1px solid var(--line); border-radius:6px; padding:8px; max-height:260px; overflow:auto; }
+    @media print { .noprint { display:none; } }
+  
+    textarea { font:inherit; font-size:13px; width:100%; padding:6px 8px; border:1px solid var(--line); border-radius:6px; background:var(--card); color:var(--ink); resize:vertical; }
+    textarea.out { font:13px/1.45 ui-monospace,Consolas,monospace; min-height:320px; }
+    td input[type=text], td select { width:100%; }
+    td.ck { width:24px; } td.st { width:150px; } .grid2 { display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:8px 14px; }
+    .grid2 label { display:flex; flex-direction:column; gap:3px; font-size:12.5px; color:var(--muted); } .grid2 label input, .grid2 label textarea { color:var(--ink); }
+    .mods { display:grid; gap:6px; } .mod { border:1px solid var(--line); border-radius:8px; padding:6px 10px; } .mod .why { font-size:12px; color:var(--muted); }
+    .mod .fields { display:flex; flex-wrap:wrap; gap:8px 14px; margin:6px 0 2px 24px; font-size:12.5px; } .mod .fields input { width:auto; }
+    .dirty { color:var(--a-ink); font-size:12.5px; } .st-new { color:var(--b-ink); font-weight:600; } .st-changed { color:var(--a-ink); font-weight:600; } .st-stopped, .st-held { color:var(--r-ink); font-weight:600; } .st-inpatient { color:var(--muted); }
+    .hint { background:var(--b-bg); color:var(--b-ink); border-radius:8px; padding:8px 12px; font-size:12.5px; margin:6px 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Discharge note</h1>
+    <div class="sub">What changed, pending results, incidental findings, follow-up, and plain-language instructions with when to call the family doctor, 8-1-1 or 9-1-1. Read-only: it orders nothing and writes nothing to Cerner.</div>
+  </header>
+  <main>
+    <div class="banner"><b>Draft from the chart. It orders nothing.</b> Medicine changes, pending results and incidental findings are found by rules (written by Claude, <b>not verified</b>) and can miss or misread things: check each line against PowerChart and the discharge medication reconciliation. Instructions are standard text for you to edit. Use made-up or Cerner sandbox patients until Island Health approves real data.</div>
+
+    <details class="card" open>
+      <summary><span>Patient and admission</span><span class="muted" id="ptsum"></span></summary>
+      <div class="body">
+        <div id="pstatus" class="muted">Open from Cerner to read the chart, or pick a made-up patient:</div>
+        <div class="row"><select id="testsel"><option value="">Made-up patient…</option></select><button id="clear" hidden>Clear</button> <button id="reset" title="Throw away your edits on this page and read the chart again">Start over from the chart</button></div>
+        <div class="grid2">
+          <label>Admitted <input type="date" id="v-admit"></label>
+          <label>Discharge date <input type="date" id="v-dc"></label>
+          <label>Diagnoses (for the note) <input type="text" id="v-dx" placeholder="e.g. HFpEF exacerbation; new atrial fibrillation"></label>
+          <label>Reason for stay in plain words (for the patient) <input type="text" id="v-ptReason" placeholder="e.g. heart failure (fluid on the lungs)"></label>
+          <label>Family doctor <input type="text" id="v-fpName" placeholder="Dr. ___ (optional)"></label>
+          <label>See family doctor within (days) <input type="number" id="v-fpDays" min="1" max="60" value="7"></label>
+        </div>
+        <label class="muted" style="display:block;margin-top:8px;font-size:12.5px">Brief hospital course (optional, for the note)<textarea id="v-course" rows="3" placeholder="Two or three lines: what happened and what was done."></textarea></label>
+        <div id="errs" class="err"></div>
+      </div>
+    </details>
+
+    <details class="card" open>
+      <summary><span>1. Medicine changes</span><span class="muted" id="medsum"></span></summary>
+      <div class="body"><div class="scroll" id="meds"></div><div class="row"><button id="addmed">Add a medicine</button></div>
+        <div class="src">Compared: home medicines (MedicationStatement / community orders) with the discharge prescriptions if there are any, otherwise the current inpatient orders. "Stop (hospital only)" lines are left off both outputs. Set the status and add a reason: the reason goes to the family doctor and the patient.</div></div>
+    </details>
+
+    <details class="card" open>
+      <summary><span>2. What changed this admission</span><span class="muted" id="chgsum"></span></summary>
+      <div class="body"><div class="scroll" id="chg"></div>
+        <label class="muted" style="display:block;margin-top:8px;font-size:12.5px">Other changes to mention (function, cognition, diet, devices, goals of care…)<textarea id="v-changedOther" rows="2"></textarea></label></div>
+    </details>
+
+    <details class="card" open>
+      <summary><span>3. Pending results</span><span class="muted" id="pendsum"></span></summary>
+      <div class="body"><div class="scroll" id="pend"></div><div class="row"><button id="addpend">Add a pending result</button></div>
+        <div class="src">Results not final, orders with no result, and notes saying "pending". Name who follows up each one: under the CPSBC standard the ordering physician stays responsible unless it is handed over.</div></div>
+    </details>
+
+    <details class="card" open>
+      <summary><span>4. Incidental findings</span><span class="muted" id="incsum"></span></summary>
+      <div class="body"><div class="scroll" id="inc"></div><div class="row"><button id="addinc">Add a finding</button></div>
+        <div class="src">Sentences in imaging reports and notes with words like nodule, mass, cyst, aneurysm or "recommend follow-up". Untick anything already dealt with.</div></div>
+    </details>
+
+    <details class="card" open>
+      <summary><span>5. Home care and when to get help</span><span class="muted" id="modsum"></span></summary>
+      <div class="body">
+        <div class="hint"><b>Short plan here, full handout separately.</b> These are the key actions and return precautions for each condition, built into the patient instructions below. For heart failure, also print the full handout with the daily weight log from the Heart failure tab.</div>
+        <div class="mods" id="mods"></div>
+        <div class="grid2" style="margin-top:10px">
+          <label>Extra instructions for the patient (one per line)<textarea id="v-ptExtra" rows="3"></textarea></label>
+          <label>Extra tasks for the family doctor (one per line)<textarea id="v-fpTasks" rows="3"></textarea></label>
+          <label>Specialist follow-up for the note (one per line)<textarea id="v-spec" rows="2" placeholder="e.g. Heart function clinic in 4 to 6 weeks (referral sent)"></textarea></label>
+          <label>Appointments for the patient (one per line)<textarea id="v-ptAppts" rows="2" placeholder="e.g. Heart function clinic: they will phone you"></textarea></label>
+          <label>Blood tests for the patient <input type="text" id="v-labsWhen" placeholder="e.g. blood test at LifeLabs in 1 week (requisition given)"></label>
+        </div>
+      </div>
+    </details>
+
+    <details class="card" open>
+      <summary><span>Discharge note for the family doctor</span><span class="muted">edit, then copy into the PowerChart discharge summary</span></summary>
+      <div class="body"><textarea class="out" id="out-fp" spellcheck="true"></textarea>
+        <div class="row"><button class="primary" id="copy-fp">Copy note</button> <button id="rb-fp">Rebuild from above</button> <span class="dirty" id="dirty-fp"></span></div></div>
+    </details>
+
+    <details class="card" open>
+      <summary><span>Patient instructions</span><span class="muted">plain language; print in large type or copy into the patient instructions</span></summary>
+      <div class="body"><textarea class="out" id="out-pt" spellcheck="true"></textarea>
+        <div class="row"><button class="primary" id="print-pt">Print (large type)</button> <button id="copy-pt">Copy</button> <button id="rb-pt">Rebuild from above</button> <span class="dirty" id="dirty-pt"></span></div></div>
+    </details>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+  <script src="../../pdf-overlay.js?v=20261120p"></script>
+  <script src="rules.js?v=20261121b"></script>
+  <script src="chart.js?v=20261121a"></script>
+  <script src="samples.js?v=20261121a"></script>
+  <script src="app.js?v=20261121b"></script>
+</body>
+</html>

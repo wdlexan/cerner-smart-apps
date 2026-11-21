@@ -38,6 +38,7 @@ const TOOLS = [
   { key: "hip",   label: "Hip fracture", tags: "hip fracture fragility orthopedics ortho",         path: "tools/hip/index.html" },
   { key: "consult", label: "Consult summary", tags: "consult summary",    path: "tools/consult/index.html" },
   { key: "mobility", label: "Mobility & discharge", tags: "mobility discharge pt ot function planning", path: "tools/mobility/index.html" },
+  { key: "discharge", label: "Discharge note", tags: "discharge summary note instructions what changed medication reconciliation pending results incidental findings follow-up family physician fp return precautions 911 when to call handout", path: "tools/discharge/index.html" },
   { key: "pd",    label: "Parkinson disease", tags: "parkinson pd levodopa",    path: "tools/pd/index.html" },
   { key: "dementia", label: "Dementia workup", tags: "dementia cognitive impairment memory delirium workup",  path: "tools/dementia/index.html" },
   { key: "aki",   label: "AKI", tags: "aki acute kidney injury creatinine renal",                  path: "tools/aki/index.html" },
@@ -57,7 +58,7 @@ const TOOLS = [
 ];
 
 // POCKET MODE (index.html?pocket=1, the iPhone home-screen app; see pocket.js): no Cerner connection, so hide the tabs that only read the chart.
-const POCKET_HIDE = ["today", "plist", "labs", "crit", "notes", "ai", "forms", "consult", "ed", "hah", "risk", "watch", "dx", "cw", "mobility"];
+const POCKET_HIDE = ["today", "plist", "labs", "crit", "notes", "ai", "forms", "consult", "ed", "hah", "risk", "watch", "dx", "cw", "mobility", "discharge"];
 const POCKET = window.TK_POCKET === true;
 if (POCKET) for (let i = TOOLS.length - 1; i >= 0; i--) if (POCKET_HIDE.includes(TOOLS[i].key)) TOOLS.splice(i, 1);
 const TAB_KEY = POCKET ? "pocket-tab" : "toolkit-tab";
