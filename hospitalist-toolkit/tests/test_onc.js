@@ -104,6 +104,35 @@ ok("APL without ATRA → start ATRA", has(R.flags(C.parse({ patient: {}, conditi
 const mp = C.parse({ patient: {}, conditions: [{ code: { text: "B-cell acute lymphoblastic leukemia" } }], obs: [], medreqs: [{ status: "active", medicationCodeableConcept: { text: "mercaptopurine 50 mg PO daily" } }, { status: "active", medicationCodeableConcept: { text: "allopurinol 100 mg PO daily" } }] }, { now });
 ok("mercaptopurine + allopurinol red", has(R.flags(mp, now), /Mercaptopurine\/thioguanine with allopurinol/, "red"));
 
+// ---- bladder, melanoma, head & neck, kidney, pancreas ----
+const k1 = (t) => Object.keys(R.detectCancers(t, [])).join(",");
+eq("bladder", k1(["Urothelial carcinoma of bladder"]), "bladder");
+eq("neurogenic bladder is not cancer", k1(["Neurogenic bladder"]), "");
+eq("melanoma", k1(["Malignant melanoma of skin of back"]), "melanoma");
+eq("melanoma lung mets stays melanoma", k1(["Melanoma metastatic to lung"]), "melanoma");
+eq("head and neck", k1(["Squamous cell carcinoma of base of tongue"]), "hn");
+eq("RCC", k1(["Clear cell renal cell carcinoma"]), "kidney");
+eq("CKD is not kidney cancer", k1(["Chronic kidney disease stage 3"]), "");
+eq("kidney mets from lung stays lung", k1(["Adenocarcinoma of lung", "Secondary malignant neoplasm of kidney"]), "lung");
+eq("pancreas", k1(["Adenocarcinoma of head of pancreas"]), "panc");
+eq("IPMN is not pancreatic cancer", k1(["Intraductal papillary mucinous neoplasm of pancreas"]), "");
+eq("BCG", m("BCG intravesical weekly"), "Intravesical BCG");
+eq("'practice' is not BCG", m("practice dose"), "");
+ok("L: enfortumab glucose red (single flag)", FL[11].filter((x) => /Glucose 22.4/.test(x.text)).length === 1 && has(FL[11], /enfortumab/, "red"));
+ok("L: enfortumab rash red", has(FL[11], /Rash on enfortumab/, "red"));
+ok("L: conduit acidosis", has(FL[11], /ileal conduit/));
+ok("M: BRAF pyrexia", has(FL[12], /BRAF\/MEK pyrexia/));
+ok("M: immunotherapy low TSH", has(FL[12], /TSH 0.05 on immunotherapy/));
+ok("M: Na on ICI mentions cortisol", has(FL[12], /Na 129.*cortisol/));
+ok("N: tracheostomy airway red", has(FL[13], /airway issue/, "red"));
+ok("N: sentinel bleed red", has(FL[13], /sentinel/, "red"));
+ok("O: diltiazem + TKI", has(FL[14], /diltiazem or verapamil/));
+ok("O: hypercalcemia", has(FL[14], /Corrected Ca 3.1/, "red"));
+ok("O: TKI surgery hold text", has(FL[14], /VEGF TKI: check BP/));
+ok("P: cholangitis red", has(FL[15], /cholangitis/, "red"));
+ok("P: no enzymes info", has(FL[15], /pancrelipase/));
+ok("P: VTE risk", has(FL[15], /highest VTE risks/));
+
 // note
 const n = R.note({ cancer: "Lung cancer", intent: "palliative", treatment: ["Osimertinib"], flags: ["x"], code: "M2", decision: "hold osimertinib" });
 ok("note has intent, drug, decision", /Intent: palliative/.test(n) && /Osimertinib/.test(n) && /My decision: hold osimertinib/.test(n));

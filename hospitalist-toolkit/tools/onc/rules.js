@@ -11,6 +11,11 @@
     crc: { re: /colon|colorectal|rectum|rectal|rectosigmoid|sigmoid|caecum|cecum|cecal|hepatic flexure|splenic flexure|C1[89](\.\d+)?\b|C20\b/i },
     prostate: { re: /prostat|C61\b/i },
     leuk: { re: /leuka?emia|\b(aml|cml|cll|apl)\b|promyelocytic|lymphoblastic|myeloblastic|C9[1-5](\.\d+)?\b/i },
+    bladder: { re: /bladder|urothelial|transitional cell|C6[5-7](\.\d+)?\b/i },
+    melanoma: { re: /melanoma|C43(\.\d+)?\b/i },
+    hn: { re: /head and neck|oropharyn|oral cavity|tongue|tonsil|laryn|pharyn|salivary|parotid|floor of mouth|gingiva|buccal mucosa|\blip\b|sinonasal|C0\d(\.\d+)?\b|C1[0-4](\.\d+)?\b|C3[0-2](\.\d+)?\b/i },
+    kidney: { re: /renal cell|\brcc\b|kidney|C64(\.\d+)?\b/i },
+    panc: { re: /pancrea|C25(\.\d+)?\b/i },
     lymph: { re: /lymphoma|hodgkin|\bdlbcl\b|burkitt|mycosis fungoides|C8[1-6](\.\d+)?\b|C88(\.\d+)?\b/i } };
   // heme subtypes (shown on the cancer card and used by rules)
   const SUB = {
@@ -21,8 +26,8 @@
       ["pcnsl", /central nervous system lymphoma|cns lymphoma|primary cns|brain lymphoma|cerebral lymphoma|intraocular lymphoma/i],
       ["follicular", /follicular|C82/i], ["mantle", /mantle cell|C83\.1/i], ["marginal", /marginal zone|malt|C88\.4/i], ["tcell", /t-?cell lymphoma|peripheral t|anaplastic large|C84|C86/i]] };
   const SUBNAME = { apl: "APL", aml: "AML", all: "ALL", cml: "CML", cll: "CLL", hodgkin: "Hodgkin", dlbcl: "DLBCL", burkitt: "Burkitt", pcnsl: "primary CNS", follicular: "follicular", mantle: "mantle cell", marginal: "marginal zone", tcell: "T-cell" };
-  const CANCERWORD = /cancer|carcinoma|adenocarcinoma|malignan|neoplasm|tumou?r|nsclc|sclc|leuka?emia|lymphoma|hodgkin|\b(aml|cml|cll|apl|dlbcl)\b|\bALL\b|\bC\d\d/i;
-  const NOTCANCER = /benign|hyperplasia|\bbph\b|polyp|adenoma(?!.*carcinoma)|screening|family history|fh of|fibroadenoma|cyst|prostatitis|nodule(?!.*malig)|leukemoid|lymphadenopathy|lymphocytosis|\bD[0-4]\d/i;
+  const CANCERWORD = /cancer|carcinoma|adenocarcinoma|malignan|neoplasm|tumou?r|nsclc|sclc|melanoma|\brcc\b|leuka?emia|lymphoma|hodgkin|\b(aml|cml|cll|apl|dlbcl)\b|\bALL\b|\bC\d\d/i;
+  const NOTCANCER = /benign|hyperplasia|\bbph\b|polyp|adenoma(?!.*carcinoma)|screening|family history|fh of|fibroadenoma|cyst|prostatitis|nodule(?!.*malig)|leukemoid|lymphadenopathy|lymphocytosis|ipmn|intraductal papillary|neurogenic bladder|overactive bladder|\bD[0-4]\d/i;
   const SECONDARY = /secondary|metasta|\bmets?\b|C7[7-9]/i;
 
   function detectCancers(probTexts, drugHits) {
@@ -79,6 +84,13 @@
     obstruction: /bowel obstruction|\bsbo\b|\blbo\b|K56/i,
     hydro: /hydronephrosis|N13/i,
     diarrhea: /diarrh|colitis|enteritis|R19\.7|K52/i,
+    biliary: /biliary obstruction|cholangitis|obstructive jaundice|jaundice|stent occlusion|K83\.[01]|R17/i,
+    airway: /stridor|airway obstruction|upper airway|tracheostomy|laryngectomy|J38\.6|Z93\.0/i,
+    laryngectomy: /laryngectomy|neck breather/i,
+    bleed: /hemorrhage|haemorrhage|bleed|hematemesis|haematemesis|carotid blowout|R04\.0/i,
+    hematuria: /hematuria|haematuria|clot retention|R31/i,
+    conduit: /ileal conduit|urostomy|neobladder|cystectomy|Z93\.6/i,
+    rash: /rash|stevens|toxic epidermal|blister|bullous|dermatitis|L51|L27/i,
     vte: /deep vein|\bdvt\b|pulmonary embol|\bpe\b|I26|I80|I82/i };
 
   function findSites(texts) {
@@ -149,7 +161,7 @@
 
     // sodium
     if (L.na && L.na.v < 125) out.push({ level: "red", tk: "hypona", text: `Na ${L.na.v} mmol/L${f.cancers && f.cancers.lung && f.cancers.lung.sclc ? " in small cell lung cancer (SIADH likely)" : ""}. Exclude adrenal insufficiency; limit correction to 8 mmol/L/24 h.` });
-    else if (L.na && L.na.v < 130) out.push({ level: "amber", tk: "hypona", text: `Na ${L.na.v} mmol/L${f.cancers && f.cancers.lung && f.cancers.lung.sclc ? " in small cell lung cancer" : ""}. Think SIADH (SCLC, cisplatin, cyclophosphamide, opioids) and adrenal insufficiency.` });
+    else if (L.na && L.na.v < 130) out.push({ level: "amber", tk: "hypona", text: `Na ${L.na.v} mmol/L${f.cancers && f.cancers.lung && f.cancers.lung.sclc ? " in small cell lung cancer" : ""}. Think SIADH (SCLC, cisplatin, cyclophosphamide, opioids) and adrenal insufficiency${tag("ici").length ? " – on immunotherapy check AM cortisol, ACTH, TSH/free T4 (hypophysitis/adrenalitis) first" : ""}.` });
 
     // counts
     if (L.plt && L.plt.v < 20) out.push({ level: "red", text: `Platelets ${L.plt.v}: bleeding risk${has(S.anticoag) ? " – on an anticoagulant: review now" : ""}. Transfuse if bleeding or <10.` });
@@ -162,7 +174,7 @@
 
     // glucose
     const hiG = L.glu && L.glu.v >= 15;
-    if (hiG && (has(/alpelisib|piqray|inavolisib|capivasertib|everolimus/i) || has(S.steroid) || tag("ici").length))
+    if (hiG && !has(/enfortumab|padcev/i) && (has(/alpelisib|piqray|inavolisib|capivasertib|everolimus/i) || has(S.steroid) || tag("ici").length))
       out.push({ level: L.glu.v >= 20 ? "red" : "amber", text: `Glucose ${L.glu.v} mmol/L on ${[has(/alpelisib|piqray|inavolisib|capivasertib|everolimus/i) && "a PI3K/AKT/mTOR drug", has(S.steroid) && "steroids", tag("ici").length && "immunotherapy (think type 1 diabetes / DKA)"].filter(Boolean).join(", ")}. Check ketones; treat.` });
 
     // liver
@@ -230,6 +242,40 @@
     if (drugs.some((d) => /Bleomycin/.test(d.name))) out.push({ level: "info", text: "Bleomycin: new cough/dyspnea → stop and CT; give the lowest FiO2 that keeps sats 88–92%." });
     if (sub.includes("pcnsl") && has(S.dex) && !hdmtx) out.push({ level: "info", text: "Primary CNS lymphoma on dexamethasone: steroids before the biopsy can make it non-diagnostic – confirm the tissue diagnosis is done or ask neurosurgery/hematology before continuing." });
 
+    // ---- bladder, melanoma, head & neck, kidney, pancreas ----
+    const C2 = f.cancers || {};
+    if (C2.panc) {
+      const bili = L.bili && L.bili.v;
+      if (bili != null && bili >= 50) out.push({ level: tmax != null && tmax >= 38.0 ? "red" : "amber", text: `Bilirubin ${bili} µmol/L in pancreatic cancer${tmax != null && tmax >= 38.0 ? ` with fever ${tmax} °C: cholangitis? Blood cultures, antibiotics, urgent ERCP/PTBD` : ": biliary obstruction or stent occlusion? US/CT, GI for ERCP (chemo waits until it falls)"}.` });
+      else if (sites.biliary) out.push({ level: "amber", text: "Biliary obstruction / cholangitis in the chart: check stent patency, LFTs, cultures if febrile." });
+      if (!has(S.pert)) out.push({ level: "info", text: "Pancreatic cancer with no pancreatic enzymes on the medication list: steatorrhea or weight loss → pancrelipase with meals (often stopped on admission by mistake)." });
+      if (!has(S.anticoag)) out.push({ level: "info", go: "emerg", text: "Pancreatic cancer has one of the highest VTE risks: inpatient prophylaxis; low threshold to image leg swelling, dyspnea or abdominal pain (splanchnic thrombosis)." });
+    }
+    if (C2.hn) {
+      if (sites.airway && !sites.laryngectomy) out.push({ level: "red", text: "Head and neck cancer with an airway issue in the chart (stridor / tracheostomy): bedside airway plan, ENT and anesthesia aware, spare tracheostomy tubes and obturator at the bedside." });
+      if (sites.laryngectomy) out.push({ level: "red", text: "Laryngectomy (neck breather): oxygen and bag-mask to the STOMA; cannot be intubated through the mouth. Post a sign at the bedside." });
+      if (sites.bleed) out.push({ level: "red", text: "Bleeding in head and neck cancer: treat any bleed as a possible sentinel (carotid) bleed – large-bore IV, crossmatch, ENT/IR now; crisis comfort plan if goals are palliative." });
+      if (has(/cisplatin/i) || tag("egfrab").length) out.push({ level: "info", text: "Chemoradiation: mucositis and dysphagia peak weeks 3–7 – fluids, analgesia, feeding tube, dietitian, SLP; watch Na, K, Mg, creatinine; refeeding labs if intake was poor." });
+    }
+    {
+      if (has(/\bbcg\b|bacillus calmette|\btice\b|oncotice/i) && tmax != null && tmax >= 38.5) out.push({ level: "red", text: `Fever ${tmax} °C after intravesical BCG: possible BCG infection (BCGosis) – cultures incl. mycobacterial, ID consult; isoniazid + rifampin + ethambutol if septic or persistent.` });
+    }
+    if (C2.bladder && sites.hematuria) out.push({ level: "amber", text: `Hematuria / clot retention${has(S.anticoag) ? " on an anticoagulant" : ""}: 3-way catheter and bladder irrigation, urology; Hb trend.` });
+    if (sites.conduit && L.hco3 && L.hco3.v < 20) out.push({ level: "amber", text: `Bicarbonate ${L.hco3.v} with an ileal conduit/neobladder: hyperchloremic metabolic acidosis from urine reabsorption – oral bicarbonate; check for obstruction/infection.` });
+    if (has(/enfortumab|padcev/i)) {
+      if (L.glu && L.glu.v >= 14) out.push({ level: L.glu.v >= 20 ? "red" : "amber", text: `Glucose ${L.glu.v} on enfortumab vedotin: hyperglycemia/DKA can occur without diabetes – ketones, insulin, hold the drug.` });
+      if (sites.rash) out.push({ level: "red", text: "Rash on enfortumab vedotin: check for blisters, mucosal involvement, skin pain (SJS/TEN) – hold the drug, dermatology." });
+    }
+    if (has(/erdafitinib|balversa/i) && L.po4 && L.po4.v >= 1.8) out.push({ level: "amber", text: `PO4 ${L.po4.v} on erdafitinib (FGFR inhibitor): low-phosphate diet, binder; dose change by oncology.` });
+    const braf = drugs.filter((d) => /Dabrafenib|Encorafenib|Vemurafenib/.test(d.name));
+    if (braf.length && tmax != null && tmax >= 38.0) out.push({ level: "amber", text: `Fever ${tmax} °C on ${braf.map((d) => d.name).join(", ")}: BRAF/MEK pyrexia is common – hold both drugs, still look for infection (and neutropenia); restart when afebrile 24 h.` });
+    if (tag("ici").length && L.tsh && (L.tsh.v < 0.1 || L.tsh.v > 10)) out.push({ level: "amber", tk: "tox", text: `TSH ${L.tsh.v} on immunotherapy: ${L.tsh.v < 0.1 ? "thyroiditis (early thyrotoxic phase – beta-blocker; hypothyroidism often follows) or low TSH from hypophysitis (check free T4, cortisol)" : "hypothyroidism – levothyroxine (check cortisol first)"}.` });
+    if (tag("ici").length && L.na && L.na.v < 135 && L.na.v >= 130) out.push({ level: "amber", text: `Na ${L.na.v} on immunotherapy: check AM cortisol, ACTH, TSH/free T4 (hypophysitis or adrenalitis) before calling it SIADH.` });
+    const vegfTki = drugs.find((d) => /VEGF TKI/.test(d.name));
+    if (vegfTki && has(S.nondhp)) out.push({ level: "amber", text: "VEGF TKI with diltiazem or verapamil: CYP3A4 interaction raises TKI levels – prefer amlodipine for TKI hypertension." });
+    if (has(/belzutifan|welireg/i) && L.hb && L.hb.v < 90) out.push({ level: "amber", text: `Hb ${L.hb.v} on belzutifan (anemia is common; also check O2 sats – hypoxia is a known effect): transfusion/ESA, oncology to adjust dose.` });
+    if (C2.melanoma && sites.brain) out.push({ level: "info", text: "Melanoma brain mets bleed: MRI for any new headache; caution with anticoagulation; lowest effective dexamethasone (steroids blunt immunotherapy)." });
+
     // ---- drug safety ----
     if (tag("ici").length) out.push({ level: "info", tk: "tox", text: `On immunotherapy (${tag("ici").map((d) => d.name).join(", ")}): any new symptom may be an immune side effect. Check TSH, cortisol, glucose, LFTs, creatinine, troponin if chest symptoms.` });
     if (tag("bispec").length) out.push({ level: "info", tk: "bsab", text: `On a bispecific (${tag("bispec").map((d) => d.name).join(", ")}): fever/low BP = CRS, confusion = ICANS.` });
@@ -253,7 +299,7 @@
     if (has(/pemetrexed/i) && !has(/folic|folate|cyanocobalamin|vitamin b12|b12/i)) out.push({ level: "info", text: "Pemetrexed: folic acid daily and B12 every 9 weeks needed – not seen on the medication list (may be outpatient)." });
     if (tag("cdk").length && has(S.cyp3a4inh)) out.push({ level: "amber", text: `${tag("cdk").map((d) => d.name).join(", ")} with a CYP3A4 inhibitor (${meds.filter((m) => S.cyp3a4inh.test(m)).slice(0, 2).join("; ")}): higher levels – ask pharmacy.` });
     if (tag("bone").length && cc != null && cc < 2.1) out.push({ level: "amber", text: `Ca ${cc} on ${tag("bone").map((d) => d.name).join(", ")}: replace calcium and vitamin D.` });
-    if (tag("vegf").length) out.push({ level: "info", text: "Anti-VEGF drug: check BP and urine protein; hold ≥4–6 weeks before elective surgery; new abdominal pain → think perforation." });
+    if (tag("vegf").length) out.push({ level: "info", text: drugs.some((d) => d.tags.includes("vegf") && /antibody|Anti-VEGF \(/.test(d.name + d.cls)) ? "Anti-VEGF drug: check BP and urine protein; hold ≥4–6 weeks before elective surgery; new abdominal pain → think perforation." : "VEGF TKI: check BP and urine protein; hold ~1–3 weeks before surgery (drug-specific); new abdominal pain → think perforation." });
     if (has(/fluorouracil|5-?fu\b|folfox|folfiri|capecitabine|xeloda/i)) out.push({ level: "info", text: "Fluoropyrimidine: chest pain = possible coronary vasospasm; severe toxicity in cycle 1 = possible DPD deficiency (uridine triacetate)." });
     if (has(/irinotecan|folfiri/i) && L.bili && L.bili.v > 25) out.push({ level: "amber", text: `Bilirubin ${L.bili.v} µmol/L on irinotecan: more neutropenia and diarrhea – oncology to review dose.` });
 

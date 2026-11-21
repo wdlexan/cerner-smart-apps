@@ -4,9 +4,10 @@
   const R = window.OncRules, C = window.OncChart, K = window.OncContent, DR = window.OncDrugs;
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
   const fmtD = (t) => (t ? new Date(t).toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "2-digit" }) : "");
-  const CNAME = { lung: "Lung", breast: "Breast", crc: "Colorectal", prostate: "Prostate", leuk: "Leukemia", lymph: "Lymphoma" };
+  const CNAME = { lung: "Lung", breast: "Breast", crc: "Colorectal", prostate: "Prostate", leuk: "Leukemia", lymph: "Lymphoma", bladder: "Bladder", melanoma: "Melanoma", hn: "Head & neck", kidney: "Kidney", panc: "Pancreas" };
+  const NOTE_NAME = { bladder: "Bladder (urothelial) cancer", melanoma: "Melanoma", hn: "Head and neck cancer", kidney: "Kidney cancer (RCC)", panc: "Pancreatic cancer" };
   const subTxt = (c) => (c && c.sub && c.sub.length ? c.sub.map((x) => R.SUBNAME[x] || x).join(", ") : "");
-  const noteName = (k, c) => (k === "leuk" ? "Leukemia" + (subTxt(c) ? " (" + subTxt(c) + ")" : "") : k === "lymph" ? "Lymphoma" + (subTxt(c) ? " (" + subTxt(c) + ")" : "") : CNAME[k] + (k === "lung" && c.sclc ? " (small cell)" : "") + " cancer");
+  const noteName = (k, c) => (k === "leuk" ? "Leukemia" + (subTxt(c) ? " (" + subTxt(c) + ")" : "") : k === "lymph" ? "Lymphoma" + (subTxt(c) ? " (" + subTxt(c) + ")" : "") : NOTE_NAME[k] || CNAME[k] + (k === "lung" && c.sclc ? " (small cell)" : "") + " cancer");
   const TKNAME = { tox: "Oncology toxicity", bsab: "CRS/ICANS", pc: "Peritoneal carcinomatosis", hypona: "Sodium", lytes: "Electrolytes", g6pd: "G6PD", aki: "AKI" };
   const state = { f: null };
 
@@ -98,7 +99,7 @@
   }
 
   // ---- chart ----
-  const LAB_ORDER = ["anc", "wbc", "blasts", "hb", "plt", "inr", "fib", "na", "k", "mg", "po4", "ca", "alb", "cr", "urate", "ldh", "glu", "alt", "bili", "lipase", "ferritin", "tsh", "cortisol", "trop", "lactate"];
+  const LAB_ORDER = ["anc", "wbc", "blasts", "hb", "plt", "inr", "fib", "na", "k", "hco3", "mg", "po4", "ca", "alb", "cr", "urate", "ldh", "glu", "alt", "bili", "lipase", "ferritin", "tsh", "cortisol", "trop", "lactate"];
   function render() {
     const f = state.f;
     K.CANCERS.forEach((c) => ($("ptBanner-" + c.key).innerHTML = ""));
@@ -122,7 +123,7 @@
       document.querySelector(`nav button[data-t="${k}"]`).insertAdjacentHTML("beforeend", '<span class="dot pt" title="this patient"></span>');
       return `<p><b>${esc(CNAME[k])}</b>${k === "lung" && c.sclc ? " – small cell" : ""}${subTxt(c) ? " – " + esc(subTxt(c)) : ""} <a href="#" data-goto="${k}">open card →</a><br><span class="muted">${c.from.length ? "Problem list: " + esc(c.from.join("; ")) : "Not on the problem list; suggested by: " + esc(c.drugs.join(", "))}</span></p>`; }).join("")
       + siteLine(f)
-      : '<span class="muted">None of lung, breast, colorectal, prostate cancer, leukemia or lymphoma found on the problem list or suggested by the medications. The Emergencies tab still applies to any cancer.</span>' + siteLine(f);
+      : '<span class="muted">None of the 11 cancers covered here found on the problem list or suggested by the medications. The Emergencies tab still applies to any cancer.</span>' + siteLine(f);
 
     // labs
     const rows = [];

@@ -30,6 +30,7 @@
     { id: "hb", name: "Hb", loinc: ["718-7", "20509-6"], re: /hemoglobin|haemoglobin|^hgb\b/i, not: /a1c|glyc|urine/i, conv: gdl },
     { id: "plt", name: "Plt", loinc: ["777-3", "26515-7"], re: /platelet|^plt\b/i, not: /volume|mpv|function/i, conv: cells },
     { id: "lactate", name: "Lactate", loinc: ["2524-7", "32693-4", "2519-7"], re: /lactate|lactic/i, not: /dehydrogenase/i },
+    { id: "hco3", name: "HCO3", loinc: ["2028-9", "1963-8", "1959-6"], re: /bicarbonate|\bhco3\b|total co2|carbon dioxide/i, not: /arterial|venous|pco2/i },
     { id: "fib", name: "Fibrinogen", loinc: ["3255-7", "48664-7"], re: /fibrinogen/i, not: /antigen|degradation/i, conv: (v, u) => (/mg\s*\/\s*dl/i.test(u || "") ? v / 100 : v) },
     { id: "inr", name: "INR", loinc: ["6301-6", "34714-6", "46418-1"], re: /\binr\b|international normali/i },
     { id: "lipase", name: "Lipase", loinc: ["3040-3", "1798-8"], re: /lipase/i, not: /fluid/i },

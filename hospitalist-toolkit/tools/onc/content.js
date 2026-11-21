@@ -5,7 +5,7 @@
   const BC = "https://www.bccancer.bc.ca/health-professionals/clinical-resources/chemotherapy-protocols/";
   const LINKS = {
     lung: BC + "lung", breast: BC + "breast", crc: BC + "gastrointestinal", prostate: BC + "genitourinary",
-    supportive: BC + "supportive-care", leuk: BC + "leukemia-bone-marrow-transplant", lymph: BC + "lymphoma-myeloma",
+    supportive: BC + "supportive-care", leuk: BC + "leukemia-bone-marrow-transplant", lymph: BC + "lymphoma-myeloma", melanoma: BC + "skin-melanoma", hn: BC + "head-neck",
     fn: "https://www.bccancer.bc.ca/health-professionals/clinical-resources/cancer-management-manual/supportive-care/febrile-neutropenia" };
   const go = (k, t) => `<a href="#" data-goto="${k}">${t}</a>`;
   const tk = (k, t) => `<a href="#" data-toolkit="${k}">${t}</a>`; // another toolkit tab
@@ -387,6 +387,218 @@
         <tr><td>Mantle cell</td><td>Median ~5–10 years with modern treatment</td></tr>
         <tr><td>Primary CNS lymphoma</td><td>~30–50% long-term if fit; older patients worse</td></tr>
         <tr><td>Peripheral T-cell</td><td>5-year ~30–40%</td></tr></table>` } ] }
+,
+
+  // =====================================================================================
+  { key: "bladder", name: "Bladder", full: "Bladder (urothelial) cancer", link: LINKS.prostate,
+    intro: `<b>Two diseases.</b> Non-muscle-invasive (NMIBC, ~75%: TURBT + intravesical BCG/chemo, recurs often but rarely kills) and muscle-invasive (MIBC: cystectomy or bladder-sparing chemoradiation). Painless visible hematuria in a smoker is bladder cancer until cystoscopy says otherwise. Same disease can arise in the renal pelvis/ureter (upper tract urothelial).`,
+    sections: [
+    { t: "At a glance: intent and biomarkers", open: true, h: `
+      <table><tr><th>Setting</th><th>Intent</th></tr>
+        <tr><td>NMIBC (Ta, T1, CIS)</td><td><b>Curative</b> / bladder preservation with surveillance cystoscopy</td></tr>
+        <tr><td>MIBC (T2–T4a, N0–1)</td><td><b>Curative</b>: neoadjuvant chemo(-immunotherapy) → cystectomy, or trimodality bladder sparing</td></tr>
+        <tr><td>Metastatic</td><td><b>Palliative</b>; median survival now ~2.5 years with enfortumab + pembrolizumab</td></tr></table>
+      <ul><li>Cystoscopy + TURBT (depth: muscle present?), CT urogram, CT chest; urine cytology.</li>
+        <li>Metastatic: <b>FGFR2/3</b> alterations (erdafitinib), HER2 (T-DXd), PD-L1 less important now.</li>
+        <li>Cisplatin eligibility (CrCl ≥50–60, ECOG 0–1, no hearing loss/neuropathy/HF) shapes treatment.</li></ul>` },
+    { t: "Treatment for cure", open: false, h: `
+      <table><tr><th>Setting</th><th>Usual approach</th></tr>
+        <tr><td>NMIBC low risk</td><td>TURBT + single post-op intravesical chemo (gemcitabine or mitomycin); surveillance</td></tr>
+        <tr><td>NMIBC intermediate/high risk, CIS</td><td>Re-TURBT for T1; <b>intravesical BCG</b> induction + maintenance (1–3 years). BCG-unresponsive: radical cystectomy, or intravesical gemcitabine-docetaxel, newer intravesical agents, pembrolizumab</td></tr>
+        <tr><td>MIBC, cisplatin-eligible</td><td><b>Neoadjuvant cisplatin-based chemo</b> (dd-MVAC or gemcitabine-cisplatin), now often <b>with durvalumab perioperatively</b> (NIAGARA) → radical cystectomy + pelvic nodes (ileal conduit or neobladder). Adjuvant nivolumab for high-risk pathology.</td></tr>
+        <tr><td>MIBC, cisplatin-ineligible</td><td>Cystectomy (± perioperative enfortumab-pembrolizumab where available) or <b>trimodality therapy</b>: maximal TURBT + RT with radiosensitizing chemo (5-FU/mitomycin, cisplatin or gemcitabine)</td></tr>
+        <tr><td>Upper tract urothelial</td><td>Nephroureterectomy ± adjuvant platinum chemo; kidney-sparing for low grade</td></tr></table>` },
+    { t: "Palliative / metastatic options", open: false, h: `
+      <ul><li><b>1st line: enfortumab vedotin + pembrolizumab</b> (EV-302) – the new standard.</li>
+        <li>Alternatives: gemcitabine-cisplatin + nivolumab; platinum chemo → <b>avelumab maintenance</b> if no progression.</li>
+        <li>FGFR3 alteration: <b>erdafitinib</b>. HER2-positive: trastuzumab deruxtecan. Sacituzumab (later lines). Single-agent chemo (paclitaxel, docetaxel, vinflunine).</li>
+        <li>Local: palliative RT for hematuria and pain; nephrostomy for obstruction (match to goals).</li></ul>` },
+    { t: "What to watch for in hospital", open: true, h: `
+      <table><tr><th>Problem</th><th>Clue</th><th>Do</th></tr>
+        <tr><td>Hematuria, clot retention</td><td>Tumour, radiation cystitis, cyclophosphamide</td><td>3-way catheter, continuous bladder irrigation, urology; hold anticoagulation if possible; RT or embolization for intractable bleeding</td></tr>
+        <tr><td>Obstruction, hydronephrosis</td><td>Rising creatinine</td><td>US; nephrostomy or stent (fits goals?)</td></tr>
+        <tr><td><b>After cystectomy</b> (ileal conduit / neobladder)</td><td>Hyperchloremic metabolic acidosis, low B12 (late), stomal stenosis, ureteric stricture, urosepsis</td><td>Bicarbonate; catheter samples from the stoma (not the bag) for culture; always colonized – treat only if sick</td></tr>
+        <tr><td><b>BCG infection</b> (BCGosis)</td><td>Fever &gt;39 °C or &gt;48 h after BCG, sepsis, granulomatous hepatitis/pneumonitis, mycotic aneurysm</td><td>ID consult; isoniazid + rifampin + ethambutol (BCG resists pyrazinamide) ± steroids; no BCG while sick</td></tr>
+        <tr><td><b>Enfortumab vedotin</b></td><td>Rash (can be SJS/TEN), hyperglycemia/DKA, neuropathy, dry eyes</td><td>Hold for severe rash or glucose &gt;14; insulin; dermatology</td></tr>
+        <tr><td>Erdafitinib</td><td>High phosphate, eye (central serous retinopathy), nail/mouth changes</td><td>Low-phosphate diet, binders; ophthalmology for vision change</td></tr>
+        <tr><td>Cisplatin</td><td>AKI, low Mg, ototoxicity, neuropathy</td><td>${tk("lytes", "Electrolytes tab")}</td></tr>
+        <tr><td>Hypercalcemia, VTE</td><td>Advanced disease</td><td>${go("emerg", "Emergencies")}</td></tr></table>` },
+    { t: "When to call oncology/urology urgently", open: false, h: `<ul>
+      <li>Clot retention or hemorrhage needing transfusion; bilateral obstruction with AKI.</li>
+      <li>Fever or sepsis after recent BCG; severe rash on enfortumab; febrile neutropenia; immune side effects.</li></ul>` },
+    { t: "Prognosis (rough) and goals of care", open: false, h: `
+      <table><tr><th>Setting</th><th>Rough outlook</th></tr>
+        <tr><td>NMIBC</td><td>5-year survival ~90%; recurrence common (~50–70%)</td></tr>
+        <tr><td>MIBC treated for cure</td><td>5-year ~50–65%</td></tr>
+        <tr><td>Metastatic (EV + pembrolizumab)</td><td>Median ~2.5 years</td></tr></table>` } ] },
+
+  // =====================================================================================
+  { key: "melanoma", name: "Melanoma", full: "Melanoma", link: LINKS.melanoma,
+    intro: `<b>Immunotherapy changed everything:</b> about half of patients with metastatic melanoma on ipilimumab + nivolumab are alive at 10 years. The hospital problems are mostly <b>immune side effects</b>, <b>brain mets</b> and BRAF-inhibitor fevers. Mucosal and uveal melanoma behave differently (uveal → liver).`,
+    sections: [
+    { t: "At a glance: intent and biomarkers", open: true, h: `
+      <table><tr><th>Setting</th><th>Intent</th></tr>
+        <tr><td>Stage I–II</td><td><b>Curative</b>: wide excision ± sentinel node biopsy</td></tr>
+        <tr><td>Stage III (nodes) and resected IV</td><td><b>Curative</b>: surgery + adjuvant (or neoadjuvant) immunotherapy</td></tr>
+        <tr><td>Unresectable stage IV</td><td>Treat with intent of <b>durable control</b>; a minority are effectively cured by immunotherapy</td></tr></table>
+      <ul><li><b>BRAF V600</b> mutation (~40–50% of cutaneous) in stage III–IV; also NRAS, KIT (mucosal/acral).</li>
+        <li>Staging: Breslow thickness, ulceration, sentinel node; CT/PET and <b>MRI brain</b> for stage III–IV. LDH is prognostic.</li></ul>` },
+    { t: "Treatment for cure", open: false, h: `
+      <table><tr><th>Setting</th><th>Usual approach</th></tr>
+        <tr><td>Stage I–II</td><td>Wide local excision (margins by thickness), sentinel node biopsy if ≥0.8 mm or ulcerated. High-risk IIB–IIC: adjuvant pembrolizumab or nivolumab (1 year).</td></tr>
+        <tr><td>Stage III</td><td><b>Neoadjuvant pembrolizumab</b> (or ipilimumab + nivolumab) for clinically detected nodes → surgery → adjuvant; or surgery → adjuvant anti-PD-1 for 1 year; BRAF-mutant: dabrafenib + trametinib for 1 year is an alternative. Completion node dissection rarely now.</td></tr>
+        <tr><td>Resected stage IV</td><td>Adjuvant nivolumab (or pembrolizumab)</td></tr></table>` },
+    { t: "Metastatic options", open: false, h: `
+      <ul><li><b>Ipilimumab + nivolumab</b> (highest response, most toxicity: ~55–60% grade 3–4) – preferred for brain mets and fit patients; or <b>nivolumab + relatlimab</b>; or anti-PD-1 alone (pembrolizumab, nivolumab) for frailer patients.</li>
+        <li><b>BRAF V600</b>: dabrafenib + trametinib, encorafenib + binimetinib, or vemurafenib + cobimetinib – fast responses (use for rapid, symptomatic disease or after immunotherapy). Immunotherapy first is generally preferred (DREAMseq).</li>
+        <li>After progression: TIL therapy (lifileucel), ipilimumab-based combinations, trials, chemo (limited). Uveal melanoma with HLA-A*02:01: tebentafusp (CRS); liver-directed therapy.</li>
+        <li><b>Brain mets</b>: SRS ± ipi/nivo; steroids reduce immunotherapy benefit – use the lowest dose.</li></ul>` },
+    { t: "What to watch for in hospital", open: true, h: `
+      <table><tr><th>Problem</th><th>Clue</th><th>Do</th></tr>
+        <tr><td><b>Immune side effects</b></td><td>Diarrhea/colitis, hepatitis, hypophysitis (headache, fatigue, low Na), thyroiditis, T1DM/DKA, pneumonitis, <b>myocarditis</b> (+ myositis/myasthenia)</td><td>${tk("tox", "Oncology toxicity tab")}; ${go("emerg", "irAE card")}. Ipi/nivo: diarrhea is colitis until proven otherwise</td></tr>
+        <tr><td>Hypophysitis / adrenal</td><td>Headache, fatigue, low BP, low Na (ipilimumab especially)</td><td>AM cortisol, ACTH, TSH/free T4, MRI pituitary; hydrocortisone before levothyroxine</td></tr>
+        <tr><td><b>BRAF/MEK pyrexia</b></td><td>Fever, chills, rigors on dabrafenib + trametinib</td><td>Hold both drugs; check for infection; antipyretics; prednisone if recurrent; restart when afebrile 24 h</td></tr>
+        <tr><td>Brain mets</td><td>Headache, seizure, focal deficit; melanoma mets bleed</td><td>MRI; dexamethasone lowest effective dose; rad onc/neurosurgery; caution with anticoagulation</td></tr>
+        <tr><td>GI bleeding / obstruction</td><td>Small-bowel mets (intussusception)</td><td>CT, surgery</td></tr>
+        <tr><td>MEK inhibitor</td><td>Reduced LVEF, retinal detachment (blurred vision), rash, CK rise</td><td>Echo, ophthalmology</td></tr>
+        <tr><td>Tebentafusp / TIL</td><td>CRS, rash, hypotension; TIL: lymphodepletion, IL-2 capillary leak</td><td>${tk("bsab", "CRS/ICANS tab")}; specialised centre</td></tr></table>` },
+    { t: "When to call oncology urgently", open: false, h: `<ul>
+      <li>Any grade ≥2 immune side effect, suspected myocarditis (troponin), adrenal crisis, DKA.</li>
+      <li>New brain mets or bleeding; recurrent fevers on BRAF/MEK.</li></ul>` },
+    { t: "Prognosis (rough) and goals of care", open: false, h: `
+      <table><tr><th>Setting</th><th>Rough outlook</th></tr>
+        <tr><td>Stage I</td><td>~95–99% at 10 years</td></tr>
+        <tr><td>Stage III</td><td>~65–90% at 5 years (substage)</td></tr>
+        <tr><td>Metastatic, ipi/nivo</td><td>~50% alive at 10 years</td></tr>
+        <tr><td>Metastatic, anti-PD-1 alone</td><td>~35–45% at 5 years</td></tr></table>` } ] },
+
+  // =====================================================================================
+  { key: "hn", name: "Head & neck", full: "Head and neck cancer (oral cavity, pharynx, larynx, salivary)", link: LINKS.hn,
+    intro: `<b>HPV-positive oropharynx</b> (younger, non-smokers, better prognosis) vs smoking/alcohol-related cancers. Treatment for cure is often surgery or <b>cisplatin-radiation</b> – weeks of mucositis, weight loss and feeding-tube dependence. The airway is the main hospital emergency.`,
+    sections: [
+    { t: "At a glance: intent and biomarkers", open: true, h: `
+      <table><tr><th>Setting</th><th>Intent</th></tr>
+        <tr><td>Stage I–II</td><td><b>Curative</b>: surgery or RT alone</td></tr>
+        <tr><td>Locally advanced (III–IVB)</td><td><b>Curative</b>: surgery + adjuvant (chemo)RT, or definitive cisplatin-RT</td></tr>
+        <tr><td>Recurrent / metastatic</td><td><b>Palliative</b> (salvage surgery or re-irradiation can still cure some)</td></tr></table>
+      <ul><li><b>p16/HPV</b> for oropharynx (different staging and outlook); EBV for nasopharynx; <b>PD-L1 CPS</b> for recurrent/metastatic.</li>
+        <li>Work-up: scope and biopsy (ENT), CT/MRI neck, PET-CT, dental assessment before RT, nutrition and speech-language pathology baseline.</li></ul>` },
+    { t: "Treatment for cure", open: false, h: `
+      <table><tr><th>Setting</th><th>Usual approach</th></tr>
+        <tr><td>Oral cavity</td><td><b>Surgery first</b> (resection ± neck dissection ± flap) → RT, or cisplatin-RT if positive margins/extranodal extension</td></tr>
+        <tr><td>Oropharynx, larynx, hypopharynx</td><td>Organ preservation: <b>RT with weekly or 3-weekly cisplatin</b> (cetuximab-RT if cisplatin unfit, inferior), or transoral surgery for selected early tumours; total laryngectomy for advanced larynx with cartilage destruction</td></tr>
+        <tr><td>Nasopharynx</td><td>Induction gemcitabine-cisplatin → cisplatin-RT</td></tr>
+        <tr><td>Resectable, newer option</td><td>Perioperative pembrolizumab with surgery and (chemo)RT (KEYNOTE-689) for CPS ≥1 locally advanced disease, where available</td></tr></table>` },
+    { t: "Palliative / recurrent options", open: false, h: `
+      <ul><li><b>CPS ≥1</b>: pembrolizumab alone, or pembrolizumab + platinum + 5-FU (higher burden/symptoms). CPS &lt;1: platinum + 5-FU + cetuximab (EXTREME) or with pembrolizumab.</li>
+        <li>Later: cetuximab, methotrexate, taxanes, trials. Nasopharynx: gemcitabine-cisplatin + toripalimab/camrelizumab-type PD-1.</li>
+        <li>Palliative RT (bleeding, pain, airway), tracheostomy, feeding tube, early palliative care (pain, secretions, wound/fungating tumour care).</li></ul>` },
+    { t: "What to watch for in hospital", open: true, h: `
+      <table><tr><th>Problem</th><th>Clue</th><th>Do</th></tr>
+        <tr><td><b>Airway obstruction</b></td><td>Stridor, voice change, can't lie flat</td><td>Sit up, heliox, dexamethasone; ENT and anesthesia now (awake fibreoptic or surgical airway); know whether the patient has a <b>laryngectomy (neck breather – oxygen to the stoma, cannot intubate orally)</b> or tracheostomy</td></tr>
+        <tr><td><b>Carotid blowout / tumour bleed</b></td><td>Herald (sentinel) bleed after RT/surgery, fungating neck wound</td><td>Pressure, airway, large-bore access, crossmatch, IR/ENT now; goals of care – crisis medication and dark towels ready</td></tr>
+        <tr><td>Mucositis, dysphagia, dehydration</td><td>Weeks 2–7 of chemoRT</td><td>Pain control (opioids, mouthwashes), IV fluids, feeding tube (PEG/NG), dietitian, SLP; aspiration risk</td></tr>
+        <tr><td>Cisplatin-RT toxicity</td><td>AKI, low Mg/K/Na, nausea, ototoxicity, neutropenia</td><td>${tk("lytes", "Electrolytes tab")}; hydrate</td></tr>
+        <tr><td>Cetuximab</td><td>Infusion reaction, acneiform rash, radiation dermatitis worse, low Mg</td><td>Replace Mg, skin care</td></tr>
+        <tr><td>Hypercalcemia</td><td>Squamous (PTHrP)</td><td>${go("emerg", "Emergencies")}</td></tr>
+        <tr><td>Late RT effects</td><td>Hypothyroidism, osteoradionecrosis of the jaw, carotid stenosis, trismus, lymphedema</td><td>TSH; dental care before extractions; stroke work-up as usual</td></tr>
+        <tr><td>Refeeding, malnutrition</td><td>Big weight loss, alcohol use</td><td>Thiamine, PO4/K/Mg monitoring when feeding starts</td></tr>
+        <tr><td>Alcohol withdrawal</td><td>Heavy drinkers admitted for surgery/chemoRT</td><td>CIWA, thiamine</td></tr></table>` },
+    { t: "When to call oncology/ENT urgently", open: false, h: `<ul>
+      <li>Any stridor or airway change; any bleed from the mouth, neck or tracheostomy (sentinel bleed).</li>
+      <li>Cannot swallow fluids or medications during chemoRT; febrile neutropenia.</li></ul>` },
+    { t: "Prognosis (rough) and goals of care", open: false, h: `
+      <table><tr><th>Setting</th><th>Rough outlook</th></tr>
+        <tr><td>HPV+ oropharynx, locally advanced</td><td>5-year survival ~80–90%</td></tr>
+        <tr><td>HPV− / smoking-related, locally advanced</td><td>~40–55%</td></tr>
+        <tr><td>Recurrent/metastatic on pembrolizumab ± chemo</td><td>Median ~13–15 months; ~20% at 4–5 years with CPS high</td></tr></table>
+      <p class="muted">Uncontrolled local disease means airway, bleeding, swallowing and wound problems – plan for these early.</p>` } ] },
+
+  // =====================================================================================
+  { key: "kidney", name: "Kidney", full: "Kidney cancer (renal cell carcinoma)", link: LINKS.prostate,
+    intro: `<b>Often found incidentally on imaging.</b> Surgery cures most localized disease. Metastatic clear-cell RCC is treated with <b>immunotherapy + VEGF TKI</b> combinations. Paraneoplastic: hypercalcemia, erythrocytosis, fever, Stauffer syndrome (cholestasis without liver mets).`,
+    sections: [
+    { t: "At a glance: intent and biomarkers", open: true, h: `
+      <table><tr><th>Setting</th><th>Intent</th></tr>
+        <tr><td>Stage I–III</td><td><b>Curative</b>: partial or radical nephrectomy (or ablation / surveillance for small masses in older patients)</td></tr>
+        <tr><td>Oligometastatic</td><td>Metastasectomy or SBRT can give long control</td></tr>
+        <tr><td>Metastatic</td><td><b>Palliative</b>, but median survival now &gt;4 years for favourable/intermediate risk</td></tr></table>
+      <ul><li>Histology: clear cell (~75%), papillary, chromophobe, others (different drugs).</li>
+        <li><b>IMDC risk</b> (time from diagnosis &lt;1 year, KPS &lt;80, low Hb, high corrected Ca, high neutrophils, high platelets).</li>
+        <li>Young or bilateral/multifocal: think hereditary (VHL – belzutifan).</li></ul>` },
+    { t: "Treatment for cure", open: false, h: `
+      <ul><li>Small renal mass (&lt;4 cm): partial nephrectomy, thermal ablation, or active surveillance (older/comorbid).</li>
+        <li>Larger/locally advanced: radical nephrectomy (± IVC thrombectomy).</li>
+        <li><b>Adjuvant pembrolizumab</b> for 1 year after nephrectomy for intermediate-high/high-risk clear-cell RCC (KEYNOTE-564: survival benefit).</li></ul>` },
+    { t: "Metastatic options", open: false, h: `
+      <ul><li><b>1st line clear cell</b>: immunotherapy combination – pembrolizumab + axitinib, nivolumab + cabozantinib, pembrolizumab + lenvatinib, or <b>ipilimumab + nivolumab</b> (intermediate/poor risk; drug-free remissions possible).</li>
+        <li>Low-volume, slow disease: active surveillance or SBRT first is reasonable.</li>
+        <li>Later: cabozantinib, lenvatinib + everolimus, axitinib, <b>belzutifan</b> (HIF-2α), tivozanib, sunitinib/pazopanib.</li>
+        <li>Non-clear cell: cabozantinib, pembrolizumab ± lenvatinib, trials.</li>
+        <li>Cytoreductive nephrectomy only in selected patients. Bone mets: RT, denosumab/zoledronic acid, orthopedic fixation (RCC bone mets are vascular – embolize before surgery).</li></ul>` },
+    { t: "What to watch for in hospital", open: true, h: `
+      <table><tr><th>Problem</th><th>Clue</th><th>Do</th></tr>
+        <tr><td><b>VEGF TKI</b> (sunitinib, pazopanib, axitinib, cabozantinib, lenvatinib)</td><td>Hypertension, proteinuria, diarrhea, hand–foot, hypothyroidism, hepatotoxicity (pazopanib), bleeding, poor wound healing, perforation, QTc (sunitinib, pazopanib, lenvatinib)</td><td>BP control (amlodipine; avoid diltiazem/verapamil – CYP3A4); TSH; hold before surgery; urine protein</td></tr>
+        <tr><td><b>Belzutifan</b></td><td>Anemia (common), <b>hypoxia</b></td><td>Hb, O2 sats; hold if hypoxic; ESA/transfusion</td></tr>
+        <tr><td>IO + TKI overlap</td><td>Diarrhea or high LFTs: TKI side effect or immune colitis/hepatitis?</td><td>Hold both; TKI effects settle in days (short half-life except lenvatinib/cabozantinib longer), immune ones need steroids. ${tk("tox", "Oncology toxicity tab")}</td></tr>
+        <tr><td>Hypercalcemia</td><td>PTHrP</td><td>${go("emerg", "Emergencies")}</td></tr>
+        <tr><td>Hematuria, clot retention</td><td>Primary in place</td><td>Urology; embolization</td></tr>
+        <tr><td>IVC tumour thrombus, VTE</td><td>Leg swelling, varicocele (right-sided or non-reducing)</td><td>Imaging; anticoagulation decision with urology/oncology</td></tr>
+        <tr><td>Single kidney after nephrectomy</td><td>Lower GFR</td><td>Dose by CrCl; avoid nephrotoxins and contrast without need</td></tr>
+        <tr><td>Brain mets</td><td>Hemorrhagic</td><td>MRI; SRS</td></tr></table>` },
+    { t: "When to call oncology urgently", open: false, h: `<ul>
+      <li>Grade ≥2 immune side effect; severe diarrhea or hepatitis on IO + TKI; hypertensive emergency on a TKI.</li>
+      <li>Hypoxia on belzutifan; cord compression; hemorrhage.</li></ul>` },
+    { t: "Prognosis (rough) and goals of care", open: false, h: `
+      <table><tr><th>Setting</th><th>Rough outlook</th></tr>
+        <tr><td>Stage I</td><td>5-year survival ~90%+</td></tr>
+        <tr><td>Stage III</td><td>~60–70%</td></tr>
+        <tr><td>Metastatic, IO combination</td><td>Median ~4–5 years (favourable risk longer, poor risk ~1.5–2 years)</td></tr></table>` } ] },
+
+  // =====================================================================================
+  { key: "panc", name: "Pancreas", full: "Pancreatic cancer (adenocarcinoma)", link: LINKS.crc,
+    intro: `<b>Most present unresectable.</b> Only ~15–20% can have surgery. Symptom burden is high: pain, jaundice, weight loss, VTE, diabetes. <b>Early palliative care</b> and a goals-of-care conversation belong in almost every admission. Pancreatic neuroendocrine tumours (PNETs) behave very differently – check the pathology.`,
+    sections: [
+    { t: "At a glance: intent and biomarkers", open: true, h: `
+      <table><tr><th>Setting</th><th>Intent</th></tr>
+        <tr><td>Resectable</td><td><b>Curative</b>: surgery (Whipple or distal pancreatectomy) + 6 months chemo</td></tr>
+        <tr><td>Borderline resectable</td><td>Neoadjuvant chemo (± RT) → surgery if response</td></tr>
+        <tr><td>Locally advanced</td><td>Chemo; a few become resectable</td></tr>
+        <tr><td>Metastatic</td><td><b>Palliative</b>; median survival ~11 months with fit-patient chemo</td></tr></table>
+      <ul><li>Pancreas-protocol CT, EUS-guided biopsy, CA 19-9 (useless if bilirubin high or Lewis-antigen negative).</li>
+        <li><b>Germline testing for everyone</b> (BRCA1/2, PALB2: platinum + PARP maintenance). Tumour: KRAS-wild-type alterations, MSI-high (rare, pembrolizumab), NTRK.</li>
+        <li>Jaundice before surgery: biliary <b>metal stent</b> by ERCP (do not delay chemo for long).</li></ul>` },
+    { t: "Treatment for cure", open: false, h: `
+      <ul><li>Resectable: surgery → <b>modified FOLFIRINOX for 6 months</b> (fit) or gemcitabine-capecitabine. Neoadjuvant chemo increasingly used.</li>
+        <li>Borderline/locally advanced: FOLFIRINOX or gemcitabine-nab-paclitaxel → restage → surgery or chemoradiation/SBRT.</li>
+        <li>After a Whipple: pancreatic enzyme replacement, diabetes, delayed gastric emptying, leaks, B12/iron/vitamin D.</li></ul>` },
+    { t: "Palliative / metastatic options", open: false, h: `
+      <ul><li>ECOG 0–1: <b>(m)FOLFIRINOX</b> or <b>NALIRIFOX</b> (liposomal irinotecan); or gemcitabine + nab-paclitaxel.</li>
+        <li>ECOG 2: gemcitabine ± nab-paclitaxel; ECOG ≥3: best supportive care.</li>
+        <li>gBRCA/PALB2: platinum first, then <b>olaparib maintenance</b>. MSI-high: pembrolizumab.</li>
+        <li>2nd line: the other backbone (5-FU + liposomal irinotecan after gemcitabine; gemcitabine-based after FOLFIRINOX). New RAS inhibitors are in trials.</li>
+        <li>Symptom care: celiac plexus block for pain, duodenal stent or gastrojejunostomy for gastric outlet obstruction, biliary stent, paracentesis/indwelling catheter for ascites.</li></ul>` },
+    { t: "What to watch for in hospital", open: true, h: `
+      <table><tr><th>Problem</th><th>Clue</th><th>Do</th></tr>
+        <tr><td><b>Biliary obstruction / cholangitis</b></td><td>Jaundice, itch, fever, rising ALP/bilirubin; stent occlusion (plastic &gt; metal)</td><td>Blood cultures, antibiotics, ERCP stent exchange or PTBD; chemo waits until bilirubin falls</td></tr>
+        <tr><td><b>VTE</b> (very high risk)</td><td>Leg swelling, PE, splanchnic/portal vein thrombosis</td><td>LMWH or DOAC (apixaban/edoxaban/rivaroxaban; watch GI bleeding); outpatient prophylaxis often given</td></tr>
+        <tr><td>Pain</td><td>Epigastric pain radiating to back</td><td>Opioids, adjuvants; celiac plexus neurolysis; palliative RT</td></tr>
+        <tr><td>Gastric outlet obstruction</td><td>Vomiting, early satiety</td><td>NG decompression; duodenal stent or GJ</td></tr>
+        <tr><td>Exocrine insufficiency</td><td>Steatorrhea, weight loss, bloating</td><td><b>Pancrelipase with meals</b> (e.g. 50,000 lipase units per meal, 25,000 with snacks) – often missing on admission</td></tr>
+        <tr><td>Diabetes</td><td>New or worse diabetes (type 3c)</td><td>Insulin often needed; watch hypoglycemia with poor intake</td></tr>
+        <tr><td>Malignant ascites, bowel obstruction</td><td>Peritoneal disease</td><td>${tk("pc", "Peritoneal carcinomatosis tab")}</td></tr>
+        <tr><td>FOLFIRINOX / NALIRIFOX</td><td>Neutropenic fever, diarrhea (irinotecan), neuropathy (oxaliplatin)</td><td>${go("emerg", "Emergencies")}; loperamide high-dose</td></tr>
+        <tr><td>Gemcitabine</td><td>Fever after dose, TMA/HUS (new hypertension, AKI, schistocytes), pneumonitis</td><td>Smear, LDH, haptoglobin</td></tr>
+        <tr><td>Depression, cachexia</td><td>Common</td><td>Screen; dietitian; mirtazapine; olanzapine for nausea</td></tr></table>` },
+    { t: "When to call oncology urgently", open: false, h: `<ul>
+      <li>Cholangitis or stent occlusion; febrile neutropenia; GI bleed on anticoagulation.</li>
+      <li>Rapid decline in performance status – time for goals of care and palliative care involvement.</li></ul>` },
+    { t: "Prognosis (rough) and goals of care", open: false, h: `
+      <table><tr><th>Setting</th><th>Rough outlook</th></tr>
+        <tr><td>Resected + adjuvant mFOLFIRINOX</td><td>Median ~4.5 years; 5-year ~40%</td></tr>
+        <tr><td>Locally advanced</td><td>Median ~1–1.5 years</td></tr>
+        <tr><td>Metastatic, FOLFIRINOX/NALIRIFOX</td><td>Median ~11 months</td></tr>
+        <tr><td>Metastatic, ECOG ≥2 or untreated</td><td>Weeks to a few months</td></tr></table>` } ] }
  ];
 
   // =====================================================================================
