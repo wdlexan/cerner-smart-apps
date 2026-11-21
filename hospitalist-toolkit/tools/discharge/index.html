@@ -114,7 +114,13 @@
     </details>
 
     <details class="card" open>
-      <summary><span>5. Home care and when to get help</span><span class="muted" id="modsum"></span></summary>
+      <summary><span>5. Follow-up in the community</span><span class="muted" id="folsum"></span></summary>
+      <div class="body"><div class="scroll" id="fol"></div><div class="row"><button id="addfol">Add a follow-up</button></div>
+        <div class="src">Plans found in the notes read (and imported PDFs or typed notes): referrals to specialists and services, outpatient imaging and procedures, lab tests. Set who arranges each one; they go in the note under "Follow-up in the community".</div></div>
+    </details>
+
+    <details class="card" open>
+      <summary><span>6. Home care and when to get help</span><span class="muted" id="modsum"></span></summary>
       <div class="body">
         <div class="hint"><b>Short plan here, full handout separately.</b> These are the key actions and return precautions for each condition, built into the patient instructions below. For heart failure, also print the full handout with the daily weight log from the Heart failure tab.</div>
         <div class="mods" id="mods"></div>
@@ -142,9 +148,9 @@
   </main>
   <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
   <script src="../../pdf-overlay.js?v=20261120p"></script>
-  <script src="rules.js?v=20261121b"></script>
+  <script src="rules.js?v=20261121d"></script>
   <script src="chart.js?v=20261121a"></script>
-  <script src="samples.js?v=20261121a"></script>
-  <script src="app.js?v=20261121b"></script>
+  <script src="samples.js?v=20261121b"></script>
+  <script src="app.js?v=20261121d"></script>
 </body>
 </html>

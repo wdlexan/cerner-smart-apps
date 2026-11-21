@@ -243,6 +243,53 @@
     }
     review(results, problems);
   }
+  /* ---------- draft discharge note from one file: follow-up in the community + what to watch for (tools/discharge/rules.js) ---------- */
+  const D = () => window.DcRules;
+  const FT = { referral: "Referral", imaging: "Imaging / procedure", lab: "Lab test", other: "Other" };
+  function draftInit(r) {
+    if (r.draft || !D()) return;
+    const text = r.textDraft != null ? r.textDraft : r.text;
+    r.draft = { follow: D().followups([{ name: r.fileName, text }]), fpDays: 7, dirty: false, out: "" };
+  }
+  function draftText(r) {
+    const text = r.textDraft != null ? r.textDraft : r.text, d = X().demographics(text), det = D().detect(text);
+    const items = r.items || [];
+    const mods = ["general"].concat(D().modules(det).map((m) => m.id).filter((id) => id !== "general"));
+    const pending = D().sentences(text).filter((x) => /\b(?:pending|awaiting|to follow|sent out)\b/i.test(x) && x.length < 260).slice(0, 8);
+    return D().draftNote({
+      title: r.fileName + (r.ocr ? " (read by OCR: check against the source)" : ""),
+      patient: [d.name, d.sex, d.birthDate ? "DOB " + d.birthDate : d.age != null ? d.age + " y" : "", d.phn ? "PHN " + d.phn : ""].filter(Boolean).join(", "),
+      sections: X().sections(text, 1200), meds: items.filter((i) => i.kind === "med").map((i) => i.text.replace(/\s+/g, " ").trim()),
+      labs: items.filter((i) => i.kind === "lab").map((i) => i.label + " " + (i.text != null ? i.text : (i.cmp || "") + i.value + (i.unit ? " " + i.unit : "")) + (i.flag ? " (" + i.flag + ")" : "") + (i.t ? " " + X().iso(i.t) : "")),
+      follow: r.draft.follow, pending, mods, v: { fpDays: r.draft.fpDays }, f: det });
+  }
+  function draftCard(r, k) {
+    draftInit(r); if (!r.draft) return "";
+    if (!r.draft.dirty) r.draft.out = draftText(r);
+    const fl = r.draft.follow;
+    return `<details open class="pdfsec"><summary><b>Draft discharge note: ${esc(r.fileName)}</b> <span class="muted">follow-up in the community and what to watch for (9-1-1 / family doctor); editable</span></summary>
+      <div class="muted" style="margin:6px 0 2px">Follow-up found in the note (referrals, imaging, lab tests). Untick, edit or add; the note below updates.</div>
+      <table><tr><th></th><th>Type</th><th>Follow-up</th><th>When</th></tr>${fl.map((x, i) => `<tr><td><input type="checkbox" class="dcon" data-k="${k}" data-i="${i}"${x.on !== false ? " checked" : ""}></td>
+        <td><select class="dctype" data-k="${k}" data-i="${i}">${Object.entries(FT).map(([v, l]) => `<option value="${v}"${x.type === v ? " selected" : ""}>${l}</option>`).join("")}</select></td>
+        <td><input type="text" class="dctext" data-k="${k}" data-i="${i}" value="${esc(x.text)}" style="width:100%"></td><td><input type="text" class="dcwhen" data-k="${k}" data-i="${i}" value="${esc(x.when)}" size="14" placeholder="e.g. in 1 week"></td></tr>`).join("") || `<tr><td colspan="4" class="muted">None found in the note.</td></tr>`}</table>
+      <div class="row"><button data-dcadd="${k}">Add a follow-up</button> <label>See family doctor within <input type="text" class="dcfp" data-k="${k}" value="${esc(r.draft.fpDays)}" size="3"> days</label></div>
+      <textarea id="pdfdc${k}" rows="20" class="mono" spellcheck="true" style="white-space:pre-wrap">${esc(r.draft.out)}</textarea>
+      <div class="row"><button data-dccopy="${k}">Copy draft note</button> <button data-dcrb="${k}">Rebuild from above</button> <label><input type="checkbox" class="dckeep" data-k="${k}" checked> Keep this draft as a note for the patient</label> <span class="muted" id="pdfdcmsg${k}">${r.draft.dirty ? "Edited by you: changes above no longer update it (Rebuild to start again)." : ""}</span></div>
+      <div class="muted">"What to watch for" uses standard return-precaution text for the conditions and medicines named in the note (heart failure, COPD, infection, blood thinner, diabetes…): check it fits this patient. UNVERIFIED draft written by Claude.</div></details>`;
+  }
+  function wireDraft(results, problems) {
+    const redo = (k) => { const r = results[+k]; if (!r || !r.draft || r.draft.dirty) return; r.draft.out = draftText(r); const ta = document.getElementById("pdfdc" + k); if (ta) ta.value = r.draft.out; saveLast(results, problems); };
+    const it = (el) => results[+el.dataset.k].draft.follow[+el.dataset.i];
+    box.querySelectorAll(".dcon").forEach((el) => (el.onchange = () => { it(el).on = el.checked; redo(el.dataset.k); }));
+    box.querySelectorAll(".dctype").forEach((el) => (el.onchange = () => { it(el).type = el.value; redo(el.dataset.k); }));
+    box.querySelectorAll(".dctext").forEach((el) => (el.oninput = () => { it(el).text = el.value; redo(el.dataset.k); }));
+    box.querySelectorAll(".dcwhen").forEach((el) => (el.oninput = () => { it(el).when = el.value; redo(el.dataset.k); }));
+    box.querySelectorAll(".dcfp").forEach((el) => (el.oninput = () => { results[+el.dataset.k].draft.fpDays = el.value; redo(el.dataset.k); }));
+    box.querySelectorAll("button[data-dcadd]").forEach((b) => (b.onclick = () => { const r = results[+b.dataset.dcadd]; r.draft.follow.push({ type: "referral", text: "", when: "", on: true }); review(results, problems); }));
+    box.querySelectorAll("textarea[id^=pdfdc]").forEach((t) => (t.oninput = () => { const r = results[+t.id.slice(5)]; r.draft.out = t.value; r.draft.dirty = true; const m = document.getElementById("pdfdcmsg" + t.id.slice(5)); if (m) m.textContent = "Edited by you: changes above no longer update it (Rebuild to start again)."; saveLast(results, problems); }));
+    box.querySelectorAll("button[data-dcrb]").forEach((b) => (b.onclick = () => { const r = results[+b.dataset.dcrb]; if (r.draft.dirty && !confirm("Rebuild the draft note? Your edits in it will be lost.")) return; r.draft.dirty = false; redo(b.dataset.dcrb); const m = document.getElementById("pdfdcmsg" + b.dataset.dcrb); if (m) m.textContent = ""; }));
+    box.querySelectorAll("button[data-dccopy]").forEach((b) => (b.onclick = async () => { const ta = document.getElementById("pdfdc" + b.dataset.dccopy); try { await navigator.clipboard.writeText(ta.value); } catch (e) { ta.select(); document.execCommand("copy"); } b.textContent = "Copied"; setTimeout(() => (b.textContent = "Copy draft note"), 1500); }));
+  }
   const fmtVal = (it) => (it.kind === "lab" ? (it.text != null ? it.text : (it.cmp || "") + it.value) : it.kind === "vital" ? (it.key === "bp" ? it.value + "/" + it.value2 : String(it.value)) : it.kind === "med" ? it.text : it.kind === "condition" ? "" : "");
   const KIND = { lab: "Lab", vital: "Vital", med: "Medication", procedure: "Procedure", report: "Imaging report", condition: "Diagnosis" };
   function review(results, problems) {
@@ -264,6 +311,7 @@
         <div class="muted">${r.ocr ? "This is what OCR read from the page pictures. " : ""}Fix misread words or numbers here, then press Re-read: the items table and summary are rebuilt from your corrected text.</div>
         <textarea id="pdftxt${k}" rows="18" class="mono" spellcheck="false">${esc(r.textDraft != null ? r.textDraft : r.text)}</textarea>
         <div class="row"><button data-reread="${k}">Re-read corrected text</button> <button data-copytxt="${k}">Copy text</button></div></details>`;
+      h += draftCard(r, k);
     });
     if (!all.length) { h += `<p>Nothing recognisable was found.${results.length ? " You can still keep the PDF text as a note below." : ""}</p>`; }
     else {
@@ -298,6 +346,7 @@
       </div>
       <p><button class="primary" id="pdfadd" disabled>Add ticked items</button> <button id="pdfback">Back</button> <button id="pdfx2">Cancel</button> <span class="muted" id="pdfres"></span></p>`;
     box.innerHTML = h;
+    wireDraft(results, problems);
     const copy = async (b, ta, label) => { try { await navigator.clipboard.writeText(ta.value); } catch (e) { ta.select(); document.execCommand("copy"); } b.textContent = "Copied"; setTimeout(() => (b.textContent = label), 1500); };
     box.querySelectorAll("button[data-copy]").forEach((b) => (b.onclick = () => copy(b, document.getElementById("pdfsum" + b.dataset.copy), "Copy summary")));
     box.querySelectorAll("button[data-copytxt]").forEach((b) => (b.onclick = () => copy(b, document.getElementById("pdftxt" + b.dataset.copytxt), "Copy text")));
@@ -327,6 +376,7 @@
       const txt = results.map((r, k) => (document.getElementById("pdftxt" + k) || {}).value || r.text).join("\n");
       const d = X().demographics(txt); if (d.birthDate) d.age = "";
       Object.entries(NP).forEach(([id, key]) => { const el = document.getElementById(id); if (!el || el.value !== el.dataset.auto) return; const v = d[key] == null ? "" : String(d[key]); el.value = v; el.dataset.auto = el.value; });
+      results.forEach((r, k) => { if (r.draft && !r.draft.dirty && D()) { r.draft.out = draftText(r); const ta = document.getElementById("pdfdc" + k); if (ta) ta.value = r.draft.out; } });
       refreshDest();
     };
     let rt = null; box.querySelectorAll("textarea[id^=pdftxt]").forEach((t) => t.addEventListener("input", () => { clearTimeout(rt); rt = setTimeout(refill, 400); }));
@@ -359,10 +409,11 @@
       results.forEach((r, k) => {
         if (document.getElementById("pdfkeep").checked) keepDoc((document.getElementById("pdftxt" + k) || {}).value || r.text, r.fileName, r); // the text as corrected on screen
         const sk = box.querySelector('.sumkeep[data-k="' + k + '"]'); if (sk && sk.checked) keepDoc((document.getElementById("pdfsum" + k) || {}).value, r.fileName + " (summary)", r);
+        const dk = box.querySelector('.dckeep[data-k="' + k + '"]'); if (dk && dk.checked) keepDoc((document.getElementById("pdfdc" + k) || {}).value, r.fileName + " (draft discharge note)", r);
       });
       Object.keys(filesAdded).forEach((n) => { const k = results.findIndex((r) => r.fileName === n), r = results[k] || {};
         st.files.push({ name: n, ids: filesAdded[n], at: Date.now(), ocr: !!r.ocr, docT: r.docT || null,
-          summary: (document.getElementById("pdfsum" + k) || {}).value || r.summary || "", text: (document.getElementById("pdftxt" + k) || {}).value || r.text || "" }); });
+          summary: (document.getElementById("pdfsum" + k) || {}).value || r.summary || "", draft: (document.getElementById("pdfdc" + k) || {}).value || (r.draft && r.draft.out) || "", text: (document.getElementById("pdftxt" + k) || {}).value || r.text || "" }); });
       if (!added.length) { document.getElementById("pdfres").textContent = "Nothing was added."; return; }
       saveFor(target, st);
       if (created) { const l = pdfPatients(); l.push({ id: target, label: [created.name[0].text, created.gender, created.birthDate ? "DOB " + created.birthDate : ""].filter(Boolean).join(", "), at: Date.now() }); savePdfPatients(l); }
@@ -411,6 +462,9 @@
       <details open class="pdfsec"><summary><b>Summary</b> <span class="muted">editable</span></summary>
         <textarea id="vsum" rows="16" spellcheck="true">${esc(f.summary || "")}</textarea>
         <div class="row"><button id="vcopy">Copy summary</button> <button id="vsave" class="primary">Save changes</button> <span class="muted" id="vmsg">${noteIdx() >= 0 ? "Saving also updates the summary note the other tabs see." : "Not kept as a note: Save changes keeps the edited summary here only."}</span></div></details>
+      ${f.draft ? `<details class="pdfsec"><summary><b>Draft discharge note</b> <span class="muted">as kept at import</span></summary>
+        <textarea id="vdc" rows="18" class="mono">${esc(f.draft)}</textarea>
+        <div class="row"><button id="vcopydc">Copy draft note</button></div></details>` : ""}
       <details class="pdfsec"><summary><b>Text read from the PDF</b>${f.ocr ? ' <span class="bad">(OCR)</span>' : ""}</summary>
         <textarea id="vtxt" rows="18" class="mono" readonly>${esc(f.text || "")}</textarea>
         <div class="row"><button id="vcopyt">Copy text</button></div></details>`}
@@ -420,6 +474,7 @@
     if (has) {
       document.getElementById("vcopy").onclick = (e) => copy(e.target, document.getElementById("vsum"), "Copy summary");
       document.getElementById("vcopyt").onclick = (e) => copy(e.target, document.getElementById("vtxt"), "Copy text");
+      const vd = document.getElementById("vcopydc"); if (vd) vd.onclick = (e) => copy(e.target, document.getElementById("vdc"), "Copy draft note");
       document.getElementById("vsave").onclick = () => {
         const v = document.getElementById("vsum").value; f.summary = v;
         const j = noteIdx();

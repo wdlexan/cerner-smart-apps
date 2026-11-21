@@ -41,4 +41,21 @@ ok("C patient: weight bearing, 4 weeks, naloxone", /full weight bearing as toler
 ok("negated finding ignored", R.incidentals({ reports: [{ name: "CT abdomen", cat: "radiology", text: "No suspicious mass. No aneurysm.", t: now }], notes: [], admit: now - 864e5, now }).length === 0);
 ok("insulins kept apart", R.medKey("insulin glargine 10 units") !== R.medKey("insulin lispro 4 units"));
 ok("medKey drops salts", R.medKey("metoprolol tartrate 25 mg PO BID") === "metoprolol" && R.medKey("ASA 81 mg") === "asa");
+// follow-up in the community + draft discharge note (MADE-UP text)
+{
+  const t = "Plan:\n1. Refer to heart function clinic in 4-6 weeks.\n2. Repeat lytes and creatinine in 1 week.\n3. Outpatient echocardiogram.\n4. CT chest showed RUL nodule; repeat CT chest in 6 months.\n5. No need for GI follow-up.\n6. Follow up with family doctor in 7 days.\nCT head was normal.";
+  const fu = R.followups([{ name: "note", text: t }]), ty = (re) => (fu.find((x) => re.test(x.text)) || {}).type;
+  ok("followups: referral with timing", ty(/heart function/) === "referral" && fu.find((x) => /heart function/.test(x.text)).when === "in 4-6 weeks", fu);
+  ok("followups: imaging (echo, repeat CT) and lab", ty(/echocardiogram/) === "imaging" && ty(/repeat CT/) === "imaging" && ty(/lytes/) === "lab");
+  ok("followups: 'No need for GI follow-up' and a normal result are not follow-ups", !fu.some((x) => /GI follow-up|CT head/.test(x.text)), fu.map((x) => x.text));
+  ok("followups: page header lines skipped", R.followups([{ name: "p", text: "Onc. Medical Follow-Up Clinic Note\nMRN: 1234567 PHN: 9999999999" }]).length === 0);
+  ok("detect: 'April' is not an ACE inhibitor", !R.detect("Seen in April 2025 for review.").medClass.acei && R.detect("ramipril 5 mg daily").medClass.acei === "ramipril");
+  ok("detect: negated problem ignored", !R.detect("No history of atrial fibrillation.").prob.af && R.detect("New atrial fibrillation.").prob.af);
+  const det = R.detect("Heart failure. Started apixaban 5 mg BID.");
+  const note = R.draftNote({ title: "made-up", patient: "Test Patient", sections: [{ name: "Plan", body: "1. Refer to heart function clinic." }], meds: ["apixaban 5 mg BID"], follow: fu, pending: ["TSH pending."], mods: ["general"].concat(R.modules(det).map((m) => m.id).filter((x) => x !== "general")), v: { fpDays: 7 }, f: det });
+  ok("draftNote: headings", ["DISCHARGE NOTE (DRAFT)", "FOLLOW-UP IN THE COMMUNITY", "Referrals to specialists and services:", "Imaging and procedures:", "Lab tests:", "PENDING RESULTS", "WHAT TO WATCH FOR", "Call 9-1-1", "family doctor or primary care provider"].every((h) => note.includes(h)), note);
+  ok("draftNote: heart failure and blood thinner warnings", /1 kg \(2 lb\)/.test(note) && /Black, tarry/.test(note));
+  const a = run(0), fp = R.fpNote({ f: a.f, fol: R.followups(a.f.notes), meds: a.meds, chg: a.chg, pend: a.pend, inc: a.inc, mods: a.mods, v: { fpDays: 7 } });
+  ok("fpNote: follow-up in the community + what to watch for", /FOLLOW-UP IN THE COMMUNITY\nReferrals to specialists and services:\n  - Refer to heart function clinic/.test(fp) && /WHAT TO WATCH FOR/.test(fp) && /Holter/.test(fp), fp);
+}
 console.log(`\n${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);

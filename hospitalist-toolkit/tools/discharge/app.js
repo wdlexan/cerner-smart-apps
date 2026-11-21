@@ -5,7 +5,7 @@ const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": 
 const isoD = (t) => (t ? new Date(t - new Date(t).getTimezoneOffset() * 6e4).toISOString().slice(0, 10) : "");
 const fromD = (s) => (s ? new Date(s + "T12:00:00").getTime() : null);
 const num = (v) => (v == null ? "" : Math.abs(v) >= 100 ? String(Math.round(v)) : String(Math.round(v * 10) / 10));
-const OWNERS = ["Family physician", "Hospitalist (me)", "Specialist", "Ordering physician", "Other"];
+const OWNERS = ["Family physician", "Hospitalist (me)", "Specialist", "Ordering physician", "Referral sent by hospital", "Patient to book", "Other"];
 const MOD_FIELDS = {
   hf: [["dry", "Weight at discharge (kg)", "number"], ["fluidL", "Fluid limit (L/day, blank = none)", "number"]],
   infection: [["abxEnd", "Last antibiotic dose (date)", "text"]],
@@ -19,7 +19,7 @@ const V_FIELDS = ["admit", "dc", "dx", "ptReason", "fpName", "fpDays", "course",
 
 let S = null; // { key, f, meds, chg, pend, inc, mods:[{id,name,why,on}], v, out:{fp,pt}, dirty:{fp,pt} }
 const storeKey = () => "dc:" + (S && S.key);
-const save = () => { try { if (S) sessionStorage.setItem(storeKey(), JSON.stringify({ meds: S.meds, chg: S.chg, pend: S.pend, inc: S.inc, mods: S.mods, v: S.v, out: S.out, dirty: S.dirty })); } catch (e) {} };
+const save = () => { try { if (S) sessionStorage.setItem(storeKey(), JSON.stringify({ meds: S.meds, chg: S.chg, pend: S.pend, inc: S.inc, fol: S.fol, mods: S.mods, v: S.v, out: S.out, dirty: S.dirty })); } catch (e) {} };
 
 function build(raw, key, sv) {
   const f = R.parse(Object.assign({ now: Date.now() }, raw));
@@ -29,8 +29,12 @@ function build(raw, key, sv) {
   S = { key, f, chg, v, meds: R.reconcile(f).map((r) => Object.assign(r, { on: r.status !== "inpatient" })),
     pend: R.pending(f).map((p) => Object.assign(p, { status: [p.status, p.detail].filter(Boolean).join(" - "), detail: "", on: true, owner: /micro|path|culture|biopsy/i.test(p.kind + " " + p.what) ? "Hospitalist (me)" : "Family physician" })),
     inc: R.incidentals(f).map((x) => Object.assign(x, { on: true, owner: "Family physician" })),
+    fol: [],
     mods: R.modules(f).map((m) => Object.assign(m, { on: true })), out: { fp: "", pt: "" }, dirty: { fp: false, pt: false } };
-  try { const saved = JSON.parse(sessionStorage.getItem(storeKey()) || "null"); if (saved) { Object.assign(S, saved); S.f = f; } } catch (e) {}
+  // follow-up in the community: plans in notes and reports (not the radiology recommendations already listed as incidental findings)
+  const incTxt = S.inc.map((x) => (x.finding + " " + x.followup).toLowerCase());
+  S.fol = R.followups(f.notes.concat(f.reports.filter((r) => r.text).map((r) => ({ name: r.name, t: r.t, text: r.text })))).filter((x) => !incTxt.some((t) => t.includes(x.text.toLowerCase().slice(0, 50)))).map((x) => Object.assign(x, { owner: x.type === "referral" ? "Referral sent by hospital" : "Family physician" }));
+  try { const saved = JSON.parse(sessionStorage.getItem(storeKey()) || "null"); if (saved) { Object.assign(S, saved); S.f = f; if (!S.fol) S.fol = []; } } catch (e) {}
 }
 
 /* ---------- sections ---------- */
@@ -64,6 +68,15 @@ function incHtml() {
     <td class="wrap">${esc(x.finding)}<div class="muted" style="font-size:11.5px">${esc(x.source)}${x.t ? ", " + esc(R.fmtD(x.t)) : ""}</div></td>
     <td class="wrap"><input type="text" data-k="inc" data-i="${i}" data-f="followup" value="${esc(x.followup)}" placeholder="e.g. CT chest in 6 to 12 months"></td><td class="st">${ownerSel("inc", i, x.owner)}</td></tr>`).join("")}</table>`;
 }
+function folHtml() {
+  const types = Object.entries(R.FTYPES);
+  const rows = S.fol.length ? `<table><tr><th></th><th>Type</th><th>What (edit as needed)</th><th>When</th><th>Who</th></tr>${S.fol.map((x, i) => `<tr><td class="ck"><input type="checkbox" data-k="fol" data-i="${i}" data-f="on"${x.on !== false ? " checked" : ""}></td>
+    <td class="st"><select data-k="fol" data-i="${i}" data-f="type">${types.map(([k, l]) => `<option value="${k}"${x.type === k ? " selected" : ""}>${esc(l.split(" ")[0] === "Referrals" ? "Referral" : l.split(" ")[0] === "Imaging" ? "Imaging / procedure" : l.split(" ")[0] === "Lab" ? "Lab test" : "Other")}</option>`).join("")}</select></td>
+    <td class="wrap"><input type="text" data-k="fol" data-i="${i}" data-f="text" value="${esc(x.text)}">${x.source ? `<div class="muted" style="font-size:11.5px">${esc(x.source)}${x.t ? ", " + esc(R.fmtD(x.t)) : ""}</div>` : ""}</td>
+    <td style="width:130px"><input type="text" data-k="fol" data-i="${i}" data-f="when" value="${esc(x.when)}" placeholder="e.g. in 1 week"></td><td class="st">${ownerSel("fol", i, x.owner)}</td></tr>`).join("")}</table>`
+    : `<p class="muted">No referrals, imaging or lab follow-up found in the notes read. Add them below.</p>`;
+  return rows;
+}
 function modsHtml() {
   const present = new Set(S.mods.map((m) => m.id));
   const extra = R.MODULES.filter((m) => !present.has(m.id));
@@ -73,19 +86,20 @@ function modsHtml() {
 }
 
 /* ---------- outputs ---------- */
-function state() { return { f: S.f, meds: S.meds, chg: { labs: S.chg.labs.filter((x) => x.on), newProbs: S.chg.newProbs.filter((x) => x.on) }, pend: S.pend, inc: S.inc, mods: S.mods.filter((m) => m.on).map((m) => m.id), v: S.v }; }
+function state() { return { f: S.f, fol: S.fol, meds: S.meds, chg: { labs: S.chg.labs.filter((x) => x.on), newProbs: S.chg.newProbs.filter((x) => x.on) }, pend: S.pend, inc: S.inc, mods: S.mods.filter((m) => m.on).map((m) => m.id), v: S.v }; }
 function outputs(force) {
   const st = state();
   ["fp", "pt"].forEach((k) => { if (force === k || force === true || !S.dirty[k]) { S.out[k] = k === "fp" ? R.fpNote(st) : R.patientText(st); S.dirty[k] = false; } $("out-" + k).value = S.out[k]; $("dirty-" + k).textContent = S.dirty[k] ? "You edited this: changes above no longer update it. Rebuild to start again from above (your edits here will be lost)." : ""; });
 }
 
 function render() {
-  if (!S) { ["meds", "chg", "pend", "inc", "mods"].forEach((id) => ($(id).innerHTML = "")); ["out-fp", "out-pt"].forEach((id) => ($(id).value = "")); return; }
+  if (!S) { ["meds", "chg", "pend", "inc", "fol", "mods"].forEach((id) => ($(id).innerHTML = "")); ["out-fp", "out-pt"].forEach((id) => ($(id).value = "")); return; }
   V_FIELDS.forEach((k) => { const el = $("v-" + k); if (!el) return; el.value = k === "admit" || k === "dc" ? isoD(S.v[k]) : S.v[k] == null ? "" : S.v[k]; });
-  $("meds").innerHTML = medsHtml(); $("chg").innerHTML = chgHtml(); $("pend").innerHTML = pendHtml(); $("inc").innerHTML = incHtml(); $("mods").innerHTML = modsHtml();
+  $("meds").innerHTML = medsHtml(); $("chg").innerHTML = chgHtml(); $("pend").innerHTML = pendHtml(); $("inc").innerHTML = incHtml(); $("fol").innerHTML = folHtml(); $("mods").innerHTML = modsHtml();
   const cnt = (a, st) => a.filter((r) => r.on !== false && (!st || st.includes(r.status))).length;
   $("medsum").textContent = `${cnt(S.meds, ["new"])} new, ${cnt(S.meds, ["changed"])} changed, ${cnt(S.meds, ["stopped", "held"])} stopped/held`;
   $("chgsum").textContent = S.chg.labs.filter((x) => x.big).length + " notable lab/weight changes";
+  $("folsum").textContent = cnt(S.fol) + " item" + (cnt(S.fol) === 1 ? "" : "s");
   $("pendsum").textContent = cnt(S.pend) + " pending"; $("incsum").textContent = cnt(S.inc) + " finding" + (cnt(S.inc) === 1 ? "" : "s");
   $("modsum").textContent = S.mods.filter((m) => m.on).map((m) => m.name.split(" (")[0]).join(", ");
   $("ptsum").textContent = S.v.admit ? "Admitted " + R.fmtD(S.v.admit) + (S.f.admitGuessed ? " (guessed from first lab: check)" : "") : "";
@@ -94,11 +108,11 @@ function render() {
 function wireRows() {
   document.querySelectorAll("[data-k]").forEach((el) => {
     const k = el.dataset.k, i = +el.dataset.i, fld = el.dataset.f;
-    const arr = k === "meds" ? S.meds : k === "pend" ? S.pend : k === "inc" ? S.inc : k === "lab" ? S.chg.labs : k === "prob" ? S.chg.newProbs : k === "mod" ? S.mods : null; if (!arr) return;
+    const arr = k === "meds" ? S.meds : k === "pend" ? S.pend : k === "inc" ? S.inc : k === "fol" ? S.fol : k === "lab" ? S.chg.labs : k === "prob" ? S.chg.newProbs : k === "mod" ? S.mods : null; if (!arr) return;
     const ev = el.type === "text" ? "input" : "change";
     el.addEventListener(ev, () => {
       if (el.type === "checkbox") arr[i][fld || "on"] = el.checked; else arr[i][fld] = el.value;
-      if (k === "mod" || (k === "meds" && fld === "status")) return render(); // fields appear / status colours
+      if (k === "mod" || (k === "meds" && fld === "status") || (k === "fol" && fld === "type")) return render(); // fields appear / status colours
       outputs(); save();
     });
   });
@@ -108,6 +122,7 @@ function wireRows() {
 V_FIELDS.forEach((k) => { const el = $("v-" + k); if (!el) return; el.addEventListener("input", () => { if (!S) return; S.v[k] = k === "admit" || k === "dc" ? fromD(el.value) : el.type === "number" ? (el.value === "" ? null : +el.value) : el.value; outputs(); save(); }); });
 $("addmed").onclick = () => { if (!S) return; S.meds.push({ key: "", status: "new", text: "", before: "", reason: "", on: true }); render(); };
 $("addpend").onclick = () => { if (!S) return; S.pend.push({ what: "", status: "", detail: "", owner: "Family physician", on: true }); render(); };
+$("addfol").onclick = () => { if (!S) return; S.fol.push({ type: "referral", text: "", when: "", owner: "Referral sent by hospital", source: "added by you", on: true }); render(); };
 $("addinc").onclick = () => { if (!S) return; S.inc.push({ finding: "", source: "added by you", followup: "", owner: "Family physician", on: true }); render(); };
 ["fp", "pt"].forEach((k) => {
   $("out-" + k).addEventListener("input", () => { if (!S) return; S.out[k] = $("out-" + k).value; S.dirty[k] = true; $("dirty-" + k).textContent = "You edited this: changes above no longer update it. Rebuild to start again from above (your edits here will be lost)."; save(); });
