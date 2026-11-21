@@ -52,4 +52,5 @@ const P2 = W.listPatients(W.readSheet('<sheetData><row r="1"><c r="D1" t="inline
   '<row r="4"><c r="F4" t="inlineStr"><is><t>Thyroid carcinoma Hypothyroid</t></is></c></row><row r="5"><c r="F5" t="inlineStr"><is><t>itp htn ckd pvd rta cad</t></is></c><c r="E5"><v>3</v></c></row>' +
   '<row r="7"><c r="D7" t="inlineStr"><is><t>HAH17 A</t></is></c><c r="E7"><v>88</v></c><c r="F7" t="inlineStr"><is><t>Angelina Tokay</t></is></c></row><row r="8"><c r="F8" t="inlineStr"><is><t>ischemic colitis oct 2026</t></is></c></row></sheetData>', ""));
 ok("excel: only names with a room are patients; lines under are pmhx", P2.map((p) => p.name).join("|") === "Barbara Lynn Gossman|Angelina Tokay" && P2[0].pmhx.join("; ") === "Thyroid carcinoma Hypothyroid; itp htn ckd pvd rta cad", P2);
+ok("comment lines skipped in list", W.parseContacts("# header\n# sign-off: Dr X\nSmith | Cardiology | 250-555-1234").length === 1);
 console.log(fail ? `\n${fail} FAILED` : "\nall passed"); process.exit(fail ? 1 : 0);

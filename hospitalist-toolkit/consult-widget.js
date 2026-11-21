@@ -80,7 +80,7 @@
   }
   // Specialist list: one per line "Name | Service | cell". Kept in this browser only (localStorage), never in the public code.
   function parseContacts(txt) {
-    return String(txt || "").split(/\n/).map((l) => l.split("|").map((x) => x.trim())).filter((p) => p[0]).map(([name, svc, cell]) => {
+    return String(txt || "").split(/\r?\n/).filter((l) => !/^\s*#/.test(l)).map((l) => l.split("|").map((x) => x.trim())).filter((p) => p[0]).map(([name, svc, cell]) => {
       if (!cell && /\d{3}/.test(svc || "")) { cell = svc; svc = ""; }
       const s = svc ? SERVICES.find((x) => x.toLowerCase().startsWith(svc.toLowerCase())) || "" : "";
       return { name: name.replace(/^dr\.?\s+/i, ""), service: s, cell: String(cell || "").trim() };
@@ -192,6 +192,8 @@
       <div id="cw-ed" style="display:none;margin:4px 0"><div class="muted">One per line: <b>Name | Service | cell</b> – e.g. <code>Smith | Infectious diseases | 250-555-1234</code>. Saved in this browser/phone only.</div>
         <textarea id="cw-list" style="min-height:90px" placeholder="Smith | Infectious diseases | 250-555-1234"></textarea>
         <div style="display:flex;justify-content:space-between;align-items:center;gap:6px"><span><button type="button" class="ghost" id="cw-imp">📇 From Contacts</button><input type="file" id="cw-vcf" accept=".vcf,text/vcard,text/x-vcard" multiple style="display:none"></span><button type="button" id="cw-save">Save list</button></div>
+        <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap"><button type="button" class="ghost" id="cw-exp">⬆ Export list</button><button type="button" class="ghost" id="cw-impf">⬇ Import list file</button><input type="file" id="cw-lf" accept=".txt,text/plain,.vcf,text/vcard" style="display:none">
+          <span class="muted" style="flex:1;min-width:180px">Move the list between phone and desktop: Export on one (email / AirDrop / OneDrive it to yourself), Import on the other. Your sign-off line goes with it.</span></div>
         <div class="muted" id="cw-impnote" style="margin-top:3px">On iPhone: Contacts → open the specialist → Share Contact → Save to Files, then tap 📇 From Contacts and pick the file. Check the service after importing.</div></div>
       <div class="row"><label>Service<select id="cw-svc">${SERVICES.map((s) => `<option>${s}</option>`).join("")}</select></label><label>Dr.<input id="cw-dr" placeholder="name"></label></div>
       <div class="row"><label>Patient from my Excel list<select id="cw-xp"><option value="">– choose the list file first –</option></select></label><span style="align-self:flex-end"><button type="button" class="ghost" id="cw-xbtn">📋 Excel list…</button><input type="file" id="cw-xf" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none"></span></div>
@@ -320,6 +322,29 @@
         } catch (e) {}
       }
       $("cw-vcf").click();
+    };
+    // export / import the whole list (plus the sign-off line) as a small text file
+    const exportText = () => ["# Hospitalist Toolkit – consult specialist list (Name | Service | cell)", "# sign-off: " + $("cw-sig").value.trim(),
+      ...parseContacts($("cw-list").value).map(contactLine)].join("\n") + "\n";
+    $("cw-exp").onclick = async () => {
+      const name = "specialists.txt", text = exportText();
+      try { const f = new File([text], name, { type: "text/plain" });
+        if (PHONE && navigator.canShare && navigator.canShare({ files: [f] })) { await navigator.share({ files: [f], title: "Specialist list" }); $("cw-impnote").textContent = "List shared."; return; }
+      } catch (e) { if (e && e.name === "AbortError") return; }
+      const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "text/plain" })); a.download = name;
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      $("cw-impnote").textContent = "Saved specialists.txt (" + parseContacts($("cw-list").value).length + " specialists). Send it to your other device and use ⬇ Import list file there.";
+    };
+    $("cw-impf").onclick = () => $("cw-lf").click();
+    $("cw-lf").onchange = async () => {
+      const f = $("cw-lf").files[0]; $("cw-lf").value = ""; if (!f) return;
+      let t = ""; try { t = await f.text(); } catch (e) {}
+      if (/BEGIN:VCARD/i.test(t)) { addImported(parseVcards(t)); return; }
+      const sig = (t.match(/^#\s*sign-off:\s*(.+)$/im) || [])[1];
+      if (sig && !$("cw-sig").value.trim()) { $("cw-sig").value = sig.trim(); try { localStorage.setItem("consult-signoff", sig.trim()); } catch (e) {} }
+      addImported(parseContacts(t));
+      try { localStorage.setItem("consult-contacts", $("cw-list").value); } catch (e) {} loadContacts(); refresh();
+      $("cw-impnote").textContent = $("cw-impnote").textContent.replace(/ Fill in any missing service, then Save list\./, "") + " Saved on this device.";
     };
     $("cw-vcf").onchange = async () => { let all = []; for (const f of $("cw-vcf").files) { try { all = all.concat(parseVcards(await f.text())); } catch (e) {} } $("cw-vcf").value = ""; addImported(all); };
     loadContacts();
