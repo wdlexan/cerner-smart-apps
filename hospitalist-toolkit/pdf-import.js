@@ -254,7 +254,7 @@
   function draftText(r) {
     const text = r.textDraft != null ? r.textDraft : r.text, d = X().demographics(text), det = D().detect(text);
     const items = r.items || [];
-    const mods = ["general"].concat(D().modules(det).map((m) => m.id).filter((id) => id !== "general"));
+    const mods = D().modules(det).map((m) => m.id); // condition-specific only (the generic warnings were too generic to help)
     const pending = D().sentences(text).filter((x) => /\b(?:pending|awaiting|to follow|sent out)\b/i.test(x) && x.length < 260).slice(0, 8);
     return D().draftNote({
       title: r.fileName + (r.ocr ? " (read by OCR: check against the source)" : ""),

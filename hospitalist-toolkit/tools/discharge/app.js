@@ -80,7 +80,7 @@ function folHtml() {
 function modsHtml() {
   const present = new Set(S.mods.map((m) => m.id));
   const extra = R.MODULES.filter((m) => !present.has(m.id));
-  return S.mods.map((m, i) => `<div class="mod"><label><input type="checkbox" data-k="mod" data-i="${i}"${m.on ? " checked" : ""}${m.id === "general" ? " disabled" : ""}> <b>${esc(m.name)}</b></label> <span class="why">${esc(m.why ? "(" + m.why + ")" : m.id === "general" ? "(always included)" : "(added by you)")}</span>
+  return S.mods.map((m, i) => `<div class="mod"><label><input type="checkbox" data-k="mod" data-i="${i}"${m.on ? " checked" : ""}> <b>${esc(m.name)}</b></label> <span class="why">${esc(m.why ? "(" + m.why + ")" : "(added by you)")}</span>
       ${m.on && MOD_FIELDS[m.id] ? `<div class="fields">${MOD_FIELDS[m.id].map(([k, l, t, ph]) => `<label class="inl">${esc(l)} <input type="${t}" data-v="${k}" value="${esc(S.v[k] == null ? "" : S.v[k])}" placeholder="${esc(ph || "")}" style="width:${t === "number" ? 80 : 220}px"${t === "number" ? ' step="any"' : ""}></label>`).join("")}</div>` : ""}</div>`).join("")
     + (extra.length ? `<div class="row"><select id="addmod"><option value="">Add another condition plan…</option>${extra.map((m) => `<option value="${m.id}">${esc(m.name)}</option>`).join("")}</select></div>` : "");
 }

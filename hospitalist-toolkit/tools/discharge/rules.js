@@ -83,7 +83,8 @@
   /* Condition modules. Each: why it applies, things to do at home, call the family doctor (or clinic) the same day, go to Emergency or call 9-1-1, family doctor tasks.
      Plain language for patients (about grade 6); "fp" lines are for the family doctor note. Fields in {braces} are filled from the form or left blank. */
   const MODULES = [
-    { id: "general", name: "Everyone (general)", always: true,
+    // generic warnings: no longer added automatically (too generic to help); can still be added by hand
+    { id: "general", name: "General warnings (generic, any patient)",
       home: ["Take your medicines exactly as listed on your new medicine list. Throw away or set aside old lists so you do not mix them up.", "Bring this sheet and all your pill bottles to your family doctor visit.", "Rest, eat well and walk a little more each day, unless you were told otherwise."],
       call: ["You have a fever over 38 °C (100.4 °F), or chills.", "You are vomiting or cannot keep fluids or pills down for more than a day.", "You have new pain, or pain that is getting worse and is not helped by your pain medicine.", "You are peeing much less than usual, or feel dizzy when you stand up.", "You are not sure how to take a medicine, or think a medicine is causing side effects."],
       er: ["Chest pain or pressure.", "Severe trouble breathing.", "Fainting, or new confusion or very hard to wake up.", "Signs of a stroke: face drooping, arm or leg weakness, trouble speaking, sudden loss of vision (BE FAST: call 9-1-1 right away).", "Bleeding that will not stop after 10 minutes of firm pressure.", "A seizure."],
@@ -400,8 +401,9 @@
     if ((o.pending || []).length) L.push("", "PENDING RESULTS", ...o.pending.map((p) => "- " + p));
     const w = watchFor(o.mods, v, o.f || { medClass: {} });
     L.push("", "WHAT TO WATCH FOR");
-    L.push("Call 9-1-1 or go to the nearest Emergency Department if:", ...w.er.map((x) => "- " + x));
-    L.push("See your family doctor or primary care provider the same day (or call 8-1-1, HealthLink BC, nurse 24/7) if:", ...w.call.map((x) => "- " + x));
+    if (w.er.length) L.push("Call 9-1-1 or go to the nearest Emergency Department if:", ...w.er.map((x) => "- " + x));
+    if (w.call.length) L.push("See your family doctor or primary care provider the same day (or call 8-1-1, HealthLink BC, nurse 24/7) if:", ...w.call.map((x) => "- " + x));
+    if (!w.er.length && !w.call.length) L.push("No condition-specific warnings found in the note: add them, or use \"Ask Claude for more follow-up detail\".");
     return L.join("\n");
   }
 
@@ -500,7 +502,7 @@
     tasks.forEach((t) => L.push("  - " + t));
     if (v.spec) v.spec.split(/\n+/).filter(Boolean).forEach((t) => L.push("- " + t.replace(/^[-*]\s*/, "")));
     const w = watchFor(s.mods, v, f);
-    L.push("", "WHAT TO WATCH FOR (given to the patient)", "Call 9-1-1 or go to Emergency if:", ...w.er.map((x) => "  - " + x), "See the family doctor / primary care provider the same day (or call 8-1-1) if:", ...w.call.map((x) => "  - " + x));
+    if (w.er.length || w.call.length) L.push("", "WHAT TO WATCH FOR (given to the patient)", ...(w.er.length ? ["Call 9-1-1 or go to Emergency if:", ...w.er.map((x) => "  - " + x)] : []), ...(w.call.length ? ["See the family doctor / primary care provider the same day (or call 8-1-1) if:", ...w.call.map((x) => "  - " + x)] : []));
     const handouts = (s.mods || []).map((id) => modById(id)).filter((m) => m && m.handout).map((m) => m.handout);
     L.push("", "Patient given: written discharge instructions with return precautions (when to call the family doctor, 8-1-1 or 9-1-1)" + (handouts.length ? "; " + handouts.join("; ") : "") + ".");
     return L.join("\n");
@@ -519,16 +521,15 @@
     if (nw.length) { L.push("NEW - start taking:"); nw.forEach((r) => L.push("  - " + plain(r.text) + (r.reason ? " (for " + r.reason + ")" : ""))); }
     if (ch.length) { L.push("CHANGED - take the new dose:"); ch.forEach((r) => L.push("  - " + plain(r.text) + "  (before: " + plain(r.before) + ")" + (r.reason ? " - " + r.reason : ""))); }
     if (sp.length) { L.push("STOP taking" + (by("held").length ? " (or hold until your doctor says to restart)" : "") + ":"); sp.forEach((r) => L.push("  - " + plain(r.text) + (r.status === "held" ? " (on hold)" : "") + (r.reason ? " (" + r.reason + ")" : ""))); }
-    L.push("Ask your pharmacist to go over your new list with you.");
     const home = [], call = [], er = [];
     mods.forEach((m) => { lines(m.home, v, f).forEach((x) => home.push(x)); lines(m.call, v, f).forEach((x) => call.push(x)); lines(m.er, v, f).forEach((x) => er.push(x)); });
     if (v.ptExtra) v.ptExtra.split(/\n+/).filter(Boolean).forEach((x) => home.push(x.replace(/^[-*]\s*/, "")));
     const uniq = (a) => a.filter((x, i) => a.indexOf(x) === i);
-    L.push("", "WHAT TO DO AT HOME"); uniq(home).forEach((x) => L.push("  - " + x));
-    L.push("", "CALL YOUR FAMILY DOCTOR (or 8-1-1, HealthLink BC, nurse 24/7) THE SAME DAY IF:"); uniq(call).forEach((x) => L.push("  - " + x));
-    L.push("", "CALL 9-1-1 OR GO TO THE NEAREST EMERGENCY DEPARTMENT IF:"); uniq(er).forEach((x) => L.push("  - " + x));
+    if (home.length) { L.push("", "WHAT TO DO AT HOME"); uniq(home).forEach((x) => L.push("  - " + x)); }
+    if (call.length) { L.push("", "CALL YOUR FAMILY DOCTOR (or 8-1-1, HealthLink BC, nurse 24/7) THE SAME DAY IF:"); uniq(call).forEach((x) => L.push("  - " + x)); }
+    if (er.length) { L.push("", "CALL 9-1-1 OR GO TO THE NEAREST EMERGENCY DEPARTMENT IF:"); uniq(er).forEach((x) => L.push("  - " + x)); }
     L.push("", "YOUR APPOINTMENTS");
-    L.push(`  - See your family doctor${v.fpName ? " (" + v.fpName + ")" : ""} within ${v.fpDays || "____"} days. Bring this sheet and your pill bottles.`);
+    L.push(`  - See your family doctor${v.fpName ? " (" + v.fpName + ")" : ""} within ${v.fpDays || "____"} days.`);
     if (v.ptAppts) v.ptAppts.split(/\n+/).filter(Boolean).forEach((x) => L.push("  - " + x.replace(/^[-*]\s*/, "")));
     const labs = [v.labsWhen].filter(Boolean); if (labs.length) L.push("  - Blood tests: " + labs.join("; "));
     const pd = (s.pend || []).filter((p) => p.on !== false);
