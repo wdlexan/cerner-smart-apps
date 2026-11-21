@@ -35,6 +35,14 @@ function build(raw, key, sv) {
   const incTxt = S.inc.map((x) => (x.finding + " " + x.followup).toLowerCase());
   S.fol = R.followups(f.notes.concat(f.reports.filter((r) => r.text).map((r) => ({ name: r.name, t: r.t, text: r.text })))).filter((x) => !incTxt.some((t) => t.includes(x.text.toLowerCase().slice(0, 50)))).map((x) => Object.assign(x, { owner: "" })); // who arranges it: only when you set it (the status found in the note is in the text)
   try { const saved = JSON.parse(sessionStorage.getItem(storeKey()) || "null"); if (saved) { Object.assign(S, saved); S.f = f; if (!S.fol) S.fol = []; } } catch (e) {}
+  try { S.dcc = window.DccRules ? window.DccRules.screen(f, raw) : null; } catch (e) { S.dcc = null; }
+}
+/* reminder: does this patient fit the South Island Discharge Clinic? (tools/dcclinic) */
+function dccHtml() {
+  const d = S && S.dcc; if (!d || d.verdict === "none") return "";
+  const open = `<a href="#" id="dcc-open" style="font-weight:600">Open the Discharge Clinic tab</a>`;
+  return `<b>Discharge Clinic?</b> This patient may fit the South Island Discharge Clinic: ${esc(d.fits.slice(0, 4).map((x) => x.name.split(" (")[0]).join("; "))}${d.fits.length > 4 ? "…" : "."}`
+    + (d.verdict === "flag" ? ` <span style="color:var(--a-ink)">Check first: ${esc(d.flags.filter((x) => x.hard).map((x) => x.text.split(":")[0]).join(", "))}.</span>` : "") + ` ${open} to screen and get the referral text for this note.`;
 }
 
 /* ---------- sections ---------- */
@@ -103,6 +111,7 @@ function render() {
   $("pendsum").textContent = cnt(S.pend) + " pending"; $("incsum").textContent = cnt(S.inc) + " finding" + (cnt(S.inc) === 1 ? "" : "s");
   $("modsum").textContent = S.mods.filter((m) => m.on).map((m) => m.name.split(" (")[0]).join(", ");
   $("ptsum").textContent = S.v.admit ? "Admitted " + R.fmtD(S.v.admit) + (S.f.admitGuessed ? " (guessed from first lab: check)" : "") : "";
+  const dc = $("dcc"); if (dc) { const h = dccHtml(); dc.hidden = !h; dc.innerHTML = h; const a = $("dcc-open"); if (a) a.onclick = (e) => { e.preventDefault(); try { parent.document.querySelector('#tabs button[data-k="dcclinic"]').click(); } catch (x) { location.href = "../dcclinic/index.html" + location.search; } }; }
   wireRows(); outputs(); save();
 }
 function wireRows() {

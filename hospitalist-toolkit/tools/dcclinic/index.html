@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Discharge Clinic (South Island)</title>
+  <style>
+    :root { --bg:#f5f7fa; --card:#fff; --ink:#1f2933; --muted:#5f6c7b; --accent:#0b6bcb; --line:#dde3ea;
+            --r-bg:#fde8e8; --r-ink:#9b1c1c; --a-bg:#fff1d6; --a-ink:#8a5200; --b-bg:#e3eefc; --b-ink:#0b4a99; --g-bg:#e4f4ea; --g-ink:#1d6b3a; --warn-bg:#fff4e5; --warn-line:#f0c27b; }
+    @media (prefers-color-scheme: dark) { :root { --bg:#111418; --card:#1a1f26; --ink:#e8edf2; --muted:#9aa7b5; --accent:#6aa9ff; --line:#2b333d;
+            --r-bg:#4a1d1d; --r-ink:#ffb3b3; --a-bg:#4a3511; --a-ink:#ffd38a; --b-bg:#14325c; --b-ink:#a9cdff; --g-bg:#16361f; --g-ink:#9be0b1; --warn-bg:#3a2e15; --warn-line:#6b5420; } }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); }
+    header { padding:14px 20px; border-bottom:1px solid var(--line); background:var(--card); }
+    header h1 { margin:0; font-size:19px; } header .sub { font-size:13px; color:var(--muted); margin-top:2px; }
+    main { max-width:980px; margin:16px auto 40px; padding:0 16px; display:grid; gap:14px; }
+    .banner { background:var(--warn-bg); border:1px solid var(--warn-line); border-radius:8px; padding:10px 14px; font-size:13px; }
+    .verdict { border-radius:10px; padding:12px 16px; font-size:14px; }
+    .verdict b { display:block; font-size:17px; margin-bottom:3px; }
+    .v-fit { background:var(--g-bg); color:var(--g-ink); } .v-flag { background:var(--a-bg); color:var(--a-ink); } .v-none { background:var(--b-bg); color:var(--b-ink); }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:10px; font-size:13.5px; }
+    .card > summary { padding:10px 16px; font-weight:700; font-size:15px; cursor:pointer; display:flex; justify-content:space-between; gap:10px; }
+    .card > .body { padding:0 16px 14px; }
+    select, input, button, textarea { font:inherit; font-size:13px; padding:5px 8px; border:1px solid var(--line); border-radius:6px; background:var(--card); color:var(--ink); }
+    button { cursor:pointer; } button.primary { border-color:var(--accent); color:var(--accent); font-weight:600; }
+    textarea { width:100%; resize:vertical; } textarea.out { font:13px/1.45 ui-monospace,Consolas,monospace; min-height:240px; }
+    .row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:8px 0; }
+    .muted { color:var(--muted); } .err { color:var(--r-ink); }
+    .item { display:flex; gap:8px; align-items:flex-start; padding:6px 0; border-bottom:1px solid var(--line); }
+    .item:last-child { border-bottom:0; } .item input[type=checkbox] { margin-top:3px; }
+    .item .why { font-size:12px; color:var(--muted); } .item .take { width:100%; margin-top:4px; }
+    .flag { border-left:4px solid var(--a-ink); background:var(--a-bg); color:var(--a-ink); border-radius:6px; padding:6px 10px; margin:5px 0; }
+    .flag.hard { border-color:var(--r-ink); background:var(--r-bg); color:var(--r-ink); }
+    .grid2 { display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:8px 14px; }
+    .grid2 label { display:flex; flex-direction:column; gap:3px; font-size:12.5px; color:var(--muted); } .grid2 label input { color:var(--ink); }
+    ol, ul { margin:6px 0 6px 20px; padding:0; } li { margin:4px 0; }
+    .steps li label { display:flex; gap:8px; align-items:flex-start; }
+    code.phrase { background:var(--b-bg); color:var(--b-ink); border-radius:5px; padding:1px 6px; font-weight:600; }
+    h3 { font-size:14px; margin:12px 0 4px; }
+    @media print { .noprint { display:none; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Discharge Clinic (South Island)</h1>
+    <div class="sub">Urgent short-term follow-up after discharge, run from RJH (takes RJH and VGH referrals). Checks the chart against the clinic criteria and drafts the referral text. Read-only: it orders nothing and writes nothing to Cerner.</div>
+  </header>
+  <main>
+    <div class="banner"><b>Rules written by Claude, not verified.</b> The chart match can miss or misread things. You decide whether to refer. Criteria are from the clinic handout (last updated July 11, 2026).</div>
+    <div id="verdict" class="verdict v-none"><b>Load a patient</b>Open from Cerner, or pick a made-up patient below.</div>
+
+    <details class="card" open>
+      <summary><span>Patient</span><span class="muted" id="ptsum"></span></summary>
+      <div class="body">
+        <div id="pstatus" class="muted">Open from Cerner to read the chart, or pick a made-up patient:</div>
+        <div class="row"><select id="testsel"><option value="">Made-up patient…</option></select></div>
+        <div id="errs" class="err" style="font-size:12.5px"></div>
+      </div>
+    </details>
+
+    <details class="card" open>
+      <summary><span>1. Does the patient fit? (examples of appropriate referrals)</span><span class="muted" id="fitsum"></span></summary>
+      <div class="body">
+        <p class="muted" style="margin:4px 0 8px">Ticked items become the reason for referral and the responsibilities handed to the clinic. Edit the text to what you actually want the clinic to do.</p>
+        <div id="fits"></div>
+        <div class="row"><select id="addfit"><option value="">Add another reason…</option></select></div>
+      </div>
+    </details>
+
+    <details class="card" open>
+      <summary><span>2. Do not refer if… (confirm each)</span><span class="muted" id="flagsum"></span></summary>
+      <div class="body">
+        <div id="flags"></div>
+        <h3>Confirm the patient does NOT:</h3>
+        <div id="donot"></div>
+        <p class="muted" style="margin:8px 0 0">Out of scope: <span id="oos"></span></p>
+      </div>
+    </details>
+
+    <details class="card" open>
+      <summary><span>3. Referral steps</span><span class="muted" id="stepsum"></span></summary>
+      <div class="body">
+        <ol class="steps" id="steps"></ol>
+        <div class="row noprint"><span>Requisition phrase:</span> <code class="phrase" id="phrase"></code> <button id="copyphrase">Copy</button></div>
+      </div>
+    </details>
+
+    <details class="card" open>
+      <summary><span>4. Referral text for your discharge note</span></summary>
+      <div class="body">
+        <div class="grid2">
+          <label>Subspecialty referral sent at the same time (if any) <input type="text" id="v-subspec" placeholder="e.g. GI for colonoscopy"></label>
+          <label>Pending at discharge <input type="text" id="v-pending"></label>
+          <label>Patient phone (confirmed in PowerChart) <input type="text" id="v-phone"></label>
+          <label>Care returns to (FP or UPCC) <input type="text" id="v-fp" placeholder="e.g. Dr. ___ (family physician)"></label>
+          <label>Not transferred, stays with… (optional) <input type="text" id="v-keep" placeholder="e.g. cardiology for the echo result"></label>
+          <label style="flex-direction:row;align-items:center;gap:6px;color:var(--ink)"><input type="checkbox" id="v-told"> Patient told about the first-business-day phone call and what to do if worse before then</label>
+        </div>
+        <div class="row"><b>Draft</b> <span class="muted" id="dirty"></span></div>
+        <textarea class="out" id="out"></textarea>
+        <div class="row noprint"><button class="primary" id="copy">Copy for PowerChart</button><button id="rebuild">Rebuild from above</button></div>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span>5. Question before referring? Message the Physician of the Day</span></summary>
+      <div class="body">
+        <p class="muted" style="margin:4px 0">Discharge Clinic Physician of the Day: Monday to Friday, 08:00 to 17:00. The schedule is available through Switchboard. RJH inpatients who may benefit from in-person assessment and discharge optimization: contact the Discharge Clinic physician (same-day not guaranteed).</p>
+        <label class="muted" style="font-size:12.5px">Brief history <input type="text" id="v-story" style="width:100%" placeholder="e.g. admitted with rapid AF and new HFrEF, now stable on PO"></label>
+        <textarea id="pod" style="min-height:110px;margin-top:8px"></textarea>
+        <div class="row noprint"><button class="primary" id="copypod">Copy message</button></div>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span>Clinic criteria (reference)</span></summary>
+      <div class="body" id="ref"></div>
+    </details>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+  <script src="../discharge/rules.js?v=20261121i"></script>
+  <script src="../discharge/chart.js?v=20261121a"></script>
+  <script src="../discharge/samples.js?v=20261121a"></script>
+  <script src="samples.js?v=20261121a"></script>
+  <script src="rules.js?v=20261121a"></script>
+  <script src="app.js?v=20261121a"></script>
+</body>
+</html>

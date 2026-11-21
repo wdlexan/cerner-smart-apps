@@ -4,7 +4,7 @@
    A tab is only loaded the first time you open it, and stays loaded when you switch away. */
 
 // To add a tool: put its files in tools/<folder>/ and add a line here.
-const TOOL_V = "20261121a"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
+const TOOL_V = "20261121b"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
 const TOOLS = [
   { key: "today", label: "Today (what changed)", tags: "what changed daily trends vitals overnight summary", path: "tools/today/index.html" },
   { key: "plist", label: "Patient list (screenshot)", tags: "patient list screenshot excel spreadsheet rounding list census floor ward ocr", path: "tools/plist/index.html" },
@@ -39,6 +39,7 @@ const TOOLS = [
   { key: "consult", label: "Consult summary", tags: "consult summary",    path: "tools/consult/index.html" },
   { key: "mobility", label: "Mobility & discharge", tags: "mobility discharge pt ot function planning", path: "tools/mobility/index.html" },
   { key: "discharge", label: "Discharge note", tags: "discharge summary note instructions what changed medication reconciliation pending results incidental findings follow-up family physician fp return precautions 911 when to call handout", path: "tools/discharge/index.html" },
+  { key: "dcclinic", label: "Discharge Clinic (South Island)", tags: "discharge clinic south island rjh sidc rapid follow-up urgent outpatient referral close follow up umac upcc holter gdmt", path: "tools/dcclinic/index.html" },
   { key: "pd",    label: "Parkinson disease", tags: "parkinson pd levodopa",    path: "tools/pd/index.html" },
   { key: "dementia", label: "Dementia workup", tags: "dementia cognitive impairment memory delirium workup",  path: "tools/dementia/index.html" },
   { key: "aki",   label: "AKI", tags: "aki acute kidney injury creatinine renal",                  path: "tools/aki/index.html" },

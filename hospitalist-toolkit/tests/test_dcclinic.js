@@ -1,0 +1,27 @@
+/* node test_dcclinic.js : Discharge Clinic screen on MADE-UP patients. */
+global.window = {}; require("../tools/discharge/samples.js"); require("../tools/dcclinic/samples.js");
+const R = require("../tools/discharge/rules.js"), C = require("../tools/dcclinic/rules.js");
+let pass = 0, fail = 0; const ok = (n, c, x) => { console.log((c ? "PASS " : "FAIL ") + n + (!c && x ? " | " + JSON.stringify(x).slice(0, 400) : "")); c ? pass++ : fail++; };
+const now = Date.now(), all = window.DC_SAMPLES.concat(window.DCC_SAMPLES);
+const run = (i) => { const raw = Object.assign({ now }, all[i].build(now)); const f = R.parse(raw); return C.screen(f, raw); };
+const ids = (s) => s.fits.map((x) => x.id);
+let a = run(0);
+ok("A HF+AF: hf, gdmt, af, pending echo, holter", ["hf", "gdmt", "af", "pending", "holter"].every((k) => ids(a).includes(k)), ids(a));
+ok("A verdict fit (no hard flags)", a.verdict === "fit", a.flags);
+ok("A GDMT fill names missing MRA", /not on MRA/.test(a.fill.gdmt), a.fill);
+let b = run(1);
+ok("B pneumonia on PO amox-clav: abx + copd", ids(b).includes("abx") && ids(b).includes("copd"), ids(b));
+ok("B new insulin flags diabetes", ids(b).includes("dm"), ids(b));
+let c = run(2);
+ok("C hip fracture: no strong fit (hb 94 not < 90)", !ids(c).includes("anemia"), ids(c));
+let d = run(3);
+ok("D anemia + Na 127 + oxygen: fits anemia and na", ids(d).includes("anemia") && ids(d).includes("na"), ids(d));
+ok("D oxygen is a hard flag, verdict flag", d.flags.some((x) => x.hard && /Oxygen/.test(x.text)) && d.verdict === "flag", d.flags);
+ok("D ALC in note flagged for function", d.flags.some((x) => x.id === "function"), d.flags);
+let e = run(4);
+ok("E suspected malignancy, liver mass biopsy pending", ids(e).includes("cancer") && ids(e).includes("pending"), ids(e));
+ok("E phone found", e.phones.length === 1, e.phones);
+const nb = C.noteBlock({ reason: "anemia", take: ["Repeat CBC in 5 days", ""], subspec: "GI", phone: "250-555-0100", told: true, fp: "Dr. Smith (FP)" });
+ok("note block has list name, responsibilities, requisition phrase", /Discharge Clinic South Island - Referrals/.test(nb) && /- Repeat CBC in 5 days/.test(nb) && /'Discharge Clinic patient'/.test(nb) && !/- \n/.test(nb), nb);
+ok("POD message in consult format", /^Hello Dr\. ___, This is Wayne/.test(C.podMessage({ name: "A B", age: 70, sex: "male", reason: "x" })));
+console.log(`\n${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);
