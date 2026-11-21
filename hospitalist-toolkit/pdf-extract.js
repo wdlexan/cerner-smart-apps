@@ -21,7 +21,7 @@
     L("cl", "chloride", "2075-0", "Chloride", "mmol/L"),
     L("hco3", "bicarbonate|total co2|carbon dioxide|\\bhco3\\b", "1963-8", "Bicarbonate", "mmol/L"),
     L("bun", "\\bbun\\b|blood urea nitrogen|\\burea\\b", "3094-0", "Urea / BUN", "mmol/L"),
-    L("creat", "creatinine", "2160-0", "Creatinine", "umol/L"),
+    L("creat", "creatinine|\\bcr\\b|\\bcreat\\b", "2160-0", "Creatinine", "umol/L"),
     L("egfr", "\\begfr\\b|estimated gfr|glomerular filtration", "62238-1", "eGFR", "mL/min/1.73m2"),
     L("glucose", "glucose", "2345-7", "Glucose", "mmol/L"),
     L("ca", "calcium", "17861-6", "Calcium", "mmol/L"),
@@ -246,12 +246,15 @@
     const out = []; let inMeds = false, since = 0;
     lines.forEach((ln, li) => {
       if (/^\s*[A-Za-z ]{3,40}:?\s*$/.test(ln) && ln.trim().length < 40) inMeds = MED_HDR.test(ln); else if (MED_HDR.test(ln) && ln.trim().length < 60) inMeds = true; else if (/^\s*(?:allerg|assessment|plan|impression|diagnos|vitals?|labs?|history|examination)\w*\s*:?/i.test(ln)) inMeds = false;
-      const m = DOSE.exec(ln); if (!m) return;
-      if (!(inMeds || FREQ.test(ln))) return;
-      const name = m[1].trim(); if (NOT_MED.test(name.split(/\s/)[0])) return;
-      const route = /\b(IV|PO|SC|SUBCUT|IM|SL|PR)\s*$/i.exec(ln.slice(0, m.index)), rest = m[4];
+      if (!DOSE.test(ln) || !(inMeds || FREQ.test(ln))) return;
+      // two drugs on one line ("apixaban 5 mg po bid and metoprolol 25 mg po bid") -> one item each
+      ln.split(/\s*(?:;|,|\band\b|\+)\s*(?=[A-Za-z][A-Za-z-]{3,}\s+\d)/i).forEach((seg) => {
+      const m = DOSE.exec(seg); if (!m) return;
+      const name = m[1].trim().replace(/^(?:(?:was|were|then)\s+)?(?:started|start|restarted|restart|resumed?|continued?|continue on|increased?|decreased?|reduced|changed to|switched to|now on|on|new|plus)\s+/i, ""); if (!name || NOT_MED.test(name.split(/\s/)[0])) return;
+      const route = /\b(IV|PO|SC|SUBCUT|IM|SL|PR)\s*$/i.exec(seg.slice(0, m.index)), rest = m[4];
       const text = (name + " " + m[2] + " " + m[3] + (route && !FREQ_ROUTE.test(rest) ? " " + route[1].toUpperCase() : "") + rest).replace(/\s+/g, " ").trim();
       out.push({ kind: "med", key: "med", label: name, dose: m[2] + " " + m[3], text, t: (findDate(ln) || docT || {}).t || null, line: ln.trim().slice(0, 200), li });
+      });
     });
     // "Hold pramipexole", "pramipexole held": order kept but marked on hold (shown in the review for the physician to confirm)
     const all = lines.join(" ");
@@ -493,8 +496,8 @@
     const docType = field(/document (?:type|subject):\s+(.+)/i) || field(/^\s*(?:report|note) type:\s+(.+)/im);
     const when = field(/service date(?:\/time)?:\s+(.+)/i) || (r.docT ? iso(r.docT) : "");
     const by = field(/sign(?:ed)? (?:information|by):\s+(.+)/i) || field(/(?:dictated|author|physician):\s+(.+)/i);
-    out.push([docType || "PDF report", when, by].filter(Boolean).join(" | "));
-    out.push("Source: " + (r.fileName || "PDF") + (r.ocr ? " (read by OCR: check values against the PDF)" : ""));
+    if (r.typed) out.push(r.fileName || "Typed note");
+    else { out.push([docType || "PDF report", when, by].filter(Boolean).join(" | ")); out.push("Source: " + (r.fileName || "PDF") + (r.ocr ? " (read by OCR: check values against the PDF)" : "")); }
     const d = demographics(text);
     if (d.name || d.birthDate || d.phn) out.push("Patient: " + [d.name, d.sex, d.birthDate ? "DOB " + d.birthDate + (d.age != null ? " (" + d.age + " y)" : "") : d.age != null ? d.age + " y" : "", d.phn ? "PHN " + d.phn : ""].filter(Boolean).join(", "));
     const seen = new Set();

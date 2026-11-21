@@ -222,4 +222,13 @@ Doing well on treatment. Sodium 131 mmol/L today. Continue the current plan and 
   ok("summary: diagnosis section stops at AI disclaimer", /ONCOLOGIC DIAGNOSIS\nMetastatic breast cancer[^\n]*testing the summary only\.\n/.test(sm) && !/scribe/i.test(sm), sm);
   ok("summary: impression section and OCR note", /IMPRESSION AND PLAN\nDoing well/.test(sm) && /read by OCR/.test(sm), sm);
 }
+// typed / pasted text (MADE-UP)
+{
+  const tr = X.fromText(`Phone report\nNa 131, K 3.2, Cr 142, CrCl 40\nStarted apixaban 5 mg po bid and metoprolol 25 mg po bid\nPlan\nRepeat lytes tomorrow.`, { fileName: "Phone report (made-up)" }); tr.typed = true;
+  const g = (k) => tr.items.filter((i) => i.key === k);
+  ok("typed: Cr 142 is creatinine, CrCl is not", g("creat").length === 1 && g("creat")[0].value === 142, g("creat"));
+  const meds = tr.items.filter((i) => i.kind === "med").map((i) => i.text);
+  ok("typed: two drugs on one line split, 'Started' dropped", meds.length === 2 && meds[0] === "apixaban 5 mg po bid" && meds[1] === "metoprolol 25 mg po bid", meds);
+  ok("typed: summary uses the title and the Plan section", /^Phone report \(made-up\)\n/.test(X.summarize(tr)) && /PLAN\nRepeat lytes tomorrow\./.test(X.summarize(tr)), X.summarize(tr));
+}
 console.log(`\n${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);

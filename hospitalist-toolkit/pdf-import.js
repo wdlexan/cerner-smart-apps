@@ -54,7 +54,7 @@
   document.head.appendChild(css);
 
   const bar = document.createElement("div"); bar.id = "pdfbar";
-  bar.innerHTML = `<button id="pdfopen" title="Read a PDF report (labs, clinic letter, endoscopy) and add what it contains to every tab">Import PDF</button><span class="cnt" id="pdfcnt"></span>`;
+  bar.innerHTML = `<button id="pdfopen" title="Read a PDF report (labs, clinic letter, endoscopy) or typed/pasted text, and add what it contains to every tab">Import PDF / text</button><span class="cnt" id="pdfcnt"></span>`;
   const top = document.querySelector("header .top"); if (top) top.insertBefore(bar, top.lastElementChild);
   const modal = document.createElement("div"); modal.id = "pdfmodal"; modal.innerHTML = `<div id="pdfbox"></div>`; document.body.appendChild(modal);
   const box = modal.firstChild;
@@ -62,14 +62,23 @@
   function close() { modal.classList.remove("on"); }
   function refreshCount() { const st = pid() ? store() : { items: [], files: [] }; const el = document.getElementById("pdfcnt"); el.innerHTML = st.items.length ? `<a href="#" id="pdfman" style="color:#fff">${st.items.length} imported item${st.items.length === 1 ? "" : "s"}</a>` : pdfPatients().length ? `<a href="#" id="pdfman" style="color:#fff">PDF-only patients (${pdfPatients().length})</a>` : ""; const a = document.getElementById("pdfman"); if (a) a.onclick = (e) => { e.preventDefault(); manage(); }; }
   document.getElementById("pdfopen").onclick = () => { if (!pid()) { alert("The patient has not loaded yet."); return; } drop(); };
+  /* the last "Review what was found" screen, kept for this browser tab so it can be reopened after closing it */
+  const LAST = "pdflastreview";
+  const saveLast = (results, problems) => { try { sessionStorage.setItem(LAST, JSON.stringify({ results, problems, at: Date.now() })); } catch (e) {} };
+  const loadLast = () => { try { return JSON.parse(sessionStorage.getItem(LAST) || "null"); } catch (e) { return null; } };
   const patientName = () => { const el = document.getElementById("patient"); return el ? el.textContent.trim() : ""; };
 
   /* ---------- step 1: choose files ---------- */
   function drop(msg) {
-    box.innerHTML = `<h2>Import a PDF report</h2>
+    box.innerHTML = `<h2>Import a PDF report or typed text</h2>
       <div class="muted">For labs, clinic letters or procedure reports that are not in Cerner. The PDF is read here in your browser: nothing is uploaded or sent to an AI. Use made-up or Cerner sandbox documents only until Island Health approves real data.</div>
       ${msg ? `<div class="warn">${msg}</div>` : ""}
+      ${(() => { const L = loadLast(); return L && L.results && L.results.length ? `<p><button class="primary" id="pdflast">Back to the last review: ${esc(L.results.map((r) => r.fileName).join(", "))}</button> <span class="muted">read ${esc(new Date(L.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }))}, with its summary and OCR text</span></p>` : ""; })()}
       <div id="pdfdrop"><div style="font-size:15px">Drop PDF files here</div><div class="muted">or</div><input type="file" id="pdffile" accept="application/pdf,.pdf" multiple></div>
+      <details class="pdfsec" open><summary><b>Or type or paste text</b> <span class="muted">a phone report, an outside note, labs from a fax, or your own notes</span></summary>
+        <input type="text" id="typtitle" placeholder="Title (optional), e.g. Phone report from Dr. ___, outside labs" style="width:100%;box-sizing:border-box;margin-top:6px;padding:5px 8px">
+        <textarea id="typtext" rows="10" spellcheck="true" placeholder="Type or paste here. Labs written like 'Na 131, K 3.2, Cr 142' and medications with doses are picked up. Section headings such as Diagnosis, Impression or Plan on their own line go into the summary."></textarea>
+        <div class="row"><button class="primary" id="typread">Read this text</button> <span class="muted">Nothing is sent anywhere: it is read here, then shown to you to check like a PDF.</span></div></details>
       ${sampleBlock()}
       <div class="muted">Text PDFs are read directly. Scanned pages, faxes or printed-to-PDF CareConnect pages (pictures of text) are read with OCR in your browser, which takes about 5-10 seconds a page (the first time also downloads about 10 MB of OCR data). Everything found is shown to you to tick and correct before it is used.</div>
       <p><button id="pdfx">Close</button></p>`;
@@ -79,6 +88,19 @@
     ["dragleave", "drop"].forEach((ev) => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.remove("hot"); }));
     dz.addEventListener("drop", (e) => run(Array.from(e.dataTransfer.files)));
     fi.onchange = () => run(Array.from(fi.files));
+    const tt = document.getElementById("typtext"), tl = document.getElementById("typtitle");
+    try { const d = JSON.parse(sessionStorage.getItem("pdftypedraft") || "null"); if (d) { tt.value = d.text || ""; tl.value = d.title || ""; } } catch (e) {}
+    const keepDraft = () => { try { sessionStorage.setItem("pdftypedraft", JSON.stringify({ text: tt.value, title: tl.value })); } catch (e) {} };
+    tt.oninput = keepDraft; tl.oninput = keepDraft;
+    document.getElementById("typread").onclick = () => {
+      const txt = tt.value.trim(); if (!txt) { tt.focus(); return; }
+      const stamp = new Date().toLocaleString([], { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+      const name = (tl.value.trim() || "Typed note") + " (" + stamp + ")";
+      const r = X().fromText(txt, { fileName: name }); r.typed = true;
+      sessionStorage.removeItem("pdftypedraft");
+      review([r], []);
+    };
+    const lb = document.getElementById("pdflast"); if (lb) lb.onclick = () => { const L = loadLast(); if (L) review(L.results, L.problems || []); };
     const ss = document.getElementById("pdfsample");
     if (ss) ss.onchange = () => { if (ss.value !== "") loadSample(+ss.value); };
     document.getElementById("pdfx").onclick = close;
@@ -197,20 +219,21 @@
     let h = `<h2>Review what was found</h2>
       <div class="warn"><b>Check before adding.</b> Reading a PDF is imperfect: values, units and dates can be wrong or missing, and a name can match the wrong test. Untick anything doubtful and fix values here. Added items appear in every tab marked as imported from PDF, not from Cerner.</div>
       ${problems.length ? `<div class="warn bad">${problems.map(esc).join("<br>")}</div>` : ""}`;
+    saveLast(results, problems);
     // per file: an editable summary, and the text that was read (OCR or text layer) to check and correct
     results.forEach((r, k) => {
       if (r.summary == null) r.summary = X().summarize(r);
       h += `<details open class="pdfsec"><summary><b>Summary: ${esc(r.fileName)}</b> <span class="muted">editable: correct it, then copy it or keep it as a note</span></summary>
         <textarea id="pdfsum${k}" rows="14" spellcheck="true">${esc(r.summary)}</textarea>
-        <div class="row"><button data-copy="${k}">Copy summary</button> <label><input type="checkbox" class="sumkeep" data-k="${k}" checked> Keep this summary as a note for the patient</label></div></details>
-        <details${r.ocr ? " open" : ""} class="pdfsec"><summary><b>Text read from ${esc(r.fileName)}</b>${r.ocr ? ' <span class="bad">(OCR)</span>' : ""} <span class="muted">${r.lines} lines${r.edited ? ", corrected by you" : ""}</span></summary>
+        <div class="row"><button data-copy="${k}">Copy summary</button> <label><input type="checkbox" class="sumkeep" data-k="${k}"${r.typed ? "" : " checked"}> Keep this summary as a note for the patient</label></div></details>
+        <details${r.ocr ? " open" : ""} class="pdfsec"><summary><b>${r.typed ? "Your text" : "Text read from " + esc(r.fileName)}</b>${r.ocr ? ' <span class="bad">(OCR)</span>' : ""} <span class="muted">${r.lines} lines${r.edited ? ", corrected by you" : ""}</span></summary>
         <div class="muted">${r.ocr ? "This is what OCR read from the page pictures. " : ""}Fix misread words or numbers here, then press Re-read: the items table and summary are rebuilt from your corrected text.</div>
-        <textarea id="pdftxt${k}" rows="18" class="mono" spellcheck="false">${esc(r.text)}</textarea>
+        <textarea id="pdftxt${k}" rows="18" class="mono" spellcheck="false">${esc(r.textDraft != null ? r.textDraft : r.text)}</textarea>
         <div class="row"><button data-reread="${k}">Re-read corrected text</button> <button data-copytxt="${k}">Copy text</button></div></details>`;
     });
     if (!all.length) { h += `<p>Nothing recognisable was found.${results.length ? " You can still keep the PDF text as a note below." : ""}</p>`; }
     else {
-      h += `<table><tr><th></th><th>Type</th><th>Item</th><th>Value</th><th>Unit</th><th>Date</th><th>Line in the PDF</th></tr>`;
+      h += `<table><tr><th></th><th>Type</th><th>Item</th><th>Value</th><th>Unit</th><th>Date</th><th>Source line</th></tr>`;
       let cur = null;
       all.forEach(({ it, r }, i) => {
         if (cur !== r.fileName) { cur = r.fileName; h += `<tr class="grp"><td colspan="7">${esc(r.fileName)}</td></tr>`; }
@@ -225,12 +248,12 @@
       });
       h += `</table>`;
     }
-    h += `<p><label><input type="checkbox" id="pdfkeep"${results.some((r) => /history of present illness|chief complaint|\bhpi\b|admission note|consult(?:ation)? note|progress note|discharge summary|physical exam/i.test(r.text)) ? " checked" : ""}> Also keep the PDF text as a note, so Notes, Risk screen and other tabs that read notes can see it (the AI tab only sends data out if you have set it up to)</label></p>
+    h += `<p><label><input type="checkbox" id="pdfkeep"${results.some((r) => r.typed || /history of present illness|chief complaint|\bhpi\b|admission note|consult(?:ation)? note|progress note|discharge summary|physical exam/i.test(r.text)) ? " checked" : ""}> Also keep the ${results.some((r) => r.typed) ? "typed" : "PDF"} text as a note, so Notes, Risk screen and other tabs that read notes can see it (the AI tab only sends data out if you have set it up to)</label></p>
       <div style="border:1px solid #dde3ea;border-radius:8px;padding:8px 12px;margin:8px 0"><b>Where should this go?</b>
         <div><label><input type="radio" name="pdfdest" value="current" checked> Add to the patient shown at the top: <b>${esc(patientName())}</b>${isPdfPt(pid()) ? " (PDF-only patient)" : ""}</label></div>
-        <div><label><input type="radio" name="pdfdest" value="new"> Open as a <b>separate patient</b> made only from this PDF (no Cerner data)</label></div>
+        <div><label><input type="radio" name="pdfdest" value="new"> Open as a <b>separate patient</b> made only from this ${results.every((r) => r.typed) ? "text" : "PDF"} (no Cerner data)</label></div>
         ${others.length ? `<div><label><input type="radio" name="pdfdest" value="existing"> Add to another PDF-only patient: <select id="pdfexist">${others.map((p) => `<option value="${esc(p.id)}">${esc(p.label)}</option>`).join("")}</select></label></div>` : ""}
-        <div id="pdfcur" style="margin-top:6px"><label><b><input type="checkbox" id="pdfpt"> This PDF is for ${esc(patientName())}</b></label></div>
+        <div id="pdfcur" style="margin-top:6px"><label><b><input type="checkbox" id="pdfpt"> This ${results.every((r) => r.typed) ? "text" : "PDF"} is for ${esc(patientName())}</b></label></div>
         <div id="pdfnew" hidden style="margin-top:6px">
           <div class="muted">Details found in the PDF are filled in: check them. Nothing here goes to Cerner; this patient exists only in this browser tab.</div>
           <table style="width:auto"><tr><td>Name</td><td><input type="text" id="np-given" placeholder="First name" value="${esc(demo.given || "")}" size="16"> <input type="text" id="np-family" placeholder="Last name" value="${esc(demo.family || "")}" size="16"></td></tr>
@@ -244,10 +267,11 @@
     const copy = async (b, ta, label) => { try { await navigator.clipboard.writeText(ta.value); } catch (e) { ta.select(); document.execCommand("copy"); } b.textContent = "Copied"; setTimeout(() => (b.textContent = label), 1500); };
     box.querySelectorAll("button[data-copy]").forEach((b) => (b.onclick = () => copy(b, document.getElementById("pdfsum" + b.dataset.copy), "Copy summary")));
     box.querySelectorAll("button[data-copytxt]").forEach((b) => (b.onclick = () => copy(b, document.getElementById("pdftxt" + b.dataset.copytxt), "Copy text")));
-    box.querySelectorAll("textarea[id^=pdfsum]").forEach((t) => (t.oninput = () => { results[+t.id.slice(6)].summary = t.value; }));
+    box.querySelectorAll("textarea[id^=pdfsum]").forEach((t) => (t.oninput = () => { results[+t.id.slice(6)].summary = t.value; saveLast(results, problems); }));
+    box.querySelectorAll("textarea[id^=pdftxt]").forEach((t) => (t.oninput = () => { results[+t.id.slice(6)].textDraft = t.value; saveLast(results, problems); }));
     box.querySelectorAll("button[data-reread]").forEach((b) => (b.onclick = () => {
       const k = +b.dataset.reread, old = results[k], txt = document.getElementById("pdftxt" + k).value;
-      const nr = X().fromText(txt, { fileName: old.fileName }); nr.ocr = old.ocr; nr.edited = true; results[k] = nr; // summary is rebuilt from the corrected text
+      const nr = X().fromText(txt, { fileName: old.fileName }); nr.ocr = old.ocr; nr.typed = old.typed; nr.edited = true; results[k] = nr; // summary is rebuilt from the corrected text
       review(results, problems);
     }));
     const addBtn = document.getElementById("pdfadd"), pt = document.getElementById("pdfpt");
@@ -292,7 +316,9 @@
         if (document.getElementById("pdfkeep").checked) keepDoc((document.getElementById("pdftxt" + k) || {}).value || r.text, r.fileName, r); // the text as corrected on screen
         const sk = box.querySelector('.sumkeep[data-k="' + k + '"]'); if (sk && sk.checked) keepDoc((document.getElementById("pdfsum" + k) || {}).value, r.fileName + " (summary)", r);
       });
-      Object.keys(filesAdded).forEach((n) => st.files.push({ name: n, ids: filesAdded[n], at: Date.now() }));
+      Object.keys(filesAdded).forEach((n) => { const k = results.findIndex((r) => r.fileName === n), r = results[k] || {};
+        st.files.push({ name: n, ids: filesAdded[n], at: Date.now(), ocr: !!r.ocr, docT: r.docT || null,
+          summary: (document.getElementById("pdfsum" + k) || {}).value || r.summary || "", text: (document.getElementById("pdftxt" + k) || {}).value || r.text || "" }); });
       if (!added.length) { document.getElementById("pdfres").textContent = "Nothing was added."; return; }
       saveFor(target, st);
       if (created) { const l = pdfPatients(); l.push({ id: target, label: [created.name[0].text, created.gender, created.birthDate ? "DOB " + created.birthDate : ""].filter(Boolean).join(", "), at: Date.now() }); savePdfPatients(l); }
@@ -308,7 +334,8 @@
   function manage() {
     const st = store();
     box.innerHTML = `<h2>Imported from PDF (this browser tab only)</h2>
-      ${st.files.length ? `<table><tr><th>File</th><th>Items</th><th>Added</th><th></th></tr>${st.files.map((f, i) => `<tr><td>${esc(f.name)}</td><td>${f.ids.length}</td><td>${new Date(f.at).toLocaleString()}</td><td><button data-rm="${i}">Remove</button></td></tr>`).join("")}</table>` : "<p>Nothing imported.</p>"}
+      ${st.files.length ? `<table><tr><th>File</th><th>Items</th><th>Added</th><th></th></tr>${st.files.map((f, i) => `<tr><td>${esc(f.name)}</td><td>${f.ids.length}</td><td>${new Date(f.at).toLocaleString()}</td><td><button data-view="${i}">Summary / text</button> <button data-rm="${i}">Remove</button></td></tr>`).join("")}</table>` : "<p>Nothing imported.</p>"}
+      ${loadLast() ? `<p><button id="pdflast2">Back to the last review screen</button></p>` : ""}
       <p class="muted">Imported items are kept only in this browser tab and disappear when the tab is closed.</p>
       ${pdfPatients().length || isPdfPt(pid()) ? `<h2 style="margin-top:14px">PDF-only patients</h2>
         <table><tr><th>Patient</th><th>Items</th><th></th></tr>${pdfPatients().map((p, i) => `<tr><td>${esc(p.label)}${p.id === pid() ? " <b>(open now)</b>" : ""}</td><td>${storeFor(p.id).items.length}</td>
@@ -317,6 +344,8 @@
       <p><button id="pdfclr" ${st.items.length ? "" : "disabled"}>Remove everything</button> <button id="pdfx4">Close</button></p>`;
     modal.classList.add("on");
     box.querySelectorAll("button[data-rm]").forEach((b) => (b.onclick = () => { const s = store(), f = s.files[+b.dataset.rm]; s.items = s.items.filter((x) => !f.ids.includes(x.id)); s.files.splice(+b.dataset.rm, 1); save(s); refreshCount(); reloadTabs(); manage(); }));
+    box.querySelectorAll("button[data-view]").forEach((b) => (b.onclick = () => viewFile(+b.dataset.view)));
+    const l2 = document.getElementById("pdflast2"); if (l2) l2.onclick = () => { const L = loadLast(); if (L) review(L.results, L.problems || []); };
     box.querySelectorAll("button[data-open]").forEach((b) => (b.onclick = () => window.TK.switchPatient(b.dataset.open)));
     box.querySelectorAll("button[data-del]").forEach((b) => (b.onclick = () => {
       const l = pdfPatients(), p = l[+b.dataset.del]; if (!p) return;
@@ -327,6 +356,35 @@
     const bk = document.getElementById("pdfback2"); if (bk) bk.onclick = () => window.TK.backToCerner();
     document.getElementById("pdfclr").onclick = () => { save({ items: [], files: [] }); refreshCount(); reloadTabs(); manage(); };
     document.getElementById("pdfx4").onclick = close;
+  }
+  /* summary and read text of one imported file: edit, copy, and update the kept summary note */
+  function viewFile(i) {
+    const st = store(), f = st.files[i]; if (!f) return manage();
+    const has = f.summary != null || f.text != null;
+    const noteIdx = () => st.items.findIndex((x) => x.resourceType === "DocumentReference" && x.description === "Imported PDF: " + f.name + " (summary)");
+    box.innerHTML = `<h2>${esc(f.name)}</h2><div class="muted">Imported ${esc(new Date(f.at).toLocaleString())}${f.ocr ? " · read by OCR: check values against the PDF" : ""}</div>
+      ${!has ? `<div class="warn">This PDF was imported before summaries were saved. Import it again to get its summary and text.</div>` : `
+      <details open class="pdfsec"><summary><b>Summary</b> <span class="muted">editable</span></summary>
+        <textarea id="vsum" rows="16" spellcheck="true">${esc(f.summary || "")}</textarea>
+        <div class="row"><button id="vcopy">Copy summary</button> <button id="vsave" class="primary">Save changes</button> <span class="muted" id="vmsg">${noteIdx() >= 0 ? "Saving also updates the summary note the other tabs see." : "Not kept as a note: Save changes keeps the edited summary here only."}</span></div></details>
+      <details class="pdfsec"><summary><b>Text read from the PDF</b>${f.ocr ? ' <span class="bad">(OCR)</span>' : ""}</summary>
+        <textarea id="vtxt" rows="18" class="mono" readonly>${esc(f.text || "")}</textarea>
+        <div class="row"><button id="vcopyt">Copy text</button></div></details>`}
+      <p><button id="vback">Back</button> <button id="vx">Close</button></p>`;
+    modal.classList.add("on");
+    const copy = async (b, ta, label) => { try { await navigator.clipboard.writeText(ta.value); } catch (e) { ta.select(); document.execCommand("copy"); } b.textContent = "Copied"; setTimeout(() => (b.textContent = label), 1500); };
+    if (has) {
+      document.getElementById("vcopy").onclick = (e) => copy(e.target, document.getElementById("vsum"), "Copy summary");
+      document.getElementById("vcopyt").onclick = (e) => copy(e.target, document.getElementById("vtxt"), "Copy text");
+      document.getElementById("vsave").onclick = () => {
+        const v = document.getElementById("vsum").value; f.summary = v;
+        const j = noteIdx();
+        if (j >= 0) { const old = st.items[j], nd = X().docResource(v, { fileName: f.name + " (summary)", patientId: pid(), now: Date.now() }, f.docT); nd.id = old.id; st.items[j] = nd; }
+        save(st); document.getElementById("vmsg").textContent = "Saved" + (j >= 0 ? ": tabs reloaded with the new summary note." : ".");
+        if (j >= 0) reloadTabs();
+      };
+    }
+    document.getElementById("vback").onclick = manage; document.getElementById("vx").onclick = close;
   }
   window.PdfImportUI = { refreshCount, review, pdfLines };
   const t = setInterval(() => { if (pid()) { refreshCount(); clearInterval(t); } }, 500);
