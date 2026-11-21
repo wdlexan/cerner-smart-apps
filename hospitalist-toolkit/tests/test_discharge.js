@@ -53,9 +53,21 @@ ok("medKey drops salts", R.medKey("metoprolol tartrate 25 mg PO BID") === "metop
   ok("detect: negated problem ignored", !R.detect("No history of atrial fibrillation.").prob.af && R.detect("New atrial fibrillation.").prob.af);
   const det = R.detect("Heart failure. Started apixaban 5 mg BID.");
   const note = R.draftNote({ title: "made-up", patient: "Test Patient", sections: [{ name: "Plan", body: "1. Refer to heart function clinic." }], meds: ["apixaban 5 mg BID"], follow: fu, pending: ["TSH pending."], mods: ["general"].concat(R.modules(det).map((m) => m.id).filter((x) => x !== "general")), v: { fpDays: 7 }, f: det });
-  ok("draftNote: headings", ["DISCHARGE NOTE (DRAFT)", "FOLLOW-UP IN THE COMMUNITY", "Referrals to specialists and services:", "Imaging and procedures:", "Lab tests:", "PENDING RESULTS", "WHAT TO WATCH FOR", "Call 9-1-1", "family doctor or primary care provider"].every((h) => note.includes(h)), note);
+  ok("draftNote: headings", ["DISCHARGE NOTE (DRAFT)", "FOLLOW-UP IN THE COMMUNITY", "Specialist follow-up, referrals and services:", "Imaging and procedures:", "Lab tests:", "PENDING RESULTS", "WHAT TO WATCH FOR", "Call 9-1-1", "family doctor or primary care provider"].every((h) => note.includes(h)), note);
   ok("draftNote: heart failure and blood thinner warnings", /1 kg \(2 lb\)/.test(note) && /Black, tarry/.test(note));
   const a = run(0), fp = R.fpNote({ f: a.f, fol: R.followups(a.f.notes), meds: a.meds, chg: a.chg, pend: a.pend, inc: a.inc, mods: a.mods, v: { fpDays: 7 } });
-  ok("fpNote: follow-up in the community + what to watch for", /FOLLOW-UP IN THE COMMUNITY\nReferrals to specialists and services:\n  - Refer to heart function clinic/.test(fp) && /WHAT TO WATCH FOR/.test(fp) && /Holter/.test(fp), fp);
+  ok("fpNote: follow-up in the community + what to watch for", /FOLLOW-UP IN THE COMMUNITY\nSpecialist follow-up, referrals and services:\n  - Refer to heart function clinic/.test(fp) && /WHAT TO WATCH FOR/.test(fp) && /Holter/.test(fp), fp);
+}
+// hospital-course style note (MADE-UP names): Dr./Nov. abbreviations, doctor named elsewhere, "him", services, past appointments
+{
+  const t = "Hospital Course\n40-year-old woman followed by nephrology (Dr. Testerson) and internal medicine (Dr. Sampleton) in community. She had an appointment with Dr. Testerson last Friday but was unable to keep it. She has a scheduled follow up with Dr. Sampleton Dec. 3.\nShe was seen by Dr. Fakename (ENT). She has a follow up with him in early 2027.\nShe has been restarted on regularly scheduled metoclopramide 10 mg QID. She has been seen by dietitian and understands the need to re-introduce oral intake. She was re-referred to Hospital at Home for monitoring of her electrolytes. I have completed a referral to GI Central for consideration of EGD as an outpatient.";
+  const fu = R.followups([{ name: "n", text: t }]), f = (re) => fu.find((x) => re.test(x.text));
+  ok("hc: 'Dr.' and 'Dec.' do not cut the sentence; doctor's specialty added", f(/Sampleton Dec\. 3/) && /internal medicine/.test(f(/Sampleton Dec/).text) && f(/Sampleton Dec/).when === "Dec. 3" && f(/Sampleton Dec/).type === "referral", fu);
+  ok("hc: missed appointment flagged as past", f(/last Friday/) && f(/last Friday/).past === true);
+  ok("hc: 'follow up with him' gets Dr. Fakename, ENT and 'early 2027'", f(/with him/) && /Fakename, ENT/.test(f(/with him/).text) && /early 2027/.test(f(/with him/).when), fu);
+  ok("hc: Hospital at Home and GI Central referrals", f(/Hospital at Home/) && f(/Hospital at Home/).type === "referral" && f(/GI Central/) && f(/GI Central/).type === "referral");
+  ok("hc: no false hits (scheduled medicine, seen by dietitian, need to re-introduce)", !f(/metoclopramide/) && !f(/dietitian/), fu.map((x) => x.text));
+  const note = R.draftNote({ sections: [{ name: "Hospital Course", body: "Course text." }], follow: fu, mods: ["general"], v: {} });
+  ok("hc: course in SUMMARY; missed appointment marked to rebook", /SUMMARY\nCourse text\./.test(note) && /MISSED \/ PAST, rebook\?/.test(note), note);
 }
 console.log(`\n${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);

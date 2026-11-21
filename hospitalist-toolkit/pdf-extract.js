@@ -507,7 +507,7 @@
   }
 
   /* ---------- plain-text summary of one read PDF (rule-based, no AI), for the physician to edit ---------- */
-  const SUM_KEY = /^(?:[A-Za-z]+\s+)?(?:diagnos[ie]s|oncologic diagnosis|reason for (?:referral|visit|admission|consult(?:ation)?)|chief complaint|history of present(?:ing)? illness|hpi|interval history|assessment(?: and plan)?|impression(?: and plan)?|plan|recommendations?|summary|conclusions?|findings|discharge diagnos[ie]s|follow[- ]?up)\b/i;
+  const SUM_KEY = /^(?:[A-Za-z]+\s+)?(?:diagnos[ie]s|oncologic diagnosis|reason for (?:referral|visit|admission|consult(?:ation)?)|chief complaint|history of present(?:ing)? illness|hpi|interval history|assessment(?: and plan)?|impression(?: and plan)?|plan|recommendations?|summary|conclusions?|findings|discharge diagnos[ie]s|follow[- ]?up|hospital course|course in hospital|clinical course|discharge plan)\b/i;
   const HEADLIKE = /^[A-Z][A-Za-z /&()\-]{2,50}:?$/;
   /* headed sections of a note (Diagnosis, Impression and Plan, Plan, Recommendations…): [{name, body}] */
   function sections(text, max) {

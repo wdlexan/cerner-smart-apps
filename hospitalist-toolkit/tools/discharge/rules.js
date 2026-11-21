@@ -247,7 +247,8 @@
       if (cur && (/[.:;!?]$/.test(prev) || /^(?:\d+[.)]|[-•*])\s/.test(l) || head(l) || head(prev))) { blocks.push(cur); cur = l; } else cur = cur ? cur + " " + l : l;
     });
     if (cur) blocks.push(cur);
-    return blocks.flatMap((b) => b.replace(/\s+/g, " ").split(/(?<=[.!?])\s+(?=[A-Z0-9])|;\s+(?=[A-Z])/)).map((s) => s.trim()).filter((s) => s.length > 8 && !/^\d+[.)]?$/.test(s));
+    const ABBR = /\b(Dr|Drs|Mr|Mrs|Ms|St|Jr|Sr|vs|approx|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec|No|Fig|e\.g|i\.e|etc)\.(?=\s)/g;
+    return blocks.flatMap((b) => b.replace(/\s+/g, " ").replace(ABBR, "$1\u2024").split(/(?<=[.!?])\s+(?=[A-Z0-9])|;\s+(?=[A-Z])/)).map((s) => s.replace(/\u2024/g, ".").trim()).filter((s) => s.length > 8 && !/^\d+[.)]?$/.test(s));
   }
   function incidentals(f) {
     const out = [], seen = new Set(), since = (f.admit || f.now - 14 * DAY) - 30 * DAY;
@@ -269,25 +270,48 @@
   }
 
   /* ---------- follow-up in the community, found in note text: referrals, imaging/procedures, lab tests ---------- */
-  const SPEC = /\b(cardiology|cardiologist|heart function clinic|hf clinic|heart failure clinic|nephrology|nephrologist|kidney (?:care )?clinic|neurology|neurologist|stroke (?:prevention )?clinic|tia clinic|gastroenterology|gastroenterologist|\bgi\b(?! bleed)|hepatology|liver clinic|respirology|respirologist|pulmonology|hematology|hematologist|medical oncology|oncology|oncologist|bc cancer|radiation oncology|rheumatology|rheumatologist|endocrinology|endocrinologist|diabetes (?:clinic|education|educator|centre|center)|urology|urologist|orthopaedics?|orthopedics?|orthopaedic|orthopedic|fracture clinic|general surgery|surgeon|surgical clinic|vascular surgery|plastic surgery|dermatology|ophthalmology|ophthalmologist|\bent\b|otolaryngology|psychiatry|psychiatrist|mental health (?:team|clinic)|geriatrics?|geriatrician|memory clinic|falls (?:prevention )?clinic|palliative(?: care)?|infectious diseases?|\bid clinic\b|anticoagulation clinic|wound (?:care )?clinic|pulmonary rehab\w*|cardiac rehab\w*|physiotherapy|physio\b|occupational therapy|home (?:care|health|support)|community (?:nursing|health)|dietitian|nutritionist|social work(?:er)?|speech[- ]language|sleep clinic|pain clinic|addictions?(?: medicine)?|rapid access addiction|opioid agonist|osteoporosis clinic|fracture liaison|transplant clinic|heart rhythm|electrophysiology|arrhythmia clinic|pacemaker clinic|lipid clinic|hypertension clinic)\b/i;
+  const SPEC = /\b(internal medicine|general internal medicine|internist|hospital at home|\bhah\b|gi central|ent|cardiology|cardiologist|heart function clinic|hf clinic|heart failure clinic|nephrology|nephrologist|kidney (?:care )?clinic|neurology|neurologist|stroke (?:prevention )?clinic|tia clinic|gastroenterology|gastroenterologist|\bgi\b(?! bleed)|hepatology|liver clinic|respirology|respirologist|pulmonology|hematology|hematologist|medical oncology|oncology|oncologist|bc cancer|radiation oncology|rheumatology|rheumatologist|endocrinology|endocrinologist|diabetes (?:clinic|education|educator|centre|center)|urology|urologist|orthopaedics?|orthopedics?|orthopaedic|orthopedic|fracture clinic|general surgery|surgeon|surgical clinic|vascular surgery|plastic surgery|dermatology|ophthalmology|ophthalmologist|\bent\b|otolaryngology|psychiatry|psychiatrist|mental health (?:team|clinic)|geriatrics?|geriatrician|memory clinic|falls (?:prevention )?clinic|palliative(?: care)?|infectious diseases?|\bid clinic\b|anticoagulation clinic|wound (?:care )?clinic|pulmonary rehab\w*|cardiac rehab\w*|physiotherapy|physio\b|occupational therapy|home (?:care|health|support)|community (?:nursing|health)|dietitian|nutritionist|social work(?:er)?|speech[- ]language|sleep clinic|pain clinic|addictions?(?: medicine)?|rapid access addiction|opioid agonist|osteoporosis clinic|fracture liaison|transplant clinic|heart rhythm|electrophysiology|arrhythmia clinic|pacemaker clinic|lipid clinic|hypertension clinic)\b/i;
   const IMG = /\b(ct(?: scan| chest| abdomen| head| angio\w*)?|cta|mri|mra|mrcp|ultrasound|u\/s|sonogra\w*|echo(?:cardiogram)?|tte|tee|x-?rays?|cxr|chest (?:x-?ray|radiograph|film)|radiographs?|bone scan|pet(?:\/ct| scan)?|dexa|bmd|bone density|holter|loop recorder|event monitor|colonoscopy|endoscopy|gastroscopy|egd|ercp|mammogra\w*|spirometry|pfts?|pulmonary function|sleep study|polysomnogra\w*|eeg|emg|nerve conduction|stress test|mibi|myocardial perfusion|angiogra\w*|cystoscopy|biopsy|carotid doppler|dopplers?|venous duplex)\b/i;
   const LABW = /\b(cbc|hgb|hemoglobin|blood count|lytes|electrolytes|bmp|creatinine|\bcr\b|egfr|renal function|kidney function|potassium|sodium|inr|tsh|a1c|hba1c|lipids?|lipid panel|lfts?|liver (?:enzymes|tests|function)|ferritin|iron studies|b12|folate|psa|cea|ca-?125|vitamin d|calcium|magnesium|phosphate|urinalysis|urine (?:culture|test)|drug levels?|trough|bloodwork|blood work|blood tests?|labs?|lab work|nt-?pro ?bnp)\b/i;
-  const INTENT = /\b(refer(?:red|ral)?|follow[- ]?up|f\/u|repeat|recheck|re-check|outpatient|arrange[ds]?|book(?:ed)?|schedul\w*|to see|will see|see (?:dr|the)|appointment|in \d+\s*(?:-|to)?\s*\d*\s*(?:days?|weeks?|wks?|months?|mos?)|within \d+|after discharge|post[- ]discharge|on discharge|recommend(?:ed|s)?|should (?:have|get|be)|needs?|consider|to be done|requisition|will call|will contact|will phone)\b/i;
+  const INTENT = /\b(refer(?:red|ral)?|follow[- ]?up|f\/u|repeat|recheck|re-check|outpatient|arrange[ds]?|book(?:ed)?|(?:is|been|be|has a|have a|already|now) scheduled|scheduled (?:for|on|follow|appointment|visit|with|in)|schedule (?:a|an|the|follow)|to see|will see|see (?:dr|the)|appointment|in \d+\s*(?:-|to)?\s*\d*\s*(?:days?|weeks?|wks?|months?|mos?)|within \d+|after discharge|post[- ]discharge|on discharge|recommend(?:ed|s)?|should (?:have|get|be)|needs? (?:a |an |to (?:see|have|get|be|follow)|repeat|follow|outpatient|referral)|consider|to be done|requisition|will call|will contact|will phone)\b/i;
   const NEGF = /\b(?:no (?:need|further|follow[- ]?up|referral)|not (?:required|needed|necessary|indicated)|declined|cancel(?:led|ed)?|already (?:done|seen|completed))\b/i;
-  const WHEN = /\b(?:(?:in|within|after|at|by)\s+(?:about\s+)?\d+\s*(?:(?:-|to)\s*\d+\s*)?(?:days?|weeks?|wks?|months?|mos?|years?)|tomorrow|next week|(?:on|for)\s+(?:[A-Z][a-z]+\.? \d{1,2}(?:st|nd|rd|th)?(?:,? \d{4})?|\d{4}-\d{2}-\d{2}|\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4})(?:\s*(?:and|&)\s*\d{1,2}(?:st|nd|rd|th)?)?)\b/;
-  const FTYPES = { referral: "Referrals to specialists and services", imaging: "Imaging and procedures", lab: "Lab tests", other: "Other follow-up" };
+  const WHEN = /\b(?:(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*\.? \d{1,2}(?:st|nd|rd|th)?(?:,? \d{4})?|(?:in )?(?:early|mid|late|spring|summer|fall|winter)[- ]\d{4}|(?:in|within|after|at|by)\s+(?:about\s+)?\d+\s*(?:(?:-|to)\s*\d+\s*)?(?:days?|weeks?|wks?|months?|mos?|years?)|tomorrow|next week|(?:on|for)\s+(?:[A-Z][a-z]+\.? \d{1,2}(?:st|nd|rd|th)?(?:,? \d{4})?|\d{4}-\d{2}-\d{2}|\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4})(?:\s*(?:and|&)\s*\d{1,2}(?:st|nd|rd|th)?)?)\b/;
+  const FTYPES = { referral: "Specialist follow-up, referrals and services", imaging: "Imaging and procedures", lab: "Lab tests", other: "Other follow-up" };
+  // "nephrology (Dr. MacDonald)", "Dr. Bartlett (ENT)", "internal medicine (McArdle)" -> { macdonald: "nephrology", bartlett: "ENT", mcardle: "internal medicine" }
+  function whoIs(text) {
+    const map = {}, t = String(text || "");
+    let re = new RegExp("(" + SPEC.source.replace(/^\\b\(|\)\\b$/g, "") + ")\\s*\\((?:Dr\\.?\\s*)?([A-Z][a-zA-Z'’-]+)", "gi"), m;
+    while ((m = re.exec(t))) map[m[2].toLowerCase()] = m[1];
+    re = new RegExp("Dr\\.?\\s*([A-Z][a-zA-Z'’-]+)\\s*\\((" + SPEC.source.replace(/^\\b\(|\)\\b$/g, "") + ")\\)", "gi");
+    while ((m = re.exec(t))) map[m[1].toLowerCase()] = m[2];
+    return map;
+  }
+  const PAST = /\b(?:has been seen|was seen|were seen|has had|was given|received|was referred .* (?:in|on) (?:19|20)\d\d)\b/i;
   function followups(sources) { // sources: [{name, t, text}]
     const out = [], seen = new Set();
-    (sources || []).forEach((src) => sentences(src.text).forEach((sen) => {
+    (sources || []).forEach((src) => { const who = whoIs(src.text), ss = sentences(src.text); ss.forEach((sen, si) => {
+      if (PAST.test(sen) && !/\b(?:refer(?:ral)?|follow[- ]?up|appointment|will|repeat|outpatient)\b/i.test(sen)) return;
       if (/\b(?:clinic note|progress note|document (?:type|subject)|service date|sign(?:ed)? information|result status|\bmrn\b|\bphn\b|date of birth|encounter (?:#|type)|copies to|printed (?:by|on)|report tracking)\b/i.test(sen)) return; // page header, not a plan
       if (sen.length < 12 || sen.length > 400 || !INTENT.test(sen) || NEGF.test(sen) || /\bpending\b|\bresult(?:s)? to follow\b/i.test(sen)) return;
       if (/\b(?:showed|revealed|demonstrated|was (?:normal|unremarkable|negative))\b/i.test(sen) && !/\b(?:repeat|follow[- ]?up|outpatient|refer)\b/i.test(sen)) return; // a result, not a plan
-      const type = SPEC.test(sen) ? "referral" : IMG.test(sen) ? "imaging" : LABW.test(sen) ? "lab" : /\b(?:follow[- ]?up|f\/u|appointment|clinic)\b/i.test(sen) ? "other" : null;
+      const type = SPEC.test(sen) && !/^\s*(?:\d+[.)]\s*)?(?:repeat|recheck)\b/i.test(sen) ? "referral" : IMG.test(sen) ? "imaging" : LABW.test(sen) ? "lab" : /\b(?:follow[- ]?up|f\/u|appointment|clinic)\b/i.test(sen) ? "other" : null;
       if (!type) return;
       const key = sen.toLowerCase().replace(/\W+/g, " ").slice(0, 90); if (seen.has(key)) return; seen.add(key);
-      const w = WHEN.exec(sen), what = (type === "referral" ? SPEC : type === "imaging" ? IMG : type === "lab" ? LABW : /follow[- ]?up|appointment|clinic/i).exec(sen);
-      out.push({ type, what: what ? what[0] : "", text: sen.replace(/^\s*(?:\d+[.)]|[-•*])\s*/, "").trim(), when: w ? w[0] : "", source: src.name || "", t: src.t || null, on: true });
-    }));
+      let ty = type, extra = "";
+      // a doctor named without a specialty: look the name up elsewhere in the note
+      const drs = [...sen.matchAll(/\bDr\.?\s*([A-Z][a-zA-Z'’-]+)/g)].map((m) => m[1]);
+      const known = drs.filter((d) => who[d.toLowerCase()] && !new RegExp(who[d.toLowerCase()], "i").test(sen));
+      if (known.length) { extra = " (" + known.map((d) => "Dr. " + d + ", " + who[d.toLowerCase()]).join("; ") + ")"; if (ty === "other") ty = "referral"; }
+      else if (drs.length && ty === "other" && /\b(?:follow[- ]?up|appointment)\b/i.test(sen)) ty = "referral";
+      // "a follow up with him": who from the sentence before
+      if (!SPEC.test(sen) && !drs.length && /\b(?:him|her|them|this (?:doctor|specialist|team))\b/i.test(sen) && si > 0) {
+        const prev = ss[si - 1], sp = SPEC.exec(prev), d = /\bDr\.?\s*([A-Z][a-zA-Z'’-]+)/.exec(prev);
+        if (sp || d) { extra = " (" + [d ? "Dr. " + d[1] : "", sp ? sp[1] : ""].filter(Boolean).join(", ") + ")"; ty = "referral"; }
+      }
+      const w = WHEN.exec(sen), what = (ty === "referral" ? SPEC : ty === "imaging" ? IMG : ty === "lab" ? LABW : /follow[- ]?up|appointment|clinic/i).exec(sen);
+      out.push({ type: ty, what: what ? what[0] : "", text: sen.replace(/^\s*(?:\d+[.)]|[-•*])\s*/, "").trim() + extra, when: w ? w[0] : "", source: src.name || "", t: src.t || null, on: true,
+        past: /\b(?:last (?:week|monday|tuesday|wednesday|thursday|friday|saturday|sunday|month)|unable to (?:keep|attend)|missed)\b/i.test(sen) || undefined });
+    }); });
     const order = { referral: 0, imaging: 1, lab: 2, other: 3 };
     return out.sort((a, b) => order[a.type] - order[b.type]);
   }
@@ -310,7 +334,7 @@
     L.push("DISCHARGE NOTE (DRAFT)");
     if (o.patient) L.push("Patient: " + o.patient);
     if (o.title) L.push("Source: " + o.title);
-    const dx = sec(/diagnos|reason|chief complaint/i), imp = sec(/impression|assessment|summary|conclusion|history of present|hpi|interval/i), plan = sec(/plan|recommendation|follow/i).filter((x) => !imp.includes(x));
+    const dx = sec(/diagnos|reason|chief complaint/i), imp = sec(/impression|assessment|summary|conclusion|history of present|hpi|interval|course/i), plan = sec(/plan|recommendation|follow/i).filter((x) => !imp.includes(x));
     if (dx.length) L.push("", "DIAGNOSIS / REASON FOR ADMISSION", ...dx.map((x) => x.body));
     if (imp.length) L.push("", "SUMMARY", ...imp.map((x) => x.body));
     if (plan.length) L.push("", "PLAN", ...plan.map((x) => x.body));
@@ -318,7 +342,7 @@
     if ((o.labs || []).length) L.push("", "KEY RESULTS", ...o.labs.map((m) => "- " + m));
     L.push("", "FOLLOW-UP IN THE COMMUNITY");
     const fu = (o.follow || []).filter((x) => x.on !== false);
-    Object.keys(FTYPES).forEach((k) => { const a = fu.filter((x) => x.type === k); if (a.length) { L.push(FTYPES[k] + ":"); a.forEach((x) => L.push("- " + x.text.replace(/[.\s]+$/, "") + (x.when && !x.text.includes(x.when) ? " (" + x.when + ")" : "") + (x.owner ? " [" + x.owner + "]" : ""))); } });
+    Object.keys(FTYPES).forEach((k) => { const a = fu.filter((x) => x.type === k); if (a.length) { L.push(FTYPES[k] + ":"); a.forEach((x) => L.push("- " + (x.past ? "MISSED / PAST, rebook? " : "") + x.text.replace(/[.\s]+$/, "") + (x.when && !x.text.includes(x.when) ? " (" + x.when + ")" : "") + (x.owner ? " [" + x.owner + "]" : ""))); } });
     if (!fu.length) L.push("No referrals, imaging or lab follow-up found in the note: add any that apply.");
     L.push(`Family doctor / primary care provider: see within ${v.fpDays || "____"} days${v.fpName ? " (" + v.fpName + ")" : ""}.`);
     if ((o.pending || []).length) L.push("", "PENDING RESULTS", ...o.pending.map((p) => "- " + p));
