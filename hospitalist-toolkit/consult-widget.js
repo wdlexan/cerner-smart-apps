@@ -186,7 +186,8 @@
     const pan = el("div", { id: "cw-pan", role: "dialog" }, `
       <h3>Consult message</h3>
       <div class="muted">~50 words. Pick a specialist, then 💬 Text opens Messages with their number and this message filled in – you tap Send.</div>
-      <div class="row"><label>Send to (your specialist list)<select id="cw-who"></select></label><label style="max-width:150px">Cell<input id="cw-cell" inputmode="tel" placeholder="250-555-1234"></label></div>
+      <div class="row"><label>Find a specialist<input id="cw-q" type="search" placeholder="type a name or service…" autocomplete="off"></label></div>
+      <div class="row"><label><span>Send to <span id="cw-whonote" class="muted"></span> <a href="#" id="cw-allsvc" style="color:#0b6bcb;font-size:11.5px"></a></span><select id="cw-who"></select></label><label style="max-width:150px">Cell<input id="cw-cell" inputmode="tel" placeholder="250-555-1234"></label></div>
       <div id="cw-ed" style="display:none;margin:4px 0"><div class="muted">One per line: <b>Name | Service | cell</b> – e.g. <code>Smith | Infectious diseases | 250-555-1234</code>. Saved in this browser/phone only.</div>
         <textarea id="cw-list" style="min-height:90px" placeholder="Smith | Infectious diseases | 250-555-1234"></textarea>
         <div style="display:flex;justify-content:space-between;align-items:center;gap:6px"><span><button type="button" class="ghost" id="cw-imp">📇 From Contacts</button><input type="file" id="cw-vcf" accept=".vcf,text/vcard,text/x-vcard" multiple style="display:none"></span><button type="button" id="cw-save">Save list</button></div>
@@ -261,6 +262,7 @@
         $("cw-words").textContent = xPts.length ? `${xPts.length} patients from ${f.name}` : "No patients found in that file (expects your VGH list format).";
       } catch (e) { $("cw-words").textContent = "Couldn't read that Excel file" + (window.JSZip ? "." : " (no internet to load the reader?)."); }
     };
+    ["cw-name", "cw-mrn"].forEach((id) => $(id).addEventListener("input", () => { $("cw-xp").value = ""; }));
     $("cw-xp").onchange = () => {
       const p = xPts[+$("cw-xp").value]; if (!p || $("cw-xp").value === "") return;
       $("cw-name").value = p.name; $("cw-age").value = p.age; $("cw-mrn").value = p.mrn; $("cw-sex").value = p.sex;
@@ -272,16 +274,37 @@
     };
     $("cw-qrx").onclick = (ev) => { ev.preventDefault(); $("cw-qr").style.display = "none"; };
     let contacts = [];
-    const loadContacts = () => { let t = ""; try { t = localStorage.getItem("consult-contacts") || ""; } catch (e) {} $("cw-list").value = t; contacts = parseContacts(t);
-      $("cw-who").innerHTML = `<option value="">${contacts.length ? "– pick a specialist –" : "– no list yet –"}</option>` + contacts.map((c, i) => `<option value="${i}">${c.name.replace(/</g, "&lt;")}${c.service ? " · " + c.service : ""}</option>`).join("") + `<option value="edit">✎ Add / edit list…</option>`; };
-    loadContacts();
+    let allSvc = false;
+    // the Send to list: only the chosen service's specialists, unless searching (search looks through everyone) or "all services" is on
+    const drawWho = (autoPick) => {
+      const q = $("cw-q").value.trim().toLowerCase(), svc = $("cw-svc").value, keep = $("cw-who").value;
+      const all = contacts.map((c, i) => Object.assign({ i }, c));
+      let list = q ? all.filter((c) => (c.name + " " + c.service + " " + c.cell).toLowerCase().includes(q)) : allSvc ? all : all.filter((c) => c.service === svc);
+      let note = q ? `(${list.length} found)` : allSvc ? "(all services)" : `(${svc})`;
+      if (!q && !allSvc && !list.length && contacts.length) { list = all; note = `(none saved for ${svc} – showing all)`; }
+      $("cw-whonote").textContent = contacts.length ? note : "";
+      $("cw-allsvc").textContent = q || !contacts.length ? "" : allSvc ? "only this service" : "show all services";
+      $("cw-who").innerHTML = `<option value="">${!contacts.length ? "– no list yet –" : list.length ? "– pick a specialist –" : "– no match –"}</option>` +
+        list.sort((a, b) => a.name.localeCompare(b.name)).map((c) => `<option value="${c.i}">${c.name.replace(/</g, "&lt;")}${c.service ? " · " + c.service : ""}</option>`).join("") + `<option value="edit">✎ Add / edit list…</option>`;
+      if (keep !== "" && keep !== "edit" && list.some((c) => String(c.i) === keep)) $("cw-who").value = keep;
+      else if (autoPick && q && list.length === 1) { $("cw-who").value = String(list[0].i); $("cw-who").onchange(); }
+    };
+    const loadContacts = () => { let t = ""; try { t = localStorage.getItem("consult-contacts") || ""; } catch (e) {} $("cw-list").value = t; contacts = parseContacts(t); drawWho(); };
+    $("cw-q").addEventListener("input", () => drawWho(true));
+    $("cw-allsvc").onclick = (e) => { e.preventDefault(); allSvc = !allSvc; drawWho(); };
+    let chosen = null; // the saved specialist now in Dr./Cell
+    $("cw-svc").addEventListener("change", () => {
+      const c = chosen != null && contacts[chosen];
+      if (c && c.service && c.service !== $("cw-svc").value) { $("cw-dr").value = ""; $("cw-cell").value = ""; chosen = null; $("cw-who").value = ""; edited = false; refresh(); }
+      drawWho();
+    });
     $("cw-who").onchange = () => {
       const v = $("cw-who").value;
       if (v === "edit") { $("cw-ed").style.display = "block"; $("cw-who").value = ""; $("cw-list").focus(); return; }
       const c = contacts[+v]; if (!c || v === "") return;
-      $("cw-dr").value = c.name; $("cw-cell").value = c.cell;
+      $("cw-dr").value = c.name; $("cw-cell").value = c.cell; chosen = +v;
       if (c.service && c.service !== $("cw-svc").value) { $("cw-svc").value = c.service; picked = null; drawLabs(); }
-      edited = false; refresh();
+      edited = false; refresh(); $("cw-q").value = ""; drawWho();
     };
     const addImported = (list) => {
       const have = new Set(parseContacts($("cw-list").value).map((c) => c.cell.replace(/\D/g, "").slice(-10)));
@@ -298,6 +321,7 @@
       $("cw-vcf").click();
     };
     $("cw-vcf").onchange = async () => { let all = []; for (const f of $("cw-vcf").files) { try { all = all.concat(parseVcards(await f.text())); } catch (e) {} } $("cw-vcf").value = ""; addImported(all); };
+    loadContacts();
     $("cw-save").onclick = () => { try { localStorage.setItem("consult-contacts", $("cw-list").value); } catch (e) {} loadContacts(); $("cw-ed").style.display = "none"; };
     $("cw-text").onclick = () => {
       const cell = $("cw-cell").value.trim();
@@ -314,12 +338,13 @@
       pan.style.display = "block"; $("cw-words").textContent = "Reading the patient…";
       await loadPatient();
       const f = patientFields();
-      if (f.name) $("cw-name").value = f.name; if (f.age != null && f.age !== "") $("cw-age").value = f.age; if (f.mrn) $("cw-mrn").value = f.mrn; if (f.sex) $("cw-sex").value = f.sex;
+      // a patient picked from the Excel list stays picked; otherwise the chart patient fills in
+      if (!$("cw-xp").value) { if (f.name) $("cw-name").value = f.name; if (f.age != null && f.age !== "") $("cw-age").value = f.age; if (f.mrn) $("cw-mrn").value = f.mrn; if (f.sex) $("cw-sex").value = f.sex; }
       $("cw-probs").innerHTML = probs.map((p) => `<option value="${p.replace(/"/g, "&quot;")}">`).join("");
       const t = topic().replace(/\s*\b(check|tab|review|by site|follow-?up|toolkit|calculator|summary|chooser|flowsheet|screen|monitor|app|pathway|matrix|tracker)\b.*$/i, "").trim();
       if (!$("cw-prob").value && t && !/^(today|notes|labs|forms|meds|physical exam|infections|antibiotic|what changed|ai|diagnosis|choosing wisely|consult|mobility|watch)/i.test(t)) $("cw-prob").value = t;
       $("cw-prob").placeholder = probs.length ? "pick from the problem list or type" : "e.g. ESBL pyelonephritis";
-      $("cw-svc").value = defaultService(); picked = null; drawLabs(); edited = false; refresh();
+      if (!$("cw-dr").value) { $("cw-svc").value = defaultService(); picked = null; drawLabs(); } drawWho(); edited = false; refresh();
       if (!pt) $("cw-words").textContent = "No chart patient (demo or not launched) – type name, age and MRN.";
     };
   }
