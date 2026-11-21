@@ -117,7 +117,7 @@
     const add = (name, on, dose, caution) => out.push({ name, on, dose, caution: caution.filter(Boolean) });
     const sglt = has(/dapagliflozin|forxiga|empagliflozin|jardiance|canagliflozin|ertugliflozin|sotagliflozin/i);
     const arni = has(/sacubitril|entresto/i), acei = has(/pril\b|ramipril|enalapril|lisinopril|perindopril|trandolapril|captopril/i), arb = has(/sartan\b|candesartan|valsartan|losartan|irbesartan|telmisartan|olmesartan/i) && !arni;
-    const bb = has(/bisoprolol|carvedilol|metoprolol succ|metoprolol ?(cr|xl|er)|metoprolol|nebivolol/i), mra = has(/spironolactone|eplerenone|finerenone/i);
+    const bb = has(/bisoprolol|carvedilol|metoprolol\s*(?:succ|cr\b|xl\b|er\b|zok)|\btoprol|nebivolol/i), mra = has(/spironolactone|eplerenone|finerenone/i);
     if (ef === "low") {
       add("ARNI (or ACE inhibitor / ARB)", arni || acei || arb, arni ? "On sacubitril/valsartan" : "Sacubitril/valsartan 24/26 mg BID (49/51 if SBP over 110 and was on ACEi/ARB); stop an ACE inhibitor 36 h before. ACEi/ARB if ARNI not possible",
         [sbp != null && sbp < 95 && `SBP ${sbp}: start low or wait`, k != null && k > 5 && `K ${k}`, egfr != null && egfr < 30 && `eGFR ${egfr}: lower start`, (acei || arb) && !arni && "On ACEi/ARB: switch to ARNI when stable (CCS)"]);
@@ -139,6 +139,41 @@
     } else out.push({ name: "Echo needed", on: null, dose: "Choose GDMT once the ejection fraction is known (or use the last echo). SGLT2 inhibitor helps at any EF", caution: [] });
     return out;
   }
+  /* ---------- the four GDMT pillars for HFrEF: on it? which drug, dose vs target (CCS 2021/2023, ACC 2022 target doses) ---------- */
+  const TARGETS = [
+    // [pillar, regex, name, target total mg/day, target text]
+    ["raas", /sacubitril|entresto/i, "sacubitril/valsartan", 194, "97/103 mg BID"],
+    ["raas", /ramipril/i, "ramipril", 10, "10 mg daily (or 5 mg BID)"], ["raas", /enalapril/i, "enalapril", 20, "10-20 mg BID"], ["raas", /lisinopril/i, "lisinopril", 20, "20-35 mg daily"],
+    ["raas", /perindopril/i, "perindopril", 8, "8 mg daily"], ["raas", /trandolapril/i, "trandolapril", 4, "4 mg daily"], ["raas", /captopril/i, "captopril", 150, "50 mg TID"],
+    ["raas", /candesartan/i, "candesartan", 32, "32 mg daily"], ["raas", /valsartan/i, "valsartan", 320, "160 mg BID"], ["raas", /losartan/i, "losartan", 150, "150 mg daily"],
+    ["raas", /irbesartan|telmisartan|olmesartan/i, "ARB (no HF trial target)", null, "use candesartan, valsartan or losartan"],
+    ["bb", /bisoprolol/i, "bisoprolol", 10, "10 mg daily"], ["bb", /carvedilol/i, "carvedilol", 50, "25 mg BID (50 mg BID if over 85 kg)"],
+    ["bb", /metoprolol\s*(?:succ|cr\b|xl\b|er\b|zok)|\btoprol/i, "metoprolol succinate", 200, "200 mg daily"], ["bb", /nebivolol/i, "nebivolol", 10, "10 mg daily (SENIORS, age 70+)"],
+    ["bbx", /metoprolol|atenolol|propranolol|labetalol|sotalol|nadolol|acebutolol|pindolol/i, "", null, ""],
+    ["mra", /spironolactone|aldactone/i, "spironolactone", 25, "25-50 mg daily"], ["mra", /eplerenone|inspra/i, "eplerenone", 50, "50 mg daily"], ["mra", /finerenone|kerendia/i, "finerenone", null, "(trial in HFmrEF/HFpEF, not HFrEF)"],
+    ["sglt2", /dapagliflozin|forxiga/i, "dapagliflozin", 10, "10 mg daily"], ["sglt2", /empagliflozin|jardiance/i, "empagliflozin", 10, "10 mg daily"],
+    ["sglt2", /canagliflozin|ertugliflozin|sotagliflozin/i, "other SGLT2 inhibitor", null, "dapagliflozin or empagliflozin have the HFrEF trials"]];
+  const PILLARS = [["raas", "ARNI / ACE inhibitor / ARB"], ["bb", "Beta-blocker"], ["mra", "MRA"], ["sglt2", "SGLT2 inhibitor"]];
+  function dailyMg(text) {
+    const m = /(\d+(?:\.\d+)?)\s*(?:\/\s*\d+(?:\.\d+)?\s*)?(?:-\s*\d+(?:\.\d+)?\s*)?mg/i.exec(text || ""); if (!m) return null;
+    const t = String(text).toLowerCase(), n = /\b(?:qid|q6h|4 times)\b/.test(t) ? 4 : /\b(?:tid|q8h|3 times)\b/.test(t) ? 3 : /\b(?:bid|q12h|twice)\b/.test(t) ? 2 : 1;
+    return +m[1] * n;
+  }
+  // meds: text list (current orders). Returns [{id, name, on: true|false|"partial", drug, text, daily, target, targetText, below, advice}]
+  function pillars(meds) {
+    return PILLARS.map(([id, name]) => {
+      const hits = []; (meds || []).forEach((t) => { const d = TARGETS.find((x) => x[1].test(t) && (x[0] === id || (id === "bb" && x[0] === "bbx"))); if (d && (d[0] === id || d[0] === "bbx")) hits.push({ d, t }); });
+      const good = hits.find((h) => h.d[0] === id && h.d[3] != null) || hits.find((h) => h.d[0] === id), other = hits.find((h) => h.d[0] === "bbx");
+      if (!good && !other) return { id, name, on: false };
+      if (!good && other) return { id, name, on: "partial", drug: other.t.split(/\s+\d/)[0], text: other.t, advice: "Not one of the HF trial beta-blockers (bisoprolol, carvedilol, metoprolol succinate): switch to bisoprolol or carvedilol" + (/metoprolol/i.test(other.t) ? " (metoprolol tartrate is not the trial drug)" : "") };
+      const [, , drug, target, targetText] = good.d, daily = dailyMg(good.t);
+      const below = target != null && daily != null && daily < target * 0.99;
+      let advice = target == null ? targetText : below ? `Below target. Target: ${targetText}. Titrate every 1-2 weeks as BP, HR, K and creatinine allow` : daily == null ? `Dose not read: target ${targetText}` : "At target dose";
+      if (id === "raas" && !/sacubitril|entresto/i.test(good.t)) advice = "ACEi/ARB: switch to sacubitril/valsartan when stable (CCS; stop ACEi 36 h before). " + advice;
+      return { id, name, on: target == null && id !== "raas" ? "partial" : true, drug, text: good.t, daily, target, targetText, below, advice };
+    });
+  }
+
   /* iron deficiency: ferritin ug/L, tsat % */
   function iron(ferritin, tsat) {
     if (ferritin == null) return { def: null, text: "Ferritin and transferrin saturation not found: check them (iron deficiency is common in HF)" };
@@ -225,6 +260,6 @@
     "Cardiac rehab referral; home care / telemonitoring if available",
     "Goals of care and palliative care input for advanced HF (repeated admissions, low BP, kidney limits)"];
 
-  const api = { NT_BANDS, ntBand, ntInterp, bnpInterp, ntChange, furoPOeq, startDose, response, ladder, daysTo, creatinine, switchPO, readyForPO, gdmt, iron, AMYLOID_FLAGS, amyloid, DDX, MIMICS, PRECIP, workup, FOLLOWUP, r1 };
+  const api = { NT_BANDS, ntBand, ntInterp, bnpInterp, ntChange, furoPOeq, startDose, response, ladder, daysTo, creatinine, switchPO, readyForPO, gdmt, iron, pillars, PILLARS, dailyMg, AMYLOID_FLAGS, amyloid, DDX, MIMICS, PRECIP, workup, FOLLOWUP, r1 };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else window.CHFRules = api;
 })();

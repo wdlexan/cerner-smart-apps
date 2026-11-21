@@ -231,4 +231,11 @@ Doing well on treatment. Sodium 131 mmol/L today. Continue the current plan and 
   ok("typed: two drugs on one line split, 'Started' dropped", meds.length === 2 && meds[0] === "apixaban 5 mg po bid" && meds[1] === "metoprolol 25 mg po bid", meds);
   ok("typed: summary uses the title and the Plan section", /^Phone report \(made-up\)\n/.test(X.summarize(tr)) && /PLAN\nRepeat lytes tomorrow\./.test(X.summarize(tr)), X.summarize(tr));
 }
+// screenshot-style OCR layout (MADE-UP): header row and a "Label:" line next to table rows must not be merged into them
+{
+  const sr = X.fromText(`Test         Result Units   Reference Flag\nSodium       128    mmol/L 135-145    L\n\nNT-proBNP    5420   ng/L   < 450      H\nMedications: furosemide 40 mg PO BID`, { fileName: "screenshot.png" });
+  const na = sr.items.find((i) => i.key === "na"), nt = sr.items.find((i) => /bnp/i.test(i.label)), med = sr.items.find((i) => i.kind === "med");
+  ok("screenshot: sodium row under a header row is read", na && na.value === 128 && na.flag === "L", sr.items);
+  ok("screenshot: NT-proBNP row not merged with the Medications line", nt && nt.value === 5420 && med && med.text === "furosemide 40 mg PO BID", sr.items);
+}
 console.log(`\n${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);

@@ -77,5 +77,19 @@ eq("parse torsemide 20 mg daily", C.loopDose("torsemide 20 mg PO daily").perDay,
 const hb = H.body({ dry: 72, diur: "furosemide 80 mg every morning", flex: true, flexdose: "40 mg", fluid: true, fluidL: 1.5 });
 ok("handout dry weight lb", /159 lb/.test(hb)); ok("handout 2 lb / 5 lb", /2 lb\) in a day/.test(hb) && /5 lb\) in a week/.test(hb)); ok("handout sodium 2,000", /2,000 mg/.test(hb)); ok("handout fluid 1.5", /1\.5 litres/.test(hb));
 
+// four GDMT pillars
+{
+  const P = (m) => Object.fromEntries(R.pillars(m).map((p) => [p.id, p]));
+  let p = P(["furosemide 80 mg IV BID", "bisoprolol 2.5 mg PO daily", "ramipril 2.5 mg PO daily", "aspirin 81 mg PO daily"]);
+  ok("pillars: ramipril + bisoprolol on, below target; MRA and SGLT2 not on", p.raas.on === true && p.raas.below && p.bb.on === true && p.bb.below && p.mra.on === false && p.sglt2.on === false);
+  ok("pillars: ACEi advice to switch to ARNI", /sacubitril\/valsartan/.test(p.raas.advice));
+  p = P(["metoprolol 25 mg PO BID"]); ok("pillars: metoprolol tartrate is partial (not a trial beta-blocker)", p.bb.on === "partial");
+  p = P(["Toprol XL 200 mg daily"]); ok("pillars: metoprolol succinate at target", p.bb.on === true && !p.bb.below);
+  p = P(["sacubitril/valsartan 97/103 mg PO BID", "carvedilol 25 mg PO BID", "spironolactone 25 mg PO daily", "dapagliflozin 10 mg PO daily"]);
+  ok("pillars: all four at target", Object.values(p).every((x) => x.on === true && !x.below));
+  p = P(["Entresto 24/26 mg BID"]); eq("pillars: Entresto 24/26 BID daily sacubitril mg", p.raas.daily, 48);
+  ok("pillars: atenolol partial", P(["atenolol 50 mg daily"]).bb.on === "partial");
+  ok("gdmt table: metoprolol tartrate no longer counts as beta-blocker", R.gdmt("low", {}, ["metoprolol 25 mg BID"]).find((g) => /Beta-blocker/.test(g.name)).on === false);
+}
 console.log(fail ? fail + " FAILED" : "all passed");
 process.exit(fail ? 1 : 0);

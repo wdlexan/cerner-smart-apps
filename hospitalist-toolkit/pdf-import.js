@@ -54,7 +54,7 @@
   document.head.appendChild(css);
 
   const bar = document.createElement("div"); bar.id = "pdfbar";
-  bar.innerHTML = `<button id="pdfopen" title="Read a PDF report (labs, clinic letter, endoscopy) or typed/pasted text, and add what it contains to every tab">Import PDF / text</button><span class="cnt" id="pdfcnt"></span>`;
+  bar.innerHTML = `<button id="pdfopen" title="Read a PDF report (labs, clinic letter, endoscopy) or typed/pasted text, and add what it contains to every tab">Import PDF / text / screenshot</button><span class="cnt" id="pdfcnt"></span>`;
   const top = document.querySelector("header .top"); if (top) top.insertBefore(bar, top.lastElementChild);
   const modal = document.createElement("div"); modal.id = "pdfmodal"; modal.innerHTML = `<div id="pdfbox"></div>`; document.body.appendChild(modal);
   const box = modal.firstChild;
@@ -70,17 +70,17 @@
 
   /* ---------- step 1: choose files ---------- */
   function drop(msg) {
-    box.innerHTML = `<h2>Import a PDF report or typed text</h2>
+    box.innerHTML = `<h2>Import a PDF, screenshot or typed text</h2>
       <div class="muted">For labs, clinic letters or procedure reports that are not in Cerner. The PDF is read here in your browser: nothing is uploaded or sent to an AI. Use made-up or Cerner sandbox documents only until Island Health approves real data.</div>
       ${msg ? `<div class="warn">${msg}</div>` : ""}
       ${(() => { const L = loadLast(); return L && L.results && L.results.length ? `<p><button class="primary" id="pdflast">Back to the last review: ${esc(L.results.map((r) => r.fileName).join(", "))}</button> <span class="muted">read ${esc(new Date(L.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }))}, with its summary and OCR text</span></p>` : ""; })()}
-      <div id="pdfdrop"><div style="font-size:15px">Drop PDF files here</div><div class="muted">or</div><input type="file" id="pdffile" accept="application/pdf,.pdf" multiple></div>
+      <div id="pdfdrop"><div style="font-size:15px">Drop PDF files or screenshots here</div><div class="muted">or <b>paste a screenshot</b> (Ctrl+V; take one with Windows+Shift+S, or Cmd+Shift+Ctrl+4 on a Mac), or</div><input type="file" id="pdffile" accept="application/pdf,.pdf,image/*" multiple></div>
       <details class="pdfsec" open><summary><b>Or type or paste text</b> <span class="muted">a phone report, an outside note, labs from a fax, or your own notes</span></summary>
         <input type="text" id="typtitle" placeholder="Title (optional), e.g. Phone report from Dr. ___, outside labs" style="width:100%;box-sizing:border-box;margin-top:6px;padding:5px 8px">
         <textarea id="typtext" rows="10" spellcheck="true" placeholder="Type or paste here. Labs written like 'Na 131, K 3.2, Cr 142' and medications with doses are picked up. Section headings such as Diagnosis, Impression or Plan on their own line go into the summary."></textarea>
         <div class="row"><button class="primary" id="typread">Read this text</button> <span class="muted">Nothing is sent anywhere: it is read here, then shown to you to check like a PDF.</span></div></details>
       ${sampleBlock()}
-      <div class="muted">Text PDFs are read directly. Scanned pages, faxes or printed-to-PDF CareConnect pages (pictures of text) are read with OCR in your browser, which takes about 5-10 seconds a page (the first time also downloads about 10 MB of OCR data). Everything found is shown to you to tick and correct before it is used.</div>
+      <div class="muted">Text PDFs are read directly. Screenshots (PowerChart, CareConnect, a lab report on screen) and scanned pages, faxes or printed-to-PDF CareConnect pages (pictures of text) are read with OCR in your browser, which takes about 5-10 seconds a page (the first time also downloads about 10 MB of OCR data). Everything found is shown to you to tick and correct before it is used.</div>
       <p><button id="pdfx">Close</button></p>`;
     modal.classList.add("on");
     const dz = document.getElementById("pdfdrop"), fi = document.getElementById("pdffile");
@@ -105,6 +105,16 @@
     if (ss) ss.onchange = () => { if (ss.value !== "") loadSample(+ss.value); };
     document.getElementById("pdfx").onclick = close;
   }
+
+  // paste a screenshot while the Import screen is open
+  document.addEventListener("paste", (e) => {
+    if (!modal.classList.contains("on") || !document.getElementById("pdfdrop")) return;
+    const items = Array.from((e.clipboardData && e.clipboardData.items) || []).filter((it) => it.kind === "file" && /^image\//.test(it.type));
+    if (!items.length) return; // ordinary text paste (e.g. into the text box) carries on as normal
+    e.preventDefault();
+    const stamp = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    run(items.map((it, i) => { const b = it.getAsFile(); return new File([b], "Pasted screenshot " + stamp + (items.length > 1 ? " (" + (i + 1) + ")" : "") + "." + ((b.type.split("/")[1] || "png").replace("jpeg", "jpg")), { type: b.type }); }));
+  });
 
   /* ---------- made-up test patients (sample-pdfs/<condition>/…, listed in sample-pdfs/index.js) ---------- */
   function sampleBlock() {
@@ -169,18 +179,42 @@
       cv.width = Math.ceil(vp.width); cv.height = Math.ceil(vp.height);
       const ctx = cv.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, cv.width, cv.height);
       await page.render({ canvasContext: ctx, viewport: vp }).promise;
-      const { data } = await w.recognize(cv);
-      const items = [];
-      (data.lines || []).forEach((ln) => {
-        const ws = (ln.words || []).filter((x) => x.text && x.text.trim()); if (!ws.length) return;
-        const yb = Math.max(...ws.map((x) => x.bbox.y1)), yt = Math.min(...ws.map((x) => x.bbox.y0));
-        ws.forEach((x) => { chars += x.text.length; items.push({ s: x.text, x: x.bbox.x0 / OCR_SCALE, y: (vp.height - yb) / OCR_SCALE, w: (x.bbox.x1 - x.bbox.x0) / OCR_SCALE, h: (yb - yt) / OCR_SCALE }); });
-      });
+      const items = await ocrCanvas(w, cv, OCR_SCALE); items.forEach((it) => (chars += it.s.length));
       pages.push(items); cv.width = cv.height = 0; // free the canvas memory
     }
     ocrMsg = null;
     return { pages, chars };
   }
+  // OCR one canvas -> words {s, x, y, w, h}; k = canvas pixels per output unit. Words on one OCR line share its baseline.
+  async function ocrCanvas(w, cv, k) {
+    const { data } = await w.recognize(cv), items = [];
+    (data.lines || []).forEach((ln) => {
+      const ws = (ln.words || []).filter((x) => x.text && x.text.trim()); if (!ws.length) return;
+      const yb = Math.max(...ws.map((x) => x.bbox.y1)), yt = Math.min(...ws.map((x) => x.bbox.y0));
+      ws.forEach((x) => items.push({ s: x.text, x: x.bbox.x0 / k, y: (cv.height - yb) / k, w: (x.bbox.x1 - x.bbox.x0) / k, h: (yb - yt) / k }));
+    });
+    return items;
+  }
+  /* a screenshot or photo (PNG, JPG…): enlarge small text, grey scale, white background (dark-mode screens are inverted), then OCR */
+  async function imageLines(file) {
+    const say = (t) => { const el = document.getElementById("pdfprog"); if (el) el.textContent = t; };
+    ocrMsg = say; say(file.name + ": reading the picture with OCR…");
+    const bmp = await createImageBitmap(file), up = bmp.width < 1600 ? 2 : 1, cv = document.createElement("canvas");
+    cv.width = bmp.width * up; cv.height = bmp.height * up;
+    const ctx = cv.getContext("2d", { willReadFrequently: true });
+    // dark background? sample the picture small
+    const sm = document.createElement("canvas"); sm.width = 64; sm.height = Math.max(1, Math.round(64 * bmp.height / bmp.width)); const sx = sm.getContext("2d"); sx.drawImage(bmp, 0, 0, sm.width, sm.height);
+    const px = sx.getImageData(0, 0, sm.width, sm.height).data; let lum = 0; for (let i = 0; i < px.length; i += 4) lum += 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
+    const dark = lum / (px.length / 4) < 110;
+    ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, cv.width, cv.height);
+    ctx.filter = "grayscale(1)" + (dark ? " invert(1)" : ""); ctx.imageSmoothingQuality = "high"; ctx.drawImage(bmp, 0, 0, cv.width, cv.height); ctx.filter = "none";
+    const w = await ocrWorker(); say(file.name + ": OCR…");
+    const k = cv.width / 612; // map to a letter-page width so layout spacing matches PDFs
+    const items = await ocrCanvas(w, cv, k); cv.width = cv.height = 0; ocrMsg = null;
+    const chars = items.reduce((n, it) => n + it.s.length, 0);
+    return { lines: X().layoutLines([items]), chars, pages: 1, ocr: true, image: true };
+  }
+  const isImage = (f) => /^image\//i.test(f.type || "") || /\.(png|jpe?g|gif|bmp|webp|tiff?)$/i.test(f.name || "");
   async function pdfLines(file) {
     const lib = await loadLib(), buf = await file.arrayBuffer(), doc = await lib.getDocument({ data: buf }).promise; let pages = [], chars = 0, ocr = false;
     for (let p = 1; p <= doc.numPages; p++) {
@@ -195,15 +229,15 @@
 
   /* ---------- step 2: read and review ---------- */
   async function run(files) {
-    files = files.filter((f) => /pdf$/i.test(f.name) || f.type === "application/pdf"); if (!files.length) return drop("That is not a PDF file.");
+    files = files.filter((f) => /pdf$/i.test(f.name) || f.type === "application/pdf" || isImage(f)); if (!files.length) return drop("That is not a PDF or a picture (PNG, JPG).");
     box.innerHTML = `<h2>Reading…</h2><div class="muted" id="pdfprog">Starting</div>`;
     const results = [], problems = [];
     for (const f of files) {
       try {
         document.getElementById("pdfprog").textContent = "Reading " + f.name + "…";
-        const { lines, chars, pages, ocr } = await pdfLines(f);
+        const { lines, chars, pages, ocr, image } = isImage(f) ? await imageLines(f) : await pdfLines(f);
         if (chars < 20 * pages) { problems.push(f.name + ": almost no text found" + (ocr ? " even with OCR (blank, handwritten or very poor scan)." : ".")); if (chars < 20) continue; }
-        const r = X().fromLines(lines, { fileName: f.name }); if (ocr) { r.ocr = true; problems.push(f.name + ": this PDF is pictures of text, so it was read with OCR. OCR can misread numbers and units (e.g. 0/O, 1/l, 5/S): check every value against the PDF before accepting."); }
+        const r = X().fromLines(lines, { fileName: f.name }); if (ocr) { r.ocr = true; problems.push(f.name + ": " + (image ? "a picture" : "this PDF is pictures of text") + ", so it was read with OCR. OCR can misread numbers and units (e.g. 0/O, 1/l, 5/S): check every value against the " + (image ? "screenshot" : "PDF") + " before accepting."); }
         results.push(r);
       } catch (e) { problems.push(f.name + ": " + (e.message || e)); }
     }

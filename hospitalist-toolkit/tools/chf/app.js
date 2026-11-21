@@ -6,7 +6,14 @@ const ago = (t) => { const h = (Date.now() - t) / HR; return h < 1 ? Math.max(1,
 const ul = (a) => "<ul>" + a.filter(Boolean).map((t) => "<li>" + t + "</li>").join("") + "</ul>";
 const num = (id) => { const v = parseFloat($(id).value); return isFinite(v) ? v : null; };
 const r1 = R.r1;
-const state = { f: null, flags: {} };
+const state = { f: null, flags: {}, why: {} }; // why: reason a GDMT pillar is not on, per pillar id
+const WHY = ["", "Starting before discharge", "Start at follow-up (titrating one at a time)", "Low BP", "Slow heart rate / heart block", "High potassium", "Low eGFR / kidney injury", "Not tolerated before", "Allergy / angioedema", "Contraindicated (other)", "Patient declined", "Palliative / goals of care"];
+const pillarList = () => R.pillars(state.f ? state.f.allMeds : []);
+// pillars counted as "covered": on, or not on with a reason recorded
+function pillarSummary(ef) {
+  const PL = pillarList(), on = PL.filter((p) => p.on === true), miss = PL.filter((p) => p.on !== true), open = miss.filter((p) => !state.why[p.id]), below = on.filter((p) => p.below);
+  return { PL, on, miss, open, below, relevant: ef === "low" || ef === "unknown" };
+}
 const has = (k) => !!(state.f && state.f.cls[k] && state.f.cls[k].length);
 const prob = (k) => !!(state.f && state.f.prob[k]);
 const cong = () => [...document.querySelectorAll(".cong:checked")].map((x) => x.value);
@@ -32,6 +39,7 @@ function draw() {
   const toGo = x.w && dry ? r1(x.w.v - dry) : null, days = x.w && dry ? R.daysTo(x.w.v, dry, rate) : null;
   const crc = x.cr0 && c.cr && x.crs.length > 1 ? R.creatinine(x.cr0.v, c.cr.v, s.decompensated) : null;
   const shock = $("shock").checked || $("cool").checked;
+  const G4 = pillarSummary(ef), nm = (a) => a.map((p) => p.on === "partial" ? p.name.toLowerCase() + " (" + p.drug + ": not a trial drug)" : p.name).join(", ");
 
   // tiles
   $("tiles").innerHTML = [
@@ -40,6 +48,7 @@ function draw() {
     tile("Loop diuretic (24 h)", ivDaily ? ivDaily + " mg IV" : f && f.loop.po24 ? f.loop.po24 + " mg PO-eq" : "none", ivDaily ? "furosemide IV given/ordered per day" : "", ivDaily ? "t1" : s.decompensated ? "t2" : "t1"),
     tile("Creatinine / eGFR", c.cr ? Math.round(c.cr.v) : "?", (c.egfr ? "eGFR " + Math.round(c.egfr.v) : "") + (crc ? ` · ${x.cr0 ? "admit " + Math.round(x.cr0.v) : ""}` : ""), crc ? (crc.lvl === "urgent" ? "t3" : crc.lvl === "action" ? "t2" : "t0") : "t1"),
     tile("K / Na / Mg", `${c.k ? r1(c.k.v) : "?"} / ${c.na ? Math.round(c.na.v) : "?"} / ${c.mg ? Math.round(c.mg.v * 100) / 100 : "?"}`, "K 4.0-5.0, Mg 0.8+", (c.k && (c.k.v < 3.8 || c.k.v > 5.2)) || (c.na && c.na.v < 133) || (c.mg && c.mg.v < 0.8) ? "t2" : "t0"),
+    tile("GDMT pillars", f ? G4.on.length + " / 4" : "?", f ? (G4.open.length ? "not on: " + G4.open.map((p) => ({ raas: "ARNI/ACEi/ARB", bb: "BB", mra: "MRA", sglt2: "SGLT2i" }[p.id])).join(", ") : "all covered") + (G4.below.length ? ` · ${G4.below.length} below target` : "") : "", !f ? "t1" : ef === "low" ? (G4.open.length >= 2 ? "t3" : G4.open.length || G4.below.length ? "t2" : "t0") : G4.open.length ? "t1" : "t0"),
     tile("BP / HR / SpO2", `${s.sbp ?? "?"} / ${s.hr ?? "?"}`, s.spo2 ? "SpO2 " + s.spo2 + "%" : "", s.sbp != null && s.sbp < 90 ? "t3" : "t0")].join("");
 
   // plan now
@@ -53,6 +62,10 @@ function draw() {
   if (c.k && c.k.v < 4) P.push(`K ${r1(c.k.v)}: replace to 4.0+ (or start/raise MRA)`);
   if (c.mg && c.mg.v < 0.8) P.push(`Mg ${Math.round(c.mg.v * 100) / 100}: replace`);
   if (crc && crc.lvl !== "ok") P.push(esc(crc.text));
+  if (f && ef === "low" && G4.open.length) P.unshift(`<span class="flag">GDMT: ${G4.on.length} of 4 pillars.</span> Not on: <b>${esc(nm(G4.open))}</b>. Start before discharge unless there is a reason not to (record it in the GDMT section)${G4.below.length ? `; ${G4.below.length} below target dose` : ""}.`);
+  else if (f && ef === "low" && G4.below.length) P.push(`GDMT: all 4 pillars covered; ${G4.below.length} below target dose (${esc(G4.below.map((p) => p.drug).join(", "))}): plan titration every 1-2 weeks.`);
+  if (f && ef === "unknown" && G4.open.length) P.push(`If EF is 40% or less: ${G4.on.length} of 4 GDMT pillars (not on: ${esc(nm(G4.open))}). SGLT2 inhibitor helps at any EF.`);
+  if (f && (ef === "mid" || ef === "pres") && G4.PL[3].on !== true && !state.why.sglt2) P.push(`<span class="flag">Not on an SGLT2 inhibitor:</span> recommended at any EF (dapagliflozin or empagliflozin 10 mg daily) unless eGFR under 20 or type 1 diabetes.`);
   if (ef === "unknown") P.push("Ejection fraction unknown: order an echo (or set EF from the last echo) to choose GDMT");
   if (!dry) P.push("Set a target (dry) weight to plan the days of diuresis and write it on the handout");
   if (nt && nt.zone === "out" && !s.decompensated) P.unshift("<b>NT-proBNP under 300: acute heart failure is unlikely.</b> Look for another cause of the breathlessness (see mimics below)");
@@ -106,10 +119,17 @@ function drawPO(x, ivDaily, home, dry) {
 function drawGDMT(ef, s, c) {
   const meds = state.f ? state.f.allMeds : [], G = R.gdmt(ef, { k: s.k, egfr: s.egfr, sbp: s.sbp, hr: s.hr, decompensated: s.decompensated, dka: prob("dm1") }, meds);
   const ir = R.iron(c.ferritin ? Math.round(c.ferritin.v) : null, c.tsat ? Math.round(c.tsat.v) : null);
-  $("gdmt").innerHTML = `<table class="agent"><tr><th>Treatment</th><th>On it?</th><th>How to start</th><th>Watch</th></tr>` +
+  const PL = pillarList();
+  const pillarsHtml = state.f ? `<h3>The four pillars${ef === "low" ? "" : ef === "unknown" ? " (if EF is 40% or less)" : " (HFrEF; at this EF the SGLT2 inhibitor is the main one)"}</h3><table class="agent"><tr><th>Pillar</th><th>Status</th><th>Order found</th><th>Dose vs target</th><th>If not on: why?</th></tr>` +
+    PL.map((p) => `<tr><td><b>${esc(p.name)}</b></td><td class="${p.on === true ? (p.below ? "st-caution" : "st-ok") : state.why[p.id] ? "" : "st-avoid"}">${p.on === true ? (p.below ? "ON, below target" : "ON") : p.on === "partial" ? "WRONG DRUG" : "NOT ON"}</td>
+      <td>${esc(p.text || "none found")}</td><td>${esc(p.advice || "")}</td>
+      <td>${p.on === true ? "" : `<select class="gwhy" data-p="${p.id}">${WHY.map((w) => `<option${state.why[p.id] === w ? " selected" : ""}>${esc(w)}</option>`).join("")}</select>`}</td></tr>`).join("") +
+    `</table><div class="muted" style="margin:4px 0 10px">Matched by drug name in active orders and doses given in the last 2 days (home medicines not read here). Targets: CCS / ACC. A pillar with a reason chosen is no longer flagged and the reason goes in the note.</div><h3>By ejection fraction</h3>` : "";
+  $("gdmt").innerHTML = pillarsHtml + `<table class="agent"><tr><th>Treatment</th><th>On it?</th><th>How to start</th><th>Watch</th></tr>` +
     G.map((g) => `<tr><td><b>${esc(g.name)}</b></td><td class="${g.on === true ? "st-ok" : g.on === false ? "st-avoid" : ""}">${g.on === true ? "YES" : g.on === false ? "NOT YET" : ""}</td><td>${esc(g.dose)}</td><td>${esc(g.caution.join("; "))}</td></tr>`).join("") + "</table>" +
     `<div class="alert ${ir.def ? "action" : "info"}" style="margin-top:8px">${esc(ir.text)}</div>` +
     `<div class="muted">Start what you can before discharge, one or two at a time, with labs in 1-2 weeks. Do not stop GDMT for a small creatinine rise during decongestion.</div>`;
+  $("gdmt").querySelectorAll(".gwhy").forEach((el) => (el.onchange = () => { if (el.value) state.why[el.dataset.p] = el.value; else delete state.why[el.dataset.p]; draw(); }));
 }
 
 function drawDDX(ef, s, c) {
@@ -188,7 +208,10 @@ function noteText(x, nt, ntc, ivDaily, resp, dry, days, crc) {
   L.push(ivDaily ? `- Furosemide ${ivDaily} mg/day IV; response ${resp.ok === false ? "inadequate: double dose" : resp.ok ? "adequate: continue" : "to reassess (urine Na 2 h, UO 6 h)"}.` : "- " + R.startDose(num("home"), s.egfr).text);
   L.push("- Daily weight, strict I/O, daily lytes/Cr; K 4-5, Mg 0.8+.");
   if (crc && crc.lvl !== "ok") L.push("- " + crc.text);
-  L.push("- GDMT: start/titrate per EF before discharge; iron studies; echo if none recent.");
+  if (state.f) { const PL = pillarList(), efv = $("ef").value;
+    L.push(`- GDMT${efv === "low" ? "" : efv === "unknown" ? " (if EF 40% or less)" : ""}: ` + PL.map((p) => `${p.name}: ${p.on === true ? p.text + (p.below ? " (below target " + p.targetText + ")" : "") : p.on === "partial" ? p.text + " (not a trial beta-blocker: switch)" : "not on" + (state.why[p.id] ? " - " + state.why[p.id].toLowerCase() : "")}`).join("; ") + ".");
+    L.push("- Iron studies; echo if none recent.");
+  } else L.push("- GDMT: start/titrate per EF before discharge; iron studies; echo if none recent.");
   L.push("- Look for precipitant and cause" + (document.querySelectorAll(".amy:checked").length >= 3 ? "; amyloid red flags: free light chains, SPEP/UPEP with IFE, then PYP scan." : "."));
   L.push("- Discharge: oral diuretic observed 24-48 h, dry weight documented, HF handout, follow-up within 7 days, labs in 1 week, HF clinic referral.");
   return L.join("\n");
@@ -196,7 +219,7 @@ function noteText(x, nt, ntc, ivDaily, resp, dry, days, crc) {
 
 /* ---- load ---- */
 function load(raw, note, errors, preset) {
-  state.f = raw ? C.parse(raw) : null; state.flags = {}; const p = (preset && preset.sit) || {}, f = state.f;
+  state.f = raw ? C.parse(raw) : null; state.flags = {}; state.why = {}; const p = (preset && preset.sit) || {}, f = state.f;
   $("ef").value = p.ef || (f && f.prob.hfref ? "low" : f && f.prob.hfpef ? "pres" : "unknown");
   $("dry").value = p.dry != null ? p.dry : ""; $("una").value = p.una != null ? p.una : ""; $("uo").value = "";
   // home loop dose: from preset, else from an oral loop order
