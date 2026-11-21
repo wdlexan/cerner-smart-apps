@@ -287,31 +287,68 @@
     return map;
   }
   const PAST = /\b(?:has been seen|was seen|were seen|has had|was given|received|was referred .* (?:in|on) (?:19|20)\d\d)\b/i;
-  function followups(sources) { // sources: [{name, t, text}]
-    const out = [], seen = new Set();
+  // service names as written in a plan
+  const SVC = [[/hospital at home|\bhah\b/i, "Hospital at Home"], [/gi central/i, "Gastroenterology (GI Central)"], [/gastroenterolog\w*|\bgi\b/i, "Gastroenterology"], [/hepatolog\w*|liver clinic/i, "Hepatology"],
+    [/nephrolog\w*|kidney (?:care )?clinic/i, "Nephrology"], [/(?:general )?internal medicine|internist/i, "Internal medicine"], [/\bent\b|otolaryngolog\w*/i, "ENT"], [/heart function clinic|h[fF] clinic|heart failure clinic/i, "Heart function clinic"],
+    [/cardiolog\w*/i, "Cardiology"], [/neurolog\w*/i, "Neurology"], [/stroke (?:prevention )?clinic|tia clinic/i, "Stroke prevention clinic"], [/respirolog\w*|pulmonolog\w*/i, "Respirology"], [/hematolog\w*/i, "Hematology"],
+    [/bc cancer|oncolog\w*/i, "Oncology"], [/rheumatolog\w*/i, "Rheumatology"], [/endocrinolog\w*/i, "Endocrinology"], [/diabetes (?:clinic|education|educator|centre|center)/i, "Diabetes education"], [/urolog\w*/i, "Urology"],
+    [/orthop\w*|fracture clinic/i, "Orthopedics"], [/psychiatr\w*|mental health/i, "Psychiatry / mental health"], [/geriatric\w*|memory clinic/i, "Geriatrics"], [/palliative/i, "Palliative care"], [/infectious disease|\bid clinic/i, "Infectious diseases"],
+    [/home (?:care|health|support)|community (?:nursing|health)/i, "Home and community care"], [/physio\w*/i, "Physiotherapy"], [/occupational therapy/i, "Occupational therapy"], [/dietitian|nutritionist/i, "Dietitian"]];
+  const svcOf = (t) => { const x = SVC.find(([re]) => re.test(t)); return x ? x[1] : t.replace(/^\w/, (c) => c.toUpperCase()); };
+  const svcKey = (n) => n.toLowerCase().replace(/\s*\(.*\)$/, "");
+  const statusOf = (sen) => /\b(?:unable to (?:keep|attend)|missed|no[- ]show)\b/i.test(sen) || /\blast (?:week|monday|tuesday|wednesday|thursday|friday|saturday|sunday|month)\b/i.test(sen) ? "missed appointment" + ((/\blast \w+/i.exec(sen) || [""])[0] ? " " + (/\blast \w+/i.exec(sen) || [""])[0] : "") + ": rebook"
+    : /\b(?:completed a referral|referral (?:has been |was )?(?:sent|faxed|done|made|completed)|re-?referred|have referred|has been referred|was referred)\b/i.test(sen) ? "referral sent"
+    : /\b(?:scheduled|booked|has an appointment|appointment (?:is )?(?:on|for)|confirmed)\b/i.test(sen) ? "booked"
+    : /\b(?:will (?:refer|arrange|book)|please (?:refer|arrange|book)|to be referred|needs? (?:a )?referral|recommend(?:ed)? referral|refer to)\b/i.test(sen) ? "to refer" : "";
+  const plainCase = (t) => t.replace(/\b(?:her|his|their)\s+(?=[a-z])/gi, "").replace(/\s+/g, " ").trim();
+  // plan sentence without the patient as subject: "She has a follow up with…" -> "Follow up with…"
+  const depronoun = (t) => plainCase(t.replace(/^\s*(?:\d+[.)]|[-•*])\s*/, "").replace(/^(?:she|he|they|the patient|patient|pt)\s+(?:has|have|had|is|was|will|needs?|should|would)\s+(?:been\s+|be\s+|a\s+|an\s+)*/i, "").replace(/^(?:i|we)\s+(?:have\s+)?/i, "")).replace(/^\w/, (c) => c.toUpperCase()).replace(/[.\s]+$/, "");
+  function followups(sources) { // sources: [{name, t, text}] -> one item per service / doctor (referrals merged), plus imaging, labs, other
+    const raw = [];
     (sources || []).forEach((src) => { const who = whoIs(src.text), ss = sentences(src.text); ss.forEach((sen, si) => {
       if (PAST.test(sen) && !/\b(?:refer(?:ral)?|follow[- ]?up|appointment|will|repeat|outpatient)\b/i.test(sen)) return;
       if (/\b(?:clinic note|progress note|document (?:type|subject)|service date|sign(?:ed)? information|result status|\bmrn\b|\bphn\b|date of birth|encounter (?:#|type)|copies to|printed (?:by|on)|report tracking)\b/i.test(sen)) return; // page header, not a plan
       if (sen.length < 12 || sen.length > 400 || !INTENT.test(sen) || NEGF.test(sen) || /\bpending\b|\bresult(?:s)? to follow\b/i.test(sen)) return;
       if (/\b(?:showed|revealed|demonstrated|was (?:normal|unremarkable|negative))\b/i.test(sen) && !/\b(?:repeat|follow[- ]?up|outpatient|refer)\b/i.test(sen)) return; // a result, not a plan
-      const type = SPEC.test(sen) && !/^\s*(?:\d+[.)]\s*)?(?:repeat|recheck)\b/i.test(sen) ? "referral" : IMG.test(sen) ? "imaging" : LABW.test(sen) ? "lab" : /\b(?:follow[- ]?up|f\/u|appointment|clinic)\b/i.test(sen) ? "other" : null;
-      if (!type) return;
-      const key = sen.toLowerCase().replace(/\W+/g, " ").slice(0, 90); if (seen.has(key)) return; seen.add(key);
-      let ty = type, extra = "";
-      // a doctor named without a specialty: look the name up elsewhere in the note
-      const drs = [...sen.matchAll(/\bDr\.?\s*([A-Z][a-zA-Z'’-]+)/g)].map((m) => m[1]);
-      const known = drs.filter((d) => who[d.toLowerCase()] && !new RegExp(who[d.toLowerCase()], "i").test(sen));
-      if (known.length) { extra = " (" + known.map((d) => "Dr. " + d + ", " + who[d.toLowerCase()]).join("; ") + ")"; if (ty === "other") ty = "referral"; }
-      else if (drs.length && ty === "other" && /\b(?:follow[- ]?up|appointment)\b/i.test(sen)) ty = "referral";
-      // "a follow up with him": who from the sentence before
-      if (!SPEC.test(sen) && !drs.length && /\b(?:him|her|them|this (?:doctor|specialist|team))\b/i.test(sen) && si > 0) {
-        const prev = ss[si - 1], sp = SPEC.exec(prev), d = /\bDr\.?\s*([A-Z][a-zA-Z'’-]+)/.exec(prev);
-        if (sp || d) { extra = " (" + [d ? "Dr. " + d[1] : "", sp ? sp[1] : ""].filter(Boolean).join(", ") + ")"; ty = "referral"; }
-      }
-      const w = WHEN.exec(sen), what = (ty === "referral" ? SPEC : ty === "imaging" ? IMG : ty === "lab" ? LABW : /follow[- ]?up|appointment|clinic/i).exec(sen);
-      out.push({ type: ty, what: what ? what[0] : "", text: sen.replace(/^\s*(?:\d+[.)]|[-•*])\s*/, "").trim() + extra, when: w ? w[0] : "", source: src.name || "", t: src.t || null, on: true,
-        past: /\b(?:last (?:week|monday|tuesday|wednesday|thursday|friday|saturday|sunday|month)|unable to (?:keep|attend)|missed)\b/i.test(sen) || undefined });
+      const base = { when: (WHEN.exec(sen) || [""])[0], status: statusOf(sen), source: src.name || "", t: src.t || null, src: sen };
+      const purpose = (/\bfor (?:consideration of |ongoing |further )?([^.;()]{3,80})/i.exec(sen) || [])[1], via = (/\b(?:through|via) ([A-Z][A-Za-z]{1,20}(?: (?!(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b)[A-Z][A-Za-z]+)?)/.exec(sen) || [])[1];
+      const detail = [purpose ? plainCase(purpose).replace(/\s+(?:as an outpatient|while .*)$/i, (m) => m) : "", via && !/GI Central/i.test(via) ? "via " + via : ""].filter(Boolean);
+      // specialists / services: one target per service or doctor named
+      const targets = [], gre = new RegExp(SPEC.source, "gi"); let m;
+      while ((m = gre.exec(sen))) { const after = sen.slice(m.index + m[0].length, m.index + m[0].length + 30), dm = /^\s*\((?:Dr\.?\s*)?([A-Z][a-zA-Z'’-]+)\)/.exec(after); targets.push({ svc: svcOf(m[0]), dr: dm ? dm[1] : "" }); }
+      [...sen.matchAll(/\bDr\.?\s*([A-Z][a-zA-Z'’-]+)/g)].map((x) => x[1]).forEach((d) => { if (targets.some((tg) => tg.dr === d)) return; const sp = who[d.toLowerCase()]; const tg = sp ? targets.find((x) => svcKey(x.svc) === svcKey(svcOf(sp)) && !x.dr) : null; if (tg) tg.dr = d; else targets.push({ svc: sp ? svcOf(sp) : "", dr: d }); });
+      if (!targets.length && /\b(?:him|her|them)\b/i.test(sen) && si > 0) { const prev = ss[si - 1], sp = SPEC.exec(prev), d = /\bDr\.?\s*([A-Z][a-zA-Z'’-]+)/.exec(prev); if (sp || d) targets.push({ svc: sp ? svcOf(sp[0]) : d && who[d[1].toLowerCase()] ? svcOf(who[d[1].toLowerCase()]) : "", dr: d ? d[1] : "" }); }
+      const isFollow = /\b(?:follow[- ]?up|f\/u|appointment|refer|referral|re-?referred|clinic|scheduled|booked|see)\b/i.test(sen);
+      if (targets.length && (isFollow || !IMG.test(sen) && !LABW.test(sen))) { targets.forEach((tg) => raw.push(Object.assign({ type: "referral", svc: tg.svc, dr: tg.dr, detail: IMG.test(sen) && !purpose ? [] : detail }, base))); if (!IMG.test(sen) || purpose) return; }
+      const type = IMG.test(sen) ? "imaging" : LABW.test(sen) ? "lab" : /\b(?:follow[- ]?up|f\/u|appointment|clinic)\b/i.test(sen) ? "other" : null;
+      if (type) raw.push(Object.assign({ type, text: depronoun(sen) }, base));
     }); });
+    // merge: one line per service (or doctor); identical imaging / lab / other lines once
+    const out = [], byKey = {};
+    raw.forEach((x) => {
+      if (x.type !== "referral") { const k = x.type + "|" + x.text.toLowerCase().replace(/\W+/g, " "); if (!byKey[k]) { byKey[k] = Object.assign({}, x, { on: true }); out.push(byKey[k]); } return; }
+      const k = "ref|" + (x.svc ? svcKey(x.svc) : "dr " + (x.dr || "").toLowerCase());
+      let g = byKey[k];
+      if (!g && x.dr) g = out.find((o) => o.type === "referral" && o.dr === x.dr) || null;
+      if (!g && !x.svc && x.dr) g = null;
+      if (!g) { g = byKey[k] = { type: "referral", svc: x.svc, dr: x.dr, whens: [], statuses: [], details: [], srcs: [], source: x.source, t: x.t, on: true }; out.push(g); }
+      if (!g.svc && x.svc) g.svc = x.svc; if (!g.dr && x.dr) g.dr = x.dr;
+      if (/GI Central/.test(x.svc || "")) g.svc = x.svc;
+      if (x.when && !g.whens.includes(x.when)) g.whens.push(x.when);
+      if (x.status && !g.statuses.includes(x.status)) g.statuses.push(x.status);
+      (x.detail || []).forEach((d) => { if (d && !g.details.some((e) => e.toLowerCase() === d.toLowerCase())) g.details.push(d); });
+      g.srcs.push(x.src);
+    });
+    out.filter((g) => g.type === "referral").forEach((g) => {
+      const future = g.whens.filter((w) => !/^last\b/i.test(w)), missed = g.statuses.find((x) => /^missed/.test(x)), booked = g.statuses.includes("booked");
+      const st = g.statuses.filter((x) => !(booked && /^missed/.test(x) && future.length) && !(booked && x === "to refer"));
+      g.when = future[0] || "";
+      g.past = !!missed && !booked || undefined;
+      const parts = st.map((x) => (x === "booked" && g.when ? "booked " + g.when : x)).concat(g.details);
+      if (g.when && !parts.some((p) => p.includes(g.when))) parts.push((parts.length ? "" : "follow-up ") + g.when);
+      g.text = (g.svc || "Follow-up") + (g.dr ? " (Dr. " + g.dr + ")" : "") + ": " + (parts.length ? parts.join("; ") : "follow-up");
+      g.src = g.srcs.join(" | ");
+    });
     const order = { referral: 0, imaging: 1, lab: 2, other: 3 };
     return out.sort((a, b) => order[a.type] - order[b.type]);
   }
@@ -342,7 +379,7 @@
     if ((o.labs || []).length) L.push("", "KEY RESULTS", ...o.labs.map((m) => "- " + m));
     L.push("", "FOLLOW-UP IN THE COMMUNITY");
     const fu = (o.follow || []).filter((x) => x.on !== false);
-    Object.keys(FTYPES).forEach((k) => { const a = fu.filter((x) => x.type === k); if (a.length) { L.push(FTYPES[k] + ":"); a.forEach((x) => L.push("- " + (x.past ? "MISSED / PAST, rebook? " : "") + x.text.replace(/[.\s]+$/, "") + (x.when && !x.text.includes(x.when) ? " (" + x.when + ")" : "") + (x.owner ? " [" + x.owner + "]" : ""))); } });
+    Object.keys(FTYPES).forEach((k) => { const a = fu.filter((x) => x.type === k); if (a.length) { L.push(FTYPES[k] + ":"); a.forEach((x) => L.push("- " + x.text.replace(/[.\s]+$/, "") + (x.when && !x.text.includes(x.when) ? " (" + x.when + ")" : "") + (x.owner ? " [" + x.owner + "]" : ""))); } });
     if (!fu.length) L.push("No referrals, imaging or lab follow-up found in the note: add any that apply.");
     L.push(`Family doctor / primary care provider: see within ${v.fpDays || "____"} days${v.fpName ? " (" + v.fpName + ")" : ""}.`);
     if ((o.pending || []).length) L.push("", "PENDING RESULTS", ...o.pending.map((p) => "- " + p));

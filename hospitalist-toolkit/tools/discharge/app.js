@@ -5,7 +5,7 @@ const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": 
 const isoD = (t) => (t ? new Date(t - new Date(t).getTimezoneOffset() * 6e4).toISOString().slice(0, 10) : "");
 const fromD = (s) => (s ? new Date(s + "T12:00:00").getTime() : null);
 const num = (v) => (v == null ? "" : Math.abs(v) >= 100 ? String(Math.round(v)) : String(Math.round(v * 10) / 10));
-const OWNERS = ["Family physician", "Hospitalist (me)", "Specialist", "Ordering physician", "Referral sent by hospital", "Patient to book", "Other"];
+const OWNERS = ["", "Family physician", "Hospitalist (me)", "Specialist", "Ordering physician", "Referral sent by hospital", "Patient to book", "Other"];
 const MOD_FIELDS = {
   hf: [["dry", "Weight at discharge (kg)", "number"], ["fluidL", "Fluid limit (L/day, blank = none)", "number"]],
   infection: [["abxEnd", "Last antibiotic dose (date)", "text"]],
@@ -33,7 +33,7 @@ function build(raw, key, sv) {
     mods: R.modules(f).map((m) => Object.assign(m, { on: true })), out: { fp: "", pt: "" }, dirty: { fp: false, pt: false } };
   // follow-up in the community: plans in notes and reports (not the radiology recommendations already listed as incidental findings)
   const incTxt = S.inc.map((x) => (x.finding + " " + x.followup).toLowerCase());
-  S.fol = R.followups(f.notes.concat(f.reports.filter((r) => r.text).map((r) => ({ name: r.name, t: r.t, text: r.text })))).filter((x) => !incTxt.some((t) => t.includes(x.text.toLowerCase().slice(0, 50)))).map((x) => Object.assign(x, { owner: x.type === "referral" ? "Referral sent by hospital" : "Family physician" }));
+  S.fol = R.followups(f.notes.concat(f.reports.filter((r) => r.text).map((r) => ({ name: r.name, t: r.t, text: r.text })))).filter((x) => !incTxt.some((t) => t.includes(x.text.toLowerCase().slice(0, 50)))).map((x) => Object.assign(x, { owner: "" })); // who arranges it: only when you set it (the status found in the note is in the text)
   try { const saved = JSON.parse(sessionStorage.getItem(storeKey()) || "null"); if (saved) { Object.assign(S, saved); S.f = f; if (!S.fol) S.fol = []; } } catch (e) {}
 }
 
@@ -55,7 +55,7 @@ function chgHtml() {
   h += P.length ? `<div style="margin-top:8px"><b>New diagnoses this admission:</b> ${P.map((x, i) => `<label class="inl" style="margin-right:12px"><input type="checkbox" data-k="prob" data-i="${i}"${x.on ? " checked" : ""}> ${esc(x.name)}</label>`).join("")}</div>` : "";
   return h;
 }
-const ownerSel = (k, i, v) => `<select data-k="${k}" data-i="${i}" data-f="owner">${OWNERS.map((o) => `<option${o === v ? " selected" : ""}>${o}</option>`).join("")}${OWNERS.includes(v) ? "" : `<option selected>${esc(v)}</option>`}</select>`;
+const ownerSel = (k, i, v) => `<select data-k="${k}" data-i="${i}" data-f="owner">${OWNERS.map((o) => `<option value="${o}"${o === v ? " selected" : ""}>${o || "—"}</option>`).join("")}${OWNERS.includes(v) ? "" : `<option selected>${esc(v)}</option>`}</select>`;
 function pendHtml() {
   if (!S.pend.length) return `<p class="muted">No pending results found. Check PowerChart (micro, pathology, send-outs) before saying "none".</p>`;
   return `<table><tr><th></th><th>Test</th><th>Status / detail</th><th>Who follows up</th></tr>${S.pend.map((p, i) => `<tr><td class="ck"><input type="checkbox" data-k="pend" data-i="${i}" data-f="on"${p.on !== false ? " checked" : ""}></td>
@@ -122,7 +122,7 @@ function wireRows() {
 V_FIELDS.forEach((k) => { const el = $("v-" + k); if (!el) return; el.addEventListener("input", () => { if (!S) return; S.v[k] = k === "admit" || k === "dc" ? fromD(el.value) : el.type === "number" ? (el.value === "" ? null : +el.value) : el.value; outputs(); save(); }); });
 $("addmed").onclick = () => { if (!S) return; S.meds.push({ key: "", status: "new", text: "", before: "", reason: "", on: true }); render(); };
 $("addpend").onclick = () => { if (!S) return; S.pend.push({ what: "", status: "", detail: "", owner: "Family physician", on: true }); render(); };
-$("addfol").onclick = () => { if (!S) return; S.fol.push({ type: "referral", text: "", when: "", owner: "Referral sent by hospital", source: "added by you", on: true }); render(); };
+$("addfol").onclick = () => { if (!S) return; S.fol.push({ type: "referral", text: "", when: "", owner: "", source: "added by you", on: true }); render(); };
 $("addinc").onclick = () => { if (!S) return; S.inc.push({ finding: "", source: "added by you", followup: "", owner: "Family physician", on: true }); render(); };
 ["fp", "pt"].forEach((k) => {
   $("out-" + k).addEventListener("input", () => { if (!S) return; S.out[k] = $("out-" + k).value; S.dirty[k] = true; $("dirty-" + k).textContent = "You edited this: changes above no longer update it. Rebuild to start again from above (your edits here will be lost)."; save(); });

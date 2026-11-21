@@ -45,7 +45,7 @@ ok("medKey drops salts", R.medKey("metoprolol tartrate 25 mg PO BID") === "metop
 {
   const t = "Plan:\n1. Refer to heart function clinic in 4-6 weeks.\n2. Repeat lytes and creatinine in 1 week.\n3. Outpatient echocardiogram.\n4. CT chest showed RUL nodule; repeat CT chest in 6 months.\n5. No need for GI follow-up.\n6. Follow up with family doctor in 7 days.\nCT head was normal.";
   const fu = R.followups([{ name: "note", text: t }]), ty = (re) => (fu.find((x) => re.test(x.text)) || {}).type;
-  ok("followups: referral with timing", ty(/heart function/) === "referral" && fu.find((x) => /heart function/.test(x.text)).when === "in 4-6 weeks", fu);
+  ok("followups: referral with timing, one line per service", ty(/heart function/i) === "referral" && fu.find((x) => /heart function/i.test(x.text)).text === "Heart function clinic: to refer; in 4-6 weeks", fu);
   ok("followups: imaging (echo, repeat CT) and lab", ty(/echocardiogram/) === "imaging" && ty(/repeat CT/) === "imaging" && ty(/lytes/) === "lab");
   ok("followups: 'No need for GI follow-up' and a normal result are not follow-ups", !fu.some((x) => /GI follow-up|CT head/.test(x.text)), fu.map((x) => x.text));
   ok("followups: page header lines skipped", R.followups([{ name: "p", text: "Onc. Medical Follow-Up Clinic Note\nMRN: 1234567 PHN: 9999999999" }]).length === 0);
@@ -56,18 +56,20 @@ ok("medKey drops salts", R.medKey("metoprolol tartrate 25 mg PO BID") === "metop
   ok("draftNote: headings", ["DISCHARGE NOTE (DRAFT)", "FOLLOW-UP IN THE COMMUNITY", "Specialist follow-up, referrals and services:", "Imaging and procedures:", "Lab tests:", "PENDING RESULTS", "WHAT TO WATCH FOR", "Call 9-1-1", "family doctor or primary care provider"].every((h) => note.includes(h)), note);
   ok("draftNote: heart failure and blood thinner warnings", /1 kg \(2 lb\)/.test(note) && /Black, tarry/.test(note));
   const a = run(0), fp = R.fpNote({ f: a.f, fol: R.followups(a.f.notes), meds: a.meds, chg: a.chg, pend: a.pend, inc: a.inc, mods: a.mods, v: { fpDays: 7 } });
-  ok("fpNote: follow-up in the community + what to watch for", /FOLLOW-UP IN THE COMMUNITY\nSpecialist follow-up, referrals and services:\n  - Refer to heart function clinic/.test(fp) && /WHAT TO WATCH FOR/.test(fp) && /Holter/.test(fp), fp);
+  ok("fpNote: follow-up in the community + what to watch for", /FOLLOW-UP IN THE COMMUNITY\nSpecialist follow-up, referrals and services:\n  - Heart function clinic: to refer; in 4 to 6 weeks/.test(fp) && /WHAT TO WATCH FOR/.test(fp) && /Holter/.test(fp), fp);
 }
 // hospital-course style note (MADE-UP names): Dr./Nov. abbreviations, doctor named elsewhere, "him", services, past appointments
 {
   const t = "Hospital Course\n40-year-old woman followed by nephrology (Dr. Testerson) and internal medicine (Dr. Sampleton) in community. She had an appointment with Dr. Testerson last Friday but was unable to keep it. She has a scheduled follow up with Dr. Sampleton Dec. 3.\nShe was seen by Dr. Fakename (ENT). She has a follow up with him in early 2027.\nShe has been restarted on regularly scheduled metoclopramide 10 mg QID. She has been seen by dietitian and understands the need to re-introduce oral intake. She was re-referred to Hospital at Home for monitoring of her electrolytes. I have completed a referral to GI Central for consideration of EGD as an outpatient.";
   const fu = R.followups([{ name: "n", text: t }]), f = (re) => fu.find((x) => re.test(x.text));
-  ok("hc: 'Dr.' and 'Dec.' do not cut the sentence; doctor's specialty added", f(/Sampleton Dec\. 3/) && /internal medicine/.test(f(/Sampleton Dec/).text) && f(/Sampleton Dec/).when === "Dec. 3" && f(/Sampleton Dec/).type === "referral", fu);
-  ok("hc: missed appointment flagged as past", f(/last Friday/) && f(/last Friday/).past === true);
-  ok("hc: 'follow up with him' gets Dr. Fakename, ENT and 'early 2027'", f(/with him/) && /Fakename, ENT/.test(f(/with him/).text) && /early 2027/.test(f(/with him/).when), fu);
-  ok("hc: Hospital at Home and GI Central referrals", f(/Hospital at Home/) && f(/Hospital at Home/).type === "referral" && f(/GI Central/) && f(/GI Central/).type === "referral");
-  ok("hc: no false hits (scheduled medicine, seen by dietitian, need to re-introduce)", !f(/metoclopramide/) && !f(/dietitian/), fu.map((x) => x.text));
+  const txt = fu.map((x) => x.text);
+  ok("hc: one line per service, doctor and specialty from elsewhere in the note, no pronouns", JSON.stringify(txt) === JSON.stringify([
+    "Nephrology (Dr. Testerson): missed appointment last Friday: rebook", "Internal medicine (Dr. Sampleton): booked Dec. 3", "ENT (Dr. Fakename): follow-up in early 2027",
+    "Hospital at Home: referral sent; monitoring of electrolytes", "Gastroenterology (GI Central): referral sent; EGD as an outpatient"]), txt);
+  ok("hc: no 'she' and no owner guessed", !txt.some((x) => /\bshe\b/i.test(x)) && fu.every((x) => !x.owner));
+  const fu2 = R.followups([{ name: "n", text: t + "\nFollow up will be with nephrology (Testerson) and internal medicine (Sampleton) as well as gastroenterology (via referral to GI Central).\nFollow up Dr. Sampleton through UMAC Dec. 3." }]);
+  ok("hc: repeated mentions merged, 'via UMAC' kept", fu2.length === 5 && fu2[1].text === "Internal medicine (Dr. Sampleton): booked Dec. 3; via UMAC", fu2.map((x) => x.text));
   const note = R.draftNote({ sections: [{ name: "Hospital Course", body: "Course text." }], follow: fu, mods: ["general"], v: {} });
-  ok("hc: course in SUMMARY; missed appointment marked to rebook", /SUMMARY\nCourse text\./.test(note) && /MISSED \/ PAST, rebook\?/.test(note), note);
+  ok("hc: course in SUMMARY; missed appointment marked to rebook", /SUMMARY\nCourse text\./.test(note) && /missed appointment last Friday: rebook/.test(note), note);
 }
 console.log(`\n${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);
