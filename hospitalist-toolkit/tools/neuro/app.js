@@ -111,10 +111,40 @@ function facts() {
   return { f, wt, respRows, br, mg, at, bl, gcs, ranked, pr, msr, clues, dmt, hints: R.hints(state.ticks) };
 }
 
+/* ---------- sub-tabs (the top bar with chips and Act now stays visible) ---------- */
+const TABS = [["findings", "Findings"], ["exam", "Exam & level"], ["ddx", "Differential"], ["ms", "MS relapse"], ["chart", "Breathing, meds, labs"], ["card", "Tests & treatment"], ["note", "Note draft"]];
+let curTab = (() => { try { return sessionStorage.getItem("neuro-tab") || "findings"; } catch (e) { return "findings"; } })();
+function showTab(k) {
+  curTab = k; try { sessionStorage.setItem("neuro-tab", k); } catch (e) {}
+  document.querySelectorAll("section.tp").forEach((sec) => sec.classList.toggle("on", sec.dataset.tab === k));
+  drawTabs(); const nav = $("subtabs"); if (nav.getBoundingClientRect().top < 0 || window.scrollY > nav.offsetTop) window.scrollTo({ top: nav.offsetTop });
+}
+function drawTabs(x) {
+  const T = state.ticks, nT = Object.keys(T).filter((k) => T[k]).length, nEx = Object.keys(state.exam).length;
+  const msShow = T.knownMS || T.msNew || Object.keys(state.ms).length;
+  if (curTab === "ms" && !msShow) curTab = "findings";
+  const ranked = x ? x.ranked : R.rank(T), br = x ? x.br : null;
+  const info = { findings: nT ? String(nT) : "", exam: nEx ? String(nEx) : "", ddx: ranked.length ? String(ranked.length) : "", ms: x && x.msr && x.msr.verdict !== "none" ? x.msr.verdict : "", chart: "", card: "", note: "" };
+  const dot = { ddx: ranked.some((d) => d.urg === "now" && d.score >= 5), chart: !!(br && br.icu), exam: false };
+  $("subtabs").innerHTML = TABS.filter(([k]) => k !== "ms" || msShow).map(([k, l]) => `<button data-t="${k}" class="${curTab === k ? "on" : ""}">${l}${info[k] ? `<span class="cnt">${esc(info[k])}</span>` : ""}${dot[k] ? `<span class="dot" title="urgent"></span>` : ""}</button>`).join("");
+  $("subtabs").querySelectorAll("button").forEach((b) => (b.onclick = () => showTab(b.dataset.t)));
+  document.querySelectorAll("section.tp").forEach((sec) => sec.classList.toggle("on", sec.dataset.tab === curTab));
+}
+function drawChips(x) {
+  const top = x.ranked[0], loc = R.localize(state.ticks), c = [];
+  if (top) c.push(`<span class="ch ${top.urg === "now" ? "now" : top.urg === "today" ? "today" : "info"}">Top: ${esc(top.name.split(" (")[0])}</span>`);
+  if (loc.level) c.push(`<span class="ch info">Level: ${esc(R.LEVELS[loc.level].name.split(" (")[0])}</span>`);
+  if (x.ranked.length > 1) c.push(`<span class="ch">${x.ranked.length - 1} more on the differential</span>`);
+  if (x.msr && x.msr.verdict !== "none") c.push(`<span class="ch ${x.msr.verdict === "true" ? "today" : "info"}">MS: ${x.msr.verdict === "true" ? "true relapse likely" : x.msr.verdict === "pseudo" ? "pseudo-relapse likely" : "unclear"}</span>`);
+  if (x.br && x.br.icu) c.push(`<span class="ch now">Breathing: ICU threshold</span>`);
+  if (state.urgent) c.push(`<span class="ch now">${state.urgent} urgent</span>`);
+  $("topchips").innerHTML = c.length ? `<span class="lab">Summary:</span>` + c.join("") : `<span class="lab">Pick the problem and tick findings to start.</span>`;
+}
+
 /* ---------- drawing ---------- */
 function draw() {
   const x = facts();
-  drawLoc(); drawMS(x); drawTiles(x); drawAlerts(x); drawDx(x); drawBreathing(x); drawMeds(x); drawLabs(x); drawCard(); NOTE.update();
+  drawLoc(); drawMS(x); drawTiles(x); drawAlerts(x); drawDx(x); drawChips(x); drawTabs(x); drawBreathing(x); drawMeds(x); drawLabs(x); drawCard(); NOTE.update();
 }
 
 function tile(k, big, s, cls) { return `<div class="tile ${cls || ""}"><div class="k">${k}</div><div class="big">${big}</div><div class="s">${s}</div></div>`; }
@@ -142,7 +172,7 @@ function drawDdx(x) {
   if (clues.length) h += `<h4>Medicine clues${clues.some((c) => c.isNew) ? " (new medicines first)" : ""}</h4><ul>${clues.slice(0, 6).map((c) => `<li>${c.isNew ? `<span class="chip u-today">NEW</span> ` : ""}<b>${esc(c.meds.join(", "))}</b>: ${esc(c.text)}</li>`).join("")}</ul>`;
   if (d.mimics.length) h += `<h4>Mimics of ${esc(d.top.name.split(" (")[0])}</h4><div>${d.mimics.map((m) => `<span class="dd">• ${esc(m)}</span>`).join("")}</div>`;
   $("ddx").innerHTML = h + `<div class="why" style="margin-top:6px">Prompts from the ticked findings, not a diagnosis. Tap a name for its tests and treatment.</div></div>`;
-  $("ddx").querySelectorAll("[data-dcard]").forEach((b) => (b.onclick = () => { state.card = b.dataset.dcard; drawCard(); $("card").scrollIntoView({ behavior: "smooth" }); }));
+  $("ddx").querySelectorAll("[data-dcard]").forEach((b) => (b.onclick = () => { state.card = b.dataset.dcard; drawCard(); showTab("card"); }));
 }
 
 function alert(lvl, b, text) { return `<div class="alert ${lvl}"><b>${b}</b>${text}</div>`; }
@@ -161,6 +191,8 @@ function drawAlerts(x) {
   if (x.dmt.some((m) => /natalizumab/i.test(m)) && (T.knownMS || T.msNew)) a.push(alert("action", "Natalizumab:", "new symptoms: think PML; MRI and discuss with the MS clinic before calling it a relapse."));
   if (T.lowK) a.push(alert("action", "Potassium:", `${esc(state.auto.lowK || "low K")}: replace and recheck; low K alone can cause weakness.`));
   $("alerts").innerHTML = a.length ? a.join("") : `<div class="muted">Nothing urgent from the ticks and chart. Keep examining.</div>`;
+  state.urgent = a.filter((h) => /alert urgent/.test(h)).length; state.alertN = a.length;
+  $("sec-alerts").style.display = a.length ? "" : "none"; // only takes space at the top when there is something to act on
   $("alertsum").textContent = a.length ? a.length + " item" + (a.length > 1 ? "s" : "") : "";
 }
 
@@ -172,7 +204,7 @@ function drawDx(x) {
       <span class="sp"></span>
       ${d.card ? `<button data-card="${d.card}">Tests & treatment</button>` : d.id === "stroke" ? `<span class="muted">Stroke tab</span>` : ""}
       <button data-work="${d.id}" class="primary">${state.work === d.id ? "Working diagnosis ✓" : "Set as working"}</button></div>`).join("");
-  $("dxlist").querySelectorAll("[data-card]").forEach((b) => (b.onclick = () => { state.card = b.dataset.card; drawCard(); $("card").scrollIntoView({ behavior: "smooth" }); }));
+  $("dxlist").querySelectorAll("[data-card]").forEach((b) => (b.onclick = () => { state.card = b.dataset.card; drawCard(); showTab("card"); }));
   $("dxlist").querySelectorAll("[data-work]").forEach((b) => (b.onclick = () => {
     state.work = state.work === b.dataset.work ? null : b.dataset.work;
     const d = R.DX.find((q) => q.id === state.work); if (d && d.card) state.card = d.card; draw();

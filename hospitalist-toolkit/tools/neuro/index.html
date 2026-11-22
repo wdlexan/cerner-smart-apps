@@ -74,6 +74,17 @@
     #ddx h4 { margin:8px 0 4px; font-size:13px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; } #ddx h4:first-child { margin-top:0; }
     #ddx .dd { display:inline-flex; align-items:center; gap:4px; margin:2px 8px 2px 0; } #ddx button.lnk { border:0; background:none; color:var(--accent); padding:0; cursor:pointer; font:inherit; text-decoration:underline; }
     #ddx .why { font-size:11.5px; color:var(--muted); } #ddx ul { margin:2px 0 4px 18px; padding:0; } #ddx li { margin:2px 0; }
+    .topbar { display:grid; gap:8px; }
+    .chips { display:flex; flex-wrap:wrap; gap:6px; align-items:center; font-size:12.5px; } .chips .lab { color:var(--muted); font-weight:600; }
+    .chips .ch { border-radius:12px; padding:2px 10px; border:1px solid var(--line); background:var(--card); }
+    .chips .ch.now { background:var(--r-bg); color:var(--r-ink); border-color:transparent; } .chips .ch.today { background:var(--a-bg); color:var(--a-ink); border-color:transparent; } .chips .ch.info { background:var(--b-bg); color:var(--b-ink); border-color:transparent; }
+    #sec-alerts > summary { padding:6px 14px; font-size:14px; } #sec-alerts .body { max-height:30vh; overflow:auto; }
+    .subtabs { display:flex; flex-wrap:wrap; gap:6px; padding:8px 0; position:sticky; top:0; z-index:5; background:var(--bg); border-bottom:1px solid var(--line); }
+    .subtabs button { border:1px solid var(--line); background:var(--card); color:var(--accent); border-radius:6px; padding:6px 12px; font-size:13.5px; cursor:pointer; position:relative; }
+    .subtabs button.on { background:var(--accent); color:#fff; border-color:var(--accent); }
+    .subtabs .cnt { font-size:11px; margin-left:4px; opacity:.8; } .subtabs .dot { position:absolute; top:-4px; right:-4px; width:10px; height:10px; border-radius:50%; background:#d0342c; border:2px solid var(--bg); }
+    section.tp { display:none; gap:14px; } section.tp.on { display:grid; }
+    @media print { section.tp { display:grid !important; } .subtabs { display:none; } .topbar { position:static; } }
     .lvl { border-radius:8px; padding:10px 14px; margin:8px 0; background:var(--b-bg); color:var(--b-ink); } .lvl b { font-size:15px; }
     .pres button { margin:2px 4px 2px 0; } .pres button.on { background:var(--accent); color:#fff; border-color:var(--accent); }
     .dx { display:flex; gap:10px; align-items:flex-start; border:1px solid var(--line); border-radius:8px; padding:8px 12px; margin:6px 0; }
@@ -94,7 +105,12 @@
   </header>
   <main>
     <div class="banner"><b>Decision-support draft. It orders nothing.</b> Scores, thresholds and doses were written by Claude from general sources and have <b>not been verified</b>: check them with neurology, neurosurgery, pharmacy and local protocols before real use. Results are found by code and <b>name</b>, so something not shown may still be in the chart. Use made-up or Cerner sandbox patients until Island Health approves real data.</div>
-
+    <div class="topbar">
+      <div class="chips" id="topchips"></div>
+      <details class="card" open id="sec-alerts"><summary><span>Act now</span><span class="muted" id="alertsum"></span></summary><div class="body" id="alerts"></div></details>
+    </div>
+    <nav class="subtabs" id="subtabs"></nav>
+    <section class="tp" data-tab="findings">
     <details class="card" open>
       <summary><span>Patient and bedside findings</span><span class="muted" id="ptsum"></span></summary>
       <div class="body">
@@ -108,7 +124,8 @@
         <div id="errs" class="err"></div>
       </div>
     </details>
-
+    </section>
+    <section class="tp" data-tab="exam">
     <details class="card" open><summary><span>Where is the lesion? Upper vs lower motor neuron</span><span class="muted" id="locsum"></span></summary>
       <div class="body">
         <div class="muted" style="margin-bottom:6px">Tick the motor signs (same ticks as above). The level found here also nudges the diagnosis list.</div>
@@ -122,14 +139,20 @@
           <tr><td>Junction</td><td class="wrap">Normal</td><td class="wrap">Normal</td><td class="wrap">Normal</td><td class="wrap">Fatigable; eyes, face, swallowing, proximal</td></tr>
           <tr><td>Muscle</td><td class="wrap">Normal until late</td><td class="wrap">Normal (wasting late)</td><td class="wrap">Normal</td><td class="wrap">Proximal, symmetric; CK often high</td></tr></table></details>
       </div></details>
-
     <details class="card" open><summary><span>Special bedside tests</span><span class="muted" id="examsum"></span></summary>
       <div class="body">
         <div class="muted" style="margin-bottom:6px">Mark each test you did. An abnormal result ticks the matching finding, which updates the level and the diagnosis list. Tap a test name for how to do it and what it means.</div>
         <div id="exam"></div>
       </div></details>
-
-    <details class="card" id="sec-ms"><summary><span>MS: true relapse or pseudo-relapse?</span><span class="muted" id="mssum"></span></summary>
+    </section>
+    <section class="tp" data-tab="ddx">
+    <div class="tiles" id="tiles"></div>
+    <div id="ddx"></div>
+    <details class="card" open><summary><span>Most likely and can't-miss diagnoses</span><span class="muted" id="dxsum"></span></summary>
+      <div class="body"><div id="dxlist"></div><div class="src">Ranking is a simple weighted count of the ticked findings (unvalidated). It is a prompt, not a diagnosis.</div></div></details>
+    </section>
+    <section class="tp" data-tab="ms">
+    <details class="card" id="sec-ms" open><summary><span>MS: true relapse or pseudo-relapse?</span><span class="muted" id="mssum"></span></summary>
       <div class="body">
         <div class="muted" style="margin-bottom:6px">Answer what you know; unknowns can stay blank. Fever, WBC, CRP, urinalysis and heat are read from the chart for the trigger question.</div>
         <div id="msq"></div>
@@ -144,39 +167,33 @@
           <tr><td>MRI</td><td class="wrap">New or contrast-enhancing lesions</td><td class="wrap">No new activity compared with baseline</td></tr>
           <tr><td>Treatment</td><td class="wrap">High-dose steroids (e.g. methylprednisolone) if disabling; review DMT</td><td class="wrap">Treat the trigger (antibiotics for UTI, cooling, rest); no steroids</td></tr></table></details>
       </div></details>
-
-    <div class="tiles" id="tiles"></div>
-    <div id="ddx"></div>
-
-    <details class="card" open><summary><span>Act now</span><span class="muted" id="alertsum"></span></summary><div class="body" id="alerts"></div></details>
-
-    <details class="card" open><summary><span>Most likely and can't-miss diagnoses</span><span class="muted" id="dxsum"></span></summary>
-      <div class="body"><div id="dxlist"></div><div class="src">Ranking is a simple weighted count of the ticked findings (unvalidated). It is a prompt, not a diagnosis.</div></div></details>
-
+    </section>
+    <section class="tp" data-tab="chart">
     <details class="card" open><summary><span>Breathing: FVC / NIF / MEP (GBS, myasthenia)</span><span class="muted" id="brsum"></span></summary>
       <div class="body"><div id="spark"></div><div class="scroll" id="brtable"></div>
         <div class="row typed">Add a bedside value: <input type="datetime-local" id="b-t" style="width:auto"> FVC <input type="number" id="b-fvc" step="0.01" placeholder="L"> NIF <input type="number" id="b-nif" step="1" placeholder="cmH₂O"> MEP <input type="number" id="b-mep" step="1" placeholder="cmH₂O"> <button id="b-add" class="primary">Add</button></div>
         <div class="src">20/30/40 rule: FVC under 20 mL/kg, NIF weaker than −30 cmH₂O, or MEP under 40 cmH₂O → ICU; also a fall of 30% or more. Values you add stay in this page only.</div></div></details>
-
     <details class="card" open><summary><span>Medicines: myasthenia check, antithrombotics and reversal, MS therapy</span><span class="muted" id="medsum"></span></summary><div class="body" id="meds"></div></details>
-
     <details class="card" open><summary><span>Labs from the chart</span><span class="muted" id="labsum"></span></summary><div class="body"><div class="scroll" id="labs"></div></div></details>
-
+    </section>
+    <section class="tp" data-tab="card">
     <details class="card" open><summary><span>Diagnosis card: tests and treatment</span><span class="muted">reference</span></summary>
       <div class="body ref"><div class="row"><select id="cardsel"></select></div><div id="card"></div></div></details>
-
+    </section>
+    <section class="tp" data-tab="note">
     <details class="card noprint" open id="sec-note">
       <summary><span>Note draft</span><span class="muted">check, edit, then paste into your PowerChart note</span></summary>
       <div class="body" id="note"></div>
     </details>
+    </section>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
   <script src="../../pdf-overlay.js?v=20261120p"></script>
-  <script src="rules.js?v=20261121u"></script>
+  <script src="rules.js?v=20261121v"></script>
   <script src="reference.js?v=20261121n"></script>
-  <script src="chart.js?v=20261121u"></script>
+  <script src="chart.js?v=20261121v"></script>
   <script src="samples.js?v=20261117a"></script>
   <script src="../../notedraft.js?v=20261113a"></script>
-  <script src="app.js?v=20261121u"></script>
+  <script src="app.js?v=20261121v"></script>
 </body>
 </html>
