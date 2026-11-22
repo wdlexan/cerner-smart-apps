@@ -93,12 +93,14 @@
     if (/^N\d/.test(f)) return [1, f];
     return [2, f];
   }
+  // room order by number, smallest first: HAH2 before HAH11, S702 before S715
+  const ROOM_CMP = new Intl.Collator("en", { numeric: true, sensitivity: "base" });
   function group(rows) {
     const g = {};
     rows.forEach((r) => { const f = r.floor || floorOf(r.location); (g[f] = g[f] || []).push(r); });
     return Object.keys(g)
       .sort((a, b) => { const x = floorRank(a), y = floorRank(b); return x[0] - y[0] || x[1].localeCompare(y[1]); })
-      .map((f) => ({ floor: f, patients: g[f].sort((a, b) => a.location.localeCompare(b.location)) }));
+      .map((f) => ({ floor: f, patients: g[f].sort((a, b) => ROOM_CMP.compare(roomOf(a.location || ""), roomOf(b.location || ""))) }));
   }
 
   function parseDis(s) {
