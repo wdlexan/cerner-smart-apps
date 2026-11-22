@@ -3,7 +3,7 @@
    Usage (after the page's own scripts):
      SubTabs.mount({ store: "chf", top: ["Chart alerts", "#tiles"], tabs: [
        { key: "assess", label: "Assess", match: ["Patient and situation", "NT-proBNP"] }, ... ] });
-   match: "#id" (element id), or text found in the section's <summary> heading (case-insensitive).
+   match: "#id" (element id), "^Text" (heading starts with), or text found anywhere in the section's <summary> heading (case-insensitive).
    Sections that match nothing go with the section before them. The banner (.banner) and "top" items stay above the tabs.
    A red dot shows on a tab that contains an urgent item (dotSel), or whose section heading contains dotText (e.g. "severe").
    Counts are optional (count: (panel) => "3").
@@ -19,12 +19,18 @@
   section.st-panel { display:none; gap:14px; } section.st-panel.on { display:grid; }
   @media print { section.st-panel { display:grid !important; } .st-nav { display:none !important; } }`;
 
+  function headOf(el) {
+    const sm = el.matches("details") ? el.querySelector(":scope > summary") : null;
+    return (sm ? sm.textContent : el.matches("h2,h3") ? el.textContent : (el.querySelector("h2,h3") || {}).textContent || el.textContent.slice(0, 120)).toLowerCase().replace(/\s+/g, " ").trim();
+  }
   function textOf(el) {
     const sm = el.matches("details") ? el.querySelector(":scope > summary") : null;
-    return ((el.id || "") + " " + (sm ? sm.textContent : el.matches("h2,h3") ? el.textContent : (el.querySelector("h2,h3") || {}).textContent || "")).toLowerCase().replace(/\s+/g, " ");
+    const head = sm ? sm.textContent : el.matches("h2,h3") ? el.textContent : (el.querySelector("h2,h3") || {}).textContent || el.textContent.slice(0, 120); // no heading: the block's own first words
+    return ((el.id || "") + " " + head).toLowerCase().replace(/\s+/g, " ");
   }
   function hits(el, m) {
     if (m.startsWith("#")) { const t = document.getElementById(m.slice(1)); return !!t && (el === t || el.contains(t)); }
+    if (m.startsWith("^")) return headOf(el).startsWith(m.slice(1).toLowerCase()); // heading starts with
     return textOf(el).includes(m.toLowerCase());
   }
 
@@ -67,7 +73,7 @@
       if (scroll && nav.getBoundingClientRect().top < 0) window.scrollTo({ top: nav.offsetTop });
     }
     // keep dots and counts current as the page redraws itself
-    let tm = null; new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(draw, 120); }).observe(main, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["class", "hidden", "style"] });
+    let tm = null; new MutationObserver((muts) => { if (muts.every((m) => nav.contains(m.target))) return; clearTimeout(tm); tm = setTimeout(draw, 120); }).observe(main, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["class", "hidden", "style"] });
     // a page that scrolls to (or links to) something in another tab switches to that tab first
     const orig = Element.prototype.scrollIntoView;
     Element.prototype.scrollIntoView = function (...a) { const p = this.closest && this.closest("section.st-panel"); if (p && !p.classList.contains("on")) show(p.dataset.tab); return orig.apply(this, a); };

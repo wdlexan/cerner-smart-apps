@@ -125,5 +125,12 @@
   <script src="../../notedraft.js?v=20261102d"></script>
   <script src="note.js?v=20261102d"></script>
   <script src="app.js?v=20261102d"></script>
+  <script src="../../subtabs.js?v=20261121d"></script>
+  <script>SubTabs.mount({ store: "pd", top: ["#tiles", "Alerts"], tabs: [
+      {"key": "meds", "label": "Medications & doses", "match": ["^Patient", "PD medications", "Doses on time"]},
+      {"key": "npo", "label": "Nil by mouth", "match": ["#sec-npo"]},
+      {"key": "avoid", "label": "Drugs to avoid", "match": ["Drugs to avoid"]},
+      {"key": "sx", "label": "Symptoms & choices", "match": ["Symptoms and management", "Choosing medications"]},
+      {"key": "note", "label": "Note draft", "match": ["#sec-note"]}] });</script>
 </body>
 </html>

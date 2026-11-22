@@ -173,5 +173,11 @@
   <script src="reference.js?v=20261117b"></script>
   <script src="../../notedraft.js?v=20261113a"></script>
   <script src="app.js?v=20261117c"></script>
+  <script src="../../subtabs.js?v=20261121d"></script>
+  <script>SubTabs.mount({ store: "acidbase", top: ["#tiles", "Red flags"], tabs: [
+      {"key": "interp", "label": "Gas & interpretation", "match": ["Patient and blood gas", "#sec-manual", "Interpretation, step by step"]},
+      {"key": "trend", "label": "Trend & medicines", "match": ["Trend (14 days)", "Relevant medications"]},
+      {"key": "causes", "label": "Causes & first steps", "match": ["Causes, tests and first steps"]},
+      {"key": "note", "label": "Note draft", "match": ["#sec-note"]}] });</script>
 </body>
 </html>

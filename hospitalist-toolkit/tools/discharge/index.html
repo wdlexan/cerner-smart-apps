@@ -158,5 +158,12 @@
   <script src="samples.js?v=20261121b"></script>
   <script src="../dcclinic/rules.js?v=20261121a"></script>
   <script src="app.js?v=20261121j"></script>
+  <script src="../../subtabs.js?v=20261121d"></script>
+  <script>SubTabs.mount({ store: "discharge", top: ["#dcc"], tabs: [
+      {"key": "meds", "label": "Patient & medicines", "match": ["Patient and admission", "1. Medicine changes"]},
+      {"key": "changes", "label": "Changes & results", "match": ["2. What changed", "3. Pending results", "4. Incidental findings"]},
+      {"key": "fu", "label": "Follow-up & home care", "match": ["5. Follow-up", "6. Home care"]},
+      {"key": "fp", "label": "Note for family doctor", "match": ["Discharge note for the family doctor"]},
+      {"key": "pt", "label": "Patient instructions", "match": ["Patient instructions"]}] });</script>
 </body>
 </html>

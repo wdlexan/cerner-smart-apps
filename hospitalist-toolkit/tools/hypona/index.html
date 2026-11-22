@@ -176,5 +176,12 @@
   <script src="extras.js?v=20261117g"></script>
   <script src="hyper.js?v=20261118b"></script>
   <script src="hyperui.js?v=20261118c"></script>
+  <script src="../../subtabs.js?v=20261121d"></script>
+  <script>SubTabs.mount({ store: "hypona", top: ["#tiles", "Alerts"], tabs: [
+      {"key": "trend", "label": "Patient & trend", "match": ["Patient and situation", "Sodium trend"]},
+      {"key": "cause", "label": "Cause", "match": ["#sec-manual", "Cause workup"]},
+      {"key": "hyper", "label": "Hypernatremia", "match": ["^Hypernatremia"]},
+      {"key": "tx", "label": "Treatment & fluids", "match": ["Treatment plan", "Fluid calculator"]},
+      {"key": "note", "label": "Note draft", "match": ["#sec-note"]}] });</script>
 </body>
 </html>

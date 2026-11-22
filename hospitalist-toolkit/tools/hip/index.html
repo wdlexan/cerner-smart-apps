@@ -137,5 +137,11 @@
   <script src="../../notedraft.js?v=20261102a"></script>
   <script src="note.js?v=20261102a"></script>
   <script src="app.js?v=20261102a"></script>
+  <script src="../../subtabs.js?v=20261121d"></script>
+  <script>SubTabs.mount({ store: "hip", top: ["#tiles", "Alerts"], tabs: [
+      {"key": "pre", "label": "Pre-op", "match": ["Patient and timeline", "#sec-pre", "Anticoagulants and antiplatelets"]},
+      {"key": "post", "label": "Post-op", "match": ["#sec-post", "Pain, delirium"]},
+      {"key": "vte", "label": "VTE & bone health", "match": ["VTE prophylaxis", "Bone health"]},
+      {"key": "note", "label": "Note draft", "match": ["#sec-note"]}] });</script>
 </body>
 </html>

@@ -124,5 +124,13 @@
   <script src="samples.js?v=20261121a"></script>
   <script src="rules.js?v=20261121a"></script>
   <script src="app.js?v=20261121a"></script>
+  <script src="../../subtabs.js?v=20261121d"></script>
+  <script>SubTabs.mount({ store: "dcclinic", top: ["#verdict"], tabs: [
+      {"key": "fit", "label": "Does it fit?", "match": ["^Patient", "1. Does the patient fit"]},
+      {"key": "donot", "label": "Do not refer", "match": ["2. Do not refer"]},
+      {"key": "steps", "label": "Referral steps", "match": ["3. Referral steps"]},
+      {"key": "text", "label": "Referral text", "match": ["4. Referral text"]},
+      {"key": "pod", "label": "Physician of the Day", "match": ["5. Question before referring"]},
+      {"key": "ref", "label": "Criteria", "match": ["Clinic criteria"]}] });</script>
 </body>
 </html>
