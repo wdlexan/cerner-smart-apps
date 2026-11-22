@@ -150,11 +150,16 @@ $("ai-fp").onclick = () => {
   $("ai-panel").hidden = false;
 };
 $("ai-go").onclick = async () => { const ta = $("ai-text"); try { await navigator.clipboard.writeText(ta.value); } catch (e) { ta.select(); document.execCommand("copy"); } const url = R.claudeUrl(ta.value); window.open(url, "_blank", "noopener"); $("ai-msg").textContent = url.includes("?q=") ? "Copied and opened. If the message box in Claude is empty, paste (Ctrl+V)." : "Copied. The text is long: paste it into Claude (Ctrl+V)."; }; $("copy-pt").onclick = (e) => copy(e.target, $("out-pt"));
-$("print-pt").onclick = () => {
+const printPt = (large) => {
+  const css = large
+    ? "body{font:16pt/1.45 Arial,Helvetica,sans-serif;margin:18mm;color:#000} h2{font-size:17pt;margin:16pt 0 4pt;border-bottom:1px solid #999} li{margin:3pt 0} ul{margin:4pt 0 4pt 18pt;padding:0} p{margin:4pt 0}"
+    : "body{font:11pt/1.35 Arial,Helvetica,sans-serif;margin:15mm;color:#000} h2{font-size:12pt;margin:10pt 0 3pt;border-bottom:1px solid #999} li{margin:1pt 0} ul{margin:3pt 0 3pt 16pt;padding:0} p{margin:2pt 0}";
   const body = esc($("out-pt").value).split("\n").map((l) => (/^[A-Z0-9][A-Z0-9 ,'()\-:/.]+:?$/.test(l.trim()) && l.trim().length > 3 ? `<h2>${l}</h2>` : /^\s+- /.test(l) ? `<li>${l.replace(/^\s+- /, "")}</li>` : l.trim() ? `<p>${l}</p>` : "")).join("\n").replace(/(<li>[\s\S]*?<\/li>)(?!\s*<li>)/g, "$1</ul>").replace(/(?<!<\/li>\s*)<li>/g, "<ul><li>");
   const w = window.open("", "_blank"); if (!w) return alert("Allow pop-ups to print.");
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Your discharge instructions</title><style>body{font:16pt/1.45 Arial,Helvetica,sans-serif;margin:18mm;color:#000} h2{font-size:17pt;margin:16pt 0 4pt;border-bottom:1px solid #999} li{margin:3pt 0} ul{margin:4pt 0 4pt 18pt;padding:0} p{margin:4pt 0}</style></head><body>${body}<script>window.onload=()=>window.print()<\/script></body></html>`); w.document.close();
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Your discharge instructions</title><style>${css}</style></head><body>${body}<script>window.onload=()=>window.print()<\/script></body></html>`); w.document.close();
 };
+$("print-pt").onclick = () => printPt(true);
+$("print-pt-reg").onclick = () => printPt(false);
 
 /* ---------- loading ---------- */
 const SAMPLES = window.DC_SAMPLES || [];
