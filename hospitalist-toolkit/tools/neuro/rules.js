@@ -31,6 +31,14 @@
       ["reflexNormal", "Reflexes normal"],
       ["sensOK", "Sensation normal"],
       ["hyperacute", "Came on over hours to 2 days"]] },
+    { group: "From special bedside tests", items: [
+      ["drift", "Pronator drift / Barré leg drift / slow finger tapping on one side (subtle UMN)"],
+      ["cerebellar", "Limb ataxia: finger-nose, heel-shin, rapid alternating movements or rebound abnormal"],
+      ["romberg", "Romberg positive (steady eyes open, falls eyes closed)"],
+      ["dorsal", "Joint position or vibration sense reduced"],
+      ["corticalSens", "Cortical sensory loss (graphesthesia, stereognosis) with normal primary sensation"],
+      ["frontal", "Frontal release signs (grasp, palmomental, glabellar tap not habituating)"],
+      ["functional", "Positive functional signs (Hoover, give-way, drift without pronation)"]] },
     { group: "Head / level of consciousness", items: [
       ["drowsy", "Drowsy, confused, or new headache"],
       ["fall", "Fall or head injury"],
@@ -103,9 +111,9 @@
     { id: "sdh", name: "Subdural hematoma (acute or chronic)", card: "sdh", urg: "now", cantMiss: true,
       score: (f) => s(f, { drowsy: 2, fall: 2, gradual: 1 }) + ((f.anticoag || f.antiplt) && (f.drowsy || f.fall || f.hemi) ? 2 : 0) + (f.hemi && (f.drowsy || f.fall) ? 1 : 0) },
     { id: "stroke", name: "Stroke or TIA (use the Stroke tab / code stroke)", card: null, urg: "now", cantMiss: true,
-      score: (f) => (f.hemi ? 3 : 0) + (f.facial && !f.bulbar ? 1 : 0) - (f.fall && f.drowsy ? 1 : 0) },
+      score: (f) => (f.hemi ? 3 : 0) + (f.drift ? (f.hemi ? 1 : 3) : 0) + (f.corticalSens ? 1 : 0) + (f.facial && !f.bulbar ? 1 : 0) - (f.fall && f.drowsy ? 1 : 0) - (f.functional && !f.hyperreflex ? 1 : 0) },
     { id: "vcentral", name: "Central vertigo: posterior circulation stroke", card: "vertigo", urg: "now", cantMiss: true,
-      score: (f) => f.vertigo || f.vConstant ? s(f, { hitNormal: 3, nysCentral: 3, skew: 3, hearing: 2, cantWalk: 2 }) + (f.vConstant ? 1 : 0) : 0 },
+      score: (f) => f.vertigo || f.vConstant ? s(f, { hitNormal: 3, nysCentral: 3, skew: 3, hearing: 2, cantWalk: 2, cerebellar: 2 }) + (f.vConstant ? 1 : 0) : 0 },
     { id: "bppv", name: "BPPV", card: "vertigo", urg: "routine",
       score: (f) => s(f, { vPositional: 3, dixPos: 3 }) - (f.vConstant ? 2 : 0) - (f.nysCentral ? 3 : 0) },
     { id: "vneur", name: "Vestibular neuritis / labyrinthitis", card: "vertigo", urg: "routine",
@@ -113,7 +121,7 @@
     { id: "mening", name: "Meningitis / encephalitis (bacterial, HSV)", card: "mening", urg: "now", cantMiss: true,
       score: (f) => (f.fever || f.neckStiff ? s(f, { fever: 2, neckStiff: 3, drowsy: 1, fluct: 1, seizure: 1, immuno: 1 }) : 0) },
     { id: "wernicke", name: "Wernicke encephalopathy", card: "wernicke", urg: "now", cantMiss: true,
-      score: (f) => (f.etoh || f.ataxiaOph ? s(f, { etoh: 2, ataxiaOph: 3, drowsy: 1, fluct: 1 }) : 0) },
+      score: (f) => (f.etoh || f.ataxiaOph ? s(f, { etoh: 2, ataxiaOph: 3, drowsy: 1, fluct: 1, cerebellar: 1 }) : 0) },
     { id: "ncse", name: "Non-convulsive status epilepticus", card: "ncse", urg: "now", cantMiss: true,
       score: (f) => s(f, { fluct: 3, seizure: 2 }) + (f.drowsy && (f.fluct || f.seizure) ? 1 : 0) },
     { id: "sah", name: "Subarachnoid hemorrhage", card: "headache", urg: "now", cantMiss: true,
@@ -133,9 +141,56 @@
     { id: "hypok", name: "Hypokalemic weakness", card: "weak", urg: "today", score: (f) => (f.lowK ? 3 : 0) + (f.para || f.prox ? 1 : 0) },
     { id: "myo", name: "Myopathy / rhabdomyolysis / myositis", card: "weak", urg: "today", score: (f) => s(f, { prox: 2, highCK: 3 }) - (f.areflex ? 1 : 0) },
     { id: "neurop", name: "Peripheral neuropathy (B12, alcohol, diabetes, chemo)", card: "weak", urg: "routine",
-      score: (f) => s(f, { distalNumb: 2, areflex: 1 }) - (f.ascend ? 2 : 0) - (f.sensLevel ? 2 : 0) },
+      score: (f) => s(f, { distalNumb: 2, areflex: 1, dorsal: 1, romberg: 1 }) - (f.ascend ? 2 : 0) - (f.sensLevel ? 2 : 0) },
+    { id: "scd", name: "B12 or copper deficiency (subacute combined degeneration)", card: "weak", urg: "today",
+      score: (f) => (f.dorsal || f.romberg ? s(f, { dorsal: 2, romberg: 2, hyperreflex: 1, distalNumb: 1, etoh: 1 }) : 0) },
+    { id: "functional", name: "Functional neurological disorder (positive signs)", card: "weak", urg: "routine",
+      score: (f) => (f.functional ? 3 : 0) - (f.hyperreflex || f.sensLevel || f.wasting ? 2 : 0) },
     { id: "mono", name: "Single nerve or root lesion (compression palsy, radiculopathy)", card: "weak", urg: "routine", score: (f) => (f.single ? 3 : 0) }];
   function s(f, w) { let n = 0; for (const k in w) if (f[k]) n += w[k]; return n; }
+
+  /* ---------- special bedside tests: how to do them, what abnormal means, which finding an abnormal result ticks ----------
+     UNVERIFIED summaries written by Claude from general knowledge; sensitivity notes are approximate. */
+  const EXAM = [
+    { group: "Subtle upper motor neuron (corticospinal)", tests: [
+      { id: "pronator", name: "Pronator drift", how: "Arms out straight, palms up, eyes closed, 20–30 s.", abn: "One arm pronates and drifts down.", means: "Subtle corticospinal weakness on that side (opposite brain).", sets: ["drift"] },
+      { id: "barre", name: "Barré leg drift", how: "Prone with knees flexed to 90°, or supine with hips and knees flexed, hold 30 s.", abn: "One leg drifts down.", means: "Subtle pyramidal weakness of that leg.", sets: ["drift"] },
+      { id: "tapping", name: "Finger / foot tapping speed", how: "Tap index finger on thumb (or foot on floor) fast for 10 s, each side.", abn: "Slower or smaller on one side.", means: "Subtle corticospinal deficit; smaller and fading amplitude suggests parkinsonism.", sets: ["drift"] },
+      { id: "hoffmann", name: "Hoffmann sign", how: "Flick the nail of the middle finger downward.", abn: "Thumb and index finger flex.", means: "Hyperreflexia: corticospinal lesion above C5-6 (cervical cord or brain). Can be normal if symmetric with brisk reflexes everywhere.", sets: ["hyperreflex"] },
+      { id: "babinski", name: "Plantar response (Babinski)", how: "Stroke the outer sole from heel toward the little toe, then across.", abn: "Big toe goes up, other toes fan.", means: "Upper motor neuron lesion.", sets: ["hyperreflex"] }] },
+    { group: "Cerebellar", tests: [
+      { id: "fnf", name: "Finger-nose-finger", how: "Touch your finger then their nose, with your finger moving; eyes open.", abn: "Intention tremor, past-pointing.", means: "Cerebellar hemisphere on the same side. (Weakness can make it look clumsy: test strength first.)", sets: ["cerebellar"] },
+      { id: "hks", name: "Heel-knee-shin", how: "Lying down, heel on the opposite knee, slide down the shin to the ankle.", abn: "Wobbles or falls off the shin.", means: "Cerebellar (same side); with eyes-closed worsening, think proprioception loss.", sets: ["cerebellar"] },
+      { id: "dysdiado", name: "Rapid alternating movements", how: "Pat the palm then the back of the hand on the thigh, fast.", abn: "Slow, irregular, clumsy rhythm (dysdiadochokinesia).", means: "Cerebellar on the same side.", sets: ["cerebellar"] },
+      { id: "rebound", name: "Rebound (check) test", how: "Patient pulls against your hand with arm flexed; let go suddenly (guard their face).", abn: "Arm overshoots and hits.", means: "Cerebellar.", sets: ["cerebellar"] },
+      { id: "tandem", name: "Tandem gait", how: "Heel-to-toe walk in a straight line, 10 steps.", abn: "Cannot do it, steps off the line.", means: "Non-specific: midline cerebellar (vermis), sensory or vestibular. Inability to walk at all with acute vertigo is a central sign.", sets: [] }] },
+    { group: "Sensory and balance", tests: [
+      { id: "romberg", name: "Romberg", how: "Feet together, steady with eyes open first; then close eyes for 30 s. Stand close to catch.", abn: "Steady with eyes open, sways or falls with eyes closed.", means: "Sensory ataxia (dorsal columns, large-fibre neuropathy) or vestibular loss. Not a cerebellar test.", sets: ["romberg"] },
+      { id: "jps", name: "Joint position and vibration", how: "Eyes closed: move the great toe up or down in small steps; 128 Hz tuning fork on the great toe, then ankle, knee.", abn: "Wrong direction, or vibration reduced.", means: "Dorsal columns or large-fibre neuropathy: B12, copper, diabetes, syphilis, cord compression.", sets: ["dorsal"] },
+      { id: "cortical", name: "Graphesthesia / stereognosis", how: "Eyes closed: trace a number on the palm; place a coin or key in the hand.", abn: "Cannot identify, with normal touch and pain.", means: "Opposite parietal cortex.", sets: ["corticalSens"] }] },
+    { group: "Meningeal irritation", tests: [
+      { id: "kernig", name: "Kernig sign", how: "Supine, hip and knee at 90°, then straighten the knee.", abn: "Pain and resistance in the hamstrings or back.", means: "Meningeal irritation. Low sensitivity: a negative test does NOT rule out meningitis.", sets: ["neckStiff"] },
+      { id: "brudz", name: "Brudzinski sign", how: "Supine, passively flex the neck.", abn: "Hips and knees flex.", means: "Meningeal irritation. Low sensitivity, like Kernig.", sets: ["neckStiff"] },
+      { id: "jolt", name: "Jolt accentuation", how: "Turn the head side to side 2–3 times a second.", abn: "Headache gets worse.", means: "Suggests meningitis in fever + headache; later studies found it less sensitive than first reported. Do LP if suspected anyway.", sets: ["neckStiff"] }] },
+    { group: "Neuromuscular junction (myasthenia)", tests: [
+      { id: "upgaze", name: "Sustained upgaze (Simpson)", how: "Look up without blinking for 60 s.", abn: "Eyelids droop progressively (± double vision).", means: "Fatigable ptosis: myasthenia.", sets: ["fatig", "ptosis"] },
+      { id: "curtain", name: "Curtain sign (enhanced ptosis)", how: "Lift the more droopy lid by hand.", abn: "The other lid drops.", means: "Bilateral NMJ weakness masked by frontalis effort: myasthenia.", sets: ["ptosis"] },
+      { id: "cogan", name: "Cogan lid twitch", how: "Look down 10–15 s, then quickly back to straight ahead.", abn: "Upper lid overshoots upward briefly.", means: "Myasthenia.", sets: ["fatig", "ptosis"] },
+      { id: "icepack", name: "Ice-pack test", how: "Ice pack (in a glove) on the closed droopy lid for 2 min.", abn: "Ptosis improves by 2 mm or more.", means: "Supports myasthenia (cold improves NMJ transmission).", sets: ["fatig", "ptosis"] },
+      { id: "neckflex", name: "Neck flexion / count to 50", how: "Test neck flexion strength; count aloud on one breath.", abn: "Weak neck flexion; cannot count past about 20.", means: "Bulbar/respiratory involvement in MG or GBS: measure FVC/NIF now.", sets: ["bulbar"] }] },
+    { group: "Frontal release", tests: [
+      { id: "grasp", name: "Grasp reflex", how: "Stroke the palm from wrist to fingers while distracting the patient.", abn: "Involuntary grasp.", means: "Opposite frontal lobe, especially if one-sided.", sets: ["frontal"] },
+      { id: "palmomental", name: "Palmomental reflex", how: "Stroke the thenar eminence.", abn: "Same-side chin twitch.", means: "Non-specific; common in older adults.", sets: ["frontal"] },
+      { id: "glabellar", name: "Glabellar tap (Myerson)", how: "Tap between the eyebrows from above (out of view), 10 times.", abn: "Keeps blinking, does not habituate.", means: "Parkinsonism or diffuse frontal dysfunction.", sets: ["frontal"] }] },
+    { group: "Functional (positive signs)", tests: [
+      { id: "hoover", name: "Hoover sign", how: "Hand under the weak heel: ask to push the weak leg down (weak), then to lift the good leg against resistance.", abn: "Weak leg pushes down strongly when the good leg lifts.", means: "Functional leg weakness (positive sign, not exclusion).", sets: ["functional"] },
+      { id: "giveway", name: "Give-way / collapsing weakness", how: "Test power with steady pressure.", abn: "Full power briefly, then sudden collapse.", means: "Supports functional weakness; pain or poor effort can do the same.", sets: ["functional"] },
+      { id: "driftNoPron", name: "Drift without pronation", how: "As for pronator drift.", abn: "Arm drops straight down without pronating.", means: "Suggests functional weakness.", sets: ["functional"] },
+      { id: "abductor", name: "Hip abductor sign", how: "Supine, ask to abduct each leg against resistance while feeling the other leg.", abn: "Weak leg abducts strongly when the good leg abducts.", means: "Functional leg weakness.", sets: ["functional"] }] },
+    { group: "Brainstem and vestibular", tests: [
+      { id: "hints", name: "HINTS (constant vertigo with nystagmus only)", how: "Head impulse, nystagmus direction, test of skew (alternate cover). Use the Vertigo ticks above for each part.", abn: "Normal head impulse, direction-changing or vertical nystagmus, or skew.", means: "Central (posterior circulation stroke). Any one central sign is enough.", sets: ["vertigo", "vConstant"] },
+      { id: "dix", name: "Dix-Hallpike", how: "Sit, head turned 45°, lie back quickly with the head 20° below the bed; watch 30 s.", abn: "Brief up-beating torsional nystagmus toward the lower ear, with vertigo.", means: "Posterior canal BPPV: Epley manoeuvre.", sets: ["vertigo", "vPositional", "dixPos"] },
+      { id: "dolls", name: "Doll's eyes (oculocephalic)", how: "Comatose patient only, cervical spine cleared: turn the head side to side.", abn: "Eyes move with the head (no counter-rotation).", means: "Brainstem dysfunction in coma. In an awake patient, use the head impulse test instead.", sets: ["drowsy"] }] }];
 
   /* ---------- where is the lesion? UMN (brain / cord) vs LMN (root, nerve) vs junction vs muscle ---------- */
   const LEVELS = {
@@ -152,9 +207,9 @@
   function localize(f) {
     const umn = f.hyperreflex || f.spastic, lmnSigns = f.areflex || f.flaccid || f.wasting || f.fascic, pure = f.reflexNormal && f.sensOK && !umn && !lmnSigns;
     const sc = {
-      brain: (f.hemi ? 3 : 0) + (f.hemi && umn ? 1 : 0) + (f.facial && f.hemi ? 1 : 0) - (f.sensLevel ? 3 : 0),
+      brain: (f.hemi ? 3 : 0) + (f.drift ? 2 : 0) + (f.corticalSens ? 2 : 0) + (f.frontal ? 1 : 0) + (f.hemi && umn ? 1 : 0) + (f.facial && f.hemi ? 1 : 0) - (f.sensLevel ? 3 : 0),
       cord: (f.sensLevel ? 3 : 0) + (f.para && umn ? 2 : 0) + (f.retention && f.para ? 1 : 0) + (f.para && f.hyperacute && lmnSigns && (f.sensLevel || f.retention) ? 1 : 0) - (f.hemi && !f.para ? 2 : 0) - (f.saddle ? 2 : 0),
-      lmn: s(f, { areflex: 2, flaccid: 1, wasting: 2, fascic: 2, single: 2, distalNumb: 1, saddle: 3, ascend: 1 }) - (f.sensLevel ? 3 : 0) - (umn ? 2 : 0),
+      lmn: s(f, { areflex: 2, flaccid: 1, wasting: 2, fascic: 2, single: 2, distalNumb: 1, saddle: 3, ascend: 1 }) + (f.dorsal && f.areflex ? 1 : 0) - (f.sensLevel ? 3 : 0) - (umn ? 2 : 0),
       nmj: s(f, { fatig: 3, ptosis: 2, bulbar: 1, descend: 2, pupils: 1 }) + (pure ? 1 : 0) - (f.areflex && !f.descend ? 1 : 0) - (f.distalNumb ? 1 : 0),
       muscle: s(f, { prox: 2, highCK: 3, lowK: 1 }) + (pure ? 1 : 0) - (f.ptosis ? 2 : 0) - (f.distalNumb ? 1 : 0) };
     const order = Object.keys(sc).sort((a, b) => sc[b] - sc[a]);
@@ -165,6 +220,12 @@
     if (f.saddle) warn.push("Cauda equina is LMN (absent ankle reflexes, floppy) even though it is in the spinal canal: MRI lumbosacral spine now.");
     if (f.ascend && !f.areflex && !umn) warn.push("Reflexes can still be present in the first 1–2 days of GBS: do not rule it out on reflexes alone.");
     if (f.ptosis && f.pupils) warn.push("Pupils involved: not myasthenia (MG spares the pupil). Think botulism or a third nerve palsy (aneurysm).");
+    if (f.cerebellar && !f.hemi) warn.push("Limb ataxia without weakness: cerebellum (same side as the clumsy limb). With vertigo, treat as posterior circulation stroke until MRI; think Wernicke if alcohol or malnutrition.");
+    if (f.romberg && !f.cerebellar) warn.push("Romberg positive means sensory ataxia (dorsal columns or large-fibre neuropathy) or vestibular loss, not cerebellar: check vibration and joint position; B12, copper, syphilis, diabetes.");
+    if (f.romberg && f.cerebellar) warn.push("Cerebellar signs plus Romberg: the cerebellar patient is unsteady with eyes open too, so Romberg is unreliable here.");
+    if (f.dorsal && (f.hyperreflex || f.spastic)) warn.push("Dorsal column loss with brisk reflexes (± absent ankle jerks): subacute combined degeneration (B12, copper, nitrous oxide) or cervical myelopathy.");
+    if (f.functional) warn.push("Functional signs support functional disorder but do not exclude disease: about 1 in 10 also have a neurological condition. Still image if the history or other signs fit.");
+    if (f.frontal) warn.push("Frontal release signs are non-specific in older or delirious patients; significant only if new, one-sided (grasp), or with other frontal signs.");
     if (f.hemi && f.lowGlu) warn.push("One-sided weakness with low glucose: correct glucose and re-examine before calling it a stroke.");
     return { level: top, name: top ? LEVELS[top].name : null, test: top ? LEVELS[top].test : null, scores: sc, next: order[1] && sc[order[1]] >= 3 && sc[order[1]] >= sc[order[0]] - 1 ? order[1] : null, warn };
   }
@@ -189,7 +250,9 @@
     ncse: ["fluct", "seizure", "drowsy"], sah: ["thunder", "neckStiff", "drowsy", "seizure", "anticoag", "antiplt"],
     cvst: ["headPos", "clotRisk", "seizure", "hemi", "drowsy", "visual"], dissect: ["neckPain", "horner", "hemi", "vertigo", "cantWalk"],
     myelitis: ["mriNoComp", "sensLevel", "para", "retention", "hyperreflex", "knownMS"], botul: ["descend", "pupils", "tick", "botRisk", "noSens", "bulbar", "ptosis"],
-    hypogly: ["lowGlu", "hemi", "drowsy", "seizure", "fluct"], pres: ["htn", "presRisk", "visual", "seizure", "drowsy"] };
+    hypogly: ["lowGlu", "hemi", "drowsy", "seizure", "fluct"], pres: ["htn", "presRisk", "visual", "seizure", "drowsy"],
+    scd: ["dorsal", "romberg", "hyperreflex", "distalNumb", "etoh"], functional: ["functional"] };
+  ["drift", "corticalSens"].forEach((k) => WHY.stroke.push(k)); WHY.vcentral.push("cerebellar"); WHY.wernicke.push("cerebellar"); WHY.neurop.push("dorsal", "romberg");
   const why = (d, f) => (WHY[d.id] || []).filter((k) => f[k]).map((k) => LABEL[k]);
 
   /* ---------- breathing in GBS / MG: the 20/30/40 rule ----------
@@ -316,6 +379,6 @@
       : { lvl: "ok", text: "Constant vertigo with an ABNORMAL head impulse, one-direction horizontal nystagmus, no skew, normal hearing and able to walk: peripheral (vestibular neuritis) is likely. Only reliable if HINTS was done by a confident examiner." };
   }
 
-  const api = { FINDINGS, LABEL, DX, rank, localize, LEVELS, breathing, mgCheck, MG_DRUGS, antithrombotics, pseudoRelapse, bladder, gcsTrend, hints };
+  const api = { FINDINGS, LABEL, DX, rank, localize, LEVELS, EXAM, breathing, mgCheck, MG_DRUGS, antithrombotics, pseudoRelapse, bladder, gcsTrend, hints };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.NeuroRules = api;
 })(typeof window !== "undefined" ? window : globalThis);

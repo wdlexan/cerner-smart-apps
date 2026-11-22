@@ -5,7 +5,7 @@ const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": 
 const fmt = (t) => new Date(t).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 const H = 36e5;
 
-const state = { f: null, ticks: {}, auto: {}, pres: "all", typed: [], work: null, card: "weak" };
+const state = { f: null, ticks: {}, auto: {}, pres: "all", typed: [], work: null, card: "weak", exam: {}, examKeys: {} };
 
 /* ---------- presentation buttons: which findings groups to highlight ---------- */
 const PRES = [
@@ -46,6 +46,26 @@ function drawLoc() {
     : `<div class="muted">Tick reflexes, tone, bulk and sensation to see the level.</div>`)
     + L.warn.map((w) => `<div class="alert action">${esc(w)}</div>`).join("");
   $("locsum").textContent = lv ? lv.name.split(" (")[0] : "";
+}
+
+/* ---------- special bedside tests ---------- */
+const EXAM_ALL = R.EXAM.flatMap((g) => g.tests);
+function drawExam() {
+  $("exam").innerHTML = R.EXAM.map((g) => {
+    const done = g.tests.filter((t) => state.exam[t.id]).length, abn = g.tests.filter((t) => state.exam[t.id] === "abn").length;
+    return `<details class="exgrp"${done ? " open" : ""}><summary>${esc(g.group)} <span class="muted" style="font-weight:normal">${done ? `${done} done${abn ? `, ${abn} abnormal` : ""}` : ""}</span></summary>` +
+      g.tests.map((t) => `<div class="exrow ${state.exam[t.id] === "abn" ? "abn" : ""}"><div class="nm"><details><summary>${esc(t.name)}</summary>
+          <div class="how"><b>How:</b> ${esc(t.how)}<br><b>Abnormal:</b> ${esc(t.abn)}<br><b>Means:</b> ${esc(t.means)}${t.sets.length ? `<br><span class="sets">Abnormal ticks: ${esc(t.sets.map((k) => R.LABEL[k]).join("; "))}</span>` : ""}</div></details></div>
+        <div class="rad">${[["", "Not done"], ["normal", "Normal"], ["abn", "Abnormal"]].map(([v, l]) => `<label><input type="radio" name="ex-${t.id}" value="${v}"${(state.exam[t.id] || "") === v ? " checked" : ""}> ${l}</label>`).join("")}</div></div>`).join("") + `</details>`;
+  }).join("");
+  $("exam").querySelectorAll("input[type=radio]").forEach((r) => (r.onchange = () => { const id = r.name.slice(3); if (r.value) state.exam[id] = r.value; else delete state.exam[id]; applyExam(); drawExam(); drawTicks(); draw(); }));
+  const n = Object.keys(state.exam).length, a = Object.values(state.exam).filter((v) => v === "abn").length;
+  $("examsum").textContent = n ? `${n} done, ${a} abnormal` : "";
+}
+function applyExam() {
+  const want = {}; EXAM_ALL.filter((t) => state.exam[t.id] === "abn").forEach((t) => t.sets.forEach((k) => (want[k] = true)));
+  Object.keys(state.examKeys).forEach((k) => { if (!want[k]) { state.ticks[k] = false; delete state.examKeys[k]; } }); // undo ticks only the tests had set
+  Object.keys(want).forEach((k) => { if (!state.ticks[k]) { state.ticks[k] = true; state.examKeys[k] = true; } });
 }
 
 /* ---------- derived facts ---------- */
@@ -194,6 +214,8 @@ function neuroNote() {
   const work = state.work ? R.DX.find((d) => d.id === state.work) : null;
   if (work) S.assess.push("Working diagnosis: " + work.name + ".");
   if (found.length) S.assess.push("Findings: " + found.join("; ") + ".");
+  const exAbn = EXAM_ALL.filter((t) => state.exam[t.id] === "abn").map((t) => t.name), exNorm = EXAM_ALL.filter((t) => state.exam[t.id] === "normal").map((t) => t.name);
+  if (exAbn.length || exNorm.length) S.data.push("Bedside tests: " + [exAbn.length ? "abnormal: " + exAbn.join(", ") : "", exNorm.length ? "normal: " + exNorm.join(", ") : ""].filter(Boolean).join("; ") + ".");
   const loc = R.localize(T); if (loc.level) S.assess.push("Localization: " + R.LEVELS[loc.level].name + (loc.next ? " (or " + R.LEVELS[loc.next].name + ")" : "") + ".");
   const others = x.ranked.filter((d) => d.id !== state.work).slice(0, 4);
   if (others.length) S.assess.push((work ? "Also considered: " : "Differential: ") + others.map((d) => d.name + (d.cantMiss ? " (can't miss)" : "")).join("; ") + ".");
@@ -246,14 +268,14 @@ function autoTicks(f) {
 function load(raw, note, errors, preset) {
   state.f = raw ? C.parse(raw) : null; state.typed = []; state.work = null;
   state.auto = state.f ? autoTicks(state.f) : {};
-  state.ticks = {}; Object.keys(state.auto).forEach((k) => (state.ticks[k] = true));
+  state.ticks = {}; state.exam = {}; state.examKeys = {}; Object.keys(state.auto).forEach((k) => (state.ticks[k] = true));
   if (preset) { (preset.ticks || []).forEach((k) => (state.ticks[k] = true)); state.card = preset.card || state.card; }
   $("wt").value = state.f && state.f.weight ? state.f.weight.v : "";
   const p = raw && raw.patient, nm = p && p.name && p.name[0];
   $("ptsum").textContent = nm ? `${(nm.given || []).join(" ")} ${nm.family || ""}${state.f.ageYears != null ? " · " + state.f.ageYears + " y" : ""}` : "";
   $("pstatus").textContent = note; $("clear").hidden = !raw;
   $("errs").innerHTML = errors && errors.length ? "Could not read: " + errors.map(esc).join("; ") + (errors.some((e) => /\b40[13]\b|Unauthorized|Forbidden/i.test(e)) ? ". Check the scopes in the Code Console." : ". Cerner's sandbox can be slow: reload the patient to try again.") : "";
-  drawTicks(); draw(); NOTE.reset();
+  drawExam(); drawTicks(); draw(); NOTE.reset();
 }
 $("clear").onclick = () => { $("testsel").value = ""; load(null, "Open from Cerner to read the chart, or pick a made-up patient:"); };
 const SAMPLES = window.NEURO_SAMPLES || [];
@@ -269,6 +291,6 @@ async function fromChart() {
     load(raw, "Chart read (read-only). Nothing is sent anywhere. Tick what you find at the bedside.", errors);
   } catch (e) { $("pstatus").textContent = "Could not read the chart: " + (e && e.message ? e.message : e) + ". The made-up patients still work."; }
 }
-drawPres(); drawTicks(); draw(); fromChart();
+drawPres(); drawExam(); drawTicks(); draw(); fromChart();
 // ?demo=1..6 opens a made-up patient directly
 (() => { const d = parseInt(new URLSearchParams(location.search).get("demo"), 10); if (d >= 1 && d <= SAMPLES.length) { $("testsel").value = d - 1; $("testsel").onchange(); } })();

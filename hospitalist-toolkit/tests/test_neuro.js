@@ -53,6 +53,19 @@ eq("UMN + LMN together warns (ALS etc.)", lv(["hyperreflex", "fascic", "wasting"
 eq("pupils + ptosis warns not MG", lv(["ptosis", "pupils", "descend"]).warn.some((w) => /botulism/.test(w)), true);
 eq("nothing ticked -> no level", lv([]).level, null);
 
+// special bedside tests
+eq("every bedside test ticks a known finding", R.EXAM.flatMap((g) => g.tests).every((t) => t.sets.every((k) => R.LABEL[k])), true);
+eq("drift alone is not enough to name a level", lv(["drift"]).level, null);
+eq("drift + cortical sensory loss -> brain", lv(["drift", "corticalSens"]).level, "brain");
+eq("drift alone lists stroke", has(["drift"], "stroke"), true);
+eq("Romberg + vibration loss + brisk reflexes -> B12/copper", top(["romberg", "dorsal", "hyperreflex"]), "scd");
+eq("Romberg without cerebellar signs warns sensory ataxia", lv(["romberg"]).warn.some((w) => /sensory ataxia/.test(w)), true);
+eq("cerebellar signs + constant vertigo -> central vertigo", top(["vertigo", "vConstant", "cerebellar"]), "vcentral");
+eq("Hoover positive -> functional listed", has(["functional"], "functional"), true);
+eq("functional with brisk reflexes is pushed out", has(["functional", "hyperreflex"], "functional"), false);
+eq("upgaze + Cogan (fatig, ptosis) -> MG", top(["fatig", "ptosis"]), "mg");
+eq("Kernig positive with fever -> meningitis", top(["neckStiff", "fever"]), "mening");
+
 // breathing 20/30/40
 const h = 36e5;
 let b = R.breathing([{ t: 0, fvc: 1.5 }], 80); eq("FVC 1.5 L / 80 kg = 19 mL/kg", b.fvcPerKg, 19); eq("-> ICU", b.icu, true);
