@@ -166,8 +166,11 @@
   /* patient details printed on the report, to prefill a "separate patient" (always shown to the physician to check) */
   const STOP = /\s{2,}|\t|\b(dob|d\.o\.b\.?|date of birth|birth ?date|sex|gender|mrn|phn|hcn|age|collected|dos|visit|location|ward|room|provider|physician|dr\.?)\b/i;
   const title = (w) => w.toLowerCase().replace(/(^|[\s'’-])([a-z])/g, (m, a, b) => a + b.toUpperCase());
+  /* pasted text often loses its line breaks ("Arthur PendeltonDate of Birth: …MalePersonal Health Number …"): put each known label back on its own line */
+  const GLUED = /(?<=[a-z0-9)\].])(?=(?:Patient Name|Name|Date of Birth|DOB|Birth ?Date|Age|Sex|Gender|Personal Health Number|PHN|Health Card|MRN|Medical Record|Address|Home Address|Home Phone|Phone|Telephone|Cell|Mobile|Emergency Contact|Next of Kin|NOK|Primary Care Provider|Family (?:Physician|Doctor)|GP|Preferred Language|Language|Code Status|Allergies|Admission Date|Admit Date|Attending|MRP)\b\s*(?:\/[^:\n]{0,20})?(?:\([^)\n]{0,10}\))?\s*:)/g;
+  const unglue = (t) => String(t || "").replace(GLUED, "\n");
   function demographics(text) {
-    const out = {}, lines = String(text || "").split(/\r?\n/).slice(0, 80);
+    const out = {}, lines = unglue(text).split(/\r?\n/).slice(0, 80);
     for (const ln of lines) {
       let m;
       if (!out.name && (m = ln.match(/\b(?:patient(?:\s+name)?|pt\.?\s*name|name)\s*[:#]\s*(.+)$/i))) {
@@ -181,7 +184,7 @@
       if (!out.birthDate && (m = ln.match(/\b(?:dob|d\.o\.b\.?|date of birth|birth ?date)\s*[:#]?\s*(.{6,24})/i))) { const d = findDate(m[1]); if (d) { out.birthDate = iso(d.t); out.birthAmbiguous = !!d.ambiguous; } }
       if (out.age == null && (m = ln.match(/\bage\s*[:#]?\s*(\d{1,3})\b/i) || ln.match(/\b(\d{1,3})\s*(?:y\/o|yo|years? old|year-old|yrs?\b)/i))) { const a = +m[1]; if (a > 0 && a < 120) out.age = a; }
       if (!out.sex && (m = ln.match(/\b(?:sex|gender)\s*[:#]?\s*(male|female|m|f)\b/i))) out.sex = /^f/i.test(m[1]) ? "female" : "male";
-      if (!out.phn && (m = ln.match(/\b(?:phn|personal health number|hcn)\s*[:#]?\s*(\d[\d\s]{8,14}\d)/i))) { const d = m[1].replace(/\s/g, ""); if (d.length === 10) out.phn = d; }
+      if (!out.phn && (m = ln.match(/\b(?:phn|personal health number|hcn)\s*(?:\((?:phn|hcn)\))?\s*[:#]?\s*(\d[\d\s]{8,14}\d)/i))) { const d = m[1].replace(/\s/g, ""); if (d.length === 10) out.phn = d; }
       if (!out.mrn && (m = ln.match(/\b(?:mrn|medical record(?: number| no\.?| #)?|chart(?: number| no\.?| #))\s*[:#]?\s*([A-Z0-9][A-Z0-9-]{3,14})\b/i))) out.mrn = m[1];
     }
     // typed notes: "SMITH, John, 76 M", "John Smith 76F", "Mrs. Mary Jones (DOB …)", "76 yo male"
@@ -208,7 +211,7 @@
     if (!out.street) {
       const PROV = "British Columbia|BC|B\\.C\\.|Alberta|AB|Saskatchewan|SK|Manitoba|MB|Ontario|ON|Quebec|QC|Yukon|YT|Nunavut|NU|Northwest Territories|NT|New Brunswick|NB|Nova Scotia|NS|Prince Edward Island|PE|Newfoundland and Labrador|NL";
       const CITY = new RegExp("^([A-Z][A-Za-z.'’ -]{1,40}?),?\\s+(" + PROV + ")\\.?,?\\s+([A-Z]\\d[A-Z]\\s?\\d[A-Z]\\d)\\b", "i");
-      const STREET = /^(?:(?:unit|suite|apt\.?|#)\s*\w+\s*[-,]?\s*)?\d{1,6}[A-Za-z]?\s+(?:[A-Za-z0-9.'’-]+\s+){0,4}?(?:street|st|road|rd|avenue|ave|drive|dr|crescent|cres|way|place|pl|court|ct|lane|ln|boulevard|blvd|crossing|terrace|trail|close|circle|highway|hwy|row|gate|grove|heights|hts|park|square|sq|parkway|pkwy|landing|walk|view|ridge|green)\b\.?(?:\s+(?:north|south|east|west|[NSEW]))?(?:\s*(?:#|unit|suite|apt\.?)\s*\w+)?/i;
+      const STREET = /^(?:(?:unit|suite|apt\.?|#)\s*\w+\s*[-,]?\s*)?\d{1,6}[A-Za-z]?\s+(?:[A-Za-z0-9.'’-]+\s+){0,4}?(?:street|st|road|rd|avenue|ave|drive|dr|crescent|cres|way|place|pl|court|ct|lane|ln|boulevard|blvd|crossing|terrace|trail|close|circle|highway|hwy|row|gate|grove|heights|hts|park|square|sq|parkway|pkwy|landing|walk|view|ridge|green)\b\.?(?:\s+(?:north|south|east|west|[NSEW]))?(?:\s*,?\s*(?:#|unit|suite|apt\.?)\s*\w+)?/i;
       for (let i = 0; i < head.length; i++) {
         let l = head[i].replace(/^(?:address|home address|addr)\s*[:#.]?\s*/i, ""), m = STREET.exec(l);
         if (!m) continue;

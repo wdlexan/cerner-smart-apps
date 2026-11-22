@@ -257,4 +257,7 @@ Doing well on treatment. Sodium 131 mmol/L today. Continue the current plan and 
   ok("unit number kept", X.demographics("Unit 4 - 980 Testing Road\nLangford, BC V9B 1B1").address === "Unit 4 - 980 Testing Road, Langford, BC V9B 1B1");
   ok("lab line is not an address", !X.demographics("Sodium 128 mmol/L\n2 units given").street);
 }
+// pasted text with the line breaks lost: labels run together
+{ const d = X.demographics("Patient Name: Arthur PendeltonDate of Birth / Age: April 14, 1948 (78 years old)Sex / Gender: MalePersonal Health Number (PHN): 9000 123 456 (fictitious)Address: 1420 Cedar Hill Cross Road, Apt 304, Victoria, BC V8P 2P1Phone: (250) 555-0194Emergency Contact: Margaret Pendelton (Spouse) – (250) 555-0198Primary Care Provider: Dr. Elena Vance");
+  ok("glued labels: name, DOB, sex, PHN, phone, address", d.given === "Arthur" && d.family === "Pendelton" && d.birthDate === "1948-04-14" && d.sex === "male" && d.phn === "9000123456" && d.phone === "250-555-0194" && d.city === "Victoria" && d.postal === "V8P 2P1" && /Apt 304/.test(d.street), d); }
 console.log(`\n${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);
