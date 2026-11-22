@@ -1,4 +1,4 @@
-/* Brain map – schematic lateral + midline views.
+/* Brain map – lateral + midline views (watercolor illustrations with regions traced over them).
  * "This patient": regions implied by ticked symptoms (orange), regions abnormal on imaging (blue), both = concordant (green).
  * "Typical pattern of <type>": the usual regions for that dementia (purple).
  * Schematic only – region shapes are approximate. Uses globals from app.js: S, on, evaluate, esc. */
@@ -43,16 +43,17 @@ const TYPE_REGIONS = {
   rpd: ["frontal", "parietal", "occipital", "caudate", "thalamus"], alc: ["mamillary", "thalamus", "cerebellum"], dep: ["medfrontal"],
   psp: ["midbrain", "frontal"], cbs: ["perirolandic", "parietal", "frontal"], msa: ["pons", "cerebellum", "caudate"], hd: ["caudate", "frontal"], als: ["perirolandic", "pons", "frontal"]
 };
-const LABEL_POS = { // label anchor points for the labelled (PDF) version
-  frontal: [95, 105], perirolandic: [205, 70], parietal: [265, 85], occipital: [335, 140], temporal: [225, 195], anttemp: [92, 205], perisylvian: [170, 158],
-  cerebellum: [300, 240]
+const LAT_LABEL_IMG = { // side-view label points, in illustration pixels (converted with latPt)
+  frontal: [300, 360], perirolandic: [492, 290], parietal: [615, 320], occipital: [770, 455], temporal: [575, 495], anttemp: [385, 560],
+  perisylvian: [500, 432], cerebellum: [676, 625]
 };
 const MID_LABEL_IMG = { // midline label points, in illustration pixels (converted with midPt)
   medfrontal: [330, 300], precuneus: [610, 290], occipital: [775, 450], hippocampus: [405, 600], mamillary: [395, 515], thalamus: [470, 472],
   caudate: [350, 470], ventricles: [430, 436], whitematter: [470, 404], midbrain: [512, 532], pons: [520, 630], cerebellum: [668, 620]
 };
 
-const MID = { x0: 440, y0: 24, k: 0.47 }; // where the illustration sits in the 800×300 drawing
+const MID = { x0: 440, y0: 24, k: 0.47 }, LAT = { x0: 30, y0: 24, k: 0.47 }; // where the two illustrations sit in the 800×300 drawing
+const latPt = (x, y) => [Math.round(LAT.x0 + (x - 150) * LAT.k), Math.round(LAT.y0 + (y - 210) * LAT.k)];
 const midPt = (x, y) => [Math.round(MID.x0 + (x - 150) * MID.k), Math.round(MID.y0 + (y - 210) * MID.k)];
 function brainSVG(fills, opts = {}) {
   // fills: {regionId: {fill, stroke}}; opts.labels: show region names
@@ -62,28 +63,27 @@ function brainSVG(fills, opts = {}) {
     const base = /cerebellum|pons|midbrain|thalamus|caudate|hippocampus|mamillary|ventricles|whitematter/.test(id) ? "#d3d9e2" : "#e7ebf1";
     return shape.replace(/\/>$/, ` data-r="${id}" fill="${st.fill || base}" fill-opacity="${st.fill ? 0.85 : 1}" stroke="${st.stroke || "#ffffff"}" stroke-width="${st.stroke ? 3 : 1.5}"><title>${esc(BRAIN_REGIONS[id].name)} — ${esc(BRAIN_REGIONS[id].fn)}</title></${tag}>`);
   };
-  const outlineL = "M40,150 C38,80 110,28 200,28 C292,28 352,78 352,138 C352,176 336,196 314,206 C298,212 282,210 268,215 L248,223 C222,233 188,236 162,229 C138,223 118,226 98,216 C68,206 42,190 40,150 Z";
-  // midline view: the watercolor illustration (brain-midline.jpg, cropped 730×580 from the 1024×834 original) with regions traced over it in image pixels
+  // both views are the watercolor illustrations (brain-lateral.jpg and brain-midline.jpg); midline view: the watercolor illustration (brain-midline.jpg, cropped 730×580 from the 1024×834 original) with regions traced over it in image pixels
   const M = (id, shape) => {
     const st = f(id), tag = shape.match(/^<(\w+)/)[1];
     return shape.replace(/\/>$/, ` data-r="${id}" fill="${st.fill || "#ffffff"}" fill-opacity="${st.fill ? 0.55 : 0}" stroke="${st.fill ? (st.stroke || st.fill) : "none"}" stroke-width="${st.stroke ? 7 : 4}"><title>${esc(BRAIN_REGIONS[id].name)} — ${esc(BRAIN_REGIONS[id].fn)}</title></${tag}>`);
   };
   let s = `<svg viewBox="0 0 800 300" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:820px;font-family:system-ui,sans-serif">
-  <defs><clipPath id="cpL"><path d="${outlineL}"/></clipPath></defs>
-  <text x="196" y="16" text-anchor="middle" font-size="12" fill="#5b6575">Side view (left hemisphere, front ←)</text>
+  
+  <text x="202" y="16" text-anchor="middle" font-size="12" fill="#5b6575">Side view (left hemisphere, front ←)</text>
   <text x="612" y="16" text-anchor="middle" font-size="12" fill="#5b6575">Midline view (cut down the middle, front ←)</text>
-  <g clip-path="url(#cpL)">
-    ${R("frontal", `<polygon points="0,0 205,0 186,166 100,180 0,195"/>`)}
-    ${R("parietal", `<polygon points="205,0 322,0 302,140 256,149 186,166"/>`)}
-    ${R("occipital", `<polygon points="322,0 420,0 420,240 300,210 302,140"/>`)}
-    ${R("temporal", `<polygon points="140,176 186,166 256,149 302,140 300,212 250,240 140,240"/>`)}
-    ${R("anttemp", `<polygon points="40,176 140,174 140,245 40,245"/>`)}
-    ${R("perirolandic", `<polygon points="196,0 228,0 210,160 178,168"/>`)}
-    ${R("perisylvian", `<ellipse cx="178" cy="160" rx="62" ry="20" transform="rotate(-14 178 160)"/>`)}
+  <g transform="translate(${LAT.x0},${LAT.y0}) scale(${LAT.k}) translate(-150,-210)">
+    <image href="brain-lateral.jpg" x="150" y="210" width="730" height="580" preserveAspectRatio="none"/>
+    ${M("frontal", `<path d="M175,430 C180,370 215,320 260,280 C320,255 390,245 470,238 L488,244 C500,290 502,350 490,405 L470,425 C430,428 395,440 370,462 C352,495 342,540 338,580 C300,582 255,575 225,560 C195,535 178,480 175,430 Z"/>`)}
+    ${M("perirolandic", `<path d="M455,240 L522,236 C530,290 528,350 508,414 L470,425 C478,360 472,300 455,240 Z"/>`)}
+    ${M("parietal", `<path d="M522,236 C560,231 620,234 680,258 C708,272 728,300 735,330 C722,350 700,380 688,410 C682,428 678,440 678,452 C650,448 620,438 600,428 C570,418 540,414 508,414 C528,350 530,290 522,236 Z"/>`)}
+    ${M("occipital", `<path d="M735,330 C770,328 800,352 815,385 C832,425 846,475 845,520 C842,545 830,562 805,566 C770,570 725,566 700,552 C686,536 680,512 686,486 C684,470 680,460 678,452 C680,425 692,395 708,370 Z"/>`)}
+    ${M("temporal", `<path d="M430,432 C460,424 490,416 520,412 C560,414 600,425 640,445 L678,452 C688,476 690,500 684,518 C655,526 620,526 598,528 C570,555 530,578 490,598 C465,612 448,630 430,642 Z"/>`)}
+    ${M("anttemp", `<path d="M430,432 L430,642 C410,648 375,648 352,628 C338,608 334,575 338,545 C342,505 356,470 380,450 C398,440 414,435 430,432 Z"/>`)}
+    ${M("perisylvian", `<ellipse cx="520" cy="430" rx="118" ry="26" transform="rotate(3 520 430)"/>`)}
+    ${M("cerebellum", `<ellipse cx="676" cy="620" rx="98" ry="100"/>`)}
+    ${M("pons", `<path d="M480,592 C510,578 548,566 576,562 C598,580 600,610 592,640 C592,676 604,716 626,758 L602,776 C578,738 556,694 540,664 C516,652 494,638 480,618 Z"/>`)}
   </g>
-  <path d="${outlineL}" fill="none" stroke="#8a94a6" stroke-width="1.6"/>
-  ${R("cerebellum", `<ellipse cx="292" cy="236" rx="46" ry="26"/>`)}
-  ${R("pons", `<path d="M232,214 L258,212 L256,262 L250,292 L238,292 L234,262 Z"/>`)}
   <g transform="translate(${MID.x0},${MID.y0}) scale(${MID.k}) translate(-150,-210)">
     <image href="brain-midline.jpg" x="150" y="210" width="730" height="580" preserveAspectRatio="none"/>
     ${M("medfrontal", `<path d="M176,430 C180,380 205,330 250,290 C300,262 360,246 420,236 L490,232 L495,342 C460,344 400,348 370,352 C330,362 300,380 285,400 C268,425 266,470 275,505 C300,520 330,535 345,545 C340,565 330,580 300,582 C260,575 222,556 200,528 C182,500 175,465 176,430 Z"/>`)}
@@ -100,7 +100,7 @@ function brainSVG(fills, opts = {}) {
     ${M("cerebellum", `<ellipse cx="668" cy="618" rx="94" ry="98"/>`)}
   </g>`;
   if (opts.labels) {
-    const pts = Object.entries(LABEL_POS).concat(Object.entries(MID_LABEL_IMG).map(([id, [x, y]]) => [id, midPt(x, y)]));
+    const pts = Object.entries(LAT_LABEL_IMG).map(([id, [x, y]]) => [id, latPt(x, y)]).concat(Object.entries(MID_LABEL_IMG).map(([id, [x, y]]) => [id, midPt(x, y)]));
     for (const [id, [x, y]] of pts) {
       const SHORT = { medfrontal: "Medial frontal", perirolandic: "Motor strip", perisylvian: "Language", whitematter: "White matter", ventricles: "Ventricle", mamillary: "Mamillary body", hippocampus: "Hippocampus", temporal: "Temporal lobe", anttemp: "Temporal pole", frontal: "Frontal lobe", parietal: "Parietal lobe", occipital: "Occipital", precuneus: "Precuneus", thalamus: "Thalamus", caudate: "Caudate", midbrain: "Midbrain", pons: "Pons", cerebellum: "Cerebellum" };
       const n = SHORT[id] || BRAIN_REGIONS[id].name;
@@ -146,7 +146,7 @@ function renderBrain(R) {
       <optgroup label="Typical pattern of…">${opts.map(r => `<option value="${r.id}" ${mode === r.id ? "selected" : ""}>${r.lvl >= 2 ? "★ " : ""}${esc(r.name)}</option>`).join("")}</optgroup></select>
       <span class="small">${legend}</span></div>
     ${brainSVG(fills)}
-    <p class="small muted" style="margin:2px 0 8px">Side view is a schematic; midline view is an illustration with regions traced over it. Shapes are approximate. Hover a region for its function. ★ = fits this patient.</p>
+    <p class="small muted" style="margin:2px 0 8px">Both views are illustrations with regions traced over them. Shapes are approximate. Hover a region for its function. ★ = fits this patient.</p>
     ${rows}`;
   document.getElementById("brainMode").onchange = e => { S.brainMode = e.target.value; renderBrain(R); };
 }
