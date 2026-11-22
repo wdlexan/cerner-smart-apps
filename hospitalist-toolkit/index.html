@@ -41,7 +41,12 @@
     html.pocket #toolsearch { flex:1 1 100%; font-size:16px; } /* 16px stops iOS zooming in on tap */
     html.pocket nav button { padding:8px 10px; }
     html.pocket #pdfbar { display:none !important; } /* no Import PDF on the phone */
-    html.pocket #frames { margin-bottom:env(safe-area-inset-bottom); }
+    /* fill the whole phone screen: in a home-screen app with the see-through status bar, iOS makes height:100% one status bar short,
+       which left an empty strip at the bottom; pinning the page to all four screen edges avoids it. The tools already pad their own
+       bottom (pocketFit) so nothing hides behind the home bar, and the frame runs right to the bottom edge. */
+    html.pocket, html.pocket body { background:var(--bg); }
+    html.pocket body { position:fixed; top:0; right:0; bottom:0; left:0; height:auto; }
+    html.pocket #frames { margin-bottom:0; }
     html.pocket #frames iframe { -webkit-overflow-scrolling:touch; }
   </style>
 </head>
