@@ -34,6 +34,20 @@ function drawTicks() {
   $("ticks").querySelectorAll("input[data-k]").forEach((i) => (i.onchange = () => { state.ticks[i.dataset.k] = i.checked; draw(); }));
 }
 
+/* ---------- where is the lesion (UMN / LMN / junction / muscle) ---------- */
+const LOC_KEYS = ["hyperreflex", "spastic", "areflex", "flaccid", "wasting", "fascic", "reflexNormal", "sensOK", "sensLevel", "saddle", "hemi", "para", "prox", "fatig", "ptosis", "pupils", "distalNumb", "single", "hyperacute"];
+function drawLoc() {
+  $("locticks").innerHTML = LOC_KEYS.map((k) => `<label><input type="checkbox" data-lk="${k}" ${state.ticks[k] ? "checked" : ""}> <span>${esc(R.LABEL[k])}</span></label>`).join("");
+  $("locticks").querySelectorAll("input[data-lk]").forEach((i) => (i.onchange = () => { state.ticks[i.dataset.lk] = i.checked; drawTicks(); draw(); }));
+  const L = R.localize(state.ticks), lv = L.level ? R.LEVELS[L.level] : null;
+  const dxNames = (ids) => ids.map((id) => (R.DX.find((d) => d.id === id) || {}).name).filter(Boolean).map((n) => n.split(" (")[0]).join(", ");
+  $("locout").innerHTML = (lv ? `<div class="lvl"><b>Most likely level: ${esc(lv.name)}</b>${L.next ? ` <span>(or ${esc(R.LEVELS[L.next].name)})</span>` : ""}
+      <div style="margin-top:4px"><b>First test:</b> ${esc(lv.test)}</div><div style="margin-top:4px"><b>Think of:</b> ${esc(dxNames(lv.dx))}</div></div>`
+    : `<div class="muted">Tick reflexes, tone, bulk and sensation to see the level.</div>`)
+    + L.warn.map((w) => `<div class="alert action">${esc(w)}</div>`).join("");
+  $("locsum").textContent = lv ? lv.name.split(" (")[0] : "";
+}
+
 /* ---------- derived facts ---------- */
 function facts() {
   const f = state.f || { labs: {}, resp: [], gcs: [], bladder: [], meds: [], conds: [], series: {} };
@@ -54,7 +68,7 @@ function facts() {
 /* ---------- drawing ---------- */
 function draw() {
   const x = facts();
-  drawTiles(x); drawAlerts(x); drawDx(x); drawBreathing(x); drawMeds(x); drawLabs(x); drawCard(); NOTE.update();
+  drawLoc(); drawTiles(x); drawAlerts(x); drawDx(x); drawBreathing(x); drawMeds(x); drawLabs(x); drawCard(); NOTE.update();
 }
 
 function tile(k, big, s, cls) { return `<div class="tile ${cls || ""}"><div class="k">${k}</div><div class="big">${big}</div><div class="s">${s}</div></div>`; }
@@ -180,6 +194,7 @@ function neuroNote() {
   const work = state.work ? R.DX.find((d) => d.id === state.work) : null;
   if (work) S.assess.push("Working diagnosis: " + work.name + ".");
   if (found.length) S.assess.push("Findings: " + found.join("; ") + ".");
+  const loc = R.localize(T); if (loc.level) S.assess.push("Localization: " + R.LEVELS[loc.level].name + (loc.next ? " (or " + R.LEVELS[loc.next].name + ")" : "") + ".");
   const others = x.ranked.filter((d) => d.id !== state.work).slice(0, 4);
   if (others.length) S.assess.push((work ? "Also considered: " : "Differential: ") + others.map((d) => d.name + (d.cantMiss ? " (can't miss)" : "")).join("; ") + ".");
   if (x.hints && x.hints.lvl !== "info") S.assess.push(x.hints.text);

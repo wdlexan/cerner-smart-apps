@@ -23,6 +23,14 @@
       ["dyspnea", "Breathless, weak cough, accessory muscles"],
       ["autonomic", "BP or heart rate swings"],
       ["backpain", "New back pain or spine tenderness"]] },
+    { group: "Motor exam: tone, bulk, reflexes", items: [
+      ["spastic", "Tone increased (spastic, catch)"],
+      ["flaccid", "Tone reduced (floppy)"],
+      ["wasting", "Muscle wasting"],
+      ["fascic", "Fasciculations"],
+      ["reflexNormal", "Reflexes normal"],
+      ["sensOK", "Sensation normal"],
+      ["hyperacute", "Came on over hours to 2 days"]] },
     { group: "Head / level of consciousness", items: [
       ["drowsy", "Drowsy, confused, or new headache"],
       ["fall", "Fall or head injury"],
@@ -129,9 +137,42 @@
     { id: "mono", name: "Single nerve or root lesion (compression palsy, radiculopathy)", card: "weak", urg: "routine", score: (f) => (f.single ? 3 : 0) }];
   function s(f, w) { let n = 0; for (const k in w) if (f[k]) n += w[k]; return n; }
 
+  /* ---------- where is the lesion? UMN (brain / cord) vs LMN (root, nerve) vs junction vs muscle ---------- */
+  const LEVELS = {
+    brain: { name: "Brain (upper motor neuron)", test: "CT head now (code stroke if within the window), then MRI brain. Fingerstick glucose first.",
+      dx: ["stroke", "sdh", "pres", "cvst", "hypogly", "mening", "ncse"] },
+    cord: { name: "Spinal cord (upper motor neuron below the level)", test: "MRI whole spine with contrast, urgently. Bladder scan; check for a sensory level.",
+      dx: ["cord", "myelitis"] },
+    lmn: { name: "Root or peripheral nerve (lower motor neuron)", test: "Root/cauda: MRI lumbar spine. Nerves (GBS, neuropathy): LP and NCS/EMG; K, Mg, glucose, B12; FVC/NIF if spreading.",
+      dx: ["cauda", "gbs", "neurop", "mono", "botul"] },
+    nmj: { name: "Neuromuscular junction", test: "FVC/NIF now; AChR and MuSK antibodies; EMG with repetitive stimulation (single-fibre if negative); ice-pack test for ptosis. Think botulism if pupils are involved or weakness descends.",
+      dx: ["mg", "botul"] },
+    muscle: { name: "Muscle", test: "CK, K, phosphate, TSH, creatinine, urine myoglobin; medication review (statins, steroids, checkpoint inhibitors); myositis antibodies and MRI/EMG/biopsy if CK high without a clear cause.",
+      dx: ["myo", "hypok"] } };
+  function localize(f) {
+    const umn = f.hyperreflex || f.spastic, lmnSigns = f.areflex || f.flaccid || f.wasting || f.fascic, pure = f.reflexNormal && f.sensOK && !umn && !lmnSigns;
+    const sc = {
+      brain: (f.hemi ? 3 : 0) + (f.hemi && umn ? 1 : 0) + (f.facial && f.hemi ? 1 : 0) - (f.sensLevel ? 3 : 0),
+      cord: (f.sensLevel ? 3 : 0) + (f.para && umn ? 2 : 0) + (f.retention && f.para ? 1 : 0) + (f.para && f.hyperacute && lmnSigns && (f.sensLevel || f.retention) ? 1 : 0) - (f.hemi && !f.para ? 2 : 0) - (f.saddle ? 2 : 0),
+      lmn: s(f, { areflex: 2, flaccid: 1, wasting: 2, fascic: 2, single: 2, distalNumb: 1, saddle: 3, ascend: 1 }) - (f.sensLevel ? 3 : 0) - (umn ? 2 : 0),
+      nmj: s(f, { fatig: 3, ptosis: 2, bulbar: 1, descend: 2, pupils: 1 }) + (pure ? 1 : 0) - (f.areflex && !f.descend ? 1 : 0) - (f.distalNumb ? 1 : 0),
+      muscle: s(f, { prox: 2, highCK: 3, lowK: 1 }) + (pure ? 1 : 0) - (f.ptosis ? 2 : 0) - (f.distalNumb ? 1 : 0) };
+    const order = Object.keys(sc).sort((a, b) => sc[b] - sc[a]);
+    const top = sc[order[0]] >= 3 ? order[0] : null;
+    const warn = [];
+    if ((f.areflex || f.flaccid) && f.para && (f.sensLevel || f.retention) && !f.saddle) warn.push("Floppy legs with absent reflexes but a sensory level or retention: acute cord lesion in spinal shock can look LMN. Treat as cord: MRI whole spine now.");
+    if (umn && (f.wasting || f.fascic)) warn.push("UMN and LMN signs together: think ALS, cervical myelopathy with radiculopathy, or B12/copper deficiency (subacute combined degeneration).");
+    if (f.saddle) warn.push("Cauda equina is LMN (absent ankle reflexes, floppy) even though it is in the spinal canal: MRI lumbosacral spine now.");
+    if (f.ascend && !f.areflex && !umn) warn.push("Reflexes can still be present in the first 1–2 days of GBS: do not rule it out on reflexes alone.");
+    if (f.ptosis && f.pupils) warn.push("Pupils involved: not myasthenia (MG spares the pupil). Think botulism or a third nerve palsy (aneurysm).");
+    if (f.hemi && f.lowGlu) warn.push("One-sided weakness with low glucose: correct glucose and re-examine before calling it a stroke.");
+    return { level: top, name: top ? LEVELS[top].name : null, test: top ? LEVELS[top].test : null, scores: sc, next: order[1] && sc[order[1]] >= 3 && sc[order[1]] >= sc[order[0]] - 1 ? order[1] : null, warn };
+  }
+
   function rank(f) {
+    const loc = localize(f), boost = loc.level ? LEVELS[loc.level].dx : [];
     return DX.map((d) => {
-      const sc = d.score(f);
+      let sc = d.score(f); if (sc > 0 && boost.includes(d.id)) sc += 1;
       return { id: d.id, name: d.name, card: d.card, urg: d.urg, cantMiss: !!d.cantMiss, score: sc, why: why(d, f) };
     }).filter((d) => d.score >= 3).sort((a, b) => b.score - a.score || (a.urg === "now" ? -1 : 1));
   }
@@ -275,6 +316,6 @@
       : { lvl: "ok", text: "Constant vertigo with an ABNORMAL head impulse, one-direction horizontal nystagmus, no skew, normal hearing and able to walk: peripheral (vestibular neuritis) is likely. Only reliable if HINTS was done by a confident examiner." };
   }
 
-  const api = { FINDINGS, LABEL, DX, rank, breathing, mgCheck, MG_DRUGS, antithrombotics, pseudoRelapse, bladder, gcsTrend, hints };
+  const api = { FINDINGS, LABEL, DX, rank, localize, LEVELS, breathing, mgCheck, MG_DRUGS, antithrombotics, pseudoRelapse, bladder, gcsTrend, hints };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.NeuroRules = api;
 })(typeof window !== "undefined" ? window : globalThis);

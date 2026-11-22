@@ -63,6 +63,8 @@
     fieldset.grp { border:1px solid var(--line); border-radius:8px; margin:8px 0; padding:4px 12px 8px; }
     fieldset.grp legend { font-weight:600; padding:0 4px; }
     fieldset.grp.dim { opacity:.45; }
+    .locticks { display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:4px 14px; font-size:13px; }
+    .lvl { border-radius:8px; padding:10px 14px; margin:8px 0; background:var(--b-bg); color:var(--b-ink); } .lvl b { font-size:15px; }
     .pres button { margin:2px 4px 2px 0; } .pres button.on { background:var(--accent); color:#fff; border-color:var(--accent); }
     .dx { display:flex; gap:10px; align-items:flex-start; border:1px solid var(--line); border-radius:8px; padding:8px 12px; margin:6px 0; }
     .dx .nm { font-weight:700; } .dx .why { font-size:12.5px; color:var(--muted); margin-top:2px; } .dx .sp { flex:1; }
@@ -96,6 +98,20 @@
       </div>
     </details>
 
+    <details class="card" open><summary><span>Where is the lesion? Upper vs lower motor neuron</span><span class="muted" id="locsum"></span></summary>
+      <div class="body">
+        <div class="muted" style="margin-bottom:6px">Tick the motor signs (same ticks as above). The level found here also nudges the diagnosis list.</div>
+        <div class="ticks locticks" id="locticks"></div>
+        <div id="locout"></div>
+        <details class="q" style="margin-top:8px"><summary>How to read the pattern</summary>
+          <table style="margin-top:6px"><tr><th>Level</th><th>Reflexes</th><th>Tone / bulk</th><th>Sensation</th><th>Pattern</th></tr>
+          <tr><td>Brain (UMN)</td><td class="wrap">Brisk, upgoing plantar</td><td class="wrap">Spastic, no wasting</td><td class="wrap">Same side, may be lost</td><td class="wrap">One side incl. face; arm extensors, leg flexors weakest</td></tr>
+          <tr><td>Cord (UMN)</td><td class="wrap">Brisk below the level (absent early: spinal shock)</td><td class="wrap">Spastic later</td><td class="wrap">Sensory level</td><td class="wrap">Both legs ± arms; bladder</td></tr>
+          <tr><td>Root / nerve (LMN)</td><td class="wrap">Reduced or absent</td><td class="wrap">Floppy; wasting, fasciculations (late)</td><td class="wrap">Root, nerve or glove-and-stocking</td><td class="wrap">Root/nerve territory, distal, or ascending (GBS)</td></tr>
+          <tr><td>Junction</td><td class="wrap">Normal</td><td class="wrap">Normal</td><td class="wrap">Normal</td><td class="wrap">Fatigable; eyes, face, swallowing, proximal</td></tr>
+          <tr><td>Muscle</td><td class="wrap">Normal until late</td><td class="wrap">Normal (wasting late)</td><td class="wrap">Normal</td><td class="wrap">Proximal, symmetric; CK often high</td></tr></table></details>
+      </div></details>
+
     <div class="tiles" id="tiles"></div>
 
     <details class="card" open><summary><span>Act now</span><span class="muted" id="alertsum"></span></summary><div class="body" id="alerts"></div></details>
@@ -122,11 +138,11 @@
   </main>
   <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
   <script src="../../pdf-overlay.js?v=20261120p"></script>
-  <script src="rules.js?v=20261121n"></script>
+  <script src="rules.js?v=20261121p"></script>
   <script src="reference.js?v=20261121n"></script>
   <script src="chart.js?v=20261121n"></script>
   <script src="samples.js?v=20261117a"></script>
   <script src="../../notedraft.js?v=20261113a"></script>
-  <script src="app.js?v=20261121n"></script>
+  <script src="app.js?v=20261121p"></script>
 </body>
 </html>

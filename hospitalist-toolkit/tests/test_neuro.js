@@ -39,6 +39,20 @@ eq("PRES: high BP + vision + seizure", top(["htn", "visual", "seizure"]), "pres"
 eq("every diagnosis card exists", R.DX.filter((d) => d.card && !REF.byId[d.card]).length, 0);
 eq("12 can't-miss + stroke-type entries", R.DX.filter((d) => d.cantMiss).length, 17);
 
+// localizer: UMN / LMN / junction / muscle
+const lv = (t) => { const f = {}; t.forEach((k) => (f[k] = true)); return R.localize(f); };
+eq("one side + brisk = brain", lv(["hemi", "hyperreflex"]).level, "brain");
+eq("both legs + brisk + sensory level = cord", lv(["para", "hyperreflex", "sensLevel"]).level, "cord");
+eq("absent reflexes + wasting + fasciculations = LMN", lv(["areflex", "wasting", "fascic"]).level, "lmn");
+eq("fatigable + ptosis, normal reflexes and sensation = junction", lv(["fatig", "ptosis", "reflexNormal", "sensOK"]).level, "nmj");
+eq("proximal + CK high, normal sensation = muscle", lv(["prox", "highCK", "sensOK", "reflexNormal"]).level, "muscle");
+let sh = lv(["para", "areflex", "flaccid", "sensLevel", "hyperacute"]);
+eq("spinal shock: floppy areflexic legs + sensory level -> cord", sh.level, "cord"); eq("spinal shock warning shown", sh.warn.some((w) => /spinal shock/.test(w)), true);
+eq("saddle numbness -> LMN with cauda warning", lv(["saddle", "areflex", "para"]).level, "lmn");
+eq("UMN + LMN together warns (ALS etc.)", lv(["hyperreflex", "fascic", "wasting"]).warn.some((w) => /ALS/.test(w)), true);
+eq("pupils + ptosis warns not MG", lv(["ptosis", "pupils", "descend"]).warn.some((w) => /botulism/.test(w)), true);
+eq("nothing ticked -> no level", lv([]).level, null);
+
 // breathing 20/30/40
 const h = 36e5;
 let b = R.breathing([{ t: 0, fvc: 1.5 }], 80); eq("FVC 1.5 L / 80 kg = 19 mL/kg", b.fvcPerKg, 19); eq("-> ICU", b.icu, true);
