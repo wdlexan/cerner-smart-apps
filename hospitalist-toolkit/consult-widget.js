@@ -60,7 +60,8 @@
       const interp = ((o.interpretation || [])[0] || {}), code = ((interp.coding || [])[0] || {}).code || interp.text || "";
       (by[key] = by[key] || []).push({ v: +o.valueQuantity.value, unit: o.valueQuantity.unit || "", t, flag: /^(H|HH|L|LL|A|AA|HU|LU)$/.test(code) ? code : "" });
     });
-    return Object.entries(by).map(([key, a]) => { a.sort((x, y) => y.t - x.t); return { key, v: a[0].v, unit: a[0].unit, t: a[0].t, flag: a[0].flag, prev: a.length > 1 ? a[1].v : null }; }).sort((x, y) => y.t - x.t);
+    return Object.entries(by).map(([key, a]) => { a.sort((x, y) => y.t - x.t); const vs = a.map((x) => x.v);
+      return { key, v: a[0].v, unit: a[0].unit, t: a[0].t, flag: a[0].flag, prev: a.length > 1 ? a[1].v : null, min: Math.min(...vs), max: Math.max(...vs), n: a.length }; }).sort((x, y) => y.t - x.t);
   }
   function labLine(labs) { return labs.length ? "Labs: " + labs.map((l) => `${l.key} ${fmtV(l.v)}${l.prev != null && fmtV(l.prev) !== fmtV(l.v) ? ` (prev ${fmtV(l.prev)})` : ""}`).join(", ") + "." : ""; }
 
@@ -69,7 +70,7 @@
     const sexWord = o.sex === "female" ? "woman" : o.sex === "male" ? "man" : "patient", pro = o.sex === "female" ? "her" : o.sex === "male" ? "him" : "them";
     const who = [o.name || "___", o.age != null && o.age !== "" ? String(o.age) : "", "MRN " + (o.mrn || "___")].filter(Boolean).join(", ");
     const prob = String(o.problem || "___").trim().replace(/^[A-Z](?=[a-z])/, (c) => c.toLowerCase());
-    const art = /^(a|an|the|possible|suspected|new|acute|chronic|severe|recurrent)\b/i.test(prob) || /^[A-Z0-9]{2,}/.test(prob) || /s$/.test(prob) || prob === "___" ? "" : /^[aeiou]/i.test(prob) ? "an " : "a ";
+    const art = /^(a|an|the|possible|suspected|new|acute|chronic|severe|recurrent)\b/i.test(prob) || /^[A-Z0-9]{2,}/.test(prob) || /^[A-Z]\.\s/.test(prob) || /s$/.test(prob) || prob === "___" ? "" : /^[aeiou]/i.test(prob) ? "an " : "a ";
     const hx = String(o.hx || "").trim().replace(/([^.!?])$/, "$1.");
     const why = String(o.why || "").trim().replace(/[.?]+$/, "");
     const ask = why ? (o.service === "Infectious diseases" || /advice|recommend|antibiotic|dose|which/i.test(why) ? `Could you see ${pro} for advice on ${why.replace(/^[A-Z](?=[a-z])/, (c) => c.toLowerCase())}?` : `Could you see ${pro} to ${/^(assess|review|help|consider|see|evaluate|manage)\b/i.test(why) ? why.replace(/^[A-Z]/, (c) => c.toLowerCase()) : "assess " + why.replace(/^[A-Z](?=[a-z])/, (c) => c.toLowerCase())}?`) : `Could you see ${pro}? ___`;
@@ -140,25 +141,82 @@
     });
     return out;
   }
-  window.ConsultWidget = { build, summarizeLabs, labLine, shortName, PERTINENT, parseContacts, smsLink, SERVICES, parseVcards, guessService, contactLine, readSheet, listPatients };
+  /* ---- when to consult: chart findings -> suggested consults (rules only; a prompt to think, not an order) ----
+     d = { labs: summarizeLabs(...) output, probs: [active problem strings], micro: [culture result strings] }
+     returns [{ service, problem, why, labs:[keys], reason, urgent }] most urgent first. SI units assumed (Hb g/L, Cr µmol/L); g/dL and mg/dL are converted. */
+  function suggest(d) {
+    const L = {}; (d.labs || []).forEach((l) => (L[l.key] = l));
+    const conv = (l, k) => { if (!l) return null; const f = (x) => (x == null ? null : k === "Hb" && x < 25 ? x * 10 : k === "Cr" && x < 20 ? x * 88.4 : x); return Object.assign({}, l, { v: f(l.v), prev: f(l.prev), min: f(l.min), max: f(l.max) }); };
+    const g = (k) => conv(L[k], k), P = (d.probs || []).join(" | "), M = (d.micro || []).join(" | "), has = (re) => re.test(P);
+    const out = [], add = (o) => out.push(Object.assign({ labs: [], urgent: false }, o));
+    // Infectious diseases
+    if (/staph[a-z]*\.? aureus|\bS\.? ?aureus\b|\bMRSA\b|\bMSSA\b/i.test(M) || has(/staph[a-z]* aureus bacter|\bMRSA bacter|\bMSSA bacter|S\.? aureus bacter/i))
+      add({ service: "Infectious diseases", problem: "S. aureus bacteremia", why: "S. aureus bacteremia management (echo, source control, antibiotic and duration)", labs: ["WBC", "CRP", "Cr"], urgent: true,
+        reason: "S. aureus in a blood culture. An ID consult is recommended for every S. aureus bacteremia (linked with lower mortality)." });
+    if (/candida/i.test(M) || has(/candidemia|candidaemia/i))
+      add({ service: "Infectious diseases", problem: "candidemia", why: "candidemia management (eye exam, line removal, antifungal and duration)", labs: ["WBC", "CRP", "Cr"], urgent: true, reason: "Candida in a blood culture – ID input is standard for candidemia." });
+    if (has(/necroti[sz]ing fasciitis/i)) add({ service: "General surgery", problem: "possible necrotizing fasciitis", why: "urgent surgical assessment and debridement", labs: ["WBC", "CRP", "Lactate", "Cr"], urgent: true, reason: "Necrotizing fasciitis on the problem list – needs urgent surgery." });
+    // Nephrology
+    const K = g("K"), Cr = g("Cr"), HC = g("HCO3"), PH = g("pH"), Na = g("Na"), Lac = g("Lactate"), Hb = g("Hb"), Plt = g("Plt"), Tr = g("Trop"), CO2 = g("pCO2");
+    if (K && K.v >= 6.5) add({ service: "Nephrology", problem: `severe hyperkalemia (K ${fmtV(K.v)})`, why: "assess need for urgent dialysis", labs: ["K", "Cr", "HCO3", "Urea"], urgent: true, reason: `K ${fmtV(K.v)} (≥ 6.5) – treat now and involve nephrology if it does not settle or with AKI.` });
+    const aki3 = Cr && Cr.n > 1 && (Cr.v >= 3 * Cr.min || (Cr.v >= 354 && Cr.v - Cr.min >= 26.5));
+    if (aki3) add({ service: "Nephrology", problem: "AKI (KDIGO stage 3)", why: "AKI work-up and need for dialysis", labs: ["Cr", "Urea", "K", "HCO3", "Na"], reason: `Cr ${fmtV(Cr.v)} from ${fmtV(Cr.min)} in the past week – stage 3 AKI.` });
+    if (has(/glomerulonephritis|\bGN\b|vasculitis|interstitial nephritis|\bAIN\b|nephrotic/i)) add({ service: "Nephrology", problem: (P.match(/glomerulonephritis|vasculitis|interstitial nephritis|nephrotic syndrome/i) || ["possible glomerulonephritis"])[0].toLowerCase(), why: "diagnosis (urine sediment, serology, ± biopsy) and treatment", labs: ["Cr", "Urea", "K", "Alb"], reason: "GN / AIN / vasculitis on the problem list – nephrology usually leads." });
+    if (Na && Na.v <= 120) add({ service: "Nephrology", problem: `severe hyponatremia (Na ${fmtV(Na.v)})`, why: "safe correction plan and cause", labs: ["Na", "K", "Cr", "Gluc"], reason: `Na ${fmtV(Na.v)} (≤ 120) – high risk of seizures and overcorrection.` });
+    // ICU
+    if ((Lac && Lac.v >= 4) || (PH && PH.v < 7.2) || (PH && PH.v < 7.3 && CO2 && CO2.v > 60))
+      add({ service: "ICU", problem: Lac && Lac.v >= 4 ? `lactate ${fmtV(Lac.v)}` : CO2 && CO2.v > 60 && PH.v < 7.3 ? "hypercapnic respiratory failure" : `severe acidosis (pH ${fmtV(PH.v)})`, why: "assessment for ICU / higher level of care", labs: ["Lactate", "pH", "pCO2", "HCO3", "Cr", "K"], urgent: true,
+        reason: [Lac && Lac.v >= 4 ? `lactate ${fmtV(Lac.v)} (≥ 4)` : "", PH && PH.v < 7.2 ? `pH ${fmtV(PH.v)}` : "", PH && PH.v < 7.3 && CO2 && CO2.v > 60 ? `pCO2 ${fmtV(CO2.v)} with pH ${fmtV(PH.v)}` : ""].filter(Boolean).join(", ") + " – consider ICU / outreach." });
+    else if (HC && HC.v <= 12) add({ service: "Nephrology", problem: `severe metabolic acidosis (HCO3 ${fmtV(HC.v)})`, why: "cause and need for dialysis", labs: ["HCO3", "Cr", "K", "Lactate"], reason: `HCO3 ${fmtV(HC.v)} (≤ 12).` });
+    // GI
+    const hbDrop = Hb && Hb.max - Hb.v;
+    if (hbDrop >= 20 && has(/gi bleed|gastrointestinal (bleed|hemorrhage|haemorrhage)|melena|melaena|hematemesis|haematemesis|hematochezia|peptic ulcer|varic/i))
+      add({ service: "Gastroenterology", problem: /hematochezia|lower gi/i.test(P) ? "lower GI bleed" : "upper GI bleed", why: "endoscopy", labs: ["Hb", "Plt", "INR", "Urea", "Cr"], urgent: true, reason: `Hb ${fmtV(Hb.v)} from ${fmtV(Hb.max)} (fall of ${fmtV(hbDrop)} g/L) with a GI bleed on the problem list.` });
+    // Cardiology
+    const trHigh = Tr && (/^H/.test(Tr.flag || "") || (/ng\/l/i.test(Tr.unit) && Tr.v > 26) || (/(ug|µg|mcg)\/l|ng\/ml/i.test(Tr.unit) && Tr.v > 0.04));
+    if (trHigh && Tr.prev != null && Tr.v >= 1.2 * Tr.prev)
+      add({ service: "Cardiology", problem: "rising troponin", why: "assess for acute coronary syndrome", labs: ["Trop", "Hb", "K", "Cr"], reason: `Troponin ${fmtV(Tr.v)} from ${fmtV(Tr.prev)} – rising. Check ECG and symptoms first (type 2 MI is common).` });
+    if (has(/complete heart block|third.degree|mobitz (type )?(ii|2)|ventricular tachycardia|\bVT\b|torsade/i))
+      add({ service: "Cardiology", problem: (P.match(/complete heart block|third.degree (av )?block|mobitz (type )?(ii|2)|ventricular tachycardia|torsades?/i) || ["arrhythmia"])[0].toLowerCase(), why: "pacing / arrhythmia management", labs: ["K", "Mg", "Trop"], urgent: true, reason: "High-grade AV block or ventricular arrhythmia on the problem list." });
+    // Hematology
+    if (Plt && Plt.v < 50) add({ service: "Hematology", problem: `thrombocytopenia (platelets ${fmtV(Plt.v)})`, why: "work-up (HIT, TTP/HUS, marrow, drugs) and transfusion threshold", labs: ["Plt", "Hb", "WBC", "INR", "LDH", "Bili"], reason: `Platelets ${fmtV(Plt.v)} (< 50). Check for a known cause (chemo, cirrhosis) before calling.` });
+    // Neuro / neurosurgery
+    if (has(/cauda equina|cord compression|spinal cord compression|epidural (abscess|hematoma)|subdural/i))
+      add({ service: "Neurosurgery", problem: (P.match(/cauda equina( syndrome)?|(spinal )?cord compression|epidural (abscess|hematoma)|(acute |chronic )?subdural (hematoma|haematoma)?/i) || ["spinal emergency"])[0].toLowerCase(), why: "urgent neurosurgical assessment", labs: ["INR", "Plt", "Hb"], urgent: true, reason: "Spinal or subdural emergency on the problem list." });
+    if (has(/status epilepticus|guillain|myasthenia|\bGBS\b/i))
+      add({ service: "Neurology", problem: (P.match(/status epilepticus|guillain[- ]barr[eé]( syndrome)?|myasthenia( gravis)?/i) || ["neuromuscular emergency"])[0].toLowerCase(), why: "diagnosis and treatment (watch breathing – FVC/NIF)", labs: ["Na", "Gluc", "Ca"], urgent: true, reason: "Status epilepticus, GBS or myasthenia on the problem list." });
+    // General surgery
+    if (has(/bowel obstruction|perforat|ischemic (bowel|colitis)|mesenteric ischemia|appendicitis|cholecystitis|cholangitis/i) && !out.some((o) => o.service === "General surgery"))
+      add({ service: "General surgery", problem: (P.match(/(small |large )?bowel obstruction|perforat\w*( viscus)?|ischemic (bowel|colitis)|mesenteric ischemia|appendicitis|cholecystitis|cholangitis/i) || ["acute abdomen"])[0].toLowerCase(), why: "surgical assessment", labs: ["WBC", "Lactate", "Hb", "Cr", "Lipase"], reason: "Surgical abdominal problem on the problem list." });
+    // one card per service, urgent first
+    const by = {}; out.forEach((o) => { if (!by[o.service]) by[o.service] = o; else { by[o.service].reason += " Also: " + o.reason; by[o.service].urgent = by[o.service].urgent || o.urgent; by[o.service].problem += " and " + o.problem; by[o.service].labs = [...new Set(by[o.service].labs.concat(o.labs))]; } });
+    return Object.values(by).sort((a, b) => b.urgent - a.urgent);
+  }
+  // culture results as text, from lab Observations (blood cultures only)
+  function microText(obs) {
+    return (obs || []).filter((o) => o && /culture|blood c/i.test((o.code && (o.code.text || ((o.code.coding || [])[0] || {}).display)) || "") && /blood/i.test(JSON.stringify(o.code || "") + JSON.stringify(o.specimen || "")))
+      .map((o) => [o.valueString, o.valueCodeableConcept && (o.valueCodeableConcept.text || ((o.valueCodeableConcept.coding || [])[0] || {}).display), ...(o.note || []).map((n) => n.text), o.conclusion].filter(Boolean).join(" "))
+      .filter((t) => t && !/no growth|negative|pending/i.test(t));
+  }
+  window.ConsultWidget = { build, suggest, microText, summarizeLabs, labLine, shortName, PERTINENT, parseContacts, smsLink, SERVICES, parseVcards, guessService, contactLine, readSheet, listPatients };
   if (typeof document === "undefined") return;
 
-  let pt = null, probs = [], labs = [], labsLoaded = false;
+  let pt = null, probs = [], labs = [], labsLoaded = false, micro = [], probsLoaded = false;
   async function loadPatient() {
     const ctx = window.CONSULT_CTX || {};
     let client = ctx.client || null;
     if (!client && window.FHIR && (location.search.includes("code=") || sessionStorage.getItem("SMART_KEY"))) { try { client = await FHIR.oauth2.ready(); } catch (e) {} }
     if (ctx.patient) pt = ctx.patient;
     else if (client) { try { pt = await client.patient.read(); } catch (e) {} }
-    if (ctx.labs && !labsLoaded) { labs = summarizeLabs(ctx.labs); labsLoaded = true; }
+    if (ctx.labs && !labsLoaded) { labs = summarizeLabs(ctx.labs); micro = microText(ctx.labs); labsLoaded = true; }
     if (client && !labsLoaded) {
       try {
         const since = new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10);
         const obs = await client.request(`Observation?patient=${client.patient.id}&category=laboratory&date=ge${since}&_count=200`, { pageLimit: 3, flat: true });
-        labs = summarizeLabs(obs); labsLoaded = true;
+        labs = summarizeLabs(obs); micro = microText(obs); labsLoaded = true;
       } catch (e) { labsLoaded = true; }
     }
-    if (client && !probs.length) {
+    if (client && !probsLoaded) { probsLoaded = true;
       try {
         const cs = await client.request(`Condition?patient=${client.patient.id}&_count=100`, { flat: true });
         probs = [...new Set(cs.filter((c) => !(c.clinicalStatus && /resolved|inactive/.test(JSON.stringify(c.clinicalStatus)))).map((c) => (c.code && (c.code.text || ((c.code.coding || [])[0] || {}).display)) || "").filter(Boolean))].slice(0, 40);
@@ -188,6 +246,7 @@
     const btn = el("button", { id: "cw-btn", type: "button", title: "Draft a consult message (ID, surgery, any service)" }, "✉ Consult");
     const pan = el("div", { id: "cw-pan", role: "dialog" }, `
       <h3>Consult message</h3>
+      <div id="cw-sug" style="display:none;margin:4px 0 8px;padding:6px 8px;border:1px solid #f0c36d;background:#fff8e6;border-radius:8px;color:#3d2e00"></div>
       <div class="muted">~50 words. Pick a specialist, then 💬 Text opens Messages with their number and this message filled in – you tap Send.</div>
       <div class="row"><label>Find a specialist<input id="cw-q" type="search" placeholder="type a name or service…" autocomplete="off"></label></div>
       <div class="row"><label><span>Send to <span id="cw-whonote" class="muted"></span> <a href="#" id="cw-allsvc" style="color:#0b6bcb;font-size:11.5px"></a></span><select id="cw-who"></select></label><label style="max-width:150px">Cell<input id="cw-cell" inputmode="tel" placeholder="250-555-1234"></label></div>
@@ -224,6 +283,26 @@
       $("cw-labs").innerHTML = list.map((l) => `<label style="flex-direction:row;align-items:center;gap:3px;min-width:0;flex:none;color:inherit"><input type="checkbox" data-k="${l.key}" style="width:auto"${sel.has(l.key) ? " checked" : ""}>${l.key} <b${l.flag ? ' style="color:#b42318"' : ""}>${fmtV(l.v)}</b>${l.prev != null ? ` <span class="muted">(${fmtV(l.prev)})</span>` : ""}</label>`).join("") || '<span class="muted">none for this service – "show all results"</span>';
       $("cw-labs").querySelectorAll("input").forEach((x) => (x.onchange = () => { picked = picked || new Set(sel); x.checked ? picked.add(x.dataset.k) : picked.delete(x.dataset.k); edited = false; refresh(); }));
       $("cw-laball").textContent = showAll ? "show usual only" : `show all results (${labs.length})`;
+    };
+    // suggested consults from the chart: click one to fill in service, problem, why and the labs
+    let sugs = [];
+    const drawSug = () => {
+      const box = $("cw-sug");
+      if (!sugs.length) { box.style.display = "none"; return; }
+      box.style.display = "block";
+      if ($("cw-xp").value) { box.innerHTML = `<b>Suggested consults</b> are for the chart patient, not the patient picked from the Excel list.`; return; }
+      box.innerHTML = `<div style="font-weight:600;margin-bottom:3px">Suggested consults – from the chart, your call</div>` + sugs.map((x, i) =>
+        `<div style="margin:4px 0"><button type="button" data-sug="${i}" style="${x.urgent ? "background:#b42318;border-color:#b42318" : ""}">${x.urgent ? "⚠ " : ""}${x.service}</button> <b>${x.problem.replace(/</g, "&lt;")}</b><div style="font-size:11.5px;margin-top:2px">${x.reason.replace(/</g, "&lt;")}</div></div>`).join("") +
+        `<div style="font-size:11px;margin-top:3px">Rules only – check the patient. Place the consult order in PowerChart too.</div>`;
+      box.querySelectorAll("[data-sug]").forEach((b) => (b.onclick = () => {
+        const x = sugs[+b.dataset.sug];
+        $("cw-svc").value = x.service; $("cw-svc").dispatchEvent(new Event("change"));
+        $("cw-prob").value = x.problem; $("cw-why").value = x.why;
+        const have = new Set(labs.map((l) => l.key)); picked = new Set(x.labs.filter((k) => have.has(k))); drawLabs();
+        const only = [...$("cw-who").options].filter((o) => /^\d+$/.test(o.value));
+        if (only.length === 1 && !/showing all/.test($("cw-whonote").textContent)) { $("cw-who").value = only[0].value; $("cw-who").onchange(); }
+        edited = false; refresh(); (only.length === 1 ? $("cw-text") : $("cw-q")).focus();
+      }));
     };
     const refresh = () => {
       if (edited) return;
@@ -268,6 +347,7 @@
       } catch (e) { $("cw-words").textContent = "Couldn't read that Excel file" + (window.JSZip ? "." : " (no internet to load the reader?)."); }
     };
     ["cw-name", "cw-mrn"].forEach((id) => $(id).addEventListener("input", () => { $("cw-xp").value = ""; }));
+    $("cw-xp").addEventListener("change", () => drawSug());
     $("cw-xp").onchange = () => {
       const p = xPts[+$("cw-xp").value]; if (!p || $("cw-xp").value === "") return;
       $("cw-name").value = p.name; $("cw-age").value = p.age; $("cw-mrn").value = p.mrn; $("cw-sex").value = p.sex;
@@ -361,6 +441,17 @@
     $("cw-close").onclick = () => (pan.style.display = "none");
     document.addEventListener("keydown", (e) => { if (e.key === "Escape") pan.style.display = "none"; });
     $("cw-copy").onclick = () => { $("cw-msg").select(); try { navigator.clipboard.writeText($("cw-msg").value); } catch (e) { document.execCommand("copy"); } $("cw-copy").textContent = "Copied"; setTimeout(() => ($("cw-copy").textContent = "Copy"), 1200); };
+    // count of suggested consults on the button, worked out in the background once the chart is reachable
+    const badge = () => { const n = pt ? sugs.length : 0, u = sugs.some((x) => x.urgent);
+      btn.textContent = n ? `✉ Consult · ${n} suggested` : "✉ Consult"; btn.style.background = n ? (u ? "#b42318" : "#b7791f") : "";
+      btn.title = n ? "Suggested: " + sugs.map((x) => x.service + " – " + x.problem).join("; ") : "Draft a consult message (ID, surgery, any service)"; };
+    let tries = 0;
+    const pre = async () => {
+      const ctx = window.CONSULT_CTX || {};
+      if (!(ctx.client || ctx.patient || ctx.labs) && !(window.FHIR && (location.search.includes("code=") || sessionStorage.getItem("SMART_KEY")))) { if (++tries < 10) setTimeout(pre, 3000); return; }
+      try { await loadPatient(); if (pt) { sugs = suggest({ labs, probs, micro }); badge(); } } catch (e) {}
+    };
+    setTimeout(pre, 2000);
     btn.onclick = async () => {
       if (pan.style.display === "block") { pan.style.display = "none"; return; }
       pan.style.display = "block"; $("cw-words").textContent = "Reading the patient…";
@@ -374,6 +465,7 @@
       $("cw-prob").placeholder = probs.length ? "pick from the problem list or type" : "e.g. ESBL pyelonephritis";
       if (!$("cw-dr").value) { $("cw-svc").value = defaultService(); picked = null; drawLabs(); } drawWho(); edited = false; refresh();
       if (!pt) $("cw-words").textContent = "No chart patient (demo or not launched) – type name, age and MRN.";
+      sugs = pt ? suggest({ labs, probs, micro }) : []; drawSug(); badge();
     };
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();

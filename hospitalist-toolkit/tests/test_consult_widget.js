@@ -53,4 +53,18 @@ const P2 = W.listPatients(W.readSheet('<sheetData><row r="1"><c r="D1" t="inline
   '<row r="7"><c r="D7" t="inlineStr"><is><t>HAH17 A</t></is></c><c r="E7"><v>88</v></c><c r="F7" t="inlineStr"><is><t>Angelina Tokay</t></is></c></row><row r="8"><c r="F8" t="inlineStr"><is><t>ischemic colitis oct 2026</t></is></c></row></sheetData>', ""));
 ok("excel: only names with a room are patients; lines under are pmhx", P2.map((p) => p.name).join("|") === "Barbara Lynn Gossman|Angelina Tokay" && P2[0].pmhx.join("; ") === "Thyroid carcinoma Hypothyroid; itp htn ckd pvd rta cad", P2);
 ok("comment lines skipped in list", W.parseContacts("# header\n# sign-off: Dr X\nSmith | Cardiology | 250-555-1234").length === 1);
+// consult suggestions
+const lab = (name, vals, unit, flag) => vals.map((v, i) => ({ resourceType: "Observation", status: "final", code: { text: name }, valueQuantity: { value: v, unit: unit || "" }, effectiveDateTime: new Date(Date.UTC(2026, 10, 15 + i)).toISOString(), interpretation: flag ? [{ coding: [{ code: flag }] }] : [] }));
+const obsAll = [].concat(lab("Potassium", [4.1, 6.8], "mmol/L"), lab("Creatinine", [80, 310], "umol/L"), lab("Hemoglobin", [112, 84], "g/L"), lab("Platelets", [140, 32], "10*9/L"), lab("Troponin I hs", [40, 160], "ng/L", "H"), lab("Lactate", [1.2, 4.6], "mmol/L"),
+  [{ resourceType: "Observation", status: "final", code: { text: "Blood Culture" }, valueString: "Staphylococcus aureus (MSSA) isolated 2/2 sets", effectiveDateTime: "2026-11-16T10:00:00Z" },
+   { resourceType: "Observation", status: "final", code: { text: "Blood Culture" }, valueString: "No growth at 5 days", effectiveDateTime: "2026-11-16T10:00:00Z" }]);
+const S1 = W.suggest({ labs: W.summarizeLabs(obsAll), probs: ["Upper GI bleed", "Hypertension"], micro: W.microText(obsAll) });
+const svcs = S1.map((x) => x.service);
+ok("suggest: ID for S. aureus, nephro for K 6.8 + AKI3, GI for Hb fall with GI bleed, cardiology for rising trop, heme for plt 32, ICU for lactate", ["Infectious diseases", "Nephrology", "Gastroenterology", "Cardiology", "Hematology", "ICU"].every((x) => svcs.includes(x)), S1.map((x) => x.service + ": " + x.problem));
+ok("suggest: one card per service, merged", S1.filter((x) => x.service === "Nephrology").length === 1 && /hyperkalemia.* and AKI/.test(S1.find((x) => x.service === "Nephrology").problem));
+ok("suggest: urgent first", S1[0].urgent === true && S1[S1.length - 1].urgent === false || S1.every((x) => x.urgent));
+const S0 = W.suggest({ labs: W.summarizeLabs([].concat(lab("Potassium", [4.1, 4.4]), lab("Creatinine", [80, 95]), lab("Hemoglobin", [112, 84], "g/L"), lab("Troponin I hs", [4, 6], "ng/L"))), probs: ["Pneumonia"], micro: W.microText(obsAll.slice(-1)) });
+ok("suggest: nothing for a stable patient (Hb fall alone, normal trop rise, negative culture)", S0.length === 0, S0);
+ok("suggest: g/dL and mg/dL converted", W.suggest({ labs: W.summarizeLabs([].concat(lab("Creatinine", [0.9, 3.2], "mg/dL"))), probs: [] }).some((x) => /AKI/.test(x.problem)));
+ok("suggest: problem-list triggers", ["Cauda equina syndrome", "Myasthenia gravis", "Small bowel obstruction"].map((p) => W.suggest({ labs: [], probs: [p] })[0].service).join() === "Neurosurgery,Neurology,General surgery");
 console.log(fail ? `\n${fail} FAILED` : "\nall passed"); process.exit(fail ? 1 : 0);
