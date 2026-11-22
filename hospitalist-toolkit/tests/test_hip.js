@@ -43,4 +43,8 @@ eq("VTE therapeutic", R.vtePlan({ onTherapeutic: true }).state, "ther");
 let b = R.bone({ vitd: 35, ca: 2.3, crcl: 50 }); eq("bone treat", b.treat, true); eq("bone low D", b.items.some((i) => /below 50/.test(i)), true);
 eq("bone CrCl<35 denosumab", R.bone({ vitd: 80, crcl: 30 }).items.some((i) => /denosumab 60 mg/.test(i)), true);
 eq("bone on treatment", R.bone({ onTreatment: "Alendronate" }).treat, false);
+// Nottingham score: all items (hand-checked: 88 M, Hb 95, AMTS low, care home = 4+1+1+1+1 = 8; 30-day mortality 100/(1+e^(5.012-0.481*8)) = 23.8%)
+{ const n = R.nhfs({ age: 88, sex: "male", hgb: 95, amtsLow: true, institution: true, comorbid2: false, malignancy: false });
+  eq("NHFS 88 M, Hb 95, AMTS low, care home", n.score, 8); near("NHFS 8 -> 30-day mortality", n.mort30, 23.8, 0.1);
+  eq("NHFS needs age and Hb", R.nhfs({ age: 80 }), null); eq("NHFS age 65 = 0 points", R.nhfs({ age: 65, hgb: 120 }).pts.age, 0); }
 console.log(fail ? fail + " FAILED" : "all passed"); process.exit(fail ? 1 : 0);

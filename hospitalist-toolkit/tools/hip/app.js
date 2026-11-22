@@ -29,7 +29,7 @@ function ctx() {
   x.baseCr = crPre.length ? Math.min(...crPre.map((e) => e.v)) : null;
   x.akiNow = x.cr && x.baseCr != null && x.cr.t > (crPre.find((e) => e.v === x.baseCr) || {}).t ? R.aki(x.baseCr, x.cr.v) : false;
   x.ts = f.ts ? { t: f.ts.t, age: now - f.ts.t } : null;
-  x.nhfs = R.nhfs({ age: f.age, sex: f.sex, hgb: x.admHgb && x.admHgb.v, amtsLow: $("amts").checked, institution: $("inst").checked, comorbid2: $("comorb").checked, malignancy: !!f.prob.malignancy });
+  x.nhfs = nhfsFromForm(f, x);
   // anticoagulants
   const rec = (cat, days) => C.recent(f, cat, days || 7, now);
   x.ac = [];
@@ -73,7 +73,7 @@ function tile(cls, k, big, s) { return `<div class="tile ${cls}"><div class="k">
 
 function draw() {
   const f = state.f;
-  if (!f) { ["tiles", "alerts", "preop", "ac", "post", "pain", "vte", "bone", "hints"].forEach((id) => ($(id).innerHTML = "")); ["alertsum", "presum", "acsum", "postsum", "painsum", "vtesum", "bonesum", "ptsum", "crclnote", "surgname"].forEach((id) => ($(id).textContent = "")); $("alerts").innerHTML = '<div class="muted">No patient loaded.</div>'; state.x = null; HIP_NOTE.update(); return; }
+  if (!f) { ["tiles", "alerts", "preop", "ac", "post", "pain", "vte", "bone", "hints"].forEach((id) => ($(id).innerHTML = "")); ["alertsum", "presum", "acsum", "postsum", "painsum", "vtesum", "bonesum", "ptsum", "crclnote", "surgname"].forEach((id) => ($(id).textContent = "")); $("alerts").innerHTML = '<div class="muted">No patient loaded.</div>'; state.x = null; HIP_NOTE.update(); const nh = nhfsFromForm(null, null); if (nh) $("tiles").innerHTML = tile(nh.score >= 7 ? "t3" : nh.score >= 5 ? "t2" : "t1", "Nottingham score", nh.score, `About ${r1(nh.mort30)}% 30-day mortality`); return; }
   const x = state.x = ctx();
   $("crclnote").textContent = x.crcl != null ? `CrCl ${Math.round(x.crcl)} mL/min (Cockcroft-Gault, actual weight)` : "CrCl needs weight, age and creatinine";
   $("postrow").style.opacity = x.done ? 1 : 0.5;
@@ -197,7 +197,37 @@ function drawBone(x) {
   $("bone").innerHTML = `<div class="muted">${esc(facts.join(" · "))}</div>` + ul(x.bone.items.map(esc).concat(["Falls: review sedatives and blood pressure drugs, check orthostatic BP, vision, home safety and physiotherapy before discharge."]));
 }
 
+/* ---------- Nottingham score inputs: chart values fill the boxes until the user changes one ("you") ---------- */
+const NH_IDS = ["nh-age", "nh-sex", "nh-hgb", "amts", "inst", "comorb", "nh-malig"];
+const nhYou = (id) => $(id).dataset.you === "1";
+function nhSet(id, v) { const el = $(id); if (nhYou(id)) return; if (el.type === "checkbox") el.checked = !!v; else el.value = v == null ? "" : v; }
+function nhfsFromForm(f, x) {
+  f = f || {}; const prob = f.prob || {};
+  nhSet("nh-age", f.age != null ? f.age : null); nhSet("nh-sex", f.sex === "male" || f.sex === "female" ? f.sex : "");
+  nhSet("nh-hgb", x && x.admHgb ? Math.round(x.admHgb.v) : null); nhSet("nh-malig", !!prob.malignancy);
+  const num = (id) => ($(id).value === "" ? null : +$(id).value);
+  const r = R.nhfs({ age: num("nh-age"), sex: $("nh-sex").value, hgb: num("nh-hgb"), amtsLow: $("amts").checked, institution: $("inst").checked, comorbid2: $("comorb").checked, malignancy: $("nh-malig").checked });
+  const src = (id, hasChart) => nhYou(id) ? '<span class="src you">you</span>' : hasChart ? '<span class="src chart">chart</span>' : "";
+  const rows = [["Age " + ($("nh-age").value || "?") + (num("nh-age") >= 86 ? " (86 or over)" : num("nh-age") >= 66 ? " (66–85)" : ""), "age", src("nh-age", f.age != null)],
+    ["Male sex", "male", src("nh-sex", !!f.sex)], ["Admission Hb 100 g/L or less" + ($("nh-hgb").value ? " (" + $("nh-hgb").value + ")" : ""), "hgb", src("nh-hgb", !!(x && x.admHgb))],
+    ["AMTS 6/10 or less", "amts", src("amts", !!prob.dementia)], ["Lives in an institution", "institution", src("inst", !!prob.institution)],
+    ["2 or more comorbidities", "comorbid", src("comorb", !!f.prob)], ["Malignancy (past 20 years)", "malignancy", src("nh-malig", !!prob.malignancy)]];
+  const missing = [num("nh-age") == null ? "age" : "", num("nh-hgb") == null ? "admission Hb" : ""].filter(Boolean);
+  $("nhfsOut").innerHTML = r ? `<table class="nhpts">${rows.map(([l, k, sr]) => `<tr><td>${esc(l)} ${sr}</td><td class="pt">${r.pts[k]}</td></tr>`).join("")}
+      <tr><td><b>Total (0–10)</b></td><td class="pt">${r.score}</td></tr></table>
+      <div style="margin-top:4px"><b>About ${r1(r.mort30)}% predicted 30-day mortality</b>${r.score >= 6 ? " · high risk: goals-of-care discussion, early geriatric input" : r.score >= 5 ? " · raised risk" : ""}</div>`
+    : `<div class="muted" style="margin-top:6px">Enter ${missing.join(" and ")} to calculate.</div>`;
+  return r;
+}
+NH_IDS.concat(["nh-amtsN"]).forEach((id) => { const el = $(id); el.addEventListener(el.type === "number" ? "input" : "change", () => {
+  if (id === "nh-amtsN") { if (el.value !== "") { $("amts").checked = +el.value <= 6; $("amts").dataset.you = "1"; } }
+  else el.dataset.you = "1";
+  draw();
+}); });
+$("nh-reset").onclick = () => { NH_IDS.forEach((id) => delete $(id).dataset.you); $("nh-amtsN").value = ""; load(state.raw || null, $("pstatus").textContent, [], state.preset); };
+
 function load(raw, note, errors, preset) {
+  state.raw = raw; state.preset = preset; NH_IDS.forEach((id) => delete $(id).dataset.you); $("nh-amtsN").value = "";
   state.f = raw ? C.parse(raw) : null; const p = preset || {}, f = state.f;
   $("amts").checked = !!p.amtsLow || !!(f && f.prob.dementia); $("inst").checked = !!p.institution || !!(f && f.prob.institution);
   const comorb = f ? ["cardiac", "cerebro", "resp", "renal", "diabetes", "parkinson", "dementia"].filter((k) => f.prob[k]).length : 0;
@@ -215,7 +245,7 @@ function load(raw, note, errors, preset) {
   $("errs").innerHTML = errors && errors.length ? "Could not read: " + errors.map(esc).join("; ") + (errors.some((e) => /\b40[13]\b|Unauthorized|Forbidden/i.test(e)) ? ". Check the scopes in the Code Console." : ". Cerner's sandbox can be slow: reload the patient to try again.") : "";
   draw(); HIP_NOTE.reset();
 }
-["arrival", "surgery", "amts", "inst", "comorb", "cam", "mobil", "cath", "bm", "bleed"].forEach((id) => ($(id).onchange = draw)); $("wt").oninput = draw;
+["arrival", "surgery", "cam", "mobil", "cath", "bm", "bleed"].forEach((id) => ($(id).onchange = draw)); $("wt").oninput = draw;
 $("clear").onclick = () => { $("testsel").value = ""; load(null, "Open from Cerner to read the chart, or pick a made-up patient:"); };
 const SAMPLES = window.HIP_SAMPLES || [];
 SAMPLES.forEach((p, i) => { const o = document.createElement("option"); o.value = i; o.textContent = p.label; $("testsel").appendChild(o); });

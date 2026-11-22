@@ -23,6 +23,12 @@
     input[type=number] { width:80px; }
     .row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:8px 0; }
     .inl { display:inline-flex; gap:6px; align-items:center; }
+    fieldset.nhfs { border:1px solid var(--line); border-radius:8px; padding:6px 12px 10px; margin:8px 0; } fieldset.nhfs legend { font-weight:700; padding:0 4px; }
+    .nhgrid { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:6px 14px; font-size:13px; }
+    .nhgrid label { display:flex; flex-direction:column; gap:3px; color:var(--muted); } .nhgrid label.ck { flex-direction:row; align-items:flex-start; gap:6px; color:var(--ink); }
+    .nhgrid input[type=number], .nhgrid select { width:120px; }
+    table.nhpts { border-collapse:collapse; font-size:12.5px; margin-top:8px; } table.nhpts td { padding:2px 10px 2px 0; } table.nhpts td.pt { text-align:right; font-weight:700; }
+    .src { font-size:11px; border-radius:8px; padding:0 6px; } .src.chart { background:var(--b-bg, #e3eefc); color:var(--b-ink, #0b4a99); } .src.you { background:var(--a-bg, #fff1d6); color:var(--a-ink, #8a5200); }
     .muted { color:var(--muted); } .err { color:var(--r-ink); }
     .tiles { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px; }
     .tile { border-radius:10px; padding:10px 14px; border:1px solid var(--line); background:var(--card); }
@@ -69,11 +75,20 @@
           <label class="inl">Surgery <input type="datetime-local" id="surgery"></label>
           <span class="muted" id="surgname"></span>
         </div>
-        <div class="row"><b>Nottingham score:</b>
-          <label class="inl"><input type="checkbox" id="amts"> Abbreviated mental test 6/10 or less (or known dementia)</label>
-          <label class="inl"><input type="checkbox" id="inst"> Lives in a care home</label>
-          <label class="inl"><input type="checkbox" id="comorb"> 2 or more comorbidities</label>
-        </div>
+        <fieldset class="nhfs"><legend>Nottingham Hip Fracture Score <span class="muted">(chart fills what it can; type or tick to change any item)</span></legend>
+          <div class="nhgrid">
+            <label>Age (years) <input type="number" id="nh-age" min="18" max="115" step="1"></label>
+            <label>Sex <select id="nh-sex"><option value="">—</option><option value="female">Female</option><option value="male">Male</option></select></label>
+            <label>Admission Hb (g/L) <input type="number" id="nh-hgb" min="30" max="200" step="1"></label>
+            <label>AMTS score (0–10, optional) <input type="number" id="nh-amtsN" min="0" max="10" step="1" placeholder="sets the box below"></label>
+            <label class="ck"><input type="checkbox" id="amts"> Abbreviated mental test 6/10 or less (or known dementia)</label>
+            <label class="ck"><input type="checkbox" id="inst"> Lives in a care home / institution</label>
+            <label class="ck"><input type="checkbox" id="comorb"> 2 or more comorbidities <span class="muted">(heart, stroke/TIA, lung, kidney disease, diabetes, Parkinson, dementia…)</span></label>
+            <label class="ck"><input type="checkbox" id="nh-malig"> Malignancy in the past 20 years</label>
+          </div>
+          <div id="nhfsOut"></div>
+          <button type="button" id="nh-reset" class="noprint">Use chart values again</button>
+        </fieldset>
         <div class="row" id="postrow">
           <label class="inl">Delirium screen (CAM / 4AT) <select id="cam"><option value="">Not recorded</option><option value="negative">Negative</option><option value="positive">Positive</option></select></label>
           <label class="inl"><input type="checkbox" id="mobil"> Out of bed since surgery</label>
@@ -136,7 +151,7 @@
   <script src="samples.js?v=20261102a"></script>
   <script src="../../notedraft.js?v=20261102a"></script>
   <script src="note.js?v=20261102a"></script>
-  <script src="app.js?v=20261102a"></script>
+  <script src="app.js?v=20261121n"></script>
   <script src="../../subtabs.js?v=20261121f"></script>
   <script>SubTabs.mount({ store: "hip", top: ["#tiles", "Alerts"], tabs: [
       {"key": "pre", "label": "Pre-op", "match": ["Patient and timeline", "#sec-pre", "Anticoagulants and antiplatelets"]},
