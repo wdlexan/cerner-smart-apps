@@ -166,5 +166,12 @@
   <script src="samples.js?v=20261117a"></script>
   <script src="../../notedraft.js?v=20261113a"></script>
   <script src="app.js?v=20261117a"></script>
+  <script src="../../subtabs.js?v=20261121a"></script>
+  <script>SubTabs.mount({ store: "aki", top: ["#tiles", "#alertsum"], tabs: [
+      {"key": "assess", "label": "Assess", "match": ["Patient and bedside findings", "Creatinine trend", "Pre-renal, renal or post-renal"]},
+      {"key": "meds", "label": "Medicines", "match": ["Medicines to stop"]},
+      {"key": "tests", "label": "Investigations", "match": ["Investigations"]},
+      {"key": "ref", "label": "Reference", "match": ["Types of AKI", "Renal (intrinsic) causes", "When to involve nephrology"]},
+      {"key": "note", "label": "Note draft", "match": ["#sec-note"]}] });</script>
 </body>
 </html>

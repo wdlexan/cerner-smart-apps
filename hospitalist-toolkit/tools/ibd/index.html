@@ -231,5 +231,13 @@
   <script src="labcards.js?v=20261113d"></script>
   <script src="eim.js?v=20261113e"></script>
   <script src="vte.js?v=20261113f"></script>
+  <script src="../../subtabs.js?v=20261121a"></script>
+  <script>SubTabs.mount({ store: "ibd", top: ["#tiles", "#sec-alerts"], tabs: [
+      {"key": "chart", "label": "Patient & flowsheet", "match": ["#panel", "#sec-flow", "#sec-sym"]},
+      {"key": "inpt", "label": "Inpatient (ASUC, abscess, CMV, VTE)", "match": ["#sec-asuc", "#sec-surg", "#sec-cmv", "#sec-alb", "#sec-eim", "#sec-vte"]},
+      {"key": "meds", "label": "Medications & levels", "match": ["#sec-meds", "#sec-tdm", "#sec-path", "#sec-screen"]},
+      {"key": "endo", "label": "Endoscopy", "match": ["#sec-endo", "Add an endoscopy"]},
+      {"key": "ref", "label": "Reference PDFs", "match": ["#refpdfs"]},
+      {"key": "note", "label": "Copy note", "match": ["#copy"]}] });</script>
 </body>
 </html>

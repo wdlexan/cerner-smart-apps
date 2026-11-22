@@ -144,5 +144,13 @@
   <script src="samples.js?v=20261121a"></script>
   <script src="handout.js?v=20261121a"></script>
   <script src="app.js?v=20261121a"></script>
+  <script src="../../subtabs.js?v=20261121a"></script>
+  <script>SubTabs.mount({ store: "chf", top: ["Chart alerts", "#tiles"], dotSel: ".alert.urgent, .tile.t3, .plan .urgent", tabs: [
+      {"key": "assess", "label": "Assess", "match": ["Patient and situation", "Plan now", "is it heart failure", "Weight, NT-proBNP"]},
+      {"key": "diur", "label": "Diuretics & IV→PO", "match": ["Diuretics:", "Switching IV to oral"]},
+      {"key": "gdmt", "label": "GDMT", "match": ["Long-term treatment"]},
+      {"key": "cause", "label": "Cause & tests", "match": ["Cause:", "Investigations"]},
+      {"key": "dc", "label": "Discharge & handout", "match": ["Discharge and follow-up", "Patient handout"]},
+      {"key": "note", "label": "Note draft", "match": ["Note draft"]}] });</script>
 </body>
 </html>

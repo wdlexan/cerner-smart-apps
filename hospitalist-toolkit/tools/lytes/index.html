@@ -162,5 +162,14 @@
   <script src="reference.js?v=20261118g"></script>
   <script src="../../notedraft.js?v=20261113a"></script>
   <script src="app.js?v=20261118g"></script>
+  <script src="../../subtabs.js?v=20261121a"></script>
+  <script>SubTabs.mount({ store: "lytes", top: ["#tiles", "#alertsum"], tabs: [
+      {"key": "values", "label": "Patient & values", "match": ["#sec-manual", "Patient", "Trend (14 days)", "Relevant medications"]},
+      {"key": "k", "dotText": "severe", "label": "Potassium", "match": ["#plan-K"]},
+      {"key": "phos", "dotText": "severe", "label": "Phosphate", "match": ["#plan-phos"]},
+      {"key": "ca", "dotText": "severe", "label": "Calcium", "match": ["#plan-Ca"]},
+      {"key": "mg", "dotText": "severe", "label": "Magnesium", "match": ["#plan-Mg"]},
+      {"key": "ref", "label": "Reference", "match": ["#sec-ref"]},
+      {"key": "note", "label": "Note draft", "match": ["#sec-note"]}] });</script>
 </body>
 </html>
