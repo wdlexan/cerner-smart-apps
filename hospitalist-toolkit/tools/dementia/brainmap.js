@@ -63,10 +63,10 @@ function brainSVG(fills, opts = {}) {
     const base = /cerebellum|pons|midbrain|thalamus|caudate|hippocampus|mamillary|ventricles|whitematter/.test(id) ? "#d3d9e2" : "#e7ebf1";
     return shape.replace(/\/>$/, ` data-r="${id}" fill="${st.fill || base}" fill-opacity="${st.fill ? 0.85 : 1}" stroke="${st.stroke || "#ffffff"}" stroke-width="${st.stroke ? 3 : 1.5}"><title>${esc(BRAIN_REGIONS[id].name)} — ${esc(BRAIN_REGIONS[id].fn)}</title></${tag}>`);
   };
-  // both views are the watercolor illustrations (brain-lateral.jpg and brain-midline.jpg); midline view: the watercolor illustration (brain-midline.jpg, cropped 730×580 from the 1024×834 original) with regions traced over it in image pixels
+  // both views are the watercolor illustrations (brain-lateral.jpg and brain-midline.jpg), faded to near-grey so highlighted regions stand out; midline view: the watercolor illustration (brain-midline.jpg, cropped 730×580 from the 1024×834 original) with regions traced over it in image pixels
   const M = (id, shape) => {
     const st = f(id), tag = shape.match(/^<(\w+)/)[1];
-    return shape.replace(/\/>$/, ` data-r="${id}" fill="${st.fill || "#ffffff"}" fill-opacity="${st.fill ? 0.55 : 0}" stroke="${st.fill ? (st.stroke || st.fill) : "none"}" stroke-width="${st.stroke ? 7 : 4}"><title>${esc(BRAIN_REGIONS[id].name)} — ${esc(BRAIN_REGIONS[id].fn)}</title></${tag}>`);
+    return shape.replace(/\/>$/, ` data-r="${id}" fill="${st.fill || "#ffffff"}" fill-opacity="${st.fill ? 0.62 : 0}" stroke="${st.fill ? (st.stroke || st.fill) : "none"}" stroke-width="${st.stroke ? 8 : 5}"><title>${esc(BRAIN_REGIONS[id].name)} — ${esc(BRAIN_REGIONS[id].fn)}</title></${tag}>`);
   };
   let s = `<svg viewBox="0 0 800 300" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:820px;font-family:system-ui,sans-serif">
   
