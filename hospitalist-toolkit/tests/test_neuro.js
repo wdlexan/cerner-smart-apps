@@ -69,6 +69,19 @@ eq("functional with brisk reflexes is pushed out", has(["functional", "hyperrefl
 eq("upgaze + Cogan (fatig, ptosis) -> MG", top(["fatig", "ptosis"]), "mg");
 eq("Kernig positive with fever -> meningitis", top(["neckStiff", "fever"]), "mening");
 
+// MS relapse check (six features)
+const msv = (a, ct) => R.msRelapse(a, ct).verdict;
+eq("MS: nothing answered -> none", msv({}), "none");
+eq("MS: new, >24h, >30d, no trigger, steady -> true", msv({ sx: "new", dur24: "yes", days30: "yes", trig: "no", fluct: "no" }), "true");
+eq("MS: old symptom, trigger, fluctuates -> pseudo", msv({ sx: "old", trig: "yes", fluct: "yes" }), "pseudo");
+eq("MS: under 24 h -> pseudo", msv({ sx: "old", dur24: "no" }), "pseudo");
+eq("MS: new symptom WITH a trigger -> unclear (not auto-true)", msv({ sx: "new", dur24: "yes", trig: "yes" }), "unclear");
+eq("MS: new symptom with trigger gives the reassess note", R.msRelapse({ sx: "new", trig: "yes" }).notes.some((n) => /does not rule out/.test(n)), true);
+eq("MS: new MRI lesion wins over an old symptom", msv({ sx: "old", trig: "yes", mri: "new" }), "true");
+eq("MS: chart trigger (UTI) used when trigger left blank", msv({ sx: "old", fluct: "yes" }, ["urinalysis positive"]), "pseudo");
+eq("MS: no trigger alone is NOT enough to call true (old symptom, fluctuating)", msv({ sx: "old", trig: "no", fluct: "yes" }), "pseudo");
+eq("MS: within 30 days note", R.msRelapse({ days30: "no" }).notes.some((n) => /30 days/.test(n)), true);
+
 // breathing 20/30/40
 const h = 36e5;
 let b = R.breathing([{ t: 0, fvc: 1.5 }], 80); eq("FVC 1.5 L / 80 kg = 19 mL/kg", b.fvcPerKg, 19); eq("-> ICU", b.icu, true);

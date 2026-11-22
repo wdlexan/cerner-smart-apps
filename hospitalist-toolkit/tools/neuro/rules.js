@@ -354,6 +354,37 @@
     };
   }
 
+  /* ---------- MS: weigh all six features (not only "is there a trigger") ----------
+     a: { sx: "new"|"old", dur24: "yes"|"no", days30: "yes"|"no", trig: "yes"|"no", fluct: "yes"|"no", improve: "yes"|"no", mri: "new"|"none" }
+     chartTriggers: strings from pseudoRelapse() (fever, WBC, CRP, UA, heat). UNVERIFIED weights written by Claude. */
+  const MS_Q = [
+    { k: "sx", q: "Is the symptom brand new, or one they have had before?", opts: [["new", "Brand new (or a major worsening of an old one)"], ["old", "Old symptom coming back"]] },
+    { k: "dur24", q: "Has it lasted 24 hours or more?", opts: [["yes", "Yes, 24 h or more"], ["no", "No, under 24 h"]] },
+    { k: "days30", q: "Did it start 30 days or more after the start of the last relapse?", opts: [["yes", "Yes, 30 days or more"], ["no", "No, within 30 days"]] },
+    { k: "trig", q: "Is there a trigger: fever, infection (UTI, chest, virus), heat, poor sleep, stress or overexertion?", opts: [["yes", "Yes"], ["no", "No (checked)"]] },
+    { k: "fluct", q: "Does it fluctuate with temperature or fatigue, or improve within hours to 2 days of treating the trigger?", opts: [["yes", "Yes, fluctuates / improving"], ["no", "No, steady or worsening"]] },
+    { k: "mri", q: "MRI compared with baseline?", opts: [["new", "New or enhancing lesion"], ["none", "No new activity"]] }];
+  function msRelapse(a, chartTriggers) {
+    a = a || {}; const ct = chartTriggers || [], trig = a.trig || (ct.length ? "yes" : null);
+    let t = 0, p = 0; const forT = [], forP = [], notes = [];
+    if (a.sx === "new") { t += 2; forT.push("brand-new symptom"); } else if (a.sx === "old") { p += 2; forP.push("old symptom recurring"); }
+    if (a.dur24 === "yes") { t += 1; forT.push("lasted 24 h or more"); } else if (a.dur24 === "no") { p += 3; forP.push("under 24 h (not a relapse by definition)"); }
+    if (a.days30 === "no") notes.push("Within 30 days of the last relapse: counts as part of that relapse, not a new one.");
+    else if (a.days30 === "yes") { t += 1; forT.push("30 days or more since the last relapse"); }
+    if (trig === "yes") { p += 2; forP.push("trigger present" + (ct.length && !a.trig ? " (chart: " + ct.join("; ") + ")" : "")); } else if (trig === "no") { t += 1; forT.push("no trigger found"); }
+    if (a.fluct === "yes") { p += 2; forP.push("fluctuates / improving quickly"); } else if (a.fluct === "no") { t += 1; forT.push("steady or worsening"); }
+    if (a.mri === "new") { t += 4; forT.push("new or enhancing MRI lesion"); } else if (a.mri === "none") { p += 2; forP.push("no new MRI activity"); }
+    const answered = MS_Q.filter((q) => a[q.k]).length + (!a.trig && ct.length ? 1 : 0);
+    if (a.sx === "new" && trig === "yes") notes.push("A trigger does not rule out a true relapse when the symptom is brand new: treat the trigger, reassess in 24–48 h, and get an MRI if it persists.");
+    if (a.sx === "old" && a.mri === "new") notes.push("Old symptom but new MRI activity: the MRI wins, so treat as a true relapse.");
+    const verdict = !answered ? "none" : a.mri === "new" || t - p >= 3 ? "true" : p - t >= 3 ? "pseudo" : "unclear";
+    const text = verdict === "true" ? "True MS relapse likely (" + forT.join("; ") + "). If it limits function: methylprednisolone 500–1000 mg IV daily for 3–5 days (check glucose and infection first); tell the MS clinic and review DMT."
+      : verdict === "pseudo" ? "Pseudo-relapse likely (" + forP.join("; ") + "). Treat the trigger, cool, rest; no steroids. Expect improvement within 24–48 h; if not, reassess and consider MRI."
+      : verdict === "unclear" ? "Unclear (" + [forT.length ? "for relapse: " + forT.join(", ") : "", forP.length ? "for pseudo-relapse: " + forP.join(", ") : ""].filter(Boolean).join("; ") + "). Treat any trigger, reassess in 24–48 h; MRI brain ± spine with contrast if it persists or is new."
+      : "";
+    return { verdict, t, p, forT, forP, notes, text, answered };
+  }
+
   /* ---------- bladder scan / post-void residual (mL) ---------- */
   function bladder(ml) {
     if (ml == null || isNaN(ml)) return null;
@@ -382,6 +413,6 @@
       : { lvl: "ok", text: "Constant vertigo with an ABNORMAL head impulse, one-direction horizontal nystagmus, no skew, normal hearing and able to walk: peripheral (vestibular neuritis) is likely. Only reliable if HINTS was done by a confident examiner." };
   }
 
-  const api = { FINDINGS, LABEL, DX, rank, localize, LEVELS, EXAM, breathing, mgCheck, MG_DRUGS, antithrombotics, pseudoRelapse, bladder, gcsTrend, hints };
+  const api = { FINDINGS, LABEL, DX, rank, localize, LEVELS, EXAM, MS_Q, msRelapse, breathing, mgCheck, MG_DRUGS, antithrombotics, pseudoRelapse, bladder, gcsTrend, hints };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.NeuroRules = api;
 })(typeof window !== "undefined" ? window : globalThis);

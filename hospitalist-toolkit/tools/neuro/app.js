@@ -5,7 +5,7 @@ const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": 
 const fmt = (t) => new Date(t).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 const H = 36e5;
 
-const state = { f: null, ticks: {}, auto: {}, pres: "all", typed: [], work: null, card: "weak", exam: {}, examKeys: {} };
+const state = { f: null, ticks: {}, auto: {}, pres: "all", typed: [], work: null, card: "weak", exam: {}, examKeys: {}, ms: {} };
 
 /* ---------- presentation buttons: which findings groups to highlight ---------- */
 const PRES = [
@@ -68,6 +68,21 @@ function applyExam() {
   Object.keys(want).forEach((k) => { if (!state.ticks[k]) { state.ticks[k] = true; state.examKeys[k] = true; } });
 }
 
+/* ---------- MS relapse check ---------- */
+function drawMS(x) {
+  if ((state.ticks.knownMS || state.ticks.msNew) && !state.msOpened) { $("sec-ms").open = true; state.msOpened = true; }
+  $("msq").innerHTML = R.MS_Q.map((q) => `<div class="msq"><div class="qq">${esc(q.q)}${q.k === "trig" && !state.ms.trig && x.pr && x.pr.triggers.length ? ` <span class="auto" style="color:var(--accent);font-size:11.5px">chart: ${esc(x.pr.triggers.join("; "))}</span>` : ""}</div>
+      ${q.opts.concat([["", "Unknown"]]).map(([v, l]) => `<label><input type="radio" name="ms-${q.k}" value="${v}"${(state.ms[q.k] || "") === v ? " checked" : ""}> ${esc(l)}</label>`).join("")}</div>`).join("");
+  $("msq").querySelectorAll("input[type=radio]").forEach((r) => (r.onchange = () => { const k = r.name.slice(3); if (r.value) state.ms[k] = r.value; else delete state.ms[k]; draw(); }));
+  const m = x.msr, cls = m.verdict === "true" ? "c-no" : m.verdict === "pseudo" ? "c-yes" : "c-unknown";
+  $("msout").innerHTML = m.verdict === "none" ? `<div class="muted" style="margin-top:6px">Answer the questions to get a verdict.</div>`
+    : `<div class="lvl"><b>${m.verdict === "true" ? "True relapse likely" : m.verdict === "pseudo" ? "Pseudo-relapse likely" : "Unclear"}</b>
+        <div style="margin-top:4px">${esc(m.text)}</div>
+        <div class="muted" style="margin-top:4px;font-size:12px">For relapse: ${m.t} · for pseudo-relapse: ${m.p}</div></div>` + m.notes.map((n) => `<div class="alert action">${esc(n)}</div>`).join("")
+      + (x.dmt.length && /natalizumab/i.test(x.dmt.join(" ")) ? `<div class="alert urgent">On natalizumab: new symptoms could be PML. Urgent MRI and neurology; JCV PCR in CSF.</div>` : "");
+  $("mssum").textContent = m.verdict === "none" ? "" : m.verdict === "true" ? "true relapse likely" : m.verdict === "pseudo" ? "pseudo-relapse likely" : "unclear";
+}
+
 /* ---------- derived facts ---------- */
 function facts() {
   const f = state.f || { labs: {}, resp: [], gcs: [], bladder: [], meds: [], conds: [], series: {} };
@@ -82,13 +97,14 @@ function facts() {
   const L = f.labs;
   const pr = (state.ticks.knownMS || state.ticks.msNew) ? R.pseudoRelapse({ tempMax: f.tempMax, wbc: L.wbc ? L.wbc.v : null, crp: L.crp ? L.crp.v : null, uaPositive: f.ua ? f.ua.pos : null, heat: !!state.ticks.heat }) : null;
   const dmt = (f.meds || []).filter((m) => /natalizumab|ocrelizumab|ofatumumab|ublituximab|rituximab|fingolimod|siponimod|ozanimod|ponesimod|cladribine|alemtuzumab|dimethyl fumarate|diroximel|teriflunomide|glatiramer|interferon/i.test(m));
-  return { f, wt, respRows, br, mg, at, bl, gcs, ranked, pr, dmt, hints: R.hints(state.ticks) };
+  const msr = R.msRelapse(state.ms, pr ? pr.triggers : []);
+  return { f, wt, respRows, br, mg, at, bl, gcs, ranked, pr, msr, dmt, hints: R.hints(state.ticks) };
 }
 
 /* ---------- drawing ---------- */
 function draw() {
   const x = facts();
-  drawLoc(); drawTiles(x); drawAlerts(x); drawDx(x); drawBreathing(x); drawMeds(x); drawLabs(x); drawCard(); NOTE.update();
+  drawLoc(); drawMS(x); drawTiles(x); drawAlerts(x); drawDx(x); drawBreathing(x); drawMeds(x); drawLabs(x); drawCard(); NOTE.update();
 }
 
 function tile(k, big, s, cls) { return `<div class="tile ${cls || ""}"><div class="k">${k}</div><div class="big">${big}</div><div class="s">${s}</div></div>`; }
@@ -112,7 +128,8 @@ function drawAlerts(x) {
   if (x.bl) { const r = R.bladder(x.bl.v); if (r.lvl !== "ok") a.push(alert(r.lvl === "urgent" ? "urgent" : "action", "Bladder:", esc(r.text))); }
   if (x.gcs && x.gcs.lvl !== "ok") a.push(alert(x.gcs.lvl === "urgent" ? "urgent" : "action", "GCS:", esc(x.gcs.text)));
   if (x.hints && x.hints.lvl !== "info") a.push(alert(x.hints.lvl === "urgent" ? "urgent" : "info", "Vertigo:", esc(x.hints.text)));
-  if (x.pr) a.push(alert(x.pr.verdict === "pseudo" ? "action" : "info", "MS:", esc(x.pr.text)));
+  if (x.msr.verdict !== "none") a.push(alert(x.msr.verdict === "pseudo" ? "action" : "info", "MS:", esc(x.msr.text)));
+  else if (x.pr) a.push(alert(x.pr.verdict === "pseudo" ? "action" : "info", "MS:", esc(x.pr.text)));
   const cord = x.ranked.find((d) => d.id === "cord" || d.id === "cauda");
   if (cord && cord.score >= 5) a.push(alert("urgent", "Cord / cauda equina:", "MRI whole spine now (within 24 h at the latest). " + (T.cancer ? "Cancer history: dexamethasone 16 mg now, do not wait for MRI. " : "") + "Call spine surgery."));
   if ((T.drowsy || T.fall) && x.at.some((q) => q.kind !== "antiplatelet" && q.kind !== "VTE prophylaxis dose")) a.push(alert("urgent", "Head injury on anticoagulant:", "CT head now; if bleeding, reverse (see Medicines)."));
@@ -220,7 +237,8 @@ function neuroNote() {
   const others = x.ranked.filter((d) => d.id !== state.work).slice(0, 4);
   if (others.length) S.assess.push((work ? "Also considered: " : "Differential: ") + others.map((d) => d.name + (d.cantMiss ? " (can't miss)" : "")).join("; ") + ".");
   if (x.hints && x.hints.lvl !== "info") S.assess.push(x.hints.text);
-  if (x.pr) S.assess.push(x.pr.text);
+  if (x.msr.verdict !== "none") { S.assess.push("MS: " + x.msr.text); x.msr.notes.forEach((n) => S.assess.push(n)); }
+  else if (x.pr) S.assess.push(x.pr.text);
   const b = x.br;
   if (b.fvc || b.nif) S.data.push("Breathing: " + [b.fvc ? `FVC ${b.fvc.fvc} L${b.fvcPerKg != null ? ` (${b.fvcPerKg} mL/kg)` : ""}` : "", b.nif ? `NIF ${b.nif.nif}` : "", b.mep ? `MEP ${b.mep.mep}` : "", b.drop ? `${b.drop}% below best in 48 h` : ""].filter(Boolean).join(", ") + (b.icu ? " — meets ICU threshold." : "."));
   if (x.bl) S.data.push(`Bladder scan ${x.bl.v} mL (${fmt(x.bl.t)}).`);
@@ -268,7 +286,7 @@ function autoTicks(f) {
 function load(raw, note, errors, preset) {
   state.f = raw ? C.parse(raw) : null; state.typed = []; state.work = null;
   state.auto = state.f ? autoTicks(state.f) : {};
-  state.ticks = {}; state.exam = {}; state.examKeys = {}; Object.keys(state.auto).forEach((k) => (state.ticks[k] = true));
+  state.ticks = {}; state.exam = {}; state.examKeys = {}; state.ms = {}; state.msOpened = false; Object.keys(state.auto).forEach((k) => (state.ticks[k] = true));
   if (preset) { (preset.ticks || []).forEach((k) => (state.ticks[k] = true)); state.card = preset.card || state.card; }
   $("wt").value = state.f && state.f.weight ? state.f.weight.v : "";
   const p = raw && raw.patient, nm = p && p.name && p.name[0];
