@@ -60,9 +60,10 @@
     @media print { .noprint { display:none; } }
     .ticks { display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:4px 14px; margin:6px 0; }
     .ticks label { display:flex; gap:6px; align-items:flex-start; } .ticks .auto { font-size:11.5px; color:var(--accent); margin-left:4px; }
-    fieldset.grp { border:1px solid var(--line); border-radius:8px; margin:8px 0; padding:4px 12px 8px; }
-    fieldset.grp legend { font-weight:600; padding:0 4px; }
-    fieldset.grp.dim { opacity:.45; }
+    details.grp { border:1px solid var(--line); border-radius:8px; margin:6px 0; padding:0 12px; }
+    details.grp > summary { font-weight:600; padding:7px 0; cursor:pointer; } details.grp[open] > summary { padding-bottom:4px; } details.grp[open] { padding-bottom:8px; }
+    details.grp .gcount { font-weight:normal; font-size:12px; background:var(--b-bg); color:var(--b-ink); border-radius:9px; padding:1px 7px; margin-left:4px; }
+    details.grp.dim > summary { opacity:.55; }
     .locticks { display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:4px 14px; font-size:13px; }
     .exgrp { border:1px solid var(--line); border-radius:8px; margin:6px 0; } .exgrp > summary { padding:6px 10px; font-weight:600; cursor:pointer; }
     .exrow { display:flex; gap:10px; align-items:flex-start; padding:5px 10px; border-top:1px solid var(--line); flex-wrap:wrap; }
@@ -102,6 +103,7 @@
           <label class="inl">Weight <input type="number" id="wt" min="25" max="350" step="0.1"> <span class="muted">kg</span></label></div>
         <div class="row pres" id="pres"></div>
         <div class="muted">Ticks with a blue "chart" label were set from the chart; untick them if they are wrong.</div>
+        <div class="row" style="margin:4px 0"><button id="grpOpen" type="button">Open all</button><button id="grpClose" type="button">Close all</button></div>
         <div id="ticks"></div>
         <div id="errs" class="err"></div>
       </div>
@@ -170,11 +172,11 @@
   </main>
   <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
   <script src="../../pdf-overlay.js?v=20261120p"></script>
-  <script src="rules.js?v=20261121t"></script>
+  <script src="rules.js?v=20261121u"></script>
   <script src="reference.js?v=20261121n"></script>
-  <script src="chart.js?v=20261121r"></script>
+  <script src="chart.js?v=20261121u"></script>
   <script src="samples.js?v=20261117a"></script>
   <script src="../../notedraft.js?v=20261113a"></script>
-  <script src="app.js?v=20261121t"></script>
+  <script src="app.js?v=20261121u"></script>
 </body>
 </html>

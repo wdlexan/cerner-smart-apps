@@ -92,6 +92,18 @@ eq("ddx: partial list puts can't-miss first", d2.partial[0].cantMiss, true);
 eq("ddx: every diagnosis has mimics", R.DX.filter((x) => !R.MIMICS[x.id] && x.id !== "stroke").length + (R.MIMICS.stroke ? 0 : 1), 0);
 eq("ddx: nothing ticked -> empty", dd([]).partial.length + (dd([]).top ? 1 : 0), 0);
 
+// preceding history (prodrome) and medicine clues
+eq("GBS: viral illness counts", R.rank({ ascend: true, areflex: true, viralURI: true }).find((d) => d.id === "gbs").score > R.rank({ ascend: true, areflex: true }).find((d) => d.id === "gbs").score, true);
+eq("dissection: neck manipulation + neck pain", top(["neckPain", "neckManip"]), "dissect");
+eq("NCSE: confusion after stopping benzodiazepines", has(["fluct", "drugStop"], "ncse"), true);
+eq("ICU/sepsis + floppy areflexic legs -> critical illness listed", has(["icuSepsis", "para", "areflex"], "cip"), true);
+eq("MS: UTI tick feeds the trigger", R.msRelapse({ sx: "old", fluct: "yes" }, ["infection now"]).verdict, "pseudo");
+let mc = R.medClues(["cefepime 2 g IV q8h", "atorvastatin 40 mg PO daily", "pembrolizumab"], ["cefepime 2 g IV q8h"]);
+eq("med clues: cefepime flagged and listed first as new", mc[0].isNew && /Cefepime/.test(mc[0].text), true);
+eq("med clues: checkpoint inhibitor and statin found", mc.some((c) => /Checkpoint/.test(c.text)) && mc.some((c) => /Statin/.test(c.text)), true);
+{ const n = Date.now(), p = C.parse({ patient: {}, obs: [], conditions: [], medreqs: [{ status: "active", authoredOn: new Date(n - 2 * 864e5).toISOString(), medicationCodeableConcept: { text: "ciprofloxacin 500 mg PO BID" } }, { status: "active", authoredOn: new Date(n - 60 * 864e5).toISOString(), medicationCodeableConcept: { text: "amlodipine 5 mg PO daily" } }] });
+  eq("chart: medicine ordered 2 days ago ticks newMed, old one does not", !!p.auto.newMed && /ciprofloxacin/.test(p.auto.newMed) && !/amlodipine/.test(p.auto.newMed), true); }
+
 // breathing 20/30/40
 const h = 36e5;
 let b = R.breathing([{ t: 0, fvc: 1.5 }], 80); eq("FVC 1.5 L / 80 kg = 19 mL/kg", b.fvcPerKg, 19); eq("-> ICU", b.icu, true);

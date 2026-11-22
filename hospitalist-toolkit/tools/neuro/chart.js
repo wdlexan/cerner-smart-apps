@@ -79,7 +79,8 @@
     const active = (m) => !m.status || /active|on-hold|draft/i.test(m.status);
     const medName = (m) => label(m.medicationCodeableConcept) || (m.medicationReference && m.medicationReference.display) || "";
     const seen = new Set();
-    (raw.medreqs || []).filter(active).forEach((m) => { const n = medName(m); if (n && !seen.has(n.toLowerCase())) { seen.add(n.toLowerCase()); out.meds.push(n); } });
+    out.newMeds = [];
+    (raw.medreqs || []).filter(active).forEach((m) => { const n = medName(m); if (n && !seen.has(n.toLowerCase())) { seen.add(n.toLowerCase()); out.meds.push(n); const t = m.authoredOn ? new Date(m.authoredOn).getTime() : null; if (t && now - t < 14 * DAY) out.newMeds.push(n); } });
     (raw.admins || []).forEach((m) => { const t = tOf(m) || (m.effectivePeriod && new Date(m.effectivePeriod.start).getTime()); const n = medName(m); if (n && t && now - t < 3 * DAY && !seen.has(n.toLowerCase())) { seen.add(n.toLowerCase()); out.meds.push(n); } });
     out.conds = (raw.conditions || []).filter((c) => !c.clinicalStatus || !/resolved|inactive/i.test(label(c.clinicalStatus))).map((c) => label(c.code)).filter(Boolean);
 
@@ -93,6 +94,8 @@
     if (out.tempMax != null && out.tempMax >= 38) A.fever = `temperature ${out.tempMax} °C in 72 h`;
     if (L.k && L.k.v < 3.0) A.lowK = `K ${L.k.v}`;
     if (L.ck && L.ck.v > 1000) A.highCK = `CK ${L.ck.v}`;
+    if (out.newMeds.length) A.newMed = out.newMeds.slice(0, 3).join(", ") + (out.newMeds.length > 3 ? "…" : "") + " (ordered in 14 days)";
+    if (out.ua && out.ua.pos && now - out.ua.t < 3 * DAY) A.uti = "urinalysis positive";
     const meds = out.meds.join(" | ");
     const glu = (out.series.glu || []).filter((x) => now - x.t < 3 * DAY), gluMin = glu.length ? Math.min(...glu.map((x) => x.v)) : null;
     if (gluMin != null && gluMin < 4) A.lowGlu = `glucose ${gluMin} in 72 h`;

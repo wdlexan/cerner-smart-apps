@@ -12,26 +12,34 @@ const PRES = [
   ["all", "All"], ["weak", "Weakness"], ["back", "Back pain + neuro"], ["eyes", "Eyes / swallowing / breathing"],
   ["head", "Drowsy / headache / fall"], ["conf", "Confused / fever / seizure"], ["vert", "Vertigo"], ["ms", "Known MS, worse"]];
 const PRES_GROUPS = {
-  weak: ["Weakness pattern", "Signs", "Weakness from the top down", "Background (chart fills some)"], back: ["Signs", "Weakness pattern", "Weakness from the top down", "Background (chart fills some)"],
-  eyes: ["Signs", "Weakness pattern", "Weakness from the top down", "Background (chart fills some)"], head: ["Head / level of consciousness", "Confusion, headache, fever", "Weakness pattern", "Background (chart fills some)"],
-  conf: ["Confusion, headache, fever", "Head / level of consciousness", "Background (chart fills some)"],
-  vert: ["Vertigo"], ms: ["Multiple sclerosis", "Signs", "Background (chart fills some)"] };
+  weak: ["Weakness pattern", "Signs", "Motor exam: tone, bulk, reflexes", "Weakness from the top down", "Preceding history (prodrome)", "Background (chart fills some)"],
+  back: ["Signs", "Weakness pattern", "Motor exam: tone, bulk, reflexes", "Preceding history (prodrome)", "Background (chart fills some)"],
+  eyes: ["Signs", "Weakness pattern", "Weakness from the top down", "Preceding history (prodrome)", "Background (chart fills some)"],
+  head: ["Head / level of consciousness", "Confusion, headache, fever", "Weakness pattern", "Preceding history (prodrome)", "Background (chart fills some)"],
+  conf: ["Confusion, headache, fever", "Head / level of consciousness", "Preceding history (prodrome)", "Background (chart fills some)"],
+  vert: ["Vertigo", "Preceding history (prodrome)"], ms: ["Multiple sclerosis", "Signs", "Preceding history (prodrome)", "Background (chart fills some)"] };
 const PRES_CARD = { weak: "weak", back: "cord", eyes: "mg", head: "sdh", conf: "mening", vert: "vertigo", ms: "ms" };
 
 function drawPres() {
   $("pres").innerHTML = "What's the problem? " + PRES.map(([k, l]) => `<button data-p="${k}" class="${state.pres === k ? "on" : ""}">${l}</button>`).join("");
   $("pres").querySelectorAll("button").forEach((b) => (b.onclick = () => {
-    state.pres = b.dataset.p; if (PRES_CARD[state.pres] && !state.work) state.card = PRES_CARD[state.pres];
+    state.pres = b.dataset.p; state.grpOpen = {}; if (PRES_CARD[state.pres] && !state.work) state.card = PRES_CARD[state.pres];
     drawPres(); drawTicks(); draw();
   }));
 }
 
 function drawTicks() {
   const show = PRES_GROUPS[state.pres];
-  $("ticks").innerHTML = R.FINDINGS.map((g) => `<fieldset class="grp ${show && !show.includes(g.group) ? "dim" : ""}"><legend>${g.group}</legend><div class="ticks">` +
-    g.items.map(([k, l]) => `<label><input type="checkbox" data-k="${k}" ${state.ticks[k] ? "checked" : ""}> <span>${esc(l)}${state.auto[k] ? `<span class="auto">chart: ${esc(state.auto[k])}</span>` : ""}</span></label>`).join("") +
-    `</div></fieldset>`).join("");
-  $("ticks").querySelectorAll("input[data-k]").forEach((i) => (i.onchange = () => { state.ticks[i.dataset.k] = i.checked; draw(); }));
+  state.grpOpen = state.grpOpen || {};
+  $("ticks").innerHTML = R.FINDINGS.map((g, gi) => {
+    const n = g.items.filter(([k]) => state.ticks[k]).length;
+    const open = g.group in state.grpOpen ? state.grpOpen[g.group] : n > 0 || (show ? show.includes(g.group) : gi < 2);
+    return `<details class="grp ${show && !show.includes(g.group) ? "dim" : ""}" data-g="${esc(g.group)}"${open ? " open" : ""}><summary>${esc(g.group)}${n ? ` <span class="gcount">${n} ticked</span>` : ""}</summary><div class="ticks">` +
+      g.items.map(([k, l]) => `<label><input type="checkbox" data-k="${k}" ${state.ticks[k] ? "checked" : ""}> <span>${esc(l)}${state.auto[k] ? `<span class="auto">chart: ${esc(state.auto[k])}</span>` : ""}</span></label>`).join("") +
+      `</div></details>`;
+  }).join("");
+  $("ticks").querySelectorAll("details.grp").forEach((d) => d.addEventListener("toggle", () => (state.grpOpen[d.dataset.g] = d.open)));
+  $("ticks").querySelectorAll("input[data-k]").forEach((i) => (i.onchange = () => { state.ticks[i.dataset.k] = i.checked; const d = i.closest("details"); const n = d.querySelectorAll("input:checked").length; const sm = d.querySelector("summary"); sm.innerHTML = esc(d.dataset.g) + (n ? ` <span class="gcount">${n} ticked</span>` : ""); draw(); }));
 }
 
 /* ---------- where is the lesion (UMN / LMN / junction / muscle) ---------- */
@@ -97,8 +105,10 @@ function facts() {
   const L = f.labs;
   const pr = (state.ticks.knownMS || state.ticks.msNew) ? R.pseudoRelapse({ tempMax: f.tempMax, wbc: L.wbc ? L.wbc.v : null, crp: L.crp ? L.crp.v : null, uaPositive: f.ua ? f.ua.pos : null, heat: !!state.ticks.heat }) : null;
   const dmt = (f.meds || []).filter((m) => /natalizumab|ocrelizumab|ofatumumab|ublituximab|rituximab|fingolimod|siponimod|ozanimod|ponesimod|cladribine|alemtuzumab|dimethyl fumarate|diroximel|teriflunomide|glatiramer|interferon/i.test(m));
-  const msr = R.msRelapse(state.ms, pr ? pr.triggers : []);
-  return { f, wt, respRows, br, mg, at, bl, gcs, ranked, pr, msr, dmt, hints: R.hints(state.ticks) };
+  const histTrig = [["uti", "infection now"], ["viralURI", "recent viral illness"], ["stressSleep", "poor sleep / stress / overexertion"]].filter(([k]) => state.ticks[k]).map(([, l]) => l);
+  const msr = R.msRelapse(state.ms, (pr ? pr.triggers : []).concat(histTrig));
+  const clues = R.medClues(f.meds, f.newMeds);
+  return { f, wt, respRows, br, mg, at, bl, gcs, ranked, pr, msr, clues, dmt, hints: R.hints(state.ticks) };
 }
 
 /* ---------- drawing ---------- */
@@ -119,16 +129,17 @@ function drawTiles(x) {
   if (x.mg.some((m) => m.lvl === "avoid" || m.lvl === "caution")) t.push(tile("MG risk medicines", x.mg.filter((m) => m.lvl === "avoid" || m.lvl === "caution").length, "see Medicines", state.ticks.knownMG || state.ticks.fatig || state.ticks.ptosis ? "t3" : "t1"));
   if (x.ranked.length) t.push(tile("Top of the list", "", esc(x.ranked[0].name), x.ranked[0].urg === "now" ? "t3" : x.ranked[0].urg === "today" ? "t2" : "t1"));
   $("tiles").innerHTML = t.join("");
-  drawDdx();
+  drawDdx(x);
 }
-function drawDdx() {
-  const d = R.differential(state.ticks);
-  if (!d.top && !d.partial.length) { $("ddx").innerHTML = ""; return; }
+function drawDdx(x) {
+  const d = R.differential(state.ticks), clues = (x && x.clues) || [];
+  if (!d.top && !d.partial.length && !clues.length) { $("ddx").innerHTML = ""; return; }
   const chip = (q) => `<span class="chip u-${q.urg}">${q.urg === "now" ? "NOW" : q.urg === "today" ? "TODAY" : "routine"}</span>`;
   const nm = (q) => (q.card ? `<button class="lnk" data-dcard="${q.card}">${esc(q.name)}</button>` : esc(q.name)) + (q.cantMiss ? ` <span class="chip c-no">can't miss</span>` : "");
   let h = `<div class="box">`;
   if (d.also.length) h += `<h4>Also fits the findings</h4><ul>${d.also.map((q) => `<li>${chip(q)} ${nm(q)} <span class="why">${esc(q.why.join(" · "))}</span></li>`).join("")}</ul>`;
   if (d.partial.length) h += `<h4>Possible: only partly fits (1–2 findings so far)</h4><ul>${d.partial.map((q) => `<li>${nm(q)} <span class="why">${esc(q.why.join(" · ") || "background only")}</span></li>`).join("")}</ul>`;
+  if (clues.length) h += `<h4>Medicine clues${clues.some((c) => c.isNew) ? " (new medicines first)" : ""}</h4><ul>${clues.slice(0, 6).map((c) => `<li>${c.isNew ? `<span class="chip u-today">NEW</span> ` : ""}<b>${esc(c.meds.join(", "))}</b>: ${esc(c.text)}</li>`).join("")}</ul>`;
   if (d.mimics.length) h += `<h4>Mimics of ${esc(d.top.name.split(" (")[0])}</h4><div>${d.mimics.map((m) => `<span class="dd">• ${esc(m)}</span>`).join("")}</div>`;
   $("ddx").innerHTML = h + `<div class="why" style="margin-top:6px">Prompts from the ticked findings, not a diagnosis. Tap a name for its tests and treatment.</div></div>`;
   $("ddx").querySelectorAll("[data-dcard]").forEach((b) => (b.onclick = () => { state.card = b.dataset.dcard; drawCard(); $("card").scrollIntoView({ behavior: "smooth" }); }));
@@ -249,6 +260,7 @@ function neuroNote() {
   const loc = R.localize(T); if (loc.level) S.assess.push("Localization: " + R.LEVELS[loc.level].name + (loc.next ? " (or " + R.LEVELS[loc.next].name + ")" : "") + ".");
   const others = x.ranked.filter((d) => d.id !== state.work).slice(0, 4);
   if (others.length) S.assess.push((work ? "Also considered: " : "Differential: ") + others.map((d) => d.name + (d.cantMiss ? " (can't miss)" : "")).join("; ") + ".");
+  const newC = x.clues.filter((c) => c.isNew); if (newC.length) S.data.push("New medicines that may be relevant: " + newC.map((c) => c.meds.join(", ")).join("; ") + ".");
   const dd = R.differential(T); if (dd.mimics.length) S.assess.push("Mimics to consider: " + dd.mimics.join(", ") + ".");
   if (x.hints && x.hints.lvl !== "info") S.assess.push(x.hints.text);
   if (x.msr.verdict !== "none") { S.assess.push("MS: " + x.msr.text); x.msr.notes.forEach((n) => S.assess.push(n)); }
@@ -326,3 +338,5 @@ async function fromChart() {
 drawPres(); drawExam(); drawTicks(); draw(); fromChart();
 // ?demo=1..6 opens a made-up patient directly
 (() => { const d = parseInt(new URLSearchParams(location.search).get("demo"), 10); if (d >= 1 && d <= SAMPLES.length) { $("testsel").value = d - 1; $("testsel").onchange(); } })();
+$("grpOpen").onclick = () => { state.grpOpen = {}; R.FINDINGS.forEach((g) => (state.grpOpen[g.group] = true)); drawTicks(); };
+$("grpClose").onclick = () => { state.grpOpen = {}; R.FINDINGS.forEach((g) => (state.grpOpen[g.group] = false)); drawTicks(); };

@@ -74,10 +74,20 @@
     { group: "Multiple sclerosis", items: [
       ["msNew", "New or worse MS symptoms for over 24 h"],
       ["heat", "Hot, exercising, or recent heat exposure"]] },
+    { group: "Preceding history (prodrome)", items: [
+      ["recentInf", "Diarrhea (e.g. Campylobacter) or chest infection in the past 6 weeks"],
+      ["viralURI", "Viral illness, flu-like or cold in the past 6 weeks"],
+      ["vaccine", "Vaccination in the past 6 weeks"],
+      ["uti", "UTI or other infection now (urinary symptoms, cough)"],
+      ["newMed", "New or changed medicine in the past 2 weeks"],
+      ["drugStop", "Stopped alcohol, benzodiazepines or an antiseizure medicine recently"],
+      ["neckManip", "Neck manipulation (chiropractic), neck trauma, violent coughing or vomiting"],
+      ["icuSepsis", "Recent ICU stay, sepsis or prolonged ventilation"],
+      ["stressSleep", "Poor sleep, high stress or overexertion"],
+      ["toxExp", "Recreational drugs or toxin exposure (nitrous oxide, organophosphates)"]] },
     { group: "Background (chart fills some)", items: [
       ["cancer", "Cancer history"],
       ["fever", "Fever or sepsis"],
-      ["recentInf", "Diarrhea or chest infection in the past 4 weeks"],
       ["anticoag", "On an anticoagulant"],
       ["antiplt", "On an antiplatelet"],
       ["spineProc", "Recent spinal procedure, epidural or LP"],
@@ -104,12 +114,12 @@
     { id: "cauda", name: "Cauda equina syndrome", card: "cauda", urg: "now", cantMiss: true,
       score: (f) => s(f, { saddle: 4, retention: 2, backpain: 2 }) + (f.para ? 1 : 0) + (f.areflex && f.para ? 1 : 0) + (f.cancer && f.backpain ? 1 : 0) },
     { id: "gbs", name: "Guillain-Barré syndrome", card: "gbs", urg: "today", cantMiss: true,
-      score: (f) => s(f, { ascend: 3, areflex: 2, recentInf: 1, distalNumb: 1, facial: 1, bulbar: 1, autonomic: 1, dyspnea: 1 })
+      score: (f) => s(f, { ascend: 3, areflex: 2, recentInf: 1, viralURI: 1, vaccine: 1, distalNumb: 1, facial: 1, bulbar: 1, autonomic: 1, dyspnea: 1 })
         + (f.para ? 1 : 0) - (f.sensLevel ? 2 : 0) - (f.hyperreflex ? 2 : 0) - (f.fatig ? 1 : 0) - (f.tick ? 3 : 0) - (f.descend ? 2 : 0) },
     { id: "mg", name: "Myasthenia gravis (crisis if breathing or swallowing affected)", card: "mg", urg: "today", cantMiss: true,
       score: (f) => s(f, { fatig: 3, ptosis: 3, bulbar: 2, knownMG: 3, dyspnea: 1 }) - (f.areflex ? 1 : 0) - (f.distalNumb ? 1 : 0) - (f.sensLevel ? 2 : 0) },
     { id: "ms", name: "MS relapse or pseudo-relapse", card: "ms", urg: "today",
-      score: (f) => s(f, { knownMS: 2, msNew: 2, heat: 1 }) },
+      score: (f) => s(f, { knownMS: 2, msNew: 2, heat: 1 }) + (f.knownMS && (f.uti || f.viralURI || f.stressSleep) ? 1 : 0) },
     { id: "sdh", name: "Subdural hematoma (acute or chronic)", card: "sdh", urg: "now", cantMiss: true,
       score: (f) => s(f, { drowsy: 2, fall: 2, gradual: 1 }) + ((f.anticoag || f.antiplt) && (f.drowsy || f.fall || f.hemi) ? 2 : 0) + (f.hemi && (f.drowsy || f.fall) ? 1 : 0) },
     { id: "stroke", name: "Stroke or TIA (use the Stroke tab / code stroke)", card: null, urg: "now", cantMiss: true,
@@ -119,34 +129,36 @@
     { id: "bppv", name: "BPPV", card: "vertigo", urg: "routine",
       score: (f) => s(f, { vPositional: 3, dixPos: 3 }) - (f.vConstant ? 2 : 0) - (f.nysCentral ? 3 : 0) },
     { id: "vneur", name: "Vestibular neuritis / labyrinthitis", card: "vertigo", urg: "routine",
-      score: (f) => (f.vConstant ? 3 : 0) - (f.hitNormal || f.nysCentral || f.skew || f.cantWalk ? 4 : 0) - (f.vPositional ? 1 : 0) },
+      score: (f) => (f.vConstant ? 3 + (f.viralURI ? 1 : 0) : 0) - (f.hitNormal || f.nysCentral || f.skew || f.cantWalk ? 4 : 0) - (f.vPositional ? 1 : 0) },
     { id: "mening", name: "Meningitis / encephalitis (bacterial, HSV)", card: "mening", urg: "now", cantMiss: true,
       score: (f) => (f.fever || f.neckStiff ? s(f, { fever: 2, neckStiff: 3, drowsy: 1, fluct: 1, seizure: 1, immuno: 1 }) : 0) },
     { id: "wernicke", name: "Wernicke encephalopathy", card: "wernicke", urg: "now", cantMiss: true,
       score: (f) => (f.etoh || f.ataxiaOph ? s(f, { etoh: 2, ataxiaOph: 3, drowsy: 1, fluct: 1, cerebellar: 1 }) : 0) },
     { id: "ncse", name: "Non-convulsive status epilepticus", card: "ncse", urg: "now", cantMiss: true,
-      score: (f) => s(f, { fluct: 3, seizure: 2 }) + (f.drowsy && (f.fluct || f.seizure) ? 1 : 0) },
+      score: (f) => s(f, { fluct: 3, seizure: 2 }) + (f.drowsy && (f.fluct || f.seizure) ? 1 : 0) + ((f.fluct || f.seizure || f.drowsy) && (f.drugStop || f.newMed) ? 1 : 0) },
     { id: "sah", name: "Subarachnoid hemorrhage", card: "headache", urg: "now", cantMiss: true,
       score: (f) => s(f, { thunder: 4, neckStiff: 1, drowsy: 1, seizure: 1 }) + (f.thunder && (f.anticoag || f.antiplt) ? 1 : 0) },
     { id: "cvst", name: "Cerebral venous sinus thrombosis", card: "headache", urg: "now", cantMiss: true,
       score: (f) => { const risk = f.preg || f.estrogen || f.thrombo || f.cancer;
         return f.headPos || (risk && (f.seizure || f.drowsy || f.hemi)) ? s(f, { headPos: 2, preg: 2, estrogen: 1, thrombo: 2, cancer: 1, seizure: 1, hemi: 1, drowsy: 1, visual: 1 }) : 0; } },
     { id: "dissect", name: "Vertebral or carotid artery dissection", card: "dissect", urg: "now", cantMiss: true,
-      score: (f) => (f.neckPain || f.horner ? s(f, { neckPain: 2, horner: 2, hemi: 1, vertigo: 1, cantWalk: 1 }) + (f.neckPain && f.horner ? 1 : 0) : 0) },
+      score: (f) => (f.neckPain || f.horner ? s(f, { neckPain: 2, horner: 2, hemi: 1, vertigo: 1, cantWalk: 1, neckManip: 2 }) + (f.neckPain && f.horner ? 1 : 0) : 0) },
     { id: "myelitis", name: "Transverse myelitis (cord not compressed)", card: "myelitis", urg: "today", cantMiss: true,
-      score: (f) => (f.mriNoComp ? 3 + s(f, { sensLevel: 1, para: 1, retention: 1, hyperreflex: 1, knownMS: 1 }) : 0) },
+      score: (f) => (f.mriNoComp ? 3 + s(f, { sensLevel: 1, para: 1, retention: 1, hyperreflex: 1, knownMS: 1, viralURI: 1, vaccine: 1 }) : 0) },
     { id: "botul", name: "Botulism or tick paralysis (GBS / MG mimic)", card: "botul", urg: "now", cantMiss: true,
-      score: (f) => s(f, { descend: 3, pupils: 2, tick: 5, botRisk: 3, noSens: 1 }) + (f.bulbar && f.ptosis && f.pupils ? 1 : 0) - (f.fatig ? 1 : 0) },
+      score: (f) => s(f, { descend: 3, pupils: 2, tick: 5, botRisk: 3, noSens: 1, toxExp: 1 }) + (f.bulbar && f.ptosis && f.pupils ? 1 : 0) - (f.fatig ? 1 : 0) },
     { id: "hypogly", name: "Hypoglycemia (can cause focal deficit, seizure, coma)", card: "hypogly", urg: "now", cantMiss: true,
       score: (f) => (f.lowGlu ? 2 + (f.hemi || f.drowsy || f.seizure || f.fluct ? 2 : 0) : 0) },
     { id: "pres", name: "PRES (posterior reversible encephalopathy)", card: "pres", urg: "now", cantMiss: true,
       score: (f) => (f.htn || f.presRisk || f.visual ? s(f, { htn: 2, presRisk: 2, visual: 2, seizure: 1, drowsy: 1, preg: 1 }) : 0) },
     { id: "hypok", name: "Hypokalemic weakness", card: "weak", urg: "today", score: (f) => (f.lowK ? 3 : 0) + (f.para || f.prox ? 1 : 0) },
-    { id: "myo", name: "Myopathy / rhabdomyolysis / myositis", card: "weak", urg: "today", score: (f) => s(f, { prox: 2, highCK: 3 }) - (f.areflex ? 1 : 0) },
+    { id: "myo", name: "Myopathy / rhabdomyolysis / myositis", card: "weak", urg: "today", score: (f) => s(f, { prox: 2, highCK: 3 }) + (f.prox && f.newMed ? 1 : 0) - (f.areflex ? 1 : 0) },
     { id: "neurop", name: "Peripheral neuropathy (B12, alcohol, diabetes, chemo)", card: "weak", urg: "routine",
       score: (f) => s(f, { distalNumb: 2, areflex: 1, dorsal: 1, romberg: 1 }) - (f.ascend ? 2 : 0) - (f.sensLevel ? 2 : 0) },
     { id: "scd", name: "B12 or copper deficiency (subacute combined degeneration)", card: "weak", urg: "today",
-      score: (f) => (f.dorsal || f.romberg ? s(f, { dorsal: 2, romberg: 2, hyperreflex: 1, distalNumb: 1, etoh: 1 }) : 0) },
+      score: (f) => (f.dorsal || f.romberg || f.toxExp ? s(f, { dorsal: 2, romberg: 2, hyperreflex: 1, distalNumb: 1, etoh: 1, toxExp: 1 }) : 0) },
+    { id: "cip", name: "Critical illness neuropathy / myopathy", card: "weak", urg: "routine",
+      score: (f) => (f.icuSepsis ? 2 + s(f, { para: 1, areflex: 1, prox: 1, flaccid: 1 }) : 0) - (f.sensLevel ? 2 : 0) },
     { id: "functional", name: "Functional neurological disorder (positive signs)", card: "weak", urg: "routine",
       score: (f) => (f.functional ? 3 : 0) - (f.hyperreflex || f.sensLevel || f.wasting ? 2 : 0) },
     { id: "mono", name: "Single nerve or root lesion (compression palsy, radiculopathy)", card: "weak", urg: "routine", score: (f) => (f.single ? 3 : 0) }];
@@ -260,6 +272,7 @@
     hypogly: ["Stroke", "Seizure", "Wernicke", "Sepsis", "Adrenal insufficiency"],
     pres: ["Eclampsia", "Posterior circulation stroke", "RCVS", "CVST", "Hypertensive encephalopathy", "Encephalitis"],
     scd: ["Cervical myelopathy", "MS", "Diabetic neuropathy", "Syphilis (tabes dorsalis)", "HIV myelopathy", "Nitrous oxide use"],
+    cip: ["Guillain-Barré", "Myasthenia (unmasked by drugs)", "Cord lesion", "Electrolyte weakness (K, PO4, Mg)", "Steroid myopathy"],
     functional: ["MS", "Stroke", "Myasthenia", "Myopathy", "Stiff-person syndrome", "Functional overlay on a real disease"] };
 
   /* every diagnosis with at least one supporting finding, for the "partly fits" list */
@@ -295,7 +308,9 @@
     cvst: ["headPos", "preg", "estrogen", "thrombo", "cancer", "seizure", "hemi", "drowsy", "visual"], dissect: ["neckPain", "horner", "hemi", "vertigo", "cantWalk"],
     myelitis: ["mriNoComp", "sensLevel", "para", "retention", "hyperreflex", "knownMS"], botul: ["descend", "pupils", "tick", "botRisk", "noSens", "bulbar", "ptosis"],
     hypogly: ["lowGlu", "hemi", "drowsy", "seizure", "fluct"], pres: ["htn", "presRisk", "visual", "seizure", "drowsy", "preg"],
-    scd: ["dorsal", "romberg", "hyperreflex", "distalNumb", "etoh"], functional: ["functional"] };
+    scd: ["dorsal", "romberg", "hyperreflex", "distalNumb", "etoh", "toxExp"], functional: ["functional"], cip: ["icuSepsis", "para", "areflex", "prox", "flaccid"] };
+  WHY.gbs.push("viralURI", "vaccine"); WHY.myelitis.push("viralURI", "vaccine"); WHY.vneur.push("viralURI"); WHY.dissect.push("neckManip");
+  WHY.ncse.push("drugStop", "newMed"); WHY.ms.push("uti", "viralURI", "stressSleep"); WHY.botul.push("toxExp"); WHY.myo.push("newMed");
   ["drift", "corticalSens"].forEach((k) => WHY.stroke.push(k)); WHY.vcentral.push("cerebellar"); WHY.wernicke.push("cerebellar"); WHY.neurop.push("dorsal", "romberg");
   const why = (d, f) => (WHY[d.id] || []).filter((k) => f[k]).map((k) => LABEL[k]);
 
@@ -426,6 +441,31 @@
     return { verdict, t, p, forT, forP, notes, text, answered };
   }
 
+  /* ---------- medicines that cause or unmask neuro problems (chart list; "new" = ordered in the past 14 days) ---------- */
+  const MED_CLUES = [
+    { re: /pembrolizumab|nivolumab|ipilimumab|atezolizumab|durvalumab|cemiplimab|dostarlimab|tremelimumab/i, text: "Checkpoint inhibitor: myasthenia, myositis (± myocarditis), GBS-like neuropathy, encephalitis. Check CK and troponin." },
+    { re: /cefepime/i, text: "Cefepime (especially with poor kidney function): encephalopathy, myoclonus, non-convulsive status." },
+    { re: /ciprofloxacin|levofloxacin|moxifloxacin|gentamicin|tobramycin|amikacin|azithromycin|clarithromycin|magnesium sulfate/i, text: "Fluoroquinolone, aminoglycoside, macrolide or IV magnesium: can unmask or worsen myasthenia." },
+    { re: /atorvastatin|rosuvastatin|simvastatin|pravastatin|lovastatin/i, text: "Statin: myopathy (check CK); rarely immune-mediated necrotizing myopathy." },
+    { re: /prednisone|dexamethasone|methylprednisolone|hydrocortisone/i, text: "Steroids: proximal myopathy, hyperglycemia, delirium; high doses can worsen myasthenia at first." },
+    { re: /tacrolimus|cyclosporine|bevacizumab/i, text: "Tacrolimus / cyclosporine / bevacizumab: PRES, tremor, seizures. Check the level and BP." },
+    { re: /natalizumab|rituximab|ocrelizumab|fingolimod|dimethyl fumarate/i, text: "MS / immunosuppressive drug: PML or opportunistic infection with new symptoms." },
+    { re: /lithium/i, text: "Lithium: tremor, ataxia, confusion, seizures (check level)." },
+    { re: /phenytoin|carbamazepine|oxcarbazepine|lacosamide|lamotrigine/i, text: "Antiseizure drug: ataxia, nystagmus, dizziness, diplopia when levels are high (oxcarbazepine/carbamazepine: low sodium)." },
+    { re: /metronidazole/i, text: "Metronidazole: neuropathy and cerebellar toxicity with long courses." },
+    { re: /linezolid|isoniazid|vincristine|paclitaxel|docetaxel|oxaliplatin|cisplatin|bortezomib|thalidomide/i, text: "Neuropathy-causing drug (linezolid, isoniazid without B6, chemotherapy)." },
+    { re: /ondansetron|tramadol|linezolid|methylene blue|fentanyl|ssri|sertraline|citalopram|escitalopram|fluoxetine|paroxetine|venlafaxine|duloxetine|trazodone/i, text: "Serotonergic drugs together: serotonin syndrome (clonus, agitation, fever, diarrhea)." },
+    { re: /haloperidol|olanzapine|quetiapine|risperidone|metoclopramide|prochlorperazine/i, text: "Dopamine blocker: NMS (rigidity, fever, high CK), parkinsonism, akathisia; avoid in Lewy body or Parkinson." },
+    { re: /apixaban|rivaroxaban|edoxaban|dabigatran|warfarin|enoxaparin|heparin|clopidogrel|ticagrelor/i, text: "Antithrombotic: bleeding (subdural, cord hematoma after LP or epidural)." },
+    { re: /estradiol|ethinyl|estrogen|premarin/i, text: "Estrogen: venous sinus thrombosis risk." },
+    { re: /insulin|glargine|gliclazide|glyburide|glimepiride/i, text: "Insulin or sulfonylurea: hypoglycemia can cause focal deficits, seizures or coma." },
+    { re: /zopiclone|lorazepam|diazepam|clonazepam|gabapentin|pregabalin|oxycodone|hydromorphone|morphine|baclofen/i, text: "Sedating drug (benzodiazepine, gabapentinoid, opioid, baclofen): drowsiness, falls, ataxia, delirium." }];
+  function medClues(meds, newMeds) {
+    const out = [], isNew = new Set((newMeds || []).map((m) => m.toLowerCase()));
+    MED_CLUES.forEach((c) => { const hit = (meds || []).filter((m) => c.re.test(m)); if (hit.length) out.push({ text: c.text, meds: hit, isNew: hit.some((m) => isNew.has(m.toLowerCase())) }); });
+    return out.sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0));
+  }
+
   /* ---------- bladder scan / post-void residual (mL) ---------- */
   function bladder(ml) {
     if (ml == null || isNaN(ml)) return null;
@@ -454,6 +494,6 @@
       : { lvl: "ok", text: "Constant vertigo with an ABNORMAL head impulse, one-direction horizontal nystagmus, no skew, normal hearing and able to walk: peripheral (vestibular neuritis) is likely. Only reliable if HINTS was done by a confident examiner." };
   }
 
-  const api = { FINDINGS, LABEL, DX, rank, rankAll, differential, MIMICS, localize, LEVELS, EXAM, MS_Q, msRelapse, breathing, mgCheck, MG_DRUGS, antithrombotics, pseudoRelapse, bladder, gcsTrend, hints };
+  const api = { FINDINGS, LABEL, DX, rank, medClues, MED_CLUES, rankAll, differential, MIMICS, localize, LEVELS, EXAM, MS_Q, msRelapse, breathing, mgCheck, MG_DRUGS, antithrombotics, pseudoRelapse, bladder, gcsTrend, hints };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.NeuroRules = api;
 })(typeof window !== "undefined" ? window : globalThis);
