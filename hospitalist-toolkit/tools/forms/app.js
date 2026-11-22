@@ -361,7 +361,9 @@ async function genericFill(PDFLib, bytes, form, v) {
         for (const f of allFields(form)) {
             const val = v[f.id];
             if (f.type === "check") { if (val && f.acro) acroCheck(f.acro); continue; }
-            if (f.type === "radio" || f.type === "select") { const o = (f.options || []).find(o => o.value === val); if (o && o.acro) acroCheck(o.acro); continue; }
+            if (f.type === "radio" || f.type === "select") { const o = (f.options || []).find(o => o.value === val); if (o && o.acro) acroCheck(o.acro);
+                else if (o && o.value && f.acro) acroText(f.acro, o.pdfText || o.label, f); // select whose choice prints as text
+                continue; }
             if (f.type === "checks") { for (const o of f.options) if ((val || []).includes(o.value) && o.acro) acroCheck(o.acro); continue; }
             if (!f.acro) continue;
             let str = f.text ? f.text(v) : val;

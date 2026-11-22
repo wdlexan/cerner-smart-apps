@@ -257,6 +257,108 @@
         },
         // =====================================================================
         {
+            // Fillable PDF (Island Health 01-01-121662-0 V4 JUN 2026): values go into the PDF's own fields (acro), so it stays editable.
+            id: "umac",
+            title: "UMAC Referral – Urgent Medical Assessment Clinic (South Island)",
+            description: "Island Health UMAC referral (form 01-01-121662-0 V4, Jun 2026; fax 250-370-8186). Not for pre-op: use the UMAC Pre-Op form",
+            category: "Referral",
+            template: "UMACReferral.pdf",
+            acro: true,
+            filePrefix: "UMACReferral",
+            fileNameFrom: "last",
+            footer: "Fax 250-370-8186, one referral per fax. Incomplete forms are rejected; no labels or stamps. Emergent: send to ED or call the on-call internist via switchboard 250-370-8699. Not accepted: cognitive decline, movement disorders / primarily neurological, chronic unchanged >12 months, fatigue without weight loss/fevers/sweats, second opinions.",
+            sections: [
+                {
+                    legend: "Referral", fields: [
+                        { id: "date", label: "Date of referral", type: "date", src: "today", fmt: "dmon", acro: "Date of Referral" },
+                        { id: "urgency", label: "Urgency (see page 2)", type: "radio", important: true, span: 4, options: [
+                            { value: "a", label: "URGENT (A) – within 1–2 weeks", acro: "URGENT A" },
+                            { value: "b", label: "Semi-urgent (B) – within 4–6 weeks", acro: "Semiurgent B" },
+                            { value: "c", label: "Non-urgent (C) – within 4–6 months", acro: "Nonurgent C" }] },
+                        { id: "refType", label: "Referral type", type: "radio", value: "hospital", span: 4, options: [
+                            { value: "ed", label: "Hospital ED", acro: "Hospital ED" }, { value: "hospital", label: "Hospital", acro: "Hospital" },
+                            { value: "community", label: "Community", acro: "Community" }, { value: "rereferral", label: "Re-referral", acro: "ReReferral" }] },
+                        { id: "priority", label: "Priority", type: "radio", value: "first", options: [
+                            { value: "first", label: "First available", acro: "undefined_4" }, { value: "prefers", label: "Prefers to see (name in details)", acro: "undefined_5" }] },
+                        { id: "prevPatient", label: "Previous patient of (UMAC physician)", type: "text", acro: "Previous Patient of", size: 9 }
+                    ]
+                },
+                {
+                    legend: "Patient", fields: [
+                        { id: "last", label: "Last name", type: "text", src: "pt.last", required: true, acro: "Last name" },
+                        { id: "first", label: "First name", type: "text", src: "pt.first", required: true, acro: "First name" },
+                        { id: "dob", label: "Date of birth", type: "date", src: "pt.dob", required: true, fmt: "dmon", acro: "Date of birth ddMmmyyyy" },
+                        { id: "phn", label: "PHN", type: "text", src: "pt.phn", phn: true, acro: "PHN" },
+                        { id: "ptPhone", label: "Primary contact number", type: "text", src: "pt.homePhone", acro: "Primary contact number" },
+                        { id: "gender", label: "Gender", type: "radio", src: "pt.sex", options: [
+                            { value: "male", label: "M", acro: "undefined" }, { value: "female", label: "F", acro: "undefined_2" }, { value: "unknown", label: "U", acro: "undefined_3" }] },
+                        { id: "address", label: "Address", type: "textarea", src: "pt.addressOneLine", span: 4, acro: "Address", size: 9 },
+                        { id: "email", label: "Email (optional)", type: "text", src: "pt.email", acro: "Email optional" },
+                        { id: "pcp", label: "Primary care provider", type: "text", acro: "Primary Care Provider", size: 9 }
+                    ]
+                },
+                {
+                    legend: "Referring practitioner", fields: [
+                        { id: "refName", label: "Referring practitioner", type: "fixed", src: "cfg.shortName", acro: "Referring practitioner" },
+                        { id: "refMsp", label: "MSP #", type: "fixed", src: "cfg.msp", acro: "Text1" },
+                        { id: "locum", label: "Locum", type: "check", acro: "Locum" },
+                        { id: "clinic", label: "Clinic name / street address / phone / fax (4 short lines)", type: "textarea", span: 4, acro: "Clinic Name Street Address Phone STAMP Fax", size: 8,
+                          value: (function () { const p = (window.APP_CONFIG || {}).physician || {};
+                              return [p.clinicName || "VGH Hospitalist Service", p.clinicAddress, p.phone && "Phone " + p.phone, p.fax && "Fax " + p.fax].filter(Boolean).join("\n"); })() }
+                    ]
+                },
+                {
+                    legend: "Reason for referral", fields: [
+                        { id: "reason", label: "Reason for referral (ONLY from the page 2 list; letter = usual urgency)", type: "select", important: true, span: 4, acro: "Reason for referral selected ONLY from page 2", size: 8, options: [
+                            { value: "", label: "— choose from the UMAC list (page 2) —" },
+                            { value: "A: Decompensated cardiorespiratory disease (acute HF, rapid AF, pericarditis, severe valve disease, asthma/COPD exacerbation, severe HTN >180/110)", label: "A: Decompensated cardiorespiratory disease (acute HF, rapid AF, pericarditis, severe valve disease, asthma/COPD exacerbation, severe HTN >180/110)" },
+                            { value: "A: Severe anemia (Hb <70) / severe thrombocytopenia (Plt <50)", label: "A: Severe anemia (Hb <70) / severe thrombocytopenia (Plt <50)" },
+                            { value: "A: New metastatic disease or likely cancer for work-up", label: "A: New metastatic disease or likely cancer for work-up" },
+                            { value: "A: Suspected vasculitis", label: "A: Suspected vasculitis" },
+                            { value: "A: Symptomatic diabetes", label: "A: Symptomatic diabetes" },
+                            { value: "A: Venous thromboembolism (VTE)", label: "A: Venous thromboembolism (VTE)" },
+                            { value: "A: Treadmill (chest pain with or without high clinical probability)", label: "A: Treadmill (chest pain with or without high clinical probability)" },
+                            { value: "B: Weight loss with B symptoms - diagnostic work-up", label: "B: Weight loss with B symptoms - diagnostic work-up" },
+                            { value: "B: Dyspnea / chest pain / palpitations / syncope NYD", label: "B: Dyspnea / chest pain / palpitations / syncope NYD" },
+                            { value: "B: Suspected autoimmune disease / PMR", label: "B: Suspected autoimmune disease / PMR" },
+                            { value: "B: Poorly controlled endocrine disease", label: "B: Poorly controlled endocrine disease" },
+                            { value: "B: Poorly controlled cardiorespiratory disease (HTN, CAD, HF, asthma, COPD)", label: "B: Poorly controlled cardiorespiratory disease (HTN, CAD, HF, asthma, COPD)" },
+                            { value: "B: New or worsening renal / liver / hematological disorder", label: "B: New or worsening renal / liver / hematological disorder" },
+                            { value: "C: Orthostatic / exertional intolerance", label: "C: Orthostatic / exertional intolerance" },
+                            { value: "C: Resistant hypertension work-up", label: "C: Resistant hypertension work-up" },
+                            { value: "C: Diabetes re-assessment", label: "C: Diabetes re-assessment" },
+                            { value: "C: Cardiorespiratory disease re-assessment", label: "C: Cardiorespiratory disease re-assessment" }] },
+                        { id: "details", label: "Details of referral (about 8 lines on the form)", type: "textarea", important: true, span: 4, acro: "Details of Referral", size: 9 }
+                    ]
+                },
+                {
+                    legend: "Alerts", fields: [
+                        { id: "alerts", label: "Alerts", type: "checks", span: 4, options: [
+                            { value: "none", label: "None", acro: "NONE" }, { value: "hoh", label: "Hard of hearing", acro: "Hard of Hearing" },
+                            { value: "violence", label: "Hx of violence", acro: "Hx of Violence" }, { value: "violenceOther", label: "Hx of violence – other", acro: "Hx of ViolenceOther" },
+                            { value: "mobility", label: "Mobility impairment", acro: "Mobility Impairment" }, { value: "cognitive", label: "Cognitive impairment", acro: "Cognitive Impairment" },
+                            { value: "mrsa", label: "MRSA", acro: "MRSA" }, { value: "vre", label: "VRE", acro: "VRE" }, { value: "cdiff", label: "C. diff", acro: "Cdiff" },
+                            { value: "otherId", label: "Other infectious disease", acro: "Other infectious Disease" },
+                            { value: "language", label: "Language barrier", acro: "Language Barrier" }, { value: "other", label: "Other", acro: "Other" }] },
+                        { id: "languageSpec", label: "Language barrier: language", type: "text", acro: "Text2", size: 8 },
+                        { id: "otherSpec", label: "Other alert", type: "text", acro: "Text3", size: 8 }
+                    ]
+                },
+                {
+                    legend: "Supporting documents", fields: [
+                        { id: "docs", label: "Blood work, micro, imaging, pathology, consult letters", type: "radio", value: "attached", span: 4, options: [
+                            { value: "attached", label: "Attached", acro: "Attached" }, { value: "pending", label: "Pending", acro: "Pending" }, { value: "none", label: "None", acro: "NONE_2" }] },
+                        { id: "pendingSpec", label: "Pending: what", type: "text", acro: "Text4", size: 8 },
+                        { id: "pmh", label: "Relevant medical history", type: "radio", value: "attached", options: [
+                            { value: "attached", label: "Attached", acro: "Attached_2" }, { value: "none", label: "None", acro: "NONE_3" }] },
+                        { id: "meds", label: "Current medications", type: "radio", value: "attached", options: [
+                            { value: "attached", label: "Attached", acro: "Attached_3" }, { value: "none", label: "None", acro: "NONE_4" }] }
+                    ]
+                }
+            ]
+        },
+        // =====================================================================
+        {
             id: "pulse",
             title: "Pulse – Cardiology & Respirology Referral",
             description: "Pulse Complete Cardiac Care (Version: March 2026, fax 250-595-1000)",
