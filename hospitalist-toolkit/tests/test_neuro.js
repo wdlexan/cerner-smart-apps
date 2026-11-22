@@ -28,7 +28,10 @@ eq("no meningitis without fever or neck stiffness", has(["drowsy", "seizure"], "
 eq("wernicke: alcohol + ataxia/eye signs", top(["etoh", "ataxiaOph", "drowsy"]), "wernicke");
 eq("NCSE: fluctuating confusion after seizure", top(["fluct", "seizure"]), "ncse");
 eq("SAH: thunderclap", top(["thunder", "neckStiff"]), "sah");
-eq("CVST: positional headache + estrogen/pregnancy + seizure", top(["headPos", "clotRisk", "seizure"]), "cvst");
+eq("CVST: positional headache + pregnancy + seizure", top(["headPos", "preg", "seizure"]), "cvst");
+eq("CVST: on the pill + positional headache is listed", has(["headPos", "estrogen"], "cvst"), true);
+eq("CVST: thrombophilia + seizure + drowsy is listed", has(["thrombo", "seizure", "drowsy"], "cvst"), true);
+eq("CVST: on the pill alone with no headache/neuro sign is not listed", has(["estrogen"], "cvst"), false);
 eq("dissection: neck pain + Horner", top(["neckPain", "horner", "vertigo"]), "dissect");
 eq("myelitis replaces cord when MRI shows no compression", top(["para", "sensLevel", "retention", "mriNoComp"]), "myelitis");
 eq("cord still top without that MRI tick", top(["para", "sensLevel", "retention", "backpain"]), "cord");
@@ -116,5 +119,9 @@ eq("GBS sample ICU by 30% drop", R.breathing(g.resp, g.weight.v).icu, true);
 const cord = C.parse(S[2].build(now)); eq("cord sample: cancer auto", !!cord.auto.cancer, true); eq("cord sample: retention auto", !!cord.auto.retention, true);
 const ms = C.parse(S[4].build(now)); eq("MS sample: UA positive", ms.ua.pos, true); eq("MS sample: fever auto", !!ms.auto.fever, true);
 const m = C.parse(S[1].build(now)); eq("MG sample: knownMG auto", !!m.auto.knownMG, true); eq("MG sample: avoid magnesium", R.mgCheck(m.meds)[0].lvl, "avoid");
+
+{ const C2 = require("../tools/neuro/chart.js"), n = Date.now(), iso = new Date(n - 36e5).toISOString();
+  const p = C2.parse({ patient: { birthDate: "1995-01-01" }, obs: [], conditions: [], medreqs: [{ status: "active", medicationCodeableConcept: { text: "levonorgestrel-ethinyl estradiol 0.15-0.03 mg PO daily" } }] });
+  eq("chart: birth control pill ticks estrogen only (not pregnancy)", !!p.auto.estrogen && !p.auto.preg && !p.auto.thrombo, true); }
 
 console.log(fail ? `\n${fail} FAILED` : "\nall passed"); process.exit(fail ? 1 : 0);

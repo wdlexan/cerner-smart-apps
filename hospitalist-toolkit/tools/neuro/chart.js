@@ -99,7 +99,9 @@
     else if (/insulin|glargine|detemir|degludec|lispro|aspart|gliclazide|glyburide|glimepiride/i.test(meds)) A.lowGlu = "on insulin or a sulfonylurea";
     if (/alcohol (use|dependence|abuse|withdrawal)|alcoholism|malnutrition|bariatric|gastric bypass|hyperemesis|anorexia/i.test(cond)) A.etoh = "on the problem list";
     if (/tacrolimus|cyclosporine|mycophenolate|azathioprine|methotrexate|rituximab|cyclophosphamide|prednisone|dexamethasone/i.test(meds) || /transplant|\bhiv\b|neutropen/i.test(cond)) A.immuno = "immunosuppressant or condition";
-    if (/pregnan|postpartum|thrombophilia|factor v leiden|antiphospholipid/i.test(cond) || /estradiol|ethinyl|estrogen/i.test(meds)) A.clotRisk = "pregnancy, estrogen or thrombophilia";
+    if (/pregnan|postpartum|puerper|O[0-9]{2}\b/i.test(cond)) A.preg = "on the problem list";
+    if (/estradiol|ethinyl|estrogen|conjugated estrogens|norethindrone acetate.*ethinyl|levonorgestrel.*ethinyl|drospirenone|norgestimate|desogestrel|etonogestrel.*ring|nuvaring|evra|yaz|yasmin|alesse|seasonique|tri-cyclen|premarin|estrace/i.test(meds)) A.estrogen = "estrogen-containing medicine ordered";
+    if (/thrombophilia|factor v leiden|prothrombin gene|antiphospholipid|protein [cs] deficiency|antithrombin deficiency|history of (dvt|pe|venous thromb|pulmonary embol)|deep vein thromb|pulmonary embol/i.test(cond)) A.thrombo = "on the problem list";
     if (/tacrolimus|cyclosporine|bevacizumab/i.test(meds) || /pre-?eclampsia|eclampsia|end.stage renal|dialysis|chronic kidney disease.*(stage 5|5)/i.test(cond)) A.presRisk = "drug or condition";
     const sbp = (out.series.sbp || []).filter((x) => now - x.t < DAY), sbpMax = sbp.length ? Math.max(...sbp.map((x) => x.v)) : null;
     if (sbpMax != null && sbpMax >= 180) A.htn = `SBP ${Math.round(sbpMax)} in 24 h`;

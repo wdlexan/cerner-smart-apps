@@ -89,7 +89,9 @@
       ["lowGlu", "Glucose under 4, or on insulin / sulfonylurea"],
       ["etoh", "Alcohol use disorder, malnutrition, bariatric surgery, or weeks of vomiting"],
       ["immuno", "Immunosuppressed (steroids, transplant, chemo, HIV)"],
-      ["clotRisk", "Pregnant or postpartum, estrogen, thrombophilia, or cancer"],
+      ["preg", "Pregnant or postpartum (up to 12 weeks)"],
+      ["estrogen", "On a birth control pill, patch or ring, or estrogen therapy"],
+      ["thrombo", "Past blood clots or a known clotting disorder (e.g. factor V Leiden, antiphospholipid)"],
       ["presRisk", "Tacrolimus/cyclosporine, chemo (e.g. bevacizumab), kidney failure, or pre-eclampsia"]] }];
   const LABEL = {}; FINDINGS.forEach((g) => g.items.forEach(([k, l]) => (LABEL[k] = l)));
 
@@ -127,7 +129,8 @@
     { id: "sah", name: "Subarachnoid hemorrhage", card: "headache", urg: "now", cantMiss: true,
       score: (f) => s(f, { thunder: 4, neckStiff: 1, drowsy: 1, seizure: 1 }) + (f.thunder && (f.anticoag || f.antiplt) ? 1 : 0) },
     { id: "cvst", name: "Cerebral venous sinus thrombosis", card: "headache", urg: "now", cantMiss: true,
-      score: (f) => (f.headPos || f.clotRisk && (f.seizure || f.drowsy || f.hemi) ? s(f, { headPos: 2, clotRisk: 2, seizure: 1, hemi: 1, drowsy: 1, visual: 1 }) : 0) },
+      score: (f) => { const risk = f.preg || f.estrogen || f.thrombo || f.cancer;
+        return f.headPos || (risk && (f.seizure || f.drowsy || f.hemi)) ? s(f, { headPos: 2, preg: 2, estrogen: 1, thrombo: 2, cancer: 1, seizure: 1, hemi: 1, drowsy: 1, visual: 1 }) : 0; } },
     { id: "dissect", name: "Vertebral or carotid artery dissection", card: "dissect", urg: "now", cantMiss: true,
       score: (f) => (f.neckPain || f.horner ? s(f, { neckPain: 2, horner: 2, hemi: 1, vertigo: 1, cantWalk: 1 }) + (f.neckPain && f.horner ? 1 : 0) : 0) },
     { id: "myelitis", name: "Transverse myelitis (cord not compressed)", card: "myelitis", urg: "today", cantMiss: true,
@@ -137,7 +140,7 @@
     { id: "hypogly", name: "Hypoglycemia (can cause focal deficit, seizure, coma)", card: "hypogly", urg: "now", cantMiss: true,
       score: (f) => (f.lowGlu ? 2 + (f.hemi || f.drowsy || f.seizure || f.fluct ? 2 : 0) : 0) },
     { id: "pres", name: "PRES (posterior reversible encephalopathy)", card: "pres", urg: "now", cantMiss: true,
-      score: (f) => (f.htn || f.presRisk || f.visual ? s(f, { htn: 2, presRisk: 2, visual: 2, seizure: 1, drowsy: 1 }) : 0) },
+      score: (f) => (f.htn || f.presRisk || f.visual ? s(f, { htn: 2, presRisk: 2, visual: 2, seizure: 1, drowsy: 1, preg: 1 }) : 0) },
     { id: "hypok", name: "Hypokalemic weakness", card: "weak", urg: "today", score: (f) => (f.lowK ? 3 : 0) + (f.para || f.prox ? 1 : 0) },
     { id: "myo", name: "Myopathy / rhabdomyolysis / myositis", card: "weak", urg: "today", score: (f) => s(f, { prox: 2, highCK: 3 }) - (f.areflex ? 1 : 0) },
     { id: "neurop", name: "Peripheral neuropathy (B12, alcohol, diabetes, chemo)", card: "weak", urg: "routine",
@@ -248,9 +251,9 @@
     neurop: ["distalNumb", "areflex"], mono: ["single"],
     mening: ["fever", "neckStiff", "drowsy", "fluct", "seizure", "immuno"], wernicke: ["etoh", "ataxiaOph", "drowsy", "fluct"],
     ncse: ["fluct", "seizure", "drowsy"], sah: ["thunder", "neckStiff", "drowsy", "seizure", "anticoag", "antiplt"],
-    cvst: ["headPos", "clotRisk", "seizure", "hemi", "drowsy", "visual"], dissect: ["neckPain", "horner", "hemi", "vertigo", "cantWalk"],
+    cvst: ["headPos", "preg", "estrogen", "thrombo", "cancer", "seizure", "hemi", "drowsy", "visual"], dissect: ["neckPain", "horner", "hemi", "vertigo", "cantWalk"],
     myelitis: ["mriNoComp", "sensLevel", "para", "retention", "hyperreflex", "knownMS"], botul: ["descend", "pupils", "tick", "botRisk", "noSens", "bulbar", "ptosis"],
-    hypogly: ["lowGlu", "hemi", "drowsy", "seizure", "fluct"], pres: ["htn", "presRisk", "visual", "seizure", "drowsy"],
+    hypogly: ["lowGlu", "hemi", "drowsy", "seizure", "fluct"], pres: ["htn", "presRisk", "visual", "seizure", "drowsy", "preg"],
     scd: ["dorsal", "romberg", "hyperreflex", "distalNumb", "etoh"], functional: ["functional"] };
   ["drift", "corticalSens"].forEach((k) => WHY.stroke.push(k)); WHY.vcentral.push("cerebellar"); WHY.wernicke.push("cerebellar"); WHY.neurop.push("dorsal", "romberg");
   const why = (d, f) => (WHY[d.id] || []).filter((k) => f[k]).map((k) => LABEL[k]);
