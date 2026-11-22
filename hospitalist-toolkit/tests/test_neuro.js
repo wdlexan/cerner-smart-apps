@@ -82,6 +82,16 @@ eq("MS: chart trigger (UTI) used when trigger left blank", msv({ sx: "old", fluc
 eq("MS: no trigger alone is NOT enough to call true (old symptom, fluctuating)", msv({ sx: "old", trig: "no", fluct: "yes" }), "pseudo");
 eq("MS: within 30 days note", R.msRelapse({ days30: "no" }).notes.some((n) => /30 days/.test(n)), true);
 
+// differential under "Top of the list"
+const dd = (t) => { const f = {}; t.forEach((k) => (f[k] = true)); return R.differential(f); };
+let d1 = dd(["ascend", "areflex", "recentInf", "para"]);
+eq("ddx: GBS on top", d1.top && d1.top.id, "gbs"); eq("ddx: GBS mimics include botulism/tick", d1.mimics.some((m) => /Botulism/.test(m)), true);
+let d2 = dd(["drowsy"]);
+eq("ddx: drowsy alone gives no top but partial list", !d2.top && d2.partial.length > 0, true);
+eq("ddx: partial list puts can't-miss first", d2.partial[0].cantMiss, true);
+eq("ddx: every diagnosis has mimics", R.DX.filter((x) => !R.MIMICS[x.id] && x.id !== "stroke").length + (R.MIMICS.stroke ? 0 : 1), 0);
+eq("ddx: nothing ticked -> empty", dd([]).partial.length + (dd([]).top ? 1 : 0), 0);
+
 // breathing 20/30/40
 const h = 36e5;
 let b = R.breathing([{ t: 0, fvc: 1.5 }], 80); eq("FVC 1.5 L / 80 kg = 19 mL/kg", b.fvcPerKg, 19); eq("-> ICU", b.icu, true);

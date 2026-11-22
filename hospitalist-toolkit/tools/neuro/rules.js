@@ -233,6 +233,47 @@
     return { level: top, name: top ? LEVELS[top].name : null, test: top ? LEVELS[top].test : null, scores: sc, next: order[1] && sc[order[1]] >= 3 && sc[order[1]] >= sc[order[0]] - 1 ? order[1] : null, warn };
   }
 
+  /* mimics to keep in mind for the top diagnosis (general knowledge, written by Claude; a prompt, not a list to rule out one by one) */
+  const MIMICS = {
+    cord: ["Transverse myelitis", "Spinal cord infarct (sudden, painful)", "Guillain-Barré", "Cauda equina / conus", "Dural AV fistula", "B12 or copper deficiency"],
+    cauda: ["Conus or cord compression", "Guillain-Barré", "Lumbar radiculopathy", "Retention from drugs or prostate (only after saddle sensation is normal)"],
+    gbs: ["Botulism or tick paralysis", "Myasthenia gravis", "Cord compression or transverse myelitis", "Low K, PO4 or high Mg", "Critical illness neuropathy", "CIDP", "Vasculitic neuropathy", "Acute porphyria"],
+    mg: ["Botulism", "Lambert-Eaton", "Miller Fisher (GBS)", "Brainstem stroke", "Third nerve palsy (aneurysm)", "Thyroid eye disease", "Myopathy / myositis (checkpoint inhibitor)"],
+    ms: ["Pseudo-relapse (UTI, heat)", "NMOSD / MOGAD", "Stroke", "PML (natalizumab)", "B12 deficiency"],
+    sdh: ["Stroke", "Seizure / post-ictal", "Hypoglycemia", "Delirium (sepsis, drugs)", "Hyponatremia", "Tumour"],
+    stroke: ["Hypoglycemia", "Seizure with Todd paresis", "Migraine with aura", "Subdural", "Tumour", "PRES", "Old stroke unmasked by infection", "Functional", "Bell palsy (face only)"],
+    vcentral: ["Vestibular neuritis", "BPPV", "Vestibular migraine", "Cerebellar hemorrhage", "Wernicke", "Drug toxicity (anticonvulsants, lithium)"],
+    bppv: ["Vestibular neuritis", "Central vertigo", "Orthostatic hypotension", "Arrhythmia"],
+    vneur: ["Posterior circulation stroke", "Labyrinthitis (hearing loss)", "Vestibular migraine", "Ramsay Hunt (VZV)", "Ménière disease"],
+    hypok: ["Thyrotoxic periodic paralysis", "Guillain-Barré", "Myopathy", "Low phosphate", "High magnesium"],
+    myo: ["Statin or steroid myopathy", "Inflammatory myositis", "Polymyalgia rheumatica", "Hypothyroidism", "Myasthenia", "Lambert-Eaton", "Rhabdomyolysis"],
+    neurop: ["B12 or copper deficiency", "Guillain-Barré / CIDP", "Diabetes, alcohol, chemotherapy", "Vasculitic neuropathy", "Paraprotein (SPEP)"],
+    mono: ["Cortical stroke (hand knob)", "Radiculopathy", "Compression palsy", "Mononeuritis multiplex (vasculitis, diabetes)"],
+    mening: ["Autoimmune encephalitis", "Subarachnoid hemorrhage", "Sepsis-associated delirium", "Non-convulsive status", "Brain abscess", "NMS / serotonin syndrome"],
+    wernicke: ["Delirium (sepsis, withdrawal)", "Hepatic encephalopathy", "Posterior circulation stroke", "Non-convulsive status", "Hypoglycemia"],
+    ncse: ["Delirium", "Metabolic encephalopathy", "Prolonged post-ictal state", "Encephalitis", "Drug toxicity (cefepime, lithium)", "Catatonia"],
+    sah: ["Reversible cerebral vasoconstriction (RCVS)", "CVST", "Pituitary apoplexy", "Dissection", "Meningitis", "Hypertensive emergency", "Migraine (diagnosis of exclusion)"],
+    cvst: ["Idiopathic intracranial hypertension", "Migraine", "SAH", "Tumour", "Meningitis", "PRES"],
+    dissect: ["Migraine", "Musculoskeletal neck pain", "Stroke from another cause", "Cluster headache (Horner)"],
+    myelitis: ["Cord compression", "Spinal cord infarct", "Dural AV fistula", "B12 or copper deficiency", "NMOSD / MOGAD / MS", "Infection (HSV, VZV, HIV, syphilis)"],
+    botul: ["Miller Fisher (GBS)", "Myasthenia gravis", "Brainstem stroke", "Lambert-Eaton", "Organophosphate poisoning", "Diphtheria"],
+    hypogly: ["Stroke", "Seizure", "Wernicke", "Sepsis", "Adrenal insufficiency"],
+    pres: ["Eclampsia", "Posterior circulation stroke", "RCVS", "CVST", "Hypertensive encephalopathy", "Encephalitis"],
+    scd: ["Cervical myelopathy", "MS", "Diabetic neuropathy", "Syphilis (tabes dorsalis)", "HIV myelopathy", "Nitrous oxide use"],
+    functional: ["MS", "Stroke", "Myasthenia", "Myopathy", "Stiff-person syndrome", "Functional overlay on a real disease"] };
+
+  /* every diagnosis with at least one supporting finding, for the "partly fits" list */
+  function rankAll(f) {
+    const loc = localize(f), boost = loc.level ? LEVELS[loc.level].dx : [];
+    return DX.map((d) => { let sc = d.score(f); if (sc > 0 && boost.includes(d.id)) sc += 1; return { id: d.id, name: d.name, card: d.card, urg: d.urg, cantMiss: !!d.cantMiss, score: sc, why: why(d, f) }; })
+      .filter((d) => d.score > 0).sort((a, b) => b.score - a.score || (b.cantMiss ? 1 : 0) - (a.cantMiss ? 1 : 0));
+  }
+  function differential(f) {
+    const all = rankAll(f), fits = all.filter((d) => d.score >= 3), partial = all.filter((d) => d.score < 3).sort((a, b) => (b.cantMiss ? 1 : 0) - (a.cantMiss ? 1 : 0) || b.score - a.score);
+    const top = fits[0] || null;
+    return { top, also: fits.slice(1, 6), partial: partial.slice(0, 6), mimics: top ? (MIMICS[top.id] || []) : [] };
+  }
+
   function rank(f) {
     const loc = localize(f), boost = loc.level ? LEVELS[loc.level].dx : [];
     return DX.map((d) => {
@@ -413,6 +454,6 @@
       : { lvl: "ok", text: "Constant vertigo with an ABNORMAL head impulse, one-direction horizontal nystagmus, no skew, normal hearing and able to walk: peripheral (vestibular neuritis) is likely. Only reliable if HINTS was done by a confident examiner." };
   }
 
-  const api = { FINDINGS, LABEL, DX, rank, localize, LEVELS, EXAM, MS_Q, msRelapse, breathing, mgCheck, MG_DRUGS, antithrombotics, pseudoRelapse, bladder, gcsTrend, hints };
+  const api = { FINDINGS, LABEL, DX, rank, rankAll, differential, MIMICS, localize, LEVELS, EXAM, MS_Q, msRelapse, breathing, mgCheck, MG_DRUGS, antithrombotics, pseudoRelapse, bladder, gcsTrend, hints };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.NeuroRules = api;
 })(typeof window !== "undefined" ? window : globalThis);

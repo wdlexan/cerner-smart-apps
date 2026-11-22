@@ -119,6 +119,19 @@ function drawTiles(x) {
   if (x.mg.some((m) => m.lvl === "avoid" || m.lvl === "caution")) t.push(tile("MG risk medicines", x.mg.filter((m) => m.lvl === "avoid" || m.lvl === "caution").length, "see Medicines", state.ticks.knownMG || state.ticks.fatig || state.ticks.ptosis ? "t3" : "t1"));
   if (x.ranked.length) t.push(tile("Top of the list", "", esc(x.ranked[0].name), x.ranked[0].urg === "now" ? "t3" : x.ranked[0].urg === "today" ? "t2" : "t1"));
   $("tiles").innerHTML = t.join("");
+  drawDdx();
+}
+function drawDdx() {
+  const d = R.differential(state.ticks);
+  if (!d.top && !d.partial.length) { $("ddx").innerHTML = ""; return; }
+  const chip = (q) => `<span class="chip u-${q.urg}">${q.urg === "now" ? "NOW" : q.urg === "today" ? "TODAY" : "routine"}</span>`;
+  const nm = (q) => (q.card ? `<button class="lnk" data-dcard="${q.card}">${esc(q.name)}</button>` : esc(q.name)) + (q.cantMiss ? ` <span class="chip c-no">can't miss</span>` : "");
+  let h = `<div class="box">`;
+  if (d.also.length) h += `<h4>Also fits the findings</h4><ul>${d.also.map((q) => `<li>${chip(q)} ${nm(q)} <span class="why">${esc(q.why.join(" · "))}</span></li>`).join("")}</ul>`;
+  if (d.partial.length) h += `<h4>Possible: only partly fits (1–2 findings so far)</h4><ul>${d.partial.map((q) => `<li>${nm(q)} <span class="why">${esc(q.why.join(" · ") || "background only")}</span></li>`).join("")}</ul>`;
+  if (d.mimics.length) h += `<h4>Mimics of ${esc(d.top.name.split(" (")[0])}</h4><div>${d.mimics.map((m) => `<span class="dd">• ${esc(m)}</span>`).join("")}</div>`;
+  $("ddx").innerHTML = h + `<div class="why" style="margin-top:6px">Prompts from the ticked findings, not a diagnosis. Tap a name for its tests and treatment.</div></div>`;
+  $("ddx").querySelectorAll("[data-dcard]").forEach((b) => (b.onclick = () => { state.card = b.dataset.dcard; drawCard(); $("card").scrollIntoView({ behavior: "smooth" }); }));
 }
 
 function alert(lvl, b, text) { return `<div class="alert ${lvl}"><b>${b}</b>${text}</div>`; }
@@ -236,6 +249,7 @@ function neuroNote() {
   const loc = R.localize(T); if (loc.level) S.assess.push("Localization: " + R.LEVELS[loc.level].name + (loc.next ? " (or " + R.LEVELS[loc.next].name + ")" : "") + ".");
   const others = x.ranked.filter((d) => d.id !== state.work).slice(0, 4);
   if (others.length) S.assess.push((work ? "Also considered: " : "Differential: ") + others.map((d) => d.name + (d.cantMiss ? " (can't miss)" : "")).join("; ") + ".");
+  const dd = R.differential(T); if (dd.mimics.length) S.assess.push("Mimics to consider: " + dd.mimics.join(", ") + ".");
   if (x.hints && x.hints.lvl !== "info") S.assess.push(x.hints.text);
   if (x.msr.verdict !== "none") { S.assess.push("MS: " + x.msr.text); x.msr.notes.forEach((n) => S.assess.push(n)); }
   else if (x.pr) S.assess.push(x.pr.text);
