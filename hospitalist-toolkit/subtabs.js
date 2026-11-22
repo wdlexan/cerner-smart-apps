@@ -3,7 +3,8 @@
    Usage (after the page's own scripts):
      SubTabs.mount({ store: "chf", top: ["Chart alerts", "#tiles"], tabs: [
        { key: "assess", label: "Assess", match: ["Patient and situation", "NT-proBNP"] }, ... ] });
-   match: "#id" (element id), "^Text" (heading starts with), or text found anywhere in the section's <summary> heading (case-insensitive).
+   live: "#box" re-sorts after the page rebuilds that box (inner: selector for where the sections sit; innerOf: the parent of this element).
+   match: "#id" (element id), ".class", "^Text" (heading starts with), or text found anywhere in the section's <summary> heading (case-insensitive).
    Sections that match nothing go with the section before them. The banner (.banner) and "top" items stay above the tabs.
    A red dot shows on a tab that contains an urgent item (dotSel), or whose section heading contains dotText (e.g. "severe").
    Counts are optional (count: (panel) => "3").
@@ -30,14 +31,42 @@
   }
   function hits(el, m) {
     if (m.startsWith("#")) { const t = document.getElementById(m.slice(1)); return !!t && (el === t || el.contains(t)); }
+    if (m.startsWith(".")) return el.matches(m); // class name
     if (m.startsWith("^")) return headOf(el).startsWith(m.slice(1).toLowerCase()); // heading starts with
     return textOf(el).includes(m.toLowerCase());
   }
 
+  let styled = false, patched = false;
   function mount(cfg) {
+    if (!styled) { const st = document.createElement("style"); st.textContent = css; document.head.appendChild(st); styled = true; }
+    if (!patched) { // a page that scrolls to (or links to) something in another tab switches to that tab first
+      patched = true;
+      const orig = Element.prototype.scrollIntoView;
+      Element.prototype.scrollIntoView = function (...a) { const p = this.closest && this.closest("section.st-panel"); if (p && !p.classList.contains("on")) { const h = p.closest("[data-st-mounted]"); if (h && h.__stShow) h.__stShow(p.dataset.tab); } return orig.apply(this, a); };
+      document.addEventListener("click", (e) => { const a = e.target.closest && e.target.closest('a[href^="#"]'); if (!a || a.getAttribute("href").length < 2) return; const t = document.getElementById(a.getAttribute("href").slice(1)); const p = t && t.closest("section.st-panel"); if (p && !p.classList.contains("on")) { const h = p.closest("[data-st-mounted]"); if (h && h.__stShow) h.__stShow(p.dataset.tab); } }, true);
+    }
+    if (cfg.live) { // the page rebuilds this box on every change: sort the new content into tabs each time, staying on the same tab
+      const box = document.querySelector(cfg.live); if (!box) return;
+      let busy = false;
+      const tryBuild = () => {
+        if (busy) return;
+        let inner = box;
+        if (cfg.innerOf) { const mark = box.matches(cfg.innerOf) ? null : box.querySelector(cfg.innerOf); if (!mark) return; inner = mark.parentElement; if (inner.matches(".st-top, .st-panel")) inner = inner.parentElement; }
+        else if (cfg.inner) inner = box.querySelector(cfg.inner);
+        if (!inner) return;
+        if (inner.dataset.stMounted && inner.querySelector(":scope > .st-nav")) return; // still tabbed
+        const n = Array.from(inner.children).filter((c) => !c.classList.contains("st-panel")).length;
+        if (n < (cfg.minSections || 3)) return; // still loading
+        busy = true; delete inner.dataset.stMounted; try { build(inner, cfg); } finally { busy = false; }
+      };
+      new MutationObserver(tryBuild).observe(box, { childList: true, subtree: true });
+      tryBuild(); return;
+    }
     const main = cfg.root ? document.querySelector(cfg.root) : document.querySelector("main"); if (!main || main.dataset.stMounted) return;
+    build(main, cfg);
+  }
+  function build(main, cfg) {
     main.dataset.stMounted = "1";
-    const st = document.createElement("style"); st.textContent = css; document.head.appendChild(st);
     const kids = Array.from(main.children).filter((c) => c.tagName !== "SCRIPT");
     const top = document.createElement("div"); top.className = "st-top";
     const nav = document.createElement("nav"); nav.className = "st-nav"; nav.setAttribute("aria-label", "Sections");
@@ -74,10 +103,7 @@
     }
     // keep dots and counts current as the page redraws itself
     let tm = null; new MutationObserver((muts) => { if (muts.every((m) => nav.contains(m.target))) return; clearTimeout(tm); tm = setTimeout(draw, 120); }).observe(main, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["class", "hidden", "style"] });
-    // a page that scrolls to (or links to) something in another tab switches to that tab first
-    const orig = Element.prototype.scrollIntoView;
-    Element.prototype.scrollIntoView = function (...a) { const p = this.closest && this.closest("section.st-panel"); if (p && !p.classList.contains("on")) show(p.dataset.tab); return orig.apply(this, a); };
-    document.addEventListener("click", (e) => { const a = e.target.closest && e.target.closest('a[href^="#"]'); if (!a) return; const t = document.getElementById(a.getAttribute("href").slice(1)); const p = t && t.closest("section.st-panel"); if (p && !p.classList.contains("on")) show(p.dataset.tab); }, true);
+    main.__stShow = show;
     draw();
     window.SubTabs.show = show; window.SubTabs.redraw = draw;
   }

@@ -255,5 +255,10 @@
   </main>
 
   <script src="app.js"></script>
+  <script src="../../subtabs.js?v=20261121f"></script>
+  <script>SubTabs.mount({ store: "g6pd", top: ["#overall"], tabs: [
+      {"key": "pt", "label": "Patient & hemolysis", "match": ["^Recognizing acute hemolysis", "G6PD status in chart"]},
+      {"key": "check", "label": "Check a drug", "match": ["^Check a drug"]},
+      {"key": "ref", "label": "Reference", "match": ["^G6PD reference"]}] });</script>
 </body>
 </html>

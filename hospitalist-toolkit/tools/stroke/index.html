@@ -123,5 +123,11 @@
     (DEMO ? startDemo() : startSmart()).catch(e => showError('The app stopped with an error: ' + (e && e.message ? e.message : e)));
   }
 </script>
+  <script src="../../subtabs.js?v=20261121f"></script>
+  <script>SubTabs.mount({ store: "stroke", live: "#stroke-tab", inner: ".sf", top: [".sf-head", ".sf-toolbar", "^Alerts"], tabs: [
+      {"key": "acute", "label": "Acute: NIHSS, BP, timeline", "match": ["^NIHSS", "^Timeline", "^BP target", "^Posterior circulation"]},
+      {"key": "prev", "label": "Workup & prevention", "match": ["^Workup and secondary prevention", "^LDL target"]},
+      {"key": "rehab", "label": "Rehab & prognosis", "match": ["^PT / OT", "^Prognosis"]},
+      {"key": "note", "label": "Note & handoff", "match": ["^Summary for the note", "^Auto-detection feedback", "^Decision support only"]}] });</script>
 </body>
 </html>

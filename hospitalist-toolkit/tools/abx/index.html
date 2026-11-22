@@ -98,5 +98,10 @@
   if (missing.length) showError('Couldn’t load: ' + missing.join(', ') + '.\nMake sure these files are in the same folder as index.html, then press Ctrl + F5.');
   else (DEMO ? startDemo() : startSmart()).catch((e) => showError('The screen stopped with an error: ' + (e && e.message ? e.message : e)));
 </script>
+  <script src="../../subtabs.js?v=20261121f"></script>
+  <script>SubTabs.mount({ store: "abx", live: "#ab-tab", innerOf: ".op-summary", top: [".op-summary"], tabs: [
+      {"key": "course", "label": "Course & duration", "match": ["^Antimicrobials by day", ".op-grid", ".op-notes"]},
+      {"key": "hist", "label": "History", "match": ["#ab-hist"]},
+      {"key": "echo", "label": "Echo needed?", "match": ["#ab-echo"]}] });</script>
 </body>
 </html>
