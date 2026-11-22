@@ -22,6 +22,23 @@ eq("vestibular neuritis when no central sign", top(["vertigo", "vConstant"]), "v
 eq("no neuritis if head impulse normal", has(["vertigo", "vConstant", "hitNormal"], "vneur"), false);
 eq("empty ticks -> empty list", R.rank({}).length, 0);
 
+// can't-miss additions (Nov 2026)
+eq("meningitis: fever + neck stiffness + drowsy", top(["fever", "neckStiff", "drowsy"]), "mening");
+eq("no meningitis without fever or neck stiffness", has(["drowsy", "seizure"], "mening"), false);
+eq("wernicke: alcohol + ataxia/eye signs", top(["etoh", "ataxiaOph", "drowsy"]), "wernicke");
+eq("NCSE: fluctuating confusion after seizure", top(["fluct", "seizure"]), "ncse");
+eq("SAH: thunderclap", top(["thunder", "neckStiff"]), "sah");
+eq("CVST: positional headache + estrogen/pregnancy + seizure", top(["headPos", "clotRisk", "seizure"]), "cvst");
+eq("dissection: neck pain + Horner", top(["neckPain", "horner", "vertigo"]), "dissect");
+eq("myelitis replaces cord when MRI shows no compression", top(["para", "sensLevel", "retention", "mriNoComp"]), "myelitis");
+eq("cord still top without that MRI tick", top(["para", "sensLevel", "retention", "backpain"]), "cord");
+eq("botulism: descending + pupils + food/wound", top(["descend", "ptosis", "bulbar", "pupils", "noSens", "botRisk"]), "botul");
+eq("tick found with ascending weakness tops GBS", top(["ascend", "areflex", "tick", "para"]), "botul");
+eq("hypoglycemia with one-sided weakness listed above stroke", top(["lowGlu", "hemi"]), "hypogly");
+eq("PRES: high BP + vision + seizure", top(["htn", "visual", "seizure"]), "pres");
+eq("every diagnosis card exists", R.DX.filter((d) => d.card && !REF.byId[d.card]).length, 0);
+eq("12 can't-miss + stroke-type entries", R.DX.filter((d) => d.cantMiss).length, 17);
+
 // breathing 20/30/40
 const h = 36e5;
 let b = R.breathing([{ t: 0, fvc: 1.5 }], 80); eq("FVC 1.5 L / 80 kg = 19 mL/kg", b.fvcPerKg, 19); eq("-> ICU", b.icu, true);
@@ -60,7 +77,7 @@ REF.CARDS.forEach((c) => eq("card " + c.id + " has tests and treatment", c.tests
 R.DX.filter((d) => d.card).forEach((d) => eq("dx " + d.id + " card exists", !!REF.byId[d.card], true));
 
 // samples parse and rank as intended
-const now = Date.UTC(2026, 10, 17, 18);
+const now = Date.now(); // parse() measures "last 72 h" from the real clock, so samples must be built relative to it
 S.forEach((s, i) => {
   const f = C.parse(s.build(now)), ticks = {};
   Object.keys(f.auto).forEach((k) => (ticks[k] = true)); s.ticks.forEach((k) => (ticks[k] = true));

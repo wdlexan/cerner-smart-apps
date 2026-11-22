@@ -27,6 +27,24 @@
       ["drowsy", "Drowsy, confused, or new headache"],
       ["fall", "Fall or head injury"],
       ["gradual", "Getting worse over days to weeks"]] },
+    { group: "Confusion, headache, fever", items: [
+      ["fluct", "Confusion that fluctuates, staring, subtle twitching, or not back to baseline after a seizure"],
+      ["seizure", "Seizure"],
+      ["thunder", "Sudden severe headache, worst at onset (thunderclap)"],
+      ["neckStiff", "Neck stiffness or photophobia"],
+      ["headPos", "Headache worse lying down or on waking, or papilledema"],
+      ["neckPain", "Neck pain (after neck movement, trauma, or with headache)"],
+      ["horner", "Horner (small pupil, mild ptosis) on one side"],
+      ["visual", "Vision loss, blurred vision or cortical blindness"],
+      ["htn", "BP very high (SBP 180 or more)"],
+      ["ataxiaOph", "Unsteady gait plus eye movement problem (nystagmus, gaze palsy)"]] },
+    { group: "Weakness from the top down", items: [
+      ["descend", "Starts in eyes, face or throat, then spreads down (descending)"],
+      ["pupils", "Dilated or sluggish pupils"],
+      ["noSens", "No sensory loss, alert, no fever"],
+      ["tick", "Tick bite or outdoor exposure (check scalp, hairline, ears)"],
+      ["botRisk", "Home-canned or fermented food, or injection drug use (wound)"],
+      ["mriNoComp", "MRI spine: no compression (cord signal change, or normal)"]] },
     { group: "Vertigo", items: [
       ["vertigo", "Vertigo or dizziness"],
       ["vPositional", "Brief (under 1 min), set off by head position"],
@@ -51,7 +69,12 @@
       ["knownMS", "Known MS"],
       ["knownMG", "Known myasthenia gravis"],
       ["lowK", "Potassium under 3.0"],
-      ["highCK", "CK over 1000"]] }];
+      ["highCK", "CK over 1000"],
+      ["lowGlu", "Glucose under 4, or on insulin / sulfonylurea"],
+      ["etoh", "Alcohol use disorder, malnutrition, bariatric surgery, or weeks of vomiting"],
+      ["immuno", "Immunosuppressed (steroids, transplant, chemo, HIV)"],
+      ["clotRisk", "Pregnant or postpartum, estrogen, thrombophilia, or cancer"],
+      ["presRisk", "Tacrolimus/cyclosporine, chemo (e.g. bevacizumab), kidney failure, or pre-eclampsia"]] }];
   const LABEL = {}; FINDINGS.forEach((g) => g.items.forEach(([k, l]) => (LABEL[k] = l)));
 
   /* ---------- ranked list of diagnoses ---------- */
@@ -59,12 +82,12 @@
     { id: "cord", name: "Spinal cord compression (tumour, abscess, hematoma)", card: "cord", urg: "now", cantMiss: true,
       score: (f) => s(f, { para: 2, sensLevel: 3, retention: 2, backpain: 2, spineProc: 1 }) + (f.hyperreflex && f.para ? 1 : 0)
         + (f.cancer && (f.backpain || f.para || f.sensLevel) ? 2 : 0) + (f.fever && f.backpain ? 2 : 0) + (f.absRisk && f.backpain ? 1 : 0)
-        + (f.anticoag && f.spineProc ? 2 : 0) },
+        + (f.anticoag && f.spineProc ? 2 : 0) - (f.mriNoComp ? 5 : 0) },
     { id: "cauda", name: "Cauda equina syndrome", card: "cauda", urg: "now", cantMiss: true,
       score: (f) => s(f, { saddle: 4, retention: 2, backpain: 2 }) + (f.para ? 1 : 0) + (f.areflex && f.para ? 1 : 0) + (f.cancer && f.backpain ? 1 : 0) },
     { id: "gbs", name: "Guillain-Barré syndrome", card: "gbs", urg: "today", cantMiss: true,
       score: (f) => s(f, { ascend: 3, areflex: 2, recentInf: 1, distalNumb: 1, facial: 1, bulbar: 1, autonomic: 1, dyspnea: 1 })
-        + (f.para ? 1 : 0) - (f.sensLevel ? 2 : 0) - (f.hyperreflex ? 2 : 0) - (f.fatig ? 1 : 0) },
+        + (f.para ? 1 : 0) - (f.sensLevel ? 2 : 0) - (f.hyperreflex ? 2 : 0) - (f.fatig ? 1 : 0) - (f.tick ? 3 : 0) - (f.descend ? 2 : 0) },
     { id: "mg", name: "Myasthenia gravis (crisis if breathing or swallowing affected)", card: "mg", urg: "today", cantMiss: true,
       score: (f) => s(f, { fatig: 3, ptosis: 3, bulbar: 2, knownMG: 3, dyspnea: 1 }) - (f.areflex ? 1 : 0) - (f.distalNumb ? 1 : 0) - (f.sensLevel ? 2 : 0) },
     { id: "ms", name: "MS relapse or pseudo-relapse", card: "ms", urg: "today",
@@ -79,6 +102,26 @@
       score: (f) => s(f, { vPositional: 3, dixPos: 3 }) - (f.vConstant ? 2 : 0) - (f.nysCentral ? 3 : 0) },
     { id: "vneur", name: "Vestibular neuritis / labyrinthitis", card: "vertigo", urg: "routine",
       score: (f) => (f.vConstant ? 3 : 0) - (f.hitNormal || f.nysCentral || f.skew || f.cantWalk ? 4 : 0) - (f.vPositional ? 1 : 0) },
+    { id: "mening", name: "Meningitis / encephalitis (bacterial, HSV)", card: "mening", urg: "now", cantMiss: true,
+      score: (f) => (f.fever || f.neckStiff ? s(f, { fever: 2, neckStiff: 3, drowsy: 1, fluct: 1, seizure: 1, immuno: 1 }) : 0) },
+    { id: "wernicke", name: "Wernicke encephalopathy", card: "wernicke", urg: "now", cantMiss: true,
+      score: (f) => (f.etoh || f.ataxiaOph ? s(f, { etoh: 2, ataxiaOph: 3, drowsy: 1, fluct: 1 }) : 0) },
+    { id: "ncse", name: "Non-convulsive status epilepticus", card: "ncse", urg: "now", cantMiss: true,
+      score: (f) => s(f, { fluct: 3, seizure: 2 }) + (f.drowsy && (f.fluct || f.seizure) ? 1 : 0) },
+    { id: "sah", name: "Subarachnoid hemorrhage", card: "headache", urg: "now", cantMiss: true,
+      score: (f) => s(f, { thunder: 4, neckStiff: 1, drowsy: 1, seizure: 1 }) + (f.thunder && (f.anticoag || f.antiplt) ? 1 : 0) },
+    { id: "cvst", name: "Cerebral venous sinus thrombosis", card: "headache", urg: "now", cantMiss: true,
+      score: (f) => (f.headPos || f.clotRisk && (f.seizure || f.drowsy || f.hemi) ? s(f, { headPos: 2, clotRisk: 2, seizure: 1, hemi: 1, drowsy: 1, visual: 1 }) : 0) },
+    { id: "dissect", name: "Vertebral or carotid artery dissection", card: "dissect", urg: "now", cantMiss: true,
+      score: (f) => (f.neckPain || f.horner ? s(f, { neckPain: 2, horner: 2, hemi: 1, vertigo: 1, cantWalk: 1 }) + (f.neckPain && f.horner ? 1 : 0) : 0) },
+    { id: "myelitis", name: "Transverse myelitis (cord not compressed)", card: "myelitis", urg: "today", cantMiss: true,
+      score: (f) => (f.mriNoComp ? 3 + s(f, { sensLevel: 1, para: 1, retention: 1, hyperreflex: 1, knownMS: 1 }) : 0) },
+    { id: "botul", name: "Botulism or tick paralysis (GBS / MG mimic)", card: "botul", urg: "now", cantMiss: true,
+      score: (f) => s(f, { descend: 3, pupils: 2, tick: 5, botRisk: 3, noSens: 1 }) + (f.bulbar && f.ptosis && f.pupils ? 1 : 0) - (f.fatig ? 1 : 0) },
+    { id: "hypogly", name: "Hypoglycemia (can cause focal deficit, seizure, coma)", card: "hypogly", urg: "now", cantMiss: true,
+      score: (f) => (f.lowGlu ? 2 + (f.hemi || f.drowsy || f.seizure || f.fluct ? 2 : 0) : 0) },
+    { id: "pres", name: "PRES (posterior reversible encephalopathy)", card: "pres", urg: "now", cantMiss: true,
+      score: (f) => (f.htn || f.presRisk || f.visual ? s(f, { htn: 2, presRisk: 2, visual: 2, seizure: 1, drowsy: 1 }) : 0) },
     { id: "hypok", name: "Hypokalemic weakness", card: "weak", urg: "today", score: (f) => (f.lowK ? 3 : 0) + (f.para || f.prox ? 1 : 0) },
     { id: "myo", name: "Myopathy / rhabdomyolysis / myositis", card: "weak", urg: "today", score: (f) => s(f, { prox: 2, highCK: 3 }) - (f.areflex ? 1 : 0) },
     { id: "neurop", name: "Peripheral neuropathy (B12, alcohol, diabetes, chemo)", card: "weak", urg: "routine",
@@ -100,7 +143,12 @@
     ms: ["knownMS", "msNew", "heat"], sdh: ["drowsy", "fall", "gradual", "anticoag", "antiplt", "hemi"],
     stroke: ["hemi", "facial"], vcentral: ["hitNormal", "nysCentral", "skew", "hearing", "cantWalk", "vConstant"],
     bppv: ["vPositional", "dixPos"], vneur: ["vConstant"], hypok: ["lowK", "para", "prox"], myo: ["prox", "highCK"],
-    neurop: ["distalNumb", "areflex"], mono: ["single"] };
+    neurop: ["distalNumb", "areflex"], mono: ["single"],
+    mening: ["fever", "neckStiff", "drowsy", "fluct", "seizure", "immuno"], wernicke: ["etoh", "ataxiaOph", "drowsy", "fluct"],
+    ncse: ["fluct", "seizure", "drowsy"], sah: ["thunder", "neckStiff", "drowsy", "seizure", "anticoag", "antiplt"],
+    cvst: ["headPos", "clotRisk", "seizure", "hemi", "drowsy", "visual"], dissect: ["neckPain", "horner", "hemi", "vertigo", "cantWalk"],
+    myelitis: ["mriNoComp", "sensLevel", "para", "retention", "hyperreflex", "knownMS"], botul: ["descend", "pupils", "tick", "botRisk", "noSens", "bulbar", "ptosis"],
+    hypogly: ["lowGlu", "hemi", "drowsy", "seizure", "fluct"], pres: ["htn", "presRisk", "visual", "seizure", "drowsy"] };
   const why = (d, f) => (WHY[d.id] || []).filter((k) => f[k]).map((k) => LABEL[k]);
 
   /* ---------- breathing in GBS / MG: the 20/30/40 rule ----------

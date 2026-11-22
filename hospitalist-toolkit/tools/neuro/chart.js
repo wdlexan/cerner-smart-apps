@@ -48,6 +48,9 @@
     obs.forEach((o) => {
       const t = tOf(o), v = num(o), u = o.valueQuantity && (o.valueQuantity.unit || o.valueQuantity.code), cs = codes(o.code), nm = label(o.code);
       if (t == null) return;
+      const sbpC = (o.component || []).find((cp) => codes(cp.code).includes("8480-6") || /systolic/i.test(label(cp.code)));
+      const sbpV = sbpC && sbpC.valueQuantity ? sbpC.valueQuantity.value : cs.includes("8480-6") || /systolic/i.test(nm) ? v : null;
+      if (sbpV != null) { (out.series.sbp = out.series.sbp || []).push({ t, v: sbpV }); return; }
       if (TEMP.some((c) => cs.includes(c)) || /temperature/i.test(nm)) { if (v != null) out.temps.push({ t, v: v > 50 ? Math.round(((v - 32) * 5 / 9) * 10) / 10 : v }); return; }
       if (cs.includes("29463-7") || cs.includes("3141-9") || /body weight/i.test(nm)) { if (v != null) { const kg = /lb/i.test(u || "") ? v * 0.4536 : v; if (!out.weight || t > out.weight.t) out.weight = { t, v: Math.round(kg * 10) / 10 }; } return; }
       const rd = RESP.find((d) => match(o, d));
@@ -90,6 +93,16 @@
     if (out.tempMax != null && out.tempMax >= 38) A.fever = `temperature ${out.tempMax} °C in 72 h`;
     if (L.k && L.k.v < 3.0) A.lowK = `K ${L.k.v}`;
     if (L.ck && L.ck.v > 1000) A.highCK = `CK ${L.ck.v}`;
+    const meds = out.meds.join(" | ");
+    const glu = (out.series.glu || []).filter((x) => now - x.t < 3 * DAY), gluMin = glu.length ? Math.min(...glu.map((x) => x.v)) : null;
+    if (gluMin != null && gluMin < 4) A.lowGlu = `glucose ${gluMin} in 72 h`;
+    else if (/insulin|glargine|detemir|degludec|lispro|aspart|gliclazide|glyburide|glimepiride/i.test(meds)) A.lowGlu = "on insulin or a sulfonylurea";
+    if (/alcohol (use|dependence|abuse|withdrawal)|alcoholism|malnutrition|bariatric|gastric bypass|hyperemesis|anorexia/i.test(cond)) A.etoh = "on the problem list";
+    if (/tacrolimus|cyclosporine|mycophenolate|azathioprine|methotrexate|rituximab|cyclophosphamide|prednisone|dexamethasone/i.test(meds) || /transplant|\bhiv\b|neutropen/i.test(cond)) A.immuno = "immunosuppressant or condition";
+    if (/pregnan|postpartum|thrombophilia|factor v leiden|antiphospholipid/i.test(cond) || /estradiol|ethinyl|estrogen/i.test(meds)) A.clotRisk = "pregnancy, estrogen or thrombophilia";
+    if (/tacrolimus|cyclosporine|bevacizumab/i.test(meds) || /pre-?eclampsia|eclampsia|end.stage renal|dialysis|chronic kidney disease.*(stage 5|5)/i.test(cond)) A.presRisk = "drug or condition";
+    const sbp = (out.series.sbp || []).filter((x) => now - x.t < DAY), sbpMax = sbp.length ? Math.max(...sbp.map((x) => x.v)) : null;
+    if (sbpMax != null && sbpMax >= 180) A.htn = `SBP ${Math.round(sbpMax)} in 24 h`;
     const lastBl = out.bladder[out.bladder.length - 1];
     if (lastBl && lastBl.v > 200 && now - lastBl.t < 3 * DAY) A.retention = `bladder scan ${lastBl.v} mL`;
     out.ageYears = raw.patient && raw.patient.birthDate ? Math.floor((now - new Date(raw.patient.birthDate).getTime()) / (365.25 * DAY)) : null;

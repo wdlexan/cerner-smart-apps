@@ -10,12 +10,13 @@ const state = { f: null, ticks: {}, auto: {}, pres: "all", typed: [], work: null
 /* ---------- presentation buttons: which findings groups to highlight ---------- */
 const PRES = [
   ["all", "All"], ["weak", "Weakness"], ["back", "Back pain + neuro"], ["eyes", "Eyes / swallowing / breathing"],
-  ["head", "Drowsy / headache / fall"], ["vert", "Vertigo"], ["ms", "Known MS, worse"]];
+  ["head", "Drowsy / headache / fall"], ["conf", "Confused / fever / seizure"], ["vert", "Vertigo"], ["ms", "Known MS, worse"]];
 const PRES_GROUPS = {
-  weak: ["Weakness pattern", "Signs", "Background (chart fills some)"], back: ["Signs", "Weakness pattern", "Background (chart fills some)"],
-  eyes: ["Signs", "Weakness pattern", "Background (chart fills some)"], head: ["Head / level of consciousness", "Weakness pattern", "Background (chart fills some)"],
+  weak: ["Weakness pattern", "Signs", "Weakness from the top down", "Background (chart fills some)"], back: ["Signs", "Weakness pattern", "Weakness from the top down", "Background (chart fills some)"],
+  eyes: ["Signs", "Weakness pattern", "Weakness from the top down", "Background (chart fills some)"], head: ["Head / level of consciousness", "Confusion, headache, fever", "Weakness pattern", "Background (chart fills some)"],
+  conf: ["Confusion, headache, fever", "Head / level of consciousness", "Background (chart fills some)"],
   vert: ["Vertigo"], ms: ["Multiple sclerosis", "Signs", "Background (chart fills some)"] };
-const PRES_CARD = { weak: "weak", back: "cord", eyes: "mg", head: "sdh", vert: "vertigo", ms: "ms" };
+const PRES_CARD = { weak: "weak", back: "cord", eyes: "mg", head: "sdh", conf: "mening", vert: "vertigo", ms: "ms" };
 
 function drawPres() {
   $("pres").innerHTML = "What's the problem? " + PRES.map(([k, l]) => `<button data-p="${k}" class="${state.pres === k ? "on" : ""}">${l}</button>`).join("");
