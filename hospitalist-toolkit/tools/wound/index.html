@@ -98,6 +98,51 @@ textarea{min-height:140px;font-family:ui-monospace,Consolas,monospace;font-size:
 <div id="c-out"></div>
 </section>
 
+<!-- ============ REVIEW PHOTO ============ -->
+<section class="tab" id="t-photo" data-label="Review photo">
+<div class="box warn"><h4>Privacy first</h4>
+For <b>sandbox, made-up or teaching photos only</b> until Island Health approves an AI service for patient images.
+Crop out or cover the face, wristband, MRN/labels, tattoos and room details. The photo is re-encoded in this browser (removes camera GPS/time data),
+sent to the AI server running on <b>your own computer</b>, and not saved anywhere.</div>
+<details open><summary>1. Add the photo</summary><div class="body">
+<div id="ph-drop" style="border:2px dashed #b9c3cf;border-radius:8px;padding:18px;text-align:center;background:#fafbfc;cursor:pointer">
+ <b>Paste (Ctrl+V)</b>, drag a photo here, or <u>click to choose a file</u><br>
+ <span class="mute">JPEG or PNG. iPhone HEIC photos: open and screenshot, or set Camera › Formats › Most Compatible.</span>
+ <input type="file" id="ph-file" accept="image/jpeg,image/png,image/webp" style="display:none">
+</div>
+<div id="ph-prev" style="margin-top:10px;display:none">
+ <img id="ph-img" alt="Wound photo preview" style="max-width:100%;max-height:360px;border:1px solid var(--line);border-radius:6px">
+ <div class="row"><span class="mute" id="ph-size"></span><button class="btn sec" onclick="phClear()">Remove photo</button></div>
+</div>
+<p class="mute">Tips: good daylight or exam light, no flash glare, camera square to the wound, a paper ruler beside it, include some surrounding skin.</p>
+</div></details>
+<details open><summary>2. Bedside findings the photo can't show (optional, recommended)</summary><div class="body">
+<div class="grid">
+ <div><label>Location</label><input type="text" id="ph-loc" placeholder="e.g. sacrum, R heel, L shin"></div>
+ <div><label>Size L × W × D (cm)</label><input type="text" id="ph-dim" placeholder="e.g. 4 × 3 × 1.5"></div>
+ <div><label>Tunnelling / undermining</label><input type="text" id="ph-tun" placeholder="e.g. 3 cm at 12 o'clock"></div>
+ <div><label>Exudate on old dressing</label><select id="ph-exu"><option value="">—</option><option>none</option><option>scant/low serous</option><option>moderate serous</option><option>heavy, soaks dressing</option><option>purulent</option><option>bloody</option></select></div>
+ <div><label>Odour after cleansing</label><select id="ph-odour"><option value="">—</option><option>none</option><option>present</option></select></div>
+ <div><label>Probes to bone</label><select id="ph-bone"><option value="">—</option><option>no</option><option>yes</option><option>not checked</option></select></div>
+ <div><label>Pulses / ABI (legs, feet)</label><input type="text" id="ph-abi" placeholder="e.g. DP palpable, ABI 0.9"></div>
+ <div><label>Diabetes / other</label><input type="text" id="ph-other" placeholder="e.g. T2DM, on prednisone, warm, painful"></div>
+</div></div></details>
+<details open><summary>3. Review</summary><div class="body">
+<label style="font-weight:400;color:var(--ink)"><input type="checkbox" id="ph-ok"> This photo is de-identified and is a sandbox, made-up or teaching image.</label>
+<div class="row">
+ <button class="btn" id="ph-go" onclick="phReview()">Review photo with AI</button>
+ <button class="btn sec" onclick="phSample()">Show sample result</button>
+ <button class="btn sec" onclick="phCopilot()">Copy prompt for Copilot</button>
+ <span id="ph-status" class="mute"></span>
+</div>
+<details style="margin-top:8px"><summary style="font-size:13px">AI server setting</summary><div class="body">
+ <label>Server address</label><input type="text" id="ph-ep" style="max-width:360px">
+ <p class="mute">Start it on your own computer: <code>ai-server/wound-server.js</code> (see the top of that file). "Copy prompt for Copilot" needs no server: it copies the instructions, then paste them and the photo into Microsoft 365 Copilot Chat.</p>
+</div></details>
+</div></details>
+<div id="ph-out"></div>
+</section>
+
 <!-- ============ PRODUCTS ============ -->
 <section class="tab" id="t-products" data-label="Products & change frequency">
 <details open><summary>Dressing categories</summary><div class="body">
@@ -557,6 +602,149 @@ function buildMsg(){
 `Hello Dr. ${dr}, This is Wayne, hospitalist. I have ${PT.name}, ${PT.age}, MRN ${PT.mrn}, with a ${wound}. Current dressing: ${g("o-prim")}, changed ${g("o-freq")}. Would you be able to see them for ${q}? Your help is much appreciated. Thanks, Wayne`;
 }
 function copyEl(id){const e=document.getElementById(id);e.select();navigator.clipboard?navigator.clipboard.writeText(e.value):document.execCommand("copy");}
+
+
+/* ===================== REVIEW PHOTO (AI) ===================== */
+// The AI server runs on the user's own computer (ai-server/wound-server.js) and holds the API key. Never put a key in this file.
+const PH_DEFAULT_EP = "http://localhost:7074/wound";
+let phData = null, phLast = null;
+const phEsc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+(function phInit() {
+  const ep = document.getElementById("ph-ep");
+  try { ep.value = localStorage.getItem("wound-ai-ep") || PH_DEFAULT_EP; } catch (e) { ep.value = PH_DEFAULT_EP; }
+  ep.onchange = () => { try { localStorage.setItem("wound-ai-ep", ep.value.trim()); } catch (e) {} };
+  const drop = document.getElementById("ph-drop"), file = document.getElementById("ph-file");
+  drop.onclick = () => file.click();
+  file.onchange = () => file.files[0] && phLoad(file.files[0]);
+  drop.ondragover = (e) => { e.preventDefault(); drop.style.background = "#eef6f6"; };
+  drop.ondragleave = () => (drop.style.background = "#fafbfc");
+  drop.ondrop = (e) => { e.preventDefault(); drop.style.background = "#fafbfc"; const f = e.dataTransfer.files[0]; f && phLoad(f); };
+  document.addEventListener("paste", (e) => {
+    if (!document.getElementById("t-photo").classList.contains("on")) return;
+    const it = [...(e.clipboardData || {}).items || []].find((i) => i.type.startsWith("image/"));
+    if (it) { e.preventDefault(); phLoad(it.getAsFile()); }
+  });
+})();
+function phStatus(t, bad) { const s = document.getElementById("ph-status"); s.textContent = t; s.style.color = bad ? "var(--bad)" : ""; }
+function phLoad(f) {
+  if (!f || !/^image\/(jpeg|png|webp|gif|bmp)$/.test(f.type)) { phStatus("Not a JPEG/PNG photo" + (f && /heic|heif/i.test(f.type + f.name) ? " (HEIC: take a screenshot of it instead)" : "") + ".", true); return; }
+  const url = URL.createObjectURL(f), img = new Image();
+  img.onload = () => {
+    const MAX = 1568, k = Math.min(1, MAX / Math.max(img.width, img.height));
+    const c = document.createElement("canvas"); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    phData = c.toDataURL("image/jpeg", 0.85); // re-encoding drops EXIF (GPS, time, device)
+    URL.revokeObjectURL(url);
+    document.getElementById("ph-img").src = phData;
+    document.getElementById("ph-prev").style.display = "";
+    document.getElementById("ph-size").textContent = `${c.width} × ${c.height}px, ${Math.round(phData.length * 0.75 / 1024)} KB (camera data removed)`;
+    phStatus("");
+  };
+  img.onerror = () => { phStatus("Could not read this image.", true); URL.revokeObjectURL(url); };
+  img.src = url;
+}
+function phClear() { phData = null; document.getElementById("ph-prev").style.display = "none"; document.getElementById("ph-file").value = ""; document.getElementById("ph-out").innerHTML = ""; phLast = null; }
+function phNotes() {
+  const v = (id) => document.getElementById(id).value.trim(), L = [];
+  [["Location", "ph-loc"], ["Size LxWxD cm", "ph-dim"], ["Tunnelling/undermining", "ph-tun"], ["Exudate on old dressing", "ph-exu"], ["Odour after cleansing", "ph-odour"], ["Probes to bone", "ph-bone"], ["Pulses/ABI", "ph-abi"], ["Other", "ph-other"]]
+    .forEach(([k, id]) => v(id) && L.push(k + ": " + v(id)));
+  return L.join("\n");
+}
+async function phReview() {
+  if (!phData) return phStatus("Add a photo first.", true);
+  if (!document.getElementById("ph-ok").checked) return phStatus("Tick the de-identified box first.", true);
+  const ep = document.getElementById("ph-ep").value.trim() || PH_DEFAULT_EP, go = document.getElementById("ph-go");
+  go.disabled = true; phStatus("Reviewing… (10–30 s)");
+  try {
+    const r = await fetch(ep, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ image: phData, notes: phNotes() }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || "HTTP " + r.status);
+    phRender(j, false); phStatus("Done.");
+  } catch (e) {
+    phStatus("AI server not reachable or failed (" + e.message + "). Is wound-server.js running on this computer? Or use Copy prompt for Copilot.", true);
+  } finally { go.disabled = false; }
+}
+const PH_SAMPLE = {
+  wound_visible: true, image_quality: "Sample only: not generated from any photo.",
+  description: "Sacral wound about 4 × 3 cm (ruler visible) with a yellow sloughy base and a rim of red granulation at the edges. Edges attached, no rolled margin. Periwound skin slightly white and wrinkled at the lower edge.",
+  tissue: { granulation: 30, slough: 70, eschar: 0, epithelial: 0, necrosis_wet: 0 },
+  likely_type: "pi", type_reason: "Over the sacrum, a pressure point, with full-thickness loss.", stage: "u", depth: "full", eschar_dry_stable: null,
+  exudate: "mod", periwound: "mac", infection_signs: "none", infection_reason: "none visible", bleeding: false, odour: null, probes_to_bone: null,
+  concerns: ["Slough obscures the base: stage after debridement (likely stage 3 or 4)."],
+  cannot_assess: ["Depth and undermining", "Odour after cleansing", "Probe to bone", "Warmth and pain"],
+  dressing: { primary: "Gelling fibre / hydrofibre (autolytic debridement of slough)", secondary: "Silicone-bordered foam", change: "Every 2–3 days and PRN when saturated", avoid: "Hydrocolloid (moderate exudate and maceration); wet-to-dry gauze" },
+  confidence: "moderate"
+};
+function phSample() { phRender(PH_SAMPLE, true); phStatus("Showing sample layout."); }
+const PH_TYPE = { pi: "Pressure injury", dfu: "Diabetic foot ulcer", venous: "Venous leg ulcer", arterial: "Arterial / ischemic ulcer", surgical: "Surgical wound / dehiscence", skintear: "Skin tear", trauma: "Traumatic wound", fungating: "Malignant / fungating", iad: "Incontinence-associated dermatitis", iv: "IV / line site", unknown: "Unclear" };
+const PH_STAGE = { "1": "Stage 1", "2": "Stage 2", "3": "Stage 3", "4": "Stage 4", u: "Unstageable", dti: "Deep tissue injury", na: "n/a", unknown: "Unclear" };
+const PH_EXU = { none: "None / dry", low: "Low", mod: "Moderate", heavy: "Heavy", unknown: "Unclear" };
+const PH_PERI = { ok: "Intact", mac: "Macerated", fragile: "Fragile", unknown: "Unclear" };
+const PH_INF = { none: "No visible signs", local: "Local / superficial signs", deep: "Deep / spreading signs", unknown: "Unclear" };
+function phRender(R, isSample) {
+  phLast = R; const t = R.tissue || {};
+  const bar = [["granulation", "#d9534f", "Granulation"], ["slough", "#e8c547", "Slough"], ["eschar", "#3a2a22", "Eschar"], ["necrosis_wet", "#6b4f2a", "Wet necrosis"], ["epithelial", "#f3a6b5", "Epithelial"]]
+    .filter(([k]) => +t[k] > 0);
+  const conf = { low: "bad", moderate: "warn", high: "ok" }[R.confidence] || "warn";
+  let h = "";
+  if (isSample) h += `<div class="box warn"><b>SAMPLE OUTPUT.</b> Not generated from a photo — shows the layout only.</div>`;
+  if (R.wound_visible === false) { document.getElementById("ph-out").innerHTML = h + `<div class="box bad"><h4>Can't assess</h4>${phEsc(R.image_quality)}</div>`; return; }
+  if ((R.concerns || []).length) h += `<div class="box bad"><h4>Act on</h4><ul>${R.concerns.map((c) => `<li>${phEsc(c)}</li>`).join("")}</ul></div>`;
+  h += `<div class="box"><h4>What the photo shows <span class="pill ${conf}">confidence: ${phEsc(R.confidence || "?")}</span></h4>
+    <p style="margin:4px 0">${phEsc(R.description)}</p>
+    ${bar.length ? `<div style="display:flex;height:16px;border-radius:4px;overflow:hidden;margin:6px 0">${bar.map(([k, c]) => `<div title="${k}" style="width:${+t[k]}%;background:${c}"></div>`).join("")}</div>
+    <div class="mute">${bar.map(([k, c, l]) => `<span style="display:inline-block;width:10px;height:10px;background:${c};border-radius:2px"></span> ${l} ${+t[k]}%`).join(" &nbsp; ")}</div>` : ""}
+    <table style="margin-top:8px"><tr><th>Likely type</th><td>${phEsc(PH_TYPE[R.likely_type] || R.likely_type)} <span class="mute">${phEsc(R.type_reason)}</span></td></tr>
+    <tr><th>Stage (pressure injury)</th><td>${phEsc(PH_STAGE[R.stage] || R.stage)}</td></tr>
+    <tr><th>Exudate</th><td>${phEsc(PH_EXU[R.exudate] || R.exudate)}</td></tr>
+    <tr><th>Periwound</th><td>${phEsc(PH_PERI[R.periwound] || R.periwound)}</td></tr>
+    <tr><th>Infection signs</th><td>${phEsc(PH_INF[R.infection_signs] || R.infection_signs)} <span class="mute">${phEsc(R.infection_reason)}</span></td></tr>
+    <tr><th>Image quality</th><td>${phEsc(R.image_quality)}</td></tr></table></div>`;
+  const d = R.dressing || {};
+  h += `<div class="box rec"><h4>Suggested dressing (AI draft)</h4>
+    <div><b>Primary:</b> ${phEsc(d.primary)}</div><div><b>Secondary:</b> ${phEsc(d.secondary)}</div>
+    <div><b>Change:</b> ${phEsc(d.change)}</div>${d.avoid ? `<div><b>Avoid:</b> ${phEsc(d.avoid)}</div>` : ""}
+    <div class="row"><button class="btn" onclick="phToChooser()">Fill Dressing chooser and compare</button><button class="btn sec" onclick="phCopy()">Copy summary</button></div></div>`;
+  if ((R.cannot_assess || []).length) h += `<div class="box warn"><h4>Check at the bedside</h4><ul>${R.cannot_assess.map((c) => `<li>${phEsc(c)}</li>`).join("")}</ul></div>`;
+  h += `<p class="mute">AI draft from a photo for physician and wound clinician review. Not a diagnosis. Photos can't show depth, undermining, odour, warmth or perfusion, and colour varies with lighting and skin tone.</p>`;
+  document.getElementById("ph-out").innerHTML = h;
+}
+function phToChooser() {
+  const R = phLast; if (!R) return;
+  const set = (id, v, ok) => { if (v && v !== "unknown" && (!ok || ok.includes(v))) { const e = document.getElementById(id); if ([...e.options].some((o) => o.value === v)) e.value = v; } };
+  set("c-type", R.likely_type); set("c-stage", R.stage); set("c-depth", R.depth); set("c-exu", R.exudate); set("c-inf", R.infection_signs); set("c-peri", R.periwound);
+  const t = R.tissue || {}, top = Math.max(+t.necrosis_wet || 0, +t.eschar || 0, +t.slough || 0);
+  document.getElementById("c-tissue").value = top < 20 ? "gran" : (+t.necrosis_wet || 0) === top ? "wetnec" : (+t.eschar || 0) === top ? (R.eschar_dry_stable === false ? "wetnec" : "eschar") : "slough";
+  document.getElementById("c-bleed").checked = !!R.bleeding;
+  if (R.odour != null) document.getElementById("c-odour").checked = !!R.odour;
+  if (R.probes_to_bone != null) document.getElementById("c-bone").checked = !!R.probes_to_bone;
+  const loc = document.getElementById("ph-loc").value.trim(); if (loc) document.getElementById("o-loc").value = loc;
+  showTab("t-chooser"); runChooser();
+  document.getElementById("c-out").insertAdjacentHTML("afterbegin", `<div class="box"><b>Filled from photo review.</b> <span class="mute">Check every dropdown above (perfusion and bedside items aren't visible in a photo), then press Suggest dressing again after any change.</span></div>`);
+}
+function phCopy() {
+  const R = phLast; if (!R) return; const d = R.dressing || {}, t = R.tissue || {};
+  const txt = [`Wound photo review (AI draft, physician review required)${document.getElementById("ph-loc").value ? " – " + document.getElementById("ph-loc").value : ""}`,
+    R.description, `Tissue: granulation ${t.granulation || 0}%, slough ${t.slough || 0}%, eschar ${t.eschar || 0}%, epithelial ${t.epithelial || 0}%.`,
+    `Likely: ${PH_TYPE[R.likely_type] || R.likely_type}${R.stage && R.stage !== "na" ? ", " + (PH_STAGE[R.stage] || R.stage) : ""}. Exudate ${PH_EXU[R.exudate] || R.exudate}. Periwound ${PH_PERI[R.periwound] || R.periwound}. Infection: ${PH_INF[R.infection_signs] || R.infection_signs}.`,
+    `Suggested: ${d.primary}; secondary ${d.secondary}; change ${d.change}.`, (R.cannot_assess || []).length ? "To check at bedside: " + R.cannot_assess.join("; ") + "." : ""].filter(Boolean).join("\n");
+  navigator.clipboard ? navigator.clipboard.writeText(txt).then(() => phStatus("Summary copied.")) : phStatus("Clipboard not available.", true);
+}
+function phCopilot() {
+  const notes = phNotes();
+  const p = ["You are helping a hospital physician describe a de-identified wound photo and choose a wound dressing CATEGORY (not a brand). I will paste the photo after this message.",
+    "Describe only what is visible plus the bedside notes below. Do not guess depth, odour, warmth, probe-to-bone or perfusion. Colour in photos is unreliable; say how confident you are.",
+    "Do not search my email, files or the web.", "", "Reply in plain text with these sections:",
+    "1. What the photo shows: wound bed tissue with rough percentages (granulation, slough, eschar, epithelial), edges, periwound, exudate.",
+    "2. Likely wound type and, if a pressure injury, the NPIAP stage (or unstageable / deep tissue injury), with the reason.",
+    "3. Visible infection signs, or 'none visible'.",
+    "4. Suggested dressing: primary category, secondary category, how often to change, what to avoid and why. Follow moist wound healing: match absorbency to exudate, fill cavities loosely, autolytic debridement for slough, keep dry stable heel or ischemic eschar dry, antimicrobial dressings only for local infection (2-week trial), no hydrocolloid on diabetic foot ulcers or infected wounds.",
+    "5. Urgent concerns, if any.", "6. What I must check at the bedside because a photo can't show it.", "",
+    "Bedside notes:", notes || "(none)", "", "This is a draft for physician and wound clinician review, not a diagnosis."].join("\n");
+  (navigator.clipboard ? navigator.clipboard.writeText(p) : Promise.reject()).then(
+    () => { phStatus("Prompt copied. Opening Copilot Chat: paste it, then paste the photo."); window.open("https://m365.cloud.microsoft/chat", "_blank", "noopener"); },
+    () => phStatus("Clipboard not available.", true));
+}
 
 /* ===================== FHIR (when launched) ===================== */
 const WOUND_RX=/pressure (ulcer|injury)|decubitus|bedsore|ulcer of (skin|foot|leg|heel|sacr)|diabetic foot|venous (stasis )?ulcer|arterial ulcer|wound|dehiscen|skin tear|osteomyelitis|cellulitis|fungating|gangrene/i;

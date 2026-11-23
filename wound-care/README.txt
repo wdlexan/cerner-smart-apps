@@ -17,6 +17,14 @@ Tabs
                          periwound, perfusion, bleeding, odour, bone, anticoagulation)
                          -> primary + secondary dressing, change frequency, act-first
                          flags, avoid list, NPWT candidacy; "Send to order writer".
+  Review photo           Paste/drag a de-identified wound photo (re-encoded in the browser, camera
+                         GPS/time removed), add bedside findings, then "Review photo with AI"
+                         (needs ai-server/wound-server.js running on your own computer; key stays
+                         in the terminal) or "Copy prompt for Copilot" (no server). Shows tissue %,
+                         likely type/stage, exudate, periwound, infection signs, suggested dressing,
+                         bedside checks; "Fill Dressing chooser and compare" runs the rule-based
+                         chooser on the AI reading. Sandbox/made-up/teaching photos only until
+                         Island Health approves an AI service for patient images.
   Products & change freq Category table with filter box; skin care; what not to use.
   Wound types            Pressure injury, DFU, venous (compression by ABI), arterial,
                          surgical, skin tear, trauma, fungating, IAD, IV sites.
