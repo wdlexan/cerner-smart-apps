@@ -28,6 +28,8 @@
   select, input[type=text] { font:inherit; padding:6px 8px; border:1px solid var(--line); border-radius:6px; background:#fff; }
   input[type=text] { flex:1; min-width:260px; } .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
   button { font:inherit; padding:6px 12px; border-radius:6px; border:1px solid var(--accent); background:var(--accent); color:#fff; cursor:pointer; }
+  .daily { background:var(--green-bg); color:var(--green); border:1px solid #b5e3c8; border-radius:6px; padding:6px 10px; margin-bottom:6px; font-weight:600; }
+  .daily b { color:var(--ink); } .pill.daily1 { background:var(--green); color:#fff; } tr.dailyrow td { background:#f3fbf6; }
   ul { margin:4px 0; padding-left:20px; } footer { font-size:12px; color:var(--muted); }
 </style>
 </head>
@@ -70,8 +72,8 @@
   </details>
   <footer>Read-only: nothing is written to the chart. Doses are typical adult regimens before renal/weight adjustment. Draft from the hospitalist's notes (Nov 2026) – not Island Health policy.</footer>
 </main>
-<script src="../hospitalist-toolkit/tools/hahabx/rules.js?v=20261123a"></script>
-<script src="../hospitalist-toolkit/tools/hahabx/app.js?v=20261123b"></script>
+<script src="../hospitalist-toolkit/tools/hahabx/rules.js?v=20261123c"></script>
+<script src="../hospitalist-toolkit/tools/hahabx/app.js?v=20261123c"></script>
 <script src="../hospitalist-toolkit/subtabs.js?v=20261121f"></script>
 <script>SubTabs.mount({ store: "hahabx", top: ["#top"], tabs: [
   { key: "pt", label: "This patient", match: ["#secPt"] },

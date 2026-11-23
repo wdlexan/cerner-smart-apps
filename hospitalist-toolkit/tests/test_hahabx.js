@@ -31,4 +31,7 @@ ok("MSSA: cefazolin + probenecid q24h before cloxacillin elastomeric", o.findInd
 ok("MRSA: vancomycin and daptomycin", ["vanco", "dapto"].every((k) => H.options("mrsa").some((r) => r.d.key === k)));
 ok("every scenario has an option", H.SCEN.every(([k]) => H.options(k).length), H.SCEN.filter(([k]) => !H.options(k).length));
 ok("antibiotic name filter: not acetaminophen", !H.ABX_RE.test("acetaminophen") && H.ABX_RE.test("cefazolin"));
+ok("daptomycin q8h: once-daily regimen highlighted", j("daptomycin", "IV q8h").daily.length === 1);
+ok("cefazolin: once daily with probenecid; pip-tazo: none", /probenecid/.test(j("cefazolin", "2 g IV q8h").daily[0]) && !j("piperacillin-tazobactam", "4.5 g IV q6h").daily.length);
+ok("ESBL options: ertapenem marked once daily", H.options("esbl")[0].once);
 console.log(fail ? `\n${fail} FAILED` : "\nall passed"); process.exit(fail ? 1 : 0);

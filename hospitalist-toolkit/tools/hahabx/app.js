@@ -8,7 +8,8 @@
 
   function verdictHtml(v) {
     const alts = (v.alts || []).length ? `<div class="small">Home-friendly alternatives (if the organism is susceptible): ${v.alts.map((a) => `<b>${esc(a.d.name)}</b> – ${esc(a.how.toLowerCase())}: ${esc(a.txt)}`).join("; ")}</div>` : "";
-    return `<span class="pill ${v.level}">${esc(v.head)}</span>${v.detail ? `<div class="small" style="margin-top:3px">${esc(v.detail)}</div>` : ""}${alts}`;
+    const once = v.daily && v.daily.length && !(v.freq && v.freq.perDay === 1 && !v.freq.cont) ? `<div class="daily">✓ Can be given ONCE DAILY: ${v.daily.map((t) => `<b>${esc(v.drug)}</b> ${esc(t)}`).join(" · ")}</div>` : "";
+    return `${once}<span class="pill ${v.level}">${esc(v.head)}</span>${v.detail && !(once && /^Lower-frequency/.test(v.detail)) ? `<div class="small" style="margin-top:3px">${esc(v.detail)}</div>` : ""}${alts}`;
   }
   function drawPt() {
     if (!state.orders) return;
@@ -24,7 +25,7 @@
   }
   function drawOpt() {
     const rows = H.options($("scen").value, limit());
-    $("optOut").innerHTML = rows.length ? `<table><tr><th>Antibiotic</th><th>How at home</th><th>Regimen</th></tr>${rows.map((r) => `<tr><td><b>${esc(r.d.name)}</b>${r.d.why ? `<div class="small muted">${esc(r.d.why)}</div>` : ""}</td><td><span class="pill ${r.how === "Nurse bolus" || r.how === "Oral" ? "ok" : r.how === "24-h elastomeric" ? "elasto" : "pharm"}">${esc(r.how)}</span></td><td>${esc(r.txt)}</td></tr>`).join("")}</table>
+    $("optOut").innerHTML = rows.length ? `<table><tr><th>Antibiotic</th><th>How at home</th><th>Regimen</th></tr>${rows.map((r) => `<tr${r.once ? ' class="dailyrow"' : ""}><td><b>${esc(r.d.name)}</b>${r.d.why ? `<div class="small muted">${esc(r.d.why)}</div>` : ""}</td><td>${r.once ? '<span class="pill daily1">✓ Once daily</span> ' : ""}<span class="pill ${r.how === "Nurse bolus" || r.how === "Oral" ? "ok" : r.how === "24-h elastomeric" ? "elasto" : "pharm"}">${esc(r.how)}</span></td><td>${esc(r.txt)}</td></tr>`).join("")}</table>
       <div class="small muted" style="margin-top:4px">Pick by susceptibility and source first; this list only ranks by how easy the regimen is at home.</div>` : '<span class="muted">No home option listed – discuss with ID / HaH pharmacy.</span>';
   }
   function drawRef() {
@@ -34,7 +35,7 @@
 
   H.SCEN.forEach(([k, l]) => { const o = document.createElement("option"); o.value = k; o.textContent = l; $("scen").appendChild(o); });
   $("scen").onchange = drawOpt; $("limit").onchange = redraw; $("orderBtn").onclick = drawOrder; $("orderTxt").addEventListener("keydown", (e) => { if (e.key === "Enter") drawOrder(); }); // (an onkeydown returning false blocked typing)
-  H.DRUGS.forEach((d) => { const o = document.createElement("option"); o.value = d.name; o.textContent = d.name; $("pickDrug").appendChild(o); });
+  H.DRUGS.forEach((d) => { const o = document.createElement("option"); o.value = d.name; o.textContent = d.name + (H.dailyOf(d).length ? "  ✓ daily" : ""); $("pickDrug").appendChild(o); });
   const fromPick = () => { if (!$("pickDrug").value) return; $("orderTxt").value = `${$("pickDrug").value} IV ${$("pickFreq").value}`; drawOrder(); };
   $("pickDrug").onchange = fromPick; $("pickFreq").onchange = fromPick;
 

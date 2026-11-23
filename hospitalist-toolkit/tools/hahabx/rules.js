@@ -68,7 +68,7 @@
   function judge(o, limit) {
     limit = limit || 2;
     const all = [o.name, o.text, o.route].join(" "), d = drugOf(o.name) || drugOf(all), f = perDay(o.text, o.timing);
-    const out = { drug: d ? d.name : o.name, freq: f, d };
+    const out = { drug: d ? d.name : o.name, freq: f, d, daily: dailyOf(d) };
     if (PO_RE.test(o.route || "") || (!/\biv\b|intravenous/i.test(all) && PO_RE.test(all))) return Object.assign(out, { level: "ok", head: "Oral – no nurse visit needed" });
     if (f && f.cont && d && (d.mode === "elasto" || d.mode === "pharm")) return Object.assign(out, { level: "ok", head: "Already a continuous infusion", detail: d.elasto });
     if (d && d.mode === "no") return Object.assign(out, { level: "bad", head: "Not possible at home as ordered", detail: d.why, alts: alternatives(d) });
@@ -80,6 +80,8 @@
     return Object.assign(out, { level: "bad", head: `${times(f.perDay)} – more than nurses can give, and not on the elastomeric list`,
       detail: lower && lower.length ? "Lower-frequency regimen: " + lower.map((b) => b.txt).join("; ") : "Change agent – see options.", alts: d ? alternatives(d) : [] });
   }
+  /* Once-daily regimens a drug has (nurse gives one dose a day). */
+  const dailyOf = (d) => ((d && d.bolus) || []).filter((b) => b.perDay === 1).map((b) => b.txt);
   const times = (n) => (n === 1 ? "once a day" : n === 2 ? "BID" : n === 3 ? "TID" : n === 4 ? "QID" : n + "×/day");
 
   /* HaH-feasible agents that share coverage with drug d (same targets), best (fewest visits) first. */
@@ -97,7 +99,7 @@
     const rows = [];
     DRUGS.forEach((d) => {
       if (!d.covers.includes(scen) && !(scen === "gnr-s" && d.covers.includes("gnr"))) return;
-      (d.bolus || []).filter((b) => b.perDay <= limit).forEach((b) => rows.push({ d, how: "Nurse bolus", txt: b.txt, rank: b.perDay }));
+      (d.bolus || []).filter((b) => b.perDay <= limit).forEach((b) => rows.push({ d, how: "Nurse bolus", txt: b.txt, rank: b.perDay, once: b.perDay === 1 }));
       if (d.mode === "elasto") rows.push({ d, how: "24-h elastomeric", txt: d.elasto, rank: 3 });
       if (d.mode === "pharm" && d.key === "mero") rows.push({ d, how: "Elastomeric per pharmacy", txt: d.elasto, rank: 4 });
       if (d.mode === "po") rows.push({ d, how: "Oral", txt: d.why, rank: 0 });
@@ -110,6 +112,6 @@
     return rows.sort((a, b) => a.rank - b.rank).filter((r) => { const k = r.d.key + r.how; if (seen.has(k)) return false; seen.add(k); return true; });
   }
 
-  const api = { DRUGS, SCEN, perDay, judge, options, alternatives, drugOf, ABX_RE, times };
+  const api = { dailyOf, DRUGS, SCEN, perDay, judge, options, alternatives, drugOf, ABX_RE, times };
   if (typeof module !== "undefined") module.exports = api; else window.HahAbx = api;
 })();
