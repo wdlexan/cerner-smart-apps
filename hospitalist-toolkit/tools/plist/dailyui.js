@@ -28,9 +28,14 @@
     say("Ready. Press <b>Update from the chart</b>.");
   }
 
+  // every slow step gets a time limit, so the page can never sit on "connecting" forever
+  const within = (ms, p, what) => { let tm; return Promise.race([p, new Promise((_, rej) => { tm = setTimeout(() => rej(new Error(what + " took more than " + Math.round(ms / 1000) + " s")), ms); })]).finally(() => clearTimeout(tm)); };
+  let conn = null; // the chart connection, made once and reused
   async function client() {
-    if (typeof FHIR === "undefined") throw new Error("the chart connection didn't load");
-    try { return await FHIR.oauth2.ready(); } catch (e) { throw new Error("not connected to the chart: open the toolkit from PowerChart or from its link, then come back to this tab"); }
+    if (conn) return conn;
+    if (typeof FHIR === "undefined") throw new Error("the chart connection didn't load (reload the toolkit)");
+    try { conn = await within(15000, FHIR.oauth2.ready(), "connecting to the chart"); return conn; }
+    catch (e) { conn = null; throw new Error(/took more/.test(e.message) ? e.message + ": reload the toolkit (Ctrl+Shift+R) or open its link again" : "not connected to the chart: open the toolkit from PowerChart or from its link, then come back to this tab"); }
   }
   // a copy of the client pointed at another patient (same login, same permissions)
   function forPatient(c, id) { return Object.create(c, { patient: { value: { id, read: () => c.request("Patient/" + id) } } }); }
@@ -39,13 +44,13 @@
   const mrnSystems = new Set();
   const isMr = (i) => /\bMR\b|MRN|medical record/i.test(JSON.stringify(i.type || {}));
   function learnSystems(p) { (p && p.identifier || []).filter(isMr).forEach((i) => { if (i.system) mrnSystems.add(i.system); }); }
-  async function learnFromOpenPatient(c) { try { if (c.patient && c.patient.id) learnSystems(await c.request("Patient/" + c.patient.id)); } catch (e) {} }
+  async function learnFromOpenPatient(c) { try { if (c.patient && c.patient.id) learnSystems(await within(15000, c.request("Patient/" + c.patient.id), "reading the open patient")); } catch (e) {} }
   async function findByMrn(c, mrn) {
     const tries = [mrn].concat(Array.from(mrnSystems).map((sys) => sys + "|" + mrn));
     let lastErr = null;
     for (const q of tries) {
       try {
-        const hits = (await c.request("Patient?identifier=" + encodeURIComponent(q), { flat: true })).filter((p) => p.resourceType === "Patient");
+        const hits = (await within(25000, c.request("Patient?identifier=" + encodeURIComponent(q), { flat: true }), "finding MRN " + mrn)).filter((p) => p.resourceType === "Patient");
         const exact = hits.filter((p) => (p.identifier || []).some((i) => String(i.value || "").replace(/\D/g, "") === mrn));
         const use = exact.length ? exact : hits;
         if (use.length === 1) return use[0].id;
@@ -97,16 +102,21 @@
     say("Working: connecting to the chart…");
     const slow = setTimeout(() => { if (/connecting/.test($("dmsg").textContent)) say("Still connecting to the chart… (if this stays, reload the toolkit: the sign-in may have expired)"); }, 15000);
     try {
-      await loadJs(JSZIP, () => window.JSZip);
+      say("Working: loading the Excel reader…");
+      await within(20000, loadJs(JSZIP, () => window.JSZip), "loading the Excel reader");
+      say("Working: connecting to the chart…");
       const c = await client();
-      // read the charts 3 at a time, then write the file
+      say("Working: checking the MRN format…");
       await learnFromOpenPatient(c);
-      const L = await PListXlsx.readList(window.JSZip, file.buf.slice(0));
+      say("Working: reading your list file…");
+      const L = await within(20000, PListXlsx.readList(window.JSZip, file.buf.slice(0)), "reading your list file");
+      if (!L.patients.length) throw new Error("no patients found in the file");
+      // read the charts 3 at a time, then write the file
       const todo = L.patients.slice(), out = new Map(); let done = 0, noAccess = 0;
       const tick = () => say(`Reading charts: ${done} of ${L.patients.length} done…`);
       tick();
       const worker = async () => { while (todo.length) { const p = todo.shift(); const key = p.first;
-        out.set(key, await valuesFor(c, p).then((v) => ({ v }), (e) => { if (/not allowed/.test(e.message || "")) noAccess++; return { e }; }));
+        out.set(key, await within(60000, valuesFor(c, p), "reading this chart").then((v) => ({ v }), (e) => { if (/not allowed/.test(e.message || "")) noAccess++; return { e }; }));
         done++; tick(); } };
       const total = L.patients.length; todo.length = 0; todo.push(...L.patients);
       await Promise.all([worker(), worker(), worker()]);
@@ -154,7 +164,7 @@
       const c = await client();
       let pts = [];
       for (const q of ["Patient?family=SMART&_count=10", "Patient?family=PETERS&_count=5", "Patient?name=a&_count=10"]) {
-        try { pts = pts.concat((await c.request(q, { flat: true })).filter((p) => p.resourceType === "Patient")); } catch (e) {}
+        try { pts = pts.concat((await within(25000, c.request(q, { flat: true }), "searching the sandbox")).filter((p) => p.resourceType === "Patient")); } catch (e) {}
         if (pts.length >= 5) break;
       }
       const seen = new Set(), list = [];
