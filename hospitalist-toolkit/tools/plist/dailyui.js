@@ -41,6 +41,42 @@
     return hits[0].id;
   }
 
+  /* light chart read for the daily list: only what the columns and "check today" need, all requests in parallel,
+     no note or report text (that is what made it slow). Same shape as DcChart.gather's raw. */
+  const iso = (t) => new Date(t).toISOString().slice(0, 10), DAY = 864e5;
+  async function gatherLite(c, pid) {
+    const errors = [];
+    const get = (url, name, pages) => {
+      let tm; return Promise.race([c.request(url, { pageLimit: pages || 1, flat: true }), new Promise((_, rej) => { tm = setTimeout(() => rej(new Error("timed out after 25 s")), 25000); })])
+        .then((r) => { clearTimeout(tm); return (Array.isArray(r) ? r : [r]).filter((x) => x && x.resourceType && x.resourceType !== "OperationOutcome"); })
+        .catch((e) => { clearTimeout(tm); errors.push(name + ": " + (e.message || e)); return []; });
+    };
+    const now = Date.now();
+    const [patient, encounters, labs, vitals, medreqs, problems, reports, orders, allergies] = await Promise.all([
+      get(`Patient/${pid}`, "patient").then((r) => r[0] || null),
+      get(`Encounter?patient=${pid}&_count=10`, "encounters"),
+      get(`Observation?patient=${pid}&category=laboratory&date=ge${iso(now - 10 * DAY)}&_count=100`, "labs (10 days)", 2),
+      get(`Observation?patient=${pid}&category=vital-signs&date=ge${iso(now - 2 * DAY)}&_count=100`, "vitals (2 days)"),
+      get(`MedicationRequest?patient=${pid}&_count=100`, "medication orders", 2),
+      get(`Condition?patient=${pid}&category=problem-list-item&_count=50`, "problem list"),
+      get(`DiagnosticReport?patient=${pid}&date=ge${iso(now - 14 * DAY)}&_count=50`, "reports (14 days)"),
+      get(`ServiceRequest?patient=${pid}&authored=ge${iso(now - 14 * DAY)}&_count=50`, "orders (14 days)"),
+      get(`AllergyIntolerance?patient=${pid}`, "allergies")]);
+    const inpt = encounters.filter((e) => e.period && e.period.start && /IMP|inpatient|ACUTE|observation|OBSENC/i.test(JSON.stringify(e.class || {}) + JSON.stringify(e.type || {})));
+    const enc = (inpt.length ? inpt : encounters).filter((e) => e.period && e.period.start).sort((a, b) => new Date(b.period.start) - new Date(a.period.start)).slice(0, 1);
+    const seen = new Set(), obs = labs.concat(vitals).filter((o) => (o.id ? (seen.has(o.id) ? false : seen.add(o.id)) : true));
+    return { raw: { patient, encounters: enc, obs, medreqs, medstatements: [], conditions: problems, reports, orders, notes: [] }, allergies, errors };
+  }
+  async function valuesFor(c, p) {
+    const mrn = String(p.mrn || "").replace(/\D/g, "");
+    if (!mrn) throw new Error("no MRN in the file (add it in the mrn column)");
+    let id;
+    try { id = await findByMrn(c, mrn); } catch (e) { if (/\b40[13]\b|forbidden|unauthori/i.test(e.message || "")) throw new Error("not allowed to look up other patients from this launch"); throw e; }
+    const g = await gatherLite(c, id), raw = Object.assign({ now: Date.now() }, g.raw), f = DcRules.parse(raw);
+    let dcc = null; try { dcc = window.DccRules ? DccRules.screen(f, raw) : null; } catch (e) {}
+    return PListDaily.values(f, raw, g.allergies, { pending: DcRules.pending, dcc });
+  }
+
   async function run() {
     if (!file) return;
     $("drun").disabled = true; $("dsave").disabled = true; $("dtbl").innerHTML = "";
@@ -48,21 +84,18 @@
     try {
       await loadJs(JSZIP, () => window.JSZip);
       const c = await client();
-      let n = 0, noAccess = 0;
-      const res = await PListXlsx.daily(window.JSZip, file.buf.slice(0), async (p) => {
-        n++; say(`Reading chart ${n}: ${esc(p.name)}…`);
-        const mrn = String(p.mrn || "").replace(/\D/g, "");
-        if (!mrn) throw new Error("no MRN in the file (add it in the mrn column)");
-        let id;
-        try { id = await findByMrn(c, mrn); } catch (e) { if (/\b40[13]\b|forbidden|unauthori/i.test(e.message || "")) { noAccess++; throw new Error("not allowed to look up other patients from this launch"); } throw e; }
-        const pc = forPatient(c, id);
-        const g = await DcChart.gather(pc, () => {});
-        let allergies = [];
-        try { allergies = (await c.request(`AllergyIntolerance?patient=${id}`, { flat: true })).filter((a) => a.resourceType === "AllergyIntolerance"); } catch (e) {}
-        const raw = Object.assign({ now: Date.now() }, g.raw), f = DcRules.parse(raw);
-        let dcc = null; try { dcc = window.DccRules ? DccRules.screen(f, raw) : null; } catch (e) {}
-        return PListDaily.values(f, raw, allergies, { pending: DcRules.pending, dcc });
-      }, { type: "uint8array" });
+      // read the charts 3 at a time, then write the file
+      const L = await PListXlsx.readList(window.JSZip, file.buf.slice(0));
+      const todo = L.patients.slice(), out = new Map(); let done = 0, noAccess = 0;
+      const tick = () => say(`Reading charts: ${done} of ${L.patients.length} done…`);
+      tick();
+      const worker = async () => { while (todo.length) { const p = todo.shift(); const key = p.first;
+        out.set(key, await valuesFor(c, p).then((v) => ({ v }), (e) => { if (/not allowed/.test(e.message || "")) noAccess++; return { e }; }));
+        done++; tick(); } };
+      const total = L.patients.length; todo.length = 0; todo.push(...L.patients);
+      await Promise.all([worker(), worker(), worker()]);
+      say(`Read ${total} charts. Writing the file…`);
+      const res = await PListXlsx.daily(window.JSZip, file.buf.slice(0), async (p) => { const r = out.get(p.first); if (!r) return null; if (r.e) throw r.e; return r.v; }, { type: "uint8array" });
       result = res;
       const ok = res.report.filter((r) => !r.error && !r.skipped);
       $("dtbl").innerHTML = `<tr><th>Patient</th><th>Filled (empty cells only)</th><th>Check today</th></tr>` + res.report.map((r) => `<tr><td>${esc(r.name)}</td>` +
