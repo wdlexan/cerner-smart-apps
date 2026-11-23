@@ -11,10 +11,10 @@
   // toolkit tab key -> usual service
   const BY_TAB = { abx: "Infectious diseases", fuo: "Infectious diseases", abxmap: "Infectious diseases", infections: "Infectious diseases", aki: "Nephrology", transplant: "Nephrology", hypona: "Nephrology", lytes: "Nephrology", acidbase: "Nephrology",
     stroke: "Neurology", neuro: "Neurology", seizure: "Neurology", ae: "Neurology", dementia: "Geriatrics", pd: "Neurology", acs: "Cardiology", chf: "Cardiology", af: "Cardiology", liver: "Gastroenterology", ibd: "Gastroenterology",
-    pc: "Medical oncology", onc: "Medical oncology", ild: "Respirology", tox: "Medical oncology", bispecific: "Medical oncology", g6pd: "Hematology", sero: "Rheumatology", hip: "Orthopedics", pain: "Palliative care", diabetes: "Endocrinology", ed: "Psychiatry", edr: "Psychiatry",
+    pc: "Medical oncology", onc: "Medical oncology", ild: "Respirology", pleural: "Respirology", tox: "Medical oncology", bispecific: "Medical oncology", g6pd: "Hematology", sero: "Rheumatology", hip: "Orthopedics", pain: "Palliative care", diabetes: "Endocrinology", ed: "Psychiatry", edr: "Psychiatry",
     opioid: "Palliative care", hah: "Internal medicine", mobility: "Geriatrics", falls: "Geriatrics" };
   const BY_TITLE = [[/serolog|rheumat|lupus|vasculitis/i, "Rheumatology"], [/infect|antibiot|abx|sepsis|fever|fuo/i, "Infectious diseases"], [/\baki\b|kidney|renal|transplant|electrolyte|sodium|acid/i, "Nephrology"], [/stroke|seizure|neuro|encephalit/i, "Neurology"],
-    [/dementia|falls|mobility/i, "Geriatrics"], [/heart|chf|atrial|cardi|nstemi|coronary/i, "Cardiology"], [/liver|cirrho|ibd|crohn|colitis/i, "Gastroenterology"], [/carcinomatosis|oncolog|myeloma|bispecific|toxicit/i, "Medical oncology"],
+    [/dementia|falls|mobility/i, "Geriatrics"], [/pleura|effusion|chest tube|empyema/i, "Respirology"], [/heart|chf|atrial|cardi|nstemi|coronary/i, "Cardiology"], [/liver|cirrho|ibd|crohn|colitis/i, "Gastroenterology"], [/carcinomatosis|oncolog|myeloma|bispecific|toxicit/i, "Medical oncology"],
     [/g6pd|hemat/i, "Hematology"], [/hip|fracture|ortho/i, "Orthopedics"], [/pain|opioid|palliat/i, "Palliative care"], [/diabet/i, "Endocrinology"], [/eating disorder/i, "Psychiatry"]];
 
   const css = `

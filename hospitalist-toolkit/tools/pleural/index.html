@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pleural effusion</title>
+  <style>
+    :root { --bg:#f5f7fa; --card:#fff; --ink:#1f2933; --muted:#5f6c7b; --accent:#0b6bcb; --line:#dde3ea;
+            --r-bg:#fde8e8; --r-ink:#9b1c1c; --a-bg:#fff1d6; --a-ink:#8a5200; --b-bg:#e3eefc; --b-ink:#0b4a99; --g-bg:#e4f4ea; --g-ink:#1d6b3a; --warn-bg:#fff4e5; --warn-line:#f0c27b; }
+    @media (prefers-color-scheme: dark) { :root { --bg:#111418; --card:#1a1f26; --ink:#e8edf2; --muted:#9aa7b5; --accent:#6aa9ff; --line:#2b333d;
+            --r-bg:#4a1d1d; --r-ink:#ffb3b3; --a-bg:#4a3511; --a-ink:#ffd38a; --b-bg:#14325c; --b-ink:#a9cdff; --g-bg:#16361f; --g-ink:#9be0b1; --warn-bg:#3a2e15; --warn-line:#6b5420; } }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); }
+    header { padding:14px 20px; border-bottom:1px solid var(--line); background:var(--card); }
+    header h1 { margin:0; font-size:19px; } header .sub { font-size:13px; color:var(--muted); margin-top:2px; }
+    main { max-width:980px; margin:16px auto 40px; padding:0 16px; display:grid; gap:14px; }
+    .banner { background:var(--warn-bg); border:1px solid var(--warn-line); border-radius:8px; padding:10px 14px; font-size:13px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:10px; font-size:13.5px; }
+    .card > summary { padding:10px 16px; font-weight:700; font-size:15px; cursor:pointer; display:flex; justify-content:space-between; gap:10px; }
+    .card > .body { padding:0 16px 14px; }
+    select, input, button { font:inherit; font-size:13px; padding:5px 8px; border:1px solid var(--line); border-radius:6px; background:var(--card); color:var(--ink); }
+    button { cursor:pointer; } button.primary { border-color:var(--accent); color:var(--accent); }
+    input[type=number] { width:80px; }
+    .row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:8px 0; }
+    .inl { display:inline-flex; gap:6px; align-items:center; }
+    .muted { color:var(--muted); } .err { color:var(--r-ink); }
+    .tiles { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px; }
+    .tile { border-radius:10px; padding:10px 14px; border:1px solid var(--line); background:var(--card); }
+    .tile .k { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; }
+    .tile .big { font-size:26px; font-weight:700; margin:2px 0; }
+    .tile .s { font-size:12.5px; }
+    .t0 { background:var(--g-bg); color:var(--g-ink); } .t1 { background:var(--b-bg); color:var(--b-ink); } .t2 { background:var(--a-bg); color:var(--a-ink); } .t3 { background:var(--r-bg); color:var(--r-ink); }
+    .t0 .k, .t1 .k, .t2 .k, .t3 .k { color:inherit; opacity:.8; }
+    .alert { border-left:4px solid; border-radius:6px; padding:8px 12px; margin:6px 0; }
+    .alert b { margin-right:6px; }
+    .alert.urgent { background:var(--r-bg); color:var(--r-ink); } .alert.action { background:var(--a-bg); color:var(--a-ink); } .alert.info { background:var(--b-bg); color:var(--b-ink); }
+    table { border-collapse:collapse; width:100%; font-size:13px; }
+    th, td { border-bottom:1px solid var(--line); padding:5px 8px; text-align:left; white-space:nowrap; }
+    th { color:var(--muted); font-weight:600; }
+    td.num { text-align:right; font-variant-numeric:tabular-nums; } td.wrap { white-space:normal; }
+    td.hi { color:var(--r-ink); font-weight:600; } td.old { color:var(--a-ink); }
+    .scroll { overflow-x:auto; }
+    .plan h3 { font-size:14px; margin:12px 0 4px; } .plan ul { margin:4px 0 8px 18px; padding:0; } .plan li { margin:3px 0; }
+    .plan .urgent h3 { color:var(--r-ink); } .plan .action h3 { color:var(--a-ink); }
+    .chip { display:inline-block; padding:1px 8px; border-radius:10px; font-size:12px; font-weight:600; }
+    .c-yes { background:var(--g-bg); color:var(--g-ink); } .c-no { background:var(--r-bg); color:var(--r-ink); } .c-unknown { background:var(--a-bg); color:var(--a-ink); }
+    .src { font-size:12px; color:var(--muted); margin-top:8px; }
+    svg text { fill:var(--muted); font-size:11px; }
+    .mgrid { display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:10px; margin:8px 0; }
+    .mgrid fieldset { border:1px solid var(--line); border-radius:8px; padding:6px 12px 8px; margin:0; display:grid; gap:6px; }
+    .mgrid legend { font-weight:600; font-size:13px; padding:0 4px; }
+    .mgrid label:not(.inl) { display:grid; grid-template-columns:120px 80px auto; align-items:center; gap:6px; }
+    .mgrid .u { font-size:12px; color:var(--muted); }
+    .mgrid label select { grid-column:span 2; justify-self:start; }
+    input.typed { border-color:var(--accent); font-weight:600; }
+    .verdict { border-radius:10px; padding:10px 14px; margin:10px 0 6px; }
+    .verdict .big { font-size:18px; font-weight:700; }
+    tr.match td { background:var(--b-bg); color:var(--b-ink); font-weight:600; }
+    td.lv-flag { color:var(--a-ink); font-weight:600; } td.lv-ok { color:var(--g-ink); font-weight:600; }
+    .flag { color:var(--r-ink); font-weight:700; }
+    .agent td { white-space:normal; vertical-align:top; } .st-ok { color:var(--g-ink); font-weight:700; } .st-caution { color:var(--a-ink); font-weight:700; } .st-avoid { color:var(--r-ink); font-weight:700; }
+    .esc-now { background:var(--r-bg); color:var(--r-ink); } .esc-today { background:var(--a-bg); color:var(--a-ink); } .esc-later { background:var(--b-bg); color:var(--b-ink); }
+    .esc { border-radius:6px; padding:6px 10px; margin:5px 0; } .esc b { margin-right:6px; }
+    textarea { width:100%; min-height:220px; font:12.5px ui-monospace,Consolas,monospace; padding:8px; border:1px solid var(--line); border-radius:6px; background:var(--card); color:var(--ink); }
+    .check li.have { color:var(--g-ink); } .check li.miss { color:var(--ink); } .check .why { color:var(--muted); font-size:12px; }
+    .mini { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:10px; } .mini .ttl { font-weight:600; font-size:13px; }
+    .bands td { white-space:normal; } tr.me td { background:var(--b-bg); color:var(--b-ink); font-weight:600; }
+    .handout { border:1px dashed var(--line); border-radius:8px; padding:10px 14px; background:var(--card); max-height:420px; overflow:auto; }
+    .rv { border-radius:10px; padding:10px 14px; margin:8px 0; } .rv .big { font-size:17px; font-weight:700; }
+    .rv-pci { background:var(--b-bg); color:var(--b-ink); } .rv-cabg { background:var(--a-bg); color:var(--a-ink); } .rv-both { background:var(--g-bg); color:var(--g-ink); } .rv-info { background:var(--card); border:1px solid var(--line); }
+    .inputs fieldset { border:1px solid var(--line); border-radius:8px; padding:6px 12px 8px; margin:6px 0; } .inputs legend { font-weight:600; font-size:13px; padding:0 4px; }
+    .inputs .row { margin:4px 0; } .auto { font-size:11px; color:var(--accent); margin-left:3px; }
+    .ref td { white-space:normal; vertical-align:top; }
+    tr.dim td { opacity:.55; } .dd { border:1px solid var(--line); border-radius:8px; padding:6px 10px; margin:6px 0; } .dd > summary { cursor:pointer; } .ddb { margin-top:6px; display:grid; gap:4px; }
+    .inputs fieldset .row label.inl { min-width:260px; }
+    @media print { .noprint { display:none; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Pleural effusion: cause, fluid analysis, imaging, chest tube, complications and removal</h1>
+    <div class="sub">Light's criteria with the pseudo-exudate check, what each fluid result means, likely causes from the chart, imaging report flags, tap safety and drainage volume, which chest tube (small-bore, large-bore, IPC, talc), tPA/DNase, tube troubleshooting, when to remove, pleural infection (RAPID), malignant effusion (LENT), handouts and note. Read-only.</div>
+  </header>
+  <main>
+    <div class="banner"><b>Decision-support draft. It orders nothing.</b> Rules were written by Claude from the BTS 2023 pleural disease guideline, Light's criteria, MIST2, the RAPID and LENT scores, the 2018 malignant effusion guidelines and AASLD hepatic hydrothorax guidance, and have <b>not been verified</b>: check with respirology / thoracic surgery and local policy (especially anticoagulant holds) before real use. Pleural fluid results are found by <b>name</b>; type any value the chart reader missed. Use made-up or Cerner sandbox patients until Island Health approves real data.</div>
+
+    <details class="card inputs" open>
+      <summary><span>Patient and situation</span><span class="muted" id="ptsum"></span></summary>
+      <div class="body">
+        <div id="pstatus" class="muted">Open from Cerner to read the chart, or pick a made-up patient:</div>
+        <div class="row"><select id="testsel"><option value="">Made-up patient…</option></select><button id="clear" hidden>Clear</button></div>
+        <div id="errs" class="err" style="font-size:12.5px"></div>
+        <fieldset><legend>Effusion <span class="auto">filled from imaging reports when found</span></legend>
+          <div class="row">
+            <label class="inl">Side <select id="side"><option value="">?</option><option value="right">Right</option><option value="left">Left</option><option value="bilateral">Bilateral</option></select></label>
+            <label class="inl">Size <select id="size"><option value="">?</option><option value="small">Small (blunting)</option><option value="moderate">Moderate</option><option value="large">Large (over half)</option><option value="massive">Massive / white-out</option></select></label>
+            <label class="inl">Context <select id="context"><option value="">Not sure yet</option><option value="hf">Heart failure</option><option value="pneumonia">Pneumonia / infection</option><option value="cancer">Known or suspected cancer</option><option value="cirrhosis">Cirrhosis</option><option value="kidney">Kidney / nephrotic / dialysis</option><option value="pe">Pulmonary embolism</option><option value="trauma">Trauma / procedure / anticoagulant bleed</option><option value="cardiac">After cardiac surgery or MI</option><option value="autoimmune">Rheumatoid / lupus</option></select></label>
+          </div>
+          <div class="row">
+            <label class="inl"><input type="checkbox" id="sympt"> Breathless</label>
+            <label class="inl"><input type="checkbox" id="fever"> Fever</label>
+            <label class="inl"><input type="checkbox" id="pleuritic"> Pleuritic pain</label>
+            <label class="inl"><input type="checkbox" id="loc"> Loculated / septated on ultrasound</label>
+            <label class="inl"><input type="checkbox" id="tbrisk"> TB risk</label>
+            <label class="inl"><input type="checkbox" id="asbestos"> Asbestos exposure</label>
+            <label class="inl"><input type="checkbox" id="hosp"> Hospital-acquired infection</label>
+          </div>
+        </fieldset>
+      </div>
+    </details>
+
+    <div class="tiles" id="tiles"></div>
+    <details class="card" open><summary><span>Chart alerts</span><span class="muted" id="alertsum"></span></summary><div class="body" id="alerts"></div></details>
+    <details class="card" open><summary><span>Plan now</span><span class="muted" id="plansum"></span></summary><div class="body plan" id="plan"></div></details>
+    <details class="card inputs" open><summary><span>Fluid analysis: Light's criteria and what the fluid says</span><span class="muted" id="fluidsum"></span></summary><div class="body"><div class="mgrid" id="fluidin"></div><div id="fluid"></div></div></details>
+    <details class="card" open><summary><span>What to send with a diagnostic tap</span></summary><div class="body plan" id="send"></div></details>
+    <details class="card" open><summary><span>Likely causes for this patient</span><span class="muted" id="causesum"></span></summary><div class="body" id="causes"></div></details>
+    <details class="card inputs" open><summary><span>All causes: transudates and exudates</span></summary><div class="body"><div class="row"><label class="inl">Show <select id="causecat"></select></label></div><div class="scroll" id="allcauses"></div></div></details>
+    <details class="card" open><summary><span>Imaging reports</span><span class="muted" id="imgsum"></span></summary><div class="body" id="imgrep"></div></details>
+    <details class="card" open><summary><span>Imaging: what to look for</span></summary><div class="body plan">
+      <h3>Chest X-ray</h3><ul><li>Blunting of the costophrenic angle needs about 200-300 mL on a PA film (about 50 mL on a lateral).</li><li>Meniscus sign; a large effusion pushes the mediastinum <b>away</b>. A white-out with shift <b>toward</b> it means collapse (endobronchial obstruction); no shift with a big effusion suggests a fixed mediastinum (mesothelioma, nodes) or trapped lung.</li><li>Supine film: hazy hemithorax, apical cap. Subpulmonic effusion: high flat "diaphragm", lateral peak.</li><li>Air-fluid level: hydropneumothorax (after a tap, bronchopleural fistula, esophageal rupture).</li></ul>
+      <h3>Ultrasound (use for every procedure)</h3><ul><li>More sensitive than CXR (detects 20 mL), shows depth, loculations and the safe site.</li><li>Anechoic fluid can be a transudate or exudate. Complex septated, echogenic or debris = exudate (septations: parapneumonic, TB, malignancy).</li><li>Pleural nodules or diaphragmatic thickening over 1 cm, liver metastases: malignancy.</li><li>Lung sliding after drainage; "jellyfish" atelectatic lung floating in fluid.</li></ul>
+      <h3>CT chest with contrast (pleural / late arterial phase)</h3><ul><li>Do it <b>before</b> draining to dryness when malignancy is possible (pleura is better seen with fluid present).</li><li>Malignancy: nodular, circumferential or mediastinal pleural thickening, parietal thickening over 1 cm.</li><li>Empyema: split pleura sign (enhancing parietal and visceral pleura), lenticular shape, gas without a procedure; look for lung abscess.</li><li>Also shows the cause: PE (CTPA), tumour, nodes, consolidation, ascites, chest tube position.</li></ul>
+      <h3>When to re-image</h3><ul><li>Pleural infection not settling at 24-48 h after drainage: ultrasound/CT for a residual collection.</li><li>After chest tube insertion: CXR for position. Before removal: CXR or ultrasound if unsure the space is drained.</li><li>6-8 weeks after discharge for parapneumonic or unexplained effusion.</li></ul></div></details>
+    <details class="card" open><summary><span>Thoracentesis: bleeding safety, how much to drain, ultrasound</span></summary><div class="body plan" id="tap"></div></details>
+    <details class="card inputs" open><summary><span>Chest tube: which tube</span><span class="muted" id="tubesum"></span></summary><div class="body">
+      <div class="row"><label class="inl">Reason for drainage <select id="purpose"><option value="">?</option><option value="parapneumonic">Parapneumonic (complicated)</option><option value="empyema">Empyema</option><option value="malignant">Malignant effusion</option><option value="hemothorax">Hemothorax</option><option value="pneumothorax">Pneumothorax</option><option value="transudate">Transudate (HF / kidney)</option><option value="hepatic">Hepatic hydrothorax</option><option value="chylo">Chylothorax</option></select></label></div>
+      <div id="tubechoice"></div></div></details>
+    <details class="card" open><summary><span>Intrapleural tPA + DNase (MIST2)</span></summary><div class="body plan" id="lytics"></div></details>
+    <details class="card" open><summary><span>Chest tube orders and daily care</span></summary><div class="body plan" id="orders"></div></details>
+    <details class="card inputs" open><summary><span>Chest tube in place: status</span></summary><div class="body">
+      <div class="row">
+        <label class="inl">Tube <select id="tubetype"><option value="none">No tube</option><option value="small">Small-bore 8-14 F</option><option value="large">Large-bore 20-32 F</option><option value="ipc">Indwelling pleural catheter</option></select></label>
+        <label class="inl">Day <input type="number" id="daysin" style="width:60px"></label>
+        <label class="inl">Output last 24 h <input type="number" id="out24" style="width:80px"> mL</label>
+      </div>
+      <div class="row">
+        <label class="inl"><input type="checkbox" id="bubbling"> Bubbling (air leak)</label>
+        <label class="inl">Lung re-expanded <select id="expanded"><option value="">?</option><option value="yes">Yes</option><option value="no">No</option></select></label>
+        <label class="inl"><input type="checkbox" id="settled"> Infection settling</label>
+        <label class="inl"><input type="checkbox" id="fluidleft"> Residual collection on imaging</label>
+        <label class="inl">Talc given <select id="talc"><option value="">No</option><option value="yes">Yes</option></select></label>
+      </div></div></details>
+    <details class="card inputs" open><summary><span>Chest tube problems: troubleshoot</span></summary><div class="body"><div class="row"><label class="inl">Problem <select id="trouble"></select></label></div><div id="troubleout"></div></div></details>
+    <details class="card" open><summary><span>When to remove the chest tube</span><span class="muted" id="rmsum"></span></summary><div class="body plan" id="removal"></div></details>
+    <details class="card inputs" open><summary><span>Pleural infection: drain or not, antibiotics, surgery, RAPID</span><span class="muted" id="rapidsum"></span></summary><div class="body plan" id="infection"></div></details>
+    <details class="card inputs" open><summary><span>Malignant effusion: LENT, IPC or talc</span><span class="muted" id="lentsum"></span></summary><div class="body">
+      <div class="row">
+        <label class="inl">ECOG <select id="ecog"><option value="">?</option><option value="0">0: fully active</option><option value="1">1: light work</option><option value="2">2: up over half the day</option><option value="3">3: in bed/chair over half</option><option value="4">4: bed-bound</option></select></label>
+        <label class="inl">Tumour <select id="tumour"><option value="">?</option><option value="low">Mesothelioma / blood cancer</option><option value="mod">Breast, gynecologic, kidney</option><option value="high">Lung / other</option></select></label>
+        <label class="inl">Lung re-expanded after drainage <select id="reexpand"><option value="">Not known</option><option value="yes">Yes</option><option value="no">No (trapped)</option></select></label>
+        <label class="inl">Breathing better after tap <select id="relief"><option value="">?</option><option value="yes">Yes</option><option value="no">No</option></select></label>
+      </div><div class="plan" id="malig"></div></div></details>
+    <details class="card" open><summary><span>Discharge and follow-up</span></summary><div class="body plan" id="fu"></div></details>
+    <details class="card inputs" open><summary><span>Patient handout</span></summary><div class="body">
+      <div class="row">
+        <label class="inl">Handout <select id="h-kind"><option value="tap">After a tap or chest tube removal</option><option value="ipc">Going home with an IPC</option><option value="infection">Going home after empyema</option></select></label>
+        <label class="inl">Follow-up <input id="h-fu" size="28" placeholder="e.g. respirology clinic in 4 weeks with CXR"></label>
+        <label class="inl">Phone <input id="h-phone" size="14"></label>
+      </div>
+      <div class="row">
+        <label class="inl">IPC drainage schedule <input id="h-sched" size="30" placeholder="e.g. home care Mon/Wed/Fri, up to 1 L"></label>
+        <label class="inl">Antibiotic until <input id="h-abx" size="16" placeholder="e.g. Dec 14"></label>
+        <button id="h-print" class="primary">Open printable handout</button>
+      </div>
+      <div class="handout" id="handout"></div></div></details>
+    <details class="card"><summary><span>Note draft</span></summary><div class="body"><textarea id="note"></textarea><div class="row"><button id="copy" class="primary">Copy</button><span class="muted">Edit before pasting. Nothing is saved.</span></div></div></details>
+    <div class="src">Sources: Roberts ME et al. British Thoracic Society Guideline for Pleural Disease, Thorax 2023; Light RW et al. Ann Intern Med 1972; Rahman NM et al. MIST2, N Engl J Med 2011; Rahman NM et al. RAPID score, Chest 2014 and Corcoran JP et al. Eur Respir J 2020; Clopton K et al. LENT score, Thorax 2014; Feller-Kopman DJ et al. ATS/STS/STR malignant pleural effusion guideline 2018; Bibby AC et al. ERS/EACTS MPE statement 2018; Davies HE et al. TIME2, JAMA 2012; Thomas R et al. AMPLE, JAMA 2017; Bhatnagar R et al. IPC-PLUS, NEJM 2018; Porcel JM et al. short antibiotic course for pleural infection, 2020; Biggins SW et al. AASLD ascites/hydrothorax guidance 2021; Porcel JM. pleural NT-proBNP 2009; Aggarwal AN et al. ADA meta-analysis 2019.</div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+  <script src="rules.js?v=20261123a"></script>
+  <script src="chart.js?v=20261123a"></script>
+  <script src="samples.js?v=20261123a"></script>
+  <script src="app.js?v=20261123a"></script>
+  <script src="../../subtabs.js?v=20261121f"></script>
+  <script>SubTabs.mount({ store: "pleural", top: ["Chart alerts", "#tiles"], dotSel: ".alert.urgent, .tile.t3, .plan .urgent", tabs: [
+      {"key": "assess", "label": "Assess", "match": ["Patient and situation", "Plan now"]},
+      {"key": "fluid", "label": "Fluid analysis", "match": ["Fluid analysis", "What to send"]},
+      {"key": "causes", "label": "Causes", "match": ["Likely causes", "All causes"]},
+      {"key": "img", "label": "Imaging", "match": ["Imaging reports", "Imaging: what to look for"]},
+      {"key": "tap", "label": "Tap & chest tube", "match": ["Thoracentesis", "Chest tube: which tube", "Intrapleural tPA", "Chest tube orders"]},
+      {"key": "tube", "label": "Tube problems & removal", "match": ["Chest tube in place", "Chest tube problems", "When to remove"]},
+      {"key": "spec", "label": "Empyema & cancer", "match": ["Pleural infection", "Malignant effusion"]},
+      {"key": "dc", "label": "Discharge & handout", "match": ["Discharge and follow-up", "Patient handout"]},
+      {"key": "note", "label": "Note draft", "match": ["Note draft"]}] });</script>
+</body>
+</html>
