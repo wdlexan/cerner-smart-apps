@@ -359,6 +359,163 @@
         },
         // =====================================================================
         {
+            // Fillable PDF (Island Health 9-90969 V5 FEB 2026): values go into the PDF's own fields (acro), so it stays editable.
+            id: "acuteneuro",
+            title: "Acute Neurology Clinic Referral (RJH)",
+            description: "Island Health Acute Neurology Clinic / First Seizure Clinic (form 9-90969 V5, Feb 2026; tel 250-370-8247, fax 250-370-8070)",
+            category: "Referral",
+            template: "AcuteNeuroReferral.pdf",
+            acro: true,
+            filePrefix: "AcuteNeuroReferral",
+            fileNameFrom: "last",
+            footer: "Non-ER physicians: call the on-call neurologist BEFORE referring and name them on the form. Fax 250-370-8070. Not for: suspected TIA/stroke (SRAU, fax 250-727-4356), isolated diplopia / neuro-ophthalmology (Dr. Ted Atkins, fax 778-265-0098), temporal arteritis (Plastic Surgery + IM/Rheumatology), or patients already followed by a neurologist for the same problem. First Seizure Clinic: a semi-urgent EEG requisition is generated automatically.",
+            sections: [
+                {
+                    legend: "Referral", fields: [
+                        { id: "clinic", label: "Clinic", type: "radio", important: true, span: 4, options: [
+                            { value: "general", label: "General Neurology", acro: "GENERAL NEUROLOGY" },
+                            { value: "seizure", label: "First Seizure Clinic (semi-urgent EEG requisition auto-generated)", acro: "FIRST SEIZURE CLINIC" }] },
+                        { id: "neurologist", label: "Neurologist consulted (REQUIRED for non-ER doctors)", type: "text", required: true, acro: "Neurologist Consulted REQUIRED FOR NONER DOCTORS", size: 9,
+                          hint: "Call the on-call neurologist before referring (RJH switchboard)." },
+                        { id: "date", label: "Date of referral", type: "date", src: "today", fmt: "dmon", span: 1, acro: "Date of referral" },
+                        { id: "pages", label: "Total # pages faxed", type: "text", span: 1, acro: "Total  of pages faxed" },
+                        { id: "seizureReq", label: "First Seizure Clinic: REQUIRED", type: "checks", span: 4, options: [
+                            { value: "precautions", label: "Seizure precautions reviewed with patient/caregiver(s)", acro: "Seizure precautions reviewed with" },
+                            { value: "driving", label: "NO driving until reviewed with Neurology, possibly longer", acro: "NO driving until reviewed with" },
+                            { value: "reviewed", label: "(No driving) reviewed with patient/caregiver(s)", acro: "reviewed with patientcaregivers" }] }
+                    ]
+                },
+                {
+                    legend: "Patient", fields: [
+                        { id: "last", label: "Last name", type: "text", src: "pt.last", required: true, acro: "Last name" },
+                        { id: "first", label: "First name", type: "text", src: "pt.first", required: true, acro: "First name" },
+                        { id: "dob", label: "Date of birth", type: "date", src: "pt.dob", required: true, fmt: "dmon", acro: "Date of birth ddMmmyyyy" },
+                        { id: "phn", label: "PHN", type: "text", src: "pt.phn", phn: true, acro: "PHN" },
+                        { id: "ptPhone", label: "Primary contact number", type: "text", src: "pt.homePhone", acro: "Primary contact number" },
+                        { id: "mrn", label: "MRN (optional)", type: "text", src: "pt.mrn", acro: "MRN optional" },
+                        { id: "email", label: "Email (optional)", type: "text", src: "pt.email", acro: "Text1", size: 9 },
+                        { id: "special", label: "Special instructions (e.g. interpreter, hard of hearing)", type: "text", acro: "Special Instructions", size: 8 }
+                    ]
+                },
+                {
+                    legend: "Referred by", fields: [
+                        { id: "refName", label: "Referring practitioner", type: "fixed", src: "cfg.shortName", acro: "Referring practitioner" },
+                        { id: "refMsp", label: "MSP #", type: "fixed", src: "cfg.msp", acro: "Text2" },
+                        { id: "locum", label: "Locum", type: "check", acro: "Locum" },
+                        { id: "refClinic", label: "Clinic name / street address / phone / fax (4 short lines)", type: "textarea", span: 4, acro: "Clinic Name Street Address Phone STAMP Fax", size: 8,
+                          value: (function () { const p = (window.APP_CONFIG || {}).physician || {};
+                              return [p.clinicName || "VGH Hospitalist Service", p.clinicAddress, p.phone && "Phone " + p.phone, p.fax && "Fax " + p.fax].filter(Boolean).join("\n"); })() },
+                        { id: "pcp", label: "Primary care provider (family doctor / NP)", type: "text", span: 3, acro: "Primary Care Provider Same as ordering practitioner", size: 8 },
+                        { id: "pcpSame", label: "PCP same as ordering practitioner", type: "check", span: 1, acro: "undefined" },
+                        { id: "copyTo", label: "Copy to (full name)", type: "text", span: 4, acro: "Copy to full name", size: 9 }
+                    ]
+                },
+                {
+                    legend: "Past medical history, history & symptoms", fields: [
+                        { id: "history", label: "Past medical history / history & symptoms (about 7 lines on the form)", type: "textarea", important: true, span: 4, acro: "HISTORY  SYMPTOMS", size: 8 },
+                        { id: "onset", label: "Onset of event date", type: "text", acro: "ONSET OF EVENT DATE", size: 9, hint: "e.g. 18-Nov-2026, or 'gradual over 3 weeks'" },
+                        { id: "notes", label: "Additional notes (about 2 lines)", type: "textarea", span: 4, acro: "ADDITIONAL NOTES", size: 8 }
+                    ]
+                },
+                {
+                    legend: "Diagnostic testing", fields: [
+                        ...[["eeg", "EEG", "Check Box3", "Check Box4"], ["holter", "Holter", "Check Box5", "Check Box11"], ["cta", "CTA", "Check Box6", "Check Box12"],
+                            ["ct", "CT", "Check Box7", "Check Box13"], ["mri", "MRI", "Check Box8", "Check Box14"], ["us", "U/S", "Check Box9", "Check Box15"],
+                            ["other", "Other", "Check Box10", "Check Box16"]].map(([id, label, ordered, completed]) => (
+                            { id: "dx_" + id, label, type: "radio", value: "none", span: 1, options: [
+                                { value: "none", label: "—" }, { value: "ordered", label: "Ordered", acro: ordered }, { value: "completed", label: "Completed", acro: completed }] })),
+                        { id: "otherTest", label: "Other test (name, short)", type: "text", span: 1, acro: "Other", size: 7 },
+                        { id: "pamphlet", label: "Patient pamphlet given", type: "check", span: 2, acro: "Patient Pamphlet Given" }
+                    ]
+                }
+            ]
+        },
+        // =====================================================================
+        {
+            // Fillable PDF (Island Health 9-91101 V2 MAR 2026). Yes/No pairs are PDF radio groups (option.acroValue).
+            id: "headache",
+            title: "Complex Headache Clinic Referral (Island Health)",
+            description: "Island Health Complex Headache Clinic (form 9-91101 V2, Mar 2026; fax 236-475-1962)",
+            category: "Referral",
+            template: "HeadacheReferral.pdf",
+            acro: true,
+            filePrefix: "HeadacheReferral",
+            fileNameFrom: "last",
+            footer: "Fax 236-475-1962. Date of referral and total pages faxed are not fillable on this PDF: write them by hand. Attach MRI/CT, recent bloodwork, and prior neurology notes if seen before (mandatory question).",
+            sections: [
+                {
+                    legend: "Patient", fields: [
+                        { id: "last", label: "Last name", type: "text", src: "pt.last", required: true, acro: "Last Name" },
+                        { id: "first", label: "First name", type: "text", src: "pt.first", required: true, acro: "First Name" },
+                        { id: "dob", label: "Date of birth", type: "date", src: "pt.dob", required: true, fmt: "dmon", acro: "Date of Birth ddMmmyyyy" },
+                        { id: "phn", label: "PHN", type: "text", src: "pt.phn", phn: true, acro: "PHN" },
+                        { id: "mrn", label: "MRN (optional)", type: "text", src: "pt.mrn", acro: "MRN Optional" },
+                        { id: "ptPhone", label: "Primary phone", type: "text", src: "pt.homePhone", acro: "Primary Phone" },
+                        { id: "email", label: "Email", type: "text", src: "pt.email", acro: "Email", size: 9 },
+                        { id: "special", label: "Special instructions", type: "text", acro: "Special Instructions", size: 9 }
+                    ]
+                },
+                {
+                    legend: "Provider", fields: [
+                        { id: "refName", label: "Referring provider", type: "fixed", src: "cfg.shortName", acro: "Referring Provider" },
+                        { id: "refMsp", label: "MSP #", type: "fixed", src: "cfg.msp", acro: "MSP" },
+                        { id: "locum", label: "Locum", type: "check", acro: "undefined" },
+                        { id: "refClinic", label: "Clinic name", type: "text", acro: "Clinic Name", size: 9,
+                          value: ((window.APP_CONFIG || {}).physician || {}).clinicName || "VGH Hospitalist Service" },
+                        { id: "refPhone", label: "Phone", type: "text", src: "cfg.phone", span: 1, acro: "Phone" },
+                        { id: "refFax", label: "Fax", type: "text", src: "cfg.fax", span: 1, acro: "Fax" },
+                        { id: "refAddress", label: "Street address", type: "text", src: "cfg.clinicAddress", span: 4, acro: "Street Address" },
+                        { id: "pcp", label: "Primary care provider", type: "text", span: 3, acro: "Primary Care Provider", size: 9 },
+                        { id: "pcpSame", label: "Same as ordering provider", type: "check", span: 1, acro: "undefined_2" },
+                        { id: "copyTo", label: "Copy to (full name)", type: "text", span: 4, acro: "Copy to full name", size: 9 }
+                    ]
+                },
+                {
+                    legend: "Reason for referral", fields: [
+                        { id: "reason", label: "Reason for referral", type: "checks", important: true, span: 4, options: [
+                            { value: "migraine", label: "Migraine", acro: "Migraine  Headache Frequency" },
+                            { value: "pregnancy", label: "Headache in pregnancy or lactation", acro: "Headache in pregnancy or lactation" },
+                            { value: "aura", label: "Complex aura", acro: "Complex Aura" },
+                            { value: "tn", label: "Trigeminal neuralgia", acro: "Trigeminal Neuralgia" },
+                            { value: "high", label: "High-pressure headache", acro: "Highpressure headache" },
+                            { value: "low", label: "Low-pressure headache", acro: "Lowpressure headache" },
+                            { value: "unknown", label: "Headache of unknown origin", acro: "Headache of unknown origin" },
+                            { value: "tac", label: "Cluster headache / other TAC", acro: "Cluster headache or other trigeminal autonomic cephalgia" }] },
+                        { id: "frequency", label: "Migraine: headache frequency (short)", type: "text", acro: "Has patient tried at least 1 abortive  1", size: 8, hint: "e.g. 15 days/month" },
+                        { id: "triedAgents", label: "Migraine: tried ≥1 abortive & ≥1 prophylactic agent (or contraindication: cardiac / cerebrovascular risk)?", type: "radio", options: [
+                            { value: "yes", label: "Yes", acro: "cerebrovascular risk factors", acroValue: "Yes" }, { value: "no", label: "No", acro: "cerebrovascular risk factors", acroValue: "No" }] },
+                        { id: "eyeExam", label: "High-pressure headache: comprehensive eye exam since symptom onset?", type: "radio", options: [
+                            { value: "yes", label: "Yes", acro: "undefined_3", acroValue: "Yes_2" }, { value: "no", label: "No", acro: "undefined_3", acroValue: "No_2" }] }
+                    ]
+                },
+                {
+                    legend: "History and medications", fields: [
+                        { id: "history", label: "Patient history (about 5 lines on the form)", type: "textarea", important: true, span: 4, acro: "Patient History AttachedRow1", size: 8 },
+                        { id: "historyAttached", label: "Patient history attached", type: "check", acro: "Attached" },
+                        { id: "meds", label: "Current medications (about 5 lines)", type: "textarea", span: 4, acro: "Current Medications AttachedRow1", size: 8 },
+                        { id: "medsAttached", label: "Medication list attached", type: "check", acro: "Attached_2" }
+                    ]
+                },
+                {
+                    legend: "Completed / attached", fields: [
+                        { id: "completed", label: "Completed and attached", type: "checks", span: 2, options: [
+                            { value: "imaging", label: "MRI/CT scan", acro: "MRICT scan" }, { value: "blood", label: "Recent bloodwork", acro: "Recent Bloodwork" }] },
+                        { id: "seenNeuro", label: "MANDATORY: previously seen a neurologist?", type: "radio", required: true, options: [
+                            { value: "yes", label: "Yes", acro: "MANDATORY QUESTION Has patient previously seen a neurologist", acroValue: "Yes_3" },
+                            { value: "no", label: "No", acro: "MANDATORY QUESTION Has patient previously seen a neurologist", acroValue: "No_3" }] },
+                        { id: "neuroNotes", label: "If yes: neurology notes attached", type: "check", acro: "If Yes Notes attached" },
+                        { id: "trialed", label: "Has the patient trialed any of these drugs?", type: "checks", span: 4, options: [
+                            { value: "topiramate", label: "Topiramate", acro: "Topiramate" }, { value: "gabapentin", label: "Gabapentin", acro: "Gabapentin" },
+                            { value: "candesartan", label: "Candesartan", acro: "Candesartan" }, { value: "venlafaxine", label: "Venlafaxine", acro: "Venlafaxine" },
+                            { value: "amitriptyline", label: "Amitriptyline", acro: "Amitriptyline" }, { value: "nortriptyline", label: "Nortriptyline", acro: "Nortriptyline" },
+                            { value: "bb", label: "Propranolol or other beta blocker", acro: "Propanolol or other beta blocker" }, { value: "verapamil", label: "Verapamil", acro: "Verapamil" },
+                            { value: "flunarizine", label: "Flunarizine", acro: "Flunarizine" }, { value: "valproate", label: "Divalproex / valproic acid", acro: "Divalproex sodium  valproic acid" }] }
+                    ]
+                }
+            ]
+        },
+        // =====================================================================
+        {
             id: "pulse",
             title: "Pulse – Cardiology & Respirology Referral",
             description: "Pulse Complete Cardiac Care (Version: March 2026, fax 250-595-1000)",

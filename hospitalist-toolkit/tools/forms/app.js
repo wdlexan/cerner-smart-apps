@@ -350,18 +350,22 @@ async function genericFill(PDFLib, bytes, form, v) {
         try {
             const t = acro.getTextField(name);
             if (f.type === "textarea") t.enableMultiline();
+            // some forms leave a field without its own font setting (/DA): give it plain Helvetica
+            try { if (!t.acroField.getDefaultAppearance()) t.acroField.setDefaultAppearance("/Helv 0 Tf 0 g"); } catch (e) {}
             t.setFontSize(f.size || (f.type === "textarea" ? 9 : 10));
             t.setText(cleanText(String(str)));
         } catch (e) { notes.push(`Could not fill “${f.label}” (${e.message}).`); }
     };
     // tick, and redraw the tick as a plain vector check (some forms use a ZapfDingbats tick that not every viewer shows)
+    // option.acroValue: the PDF field is a radio group (e.g. Yes/No); select that export value
+    const acroRadio = (name, value) => { try { acro.getRadioGroup(name).select(value); } catch (e) { notes.push(`Could not tick “${name}” (${value}).`); } };
     const acroCheck = (name) => { try { const cb = acro.getCheckBox(name); cb.check();
         try { cb.acroField.getWidgets().forEach((w) => { const mk = w.getAppearanceCharacteristics(); if (mk && mk.getBorderColor() && mk.getBorderColor().length) w.getOrCreateBorderStyle().setWidth(1); }); cb.updateAppearances(); } catch (e) {} } catch (e) { notes.push(`Could not tick “${name}”.`); } };
     if (acro) {
         for (const f of allFields(form)) {
             const val = v[f.id];
             if (f.type === "check") { if (val && f.acro) acroCheck(f.acro); continue; }
-            if (f.type === "radio" || f.type === "select") { const o = (f.options || []).find(o => o.value === val); if (o && o.acro) acroCheck(o.acro);
+            if (f.type === "radio" || f.type === "select") { const o = (f.options || []).find(o => o.value === val); if (o && o.acro && o.acroValue) acroRadio(o.acro, o.acroValue); else if (o && o.acro) acroCheck(o.acro);
                 else if (o && o.value && f.acro) acroText(f.acro, o.pdfText || o.label, f); // select whose choice prints as text
                 continue; }
             if (f.type === "checks") { for (const o of f.options) if ((val || []).includes(o.value) && o.acro) acroCheck(o.acro); continue; }
