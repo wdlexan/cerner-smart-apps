@@ -126,6 +126,18 @@
     <details class="card inputs" open><summary><span>Chest tube: which tube</span><span class="muted" id="tubesum"></span></summary><div class="body">
       <div class="row"><label class="inl">Reason for drainage <select id="purpose"><option value="">?</option><option value="parapneumonic">Parapneumonic (complicated)</option><option value="empyema">Empyema</option><option value="malignant">Malignant effusion</option><option value="hemothorax">Hemothorax</option><option value="pneumothorax">Pneumothorax</option><option value="transudate">Transudate (HF / kidney)</option><option value="hepatic">Hepatic hydrothorax</option><option value="chylo">Chylothorax</option></select></label></div>
       <div id="tubechoice"></div></div></details>
+    <details class="card inputs" open><summary><span>When to clamp the chest tube (BTS 2023)</span><span class="muted" id="clampsum"></span></summary><div class="body">
+      <div class="row">
+        <label class="inl">Drained since insertion / this session <input type="number" id="c-drained" style="width:80px"> mL</label>
+        <label class="inl">over <input type="number" id="c-min" style="width:60px"> min</label>
+        <label class="inl">Local clamp time <select id="c-clampmin"><option value="60">60 min</option><option value="30">30 min</option><option value="15">15 min</option></select></label>
+      </div>
+      <div class="row">
+        <label class="inl"><input type="checkbox" id="c-sym"> Cough, chest tightness/pain, worse breathlessness, or SpO2/BP drop</label>
+        <label class="inl"><input type="checkbox" id="c-lytics"> tPA / DNase just instilled</label>
+        <span class="muted">Bubbling and reason for drainage come from the other cards.</span>
+      </div>
+      <div id="clamp"></div></div></details>
     <details class="card" open><summary><span>Intrapleural tPA + DNase (MIST2)</span></summary><div class="body plan" id="lytics"></div></details>
     <details class="card" open><summary><span>Chest tube orders and daily care</span></summary><div class="body plan" id="orders"></div></details>
     <details class="card inputs" open><summary><span>Chest tube in place: status</span></summary><div class="body">
@@ -169,17 +181,17 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
-  <script src="rules.js?v=20261123a"></script>
+  <script src="rules.js?v=20261123b"></script>
   <script src="chart.js?v=20261123a"></script>
-  <script src="samples.js?v=20261123a"></script>
-  <script src="app.js?v=20261123a"></script>
+  <script src="samples.js?v=20261123b"></script>
+  <script src="app.js?v=20261123b"></script>
   <script src="../../subtabs.js?v=20261121f"></script>
   <script>SubTabs.mount({ store: "pleural", top: ["Chart alerts", "#tiles"], dotSel: ".alert.urgent, .tile.t3, .plan .urgent", tabs: [
       {"key": "assess", "label": "Assess", "match": ["Patient and situation", "Plan now"]},
       {"key": "fluid", "label": "Fluid analysis", "match": ["Fluid analysis", "What to send"]},
       {"key": "causes", "label": "Causes", "match": ["Likely causes", "All causes"]},
       {"key": "img", "label": "Imaging", "match": ["Imaging reports", "Imaging: what to look for"]},
-      {"key": "tap", "label": "Tap & chest tube", "match": ["Thoracentesis", "Chest tube: which tube", "Intrapleural tPA", "Chest tube orders"]},
+      {"key": "tap", "label": "Tap & chest tube", "match": ["Thoracentesis", "Chest tube: which tube", "When to clamp", "Intrapleural tPA", "Chest tube orders"]},
       {"key": "tube", "label": "Tube problems & removal", "match": ["Chest tube in place", "Chest tube problems", "When to remove"]},
       {"key": "spec", "label": "Empyema & cancer", "match": ["Pleural infection", "Malignant effusion"]},
       {"key": "dc", "label": "Discharge & handout", "match": ["Discharge and follow-up", "Patient handout"]},

@@ -52,6 +52,16 @@ eq("effusion 300 not ready", R.removal({ purpose: "effusion", out24: 300 }).read
 ok("tube choice hepatic = avoid", /AVOID/.test(R.tubeChoice("hepatic").pick));
 ok("all troubleshoot items have steps", Object.values(R.TROUBLE).every((t) => t.steps.length >= 2));
 
+// clamp
+eq("clamp: bubbling never", R.clamp({ bubbling: true, drained: 2000 }).act, "never");
+eq("clamp: symptoms now", R.clamp({ symptoms: true, drained: 300 }).act, "now");
+eq("clamp: 1500 now", R.clamp({ drained: 1500 }).act, "now");
+eq("clamp: 1100 in 40 min soon", R.clamp({ drained: 1100, minutes: 40 }).act, "soon");
+eq("clamp: 600 keep draining", R.clamp({ drained: 600 }).act, "drain");
+eq("clamp: hemothorax no", R.clamp({ purpose: "hemothorax", drained: 1800 }).act, "no");
+eq("clamp: tPA 1 h", R.clamp({ lytics: true }).act, "lytics");
+ok("clamp: local time used", R.clamp({ drained: 1600, clampMin: 15 }).steps[0].includes("15 min"));
+
 // imaging scan
 const im = R.imaging("Loculated right pleural collection with enhancing split pleura sign. Large right effusion.").map((x) => x.id);
 ok("imaging: split", im.includes("split")); ok("imaging: loculated", im.includes("loculated")); ok("imaging: large", im.includes("large"));

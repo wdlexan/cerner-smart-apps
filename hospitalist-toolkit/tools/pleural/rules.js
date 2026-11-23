@@ -210,6 +210,27 @@
     return { ready, yes, no, how, label: ready ? "Ready to remove" : "Not yet" };
   }
 
+  /* ---------- when to clamp (BTS 2023 clinical statement on pleural procedures) ---------- */
+  // o: purpose, drained (mL since insertion / this session), minutes (since drainage started), symptoms (cough, chest tightness/pain, worse breathlessness, SpO2/BP drop),
+  //    bubbling, lytics (tPA/DNase just instilled), large (large/massive effusion), clampMin (local clamp time, default 60)
+  function clamp(o) {
+    o = o || {};
+    const mins = o.clampMin || 60;
+    if (o.bubbling) return { act: "never", label: "Do NOT clamp", tone: "t3", why: ["The drain is bubbling (air leak). Clamping can cause a tension pneumothorax."], steps: ["Leave on underwater seal (suction only if the lung is not re-expanding).", "If you must change the bottle, clamp for seconds only, with the patient supervised."] };
+    if (o.symptoms) return { act: "now", label: "Clamp NOW", tone: "t3", why: ["Cough, chest tightness or pain, worse breathlessness, or a fall in SpO2/BP during drainage: possible re-expansion pulmonary edema (BTS 2023: clamp promptly)."],
+      steps: ["Close the three-way tap / clamp the tube.", "Oxygen, sit up, observations every 15 min; CXR if not settling.", "Re-expansion edema: supportive (high-flow O2, CPAP/NIV if needed); usually settles in 24-48 h.", `Restart only when symptoms have settled (at least ${mins} min), and drain more slowly.`] };
+    if (o.purpose === "hemothorax") return { act: "no", label: "Do not clamp to control bleeding", tone: "t2", why: ["Clamping hides ongoing bleeding and does not tamponade it."], steps: ["Measure output hourly; thoracic surgery if 1.5 L at insertion or over 200 mL/h for 2-4 h, or unstable.", "Clamp only if re-expansion symptoms appear."] };
+    if (o.purpose === "pneumothorax") return { act: "no", label: "Do not clamp", tone: "t2", why: ["Pneumothorax drains are not clamped routinely (BTS)."], steps: ["A clamping trial before removal (4-6 h, then CXR) is a local option only when bubbling has stopped and you are unsure."] };
+    if (o.lytics) return { act: "lytics", label: "Clamp 1 h after tPA / DNase", tone: "t1", why: ["Keeps the drugs in the pleural space (MIST2 protocol); not about volume."], steps: ["Clamp for 1 h after each instillation, then free drainage.", "Unclamp early if pain, breathlessness or SpO2 drop (possible tension from fluid)."] };
+    const d = typeof o.drained === "number" ? o.drained : null;
+    if (d != null && d >= 1500) return { act: "now", label: `Clamp now: ${d} mL drained`, tone: "t3", why: ["BTS 2023: in general drain no more than 1.5 L in one attempt to prevent re-expansion pulmonary edema."],
+      steps: [`Clamp for ${mins} min (common practice about 1 h; check your local drain policy), observations every 15 min.`, "Then release and drain the next 1-1.5 L the same way, or about 500 mL/h, stopping for any symptom.", "Document the volume limit and clamp time on the drain order so nursing can follow it."] };
+    if (d != null && d >= 1000 && (o.large || (typeof o.minutes === "number" && o.minutes <= 60))) return { act: "soon", label: `Nearly at the limit: ${d} mL`, tone: "t2", why: ["Large effusion or fast drainage in the first hour: highest risk of re-expansion pulmonary edema."],
+      steps: [`Clamp at 1.5 L (or ${d >= 1200 ? "now if the lung was collapsed for days" : "earlier if any symptom"}).`, "Watch for cough, chest tightness, falling SpO2."] };
+    return { act: "drain", label: "Keep draining (with limits)", tone: "t0", why: [d != null ? `${d} mL so far: under the 1.5 L limit.` : "Enter the volume drained so far."],
+      steps: ["Observations every 15 min for the first hour.", "Clamp at 1.5 L, or at once for cough, chest tightness/pain, worse breathlessness or a fall in SpO2/BP.", "Drain bottle below the chest; never clamp if it starts bubbling."] };
+  }
+
   /* ---------- causes reference ---------- */
   const CAUSES = [
     { cat: "Transudate", name: "Heart failure", clue: "Bilateral (R bigger than L), cardiomegaly, high NT-proBNP; pleural NT-proBNP over 1500", tx: "Diuretics; tap only if atypical (unilateral, left bigger, fever, pleuritic pain) or not resolving after 3 days of diuresis." },
@@ -258,6 +279,6 @@
     return f;
   }
 
-  const api = { lights, fluid, parapneumonic, rapid, lent, mpePlan, tubeChoice, TROUBLE, removal, CAUSES, imaging };
+  const api = { lights, fluid, parapneumonic, rapid, lent, mpePlan, tubeChoice, TROUBLE, removal, clamp, CAUSES, imaging };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else window.PleuralRules = api;
 })();

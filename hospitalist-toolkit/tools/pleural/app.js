@@ -62,7 +62,9 @@ function facts() {
   const bleedCtx = purpose === "hemothorax" || ctx === "trauma" || fl.findings.some((g) => g.id === "hemothorax");
   const surg = bleedCtx && ((first && first.v >= 1500) || over200 >= 3);
   const infection = ctx === "pneumonia" || prob("pneumonia") || purpose === "empyema" || purpose === "parapneumonic" || fl.findings.some((g) => ["empyema", "infected", "lowpH"].includes(g.id) && !(g.id === "lowpH" && (ctx === "cancer" || ctx === "autoimmune")));
-  return { f, o, fl, para, ctx, purpose, tapped, img, imgIds, rp, ln, nlr, rm, tube, inr, plt, hbs, dr, surg, over200, age, infection, bleedCtx };
+  const drSum = dr.length ? dr.reduce((a2, d) => a2 + d.v, 0) : null;
+  const cl = R.clamp({ purpose, drained: num("c-drained") != null ? num("c-drained") : null, minutes: num("c-min"), symptoms: chk("c-sym"), bubbling: chk("bubbling"), lytics: chk("c-lytics"), large: ["large", "massive"].includes(val("size")), clampMin: +val("c-clampmin") || 60 });
+  return { f, o, fl, para, ctx, purpose, tapped, img, imgIds, rp, ln, nlr, rm, tube, inr, plt, hbs, dr, surg, over200, age, infection, bleedCtx, cl, drSum };
 }
 
 /* ---------- alerts ---------- */
@@ -72,6 +74,8 @@ function alertsOf(x) {
     add("urgent", "Hepatic hydrothorax", "Avoid a chest tube: massive fluid and protein loss, kidney failure, infection, high mortality. Therapeutic tap, diuretics, TIPS / transplant referral (hepatology).");
   if ((ids.has("empyema") || ids.has("infected") || ids.has("lowpH")) && (!x.tube || x.tube === "none")) add("urgent", "Needs drainage", "Pus, organisms or pH under 7.2: chest tube now (12-14 F, ultrasound-guided) plus antibiotics.");
   if (x.infection && x.tube && x.tube !== "none" && chk("fluidleft") && !chk("settled")) add("action", "Residual infected collection", "Tube in but collection remains and infection not settling: flush/check the tube, then intrapleural tPA 10 mg + DNase 5 mg BID × 3 days or thoracic surgery (VATS).");
+  if (x.cl.act === "now") add("urgent", "Clamp the chest tube", x.cl.label + ". " + x.cl.why[0]);
+  if (x.cl.act === "never" && x.tube && x.tube !== "none") add("action", "Bubbling drain", "Do not clamp.");
   if (x.surg) add("urgent", "Hemothorax: surgery criteria", `${x.dr[0] && x.dr[0].v >= 1500 ? "1.5 L or more at insertion" : x.over200 + " hourly outputs of 200 mL or more"}: call thoracic surgery now; reverse anticoagulation; transfuse.`);
   if (ids.has("hemothorax") && !x.surg && x.bleedCtx) add("action", "Hemothorax", "Watch hourly output and Hb. Surgery if over 200 mL/h for 2-4 h or 1.5 L at insertion.");
   if (x.hbs.length >= 2 && x.hbs[0].v - x.hbs[x.hbs.length - 1].v >= 20) add("action", "Hb falling", `Hb ${x.hbs[0].v} → ${x.hbs[x.hbs.length - 1].v} in 48 h.`);
@@ -133,7 +137,7 @@ function draw() {
   const A = alertsOf(x);
   $("alertsum").textContent = A.length ? `${A.filter((a) => a.lvl === "urgent").length} urgent, ${A.length} total` : "none";
   $("alerts").innerHTML = A.length ? A.map((a) => `<div class="alert ${a.lvl}"><b>${a.b}:</b>${a.t}</div>`).join("") : '<div class="muted">No alerts.</div>';
-  drawPlan(x, lk); drawFluid(x); drawCauses(x, lk); drawImaging(x); drawTap(x); drawTube(x); drawTrouble(); drawRemoval(x); drawInfection(x); drawMalignant(x); drawFU(x, lk); drawHandout();
+  drawPlan(x, lk); drawFluid(x); drawCauses(x, lk); drawImaging(x); drawTap(x); drawTube(x); drawClamp(x); drawTrouble(); drawRemoval(x); drawInfection(x); drawMalignant(x); drawFU(x, lk); drawHandout();
   $("note").value = noteText(x, lk);
   state.lastX = x;
 }
@@ -237,6 +241,18 @@ function drawTube(x) {
     "Antibiotics are not needed for the drain itself (except trauma per local practice)."]);
 }
 
+function drawClamp(x) {
+  const c = x.cl;
+  $("clampsum").textContent = c.label;
+  $("clamp").innerHTML = `<div class="verdict ${c.tone}"><div class="big">${esc(c.label)}</div>${ul(c.why.map(esc))}</div><ol>${c.steps.map((t) => "<li>" + esc(t) + "</li>").join("")}</ol>
+    <details><summary><b>The rules (BTS 2023 clinical statement on pleural procedures)</b></summary>${ul([
+      "In general, drain a maximum of 1.5 L in one attempt.",
+      "Stop (clamp) for chest tightness, pain, persistent cough or worsening breathlessness. Clamp a drain promptly for repetitive coughing or chest pain: re-expansion pulmonary edema can be fatal.",
+      "Large effusions are drained in a controlled way; observations every 15 min for the first hour (NHS rapid-offload safety alert).",
+      "How long to clamp is a local choice (commonly about 1 h; some protocols 15-30 min with reassessment). Write the limit and clamp time on the drain order.",
+      "Never clamp a bubbling drain. Do not clamp a hemothorax to slow bleeding. Pneumothorax drains are not clamped routinely.",
+      "After intrapleural tPA/DNase: clamp 1 h after each dose (to keep the drugs in)."].map(esc))}</details>`;
+}
 function drawTrouble() {
   const k = val("trouble"), t = R.TROUBLE[k];
   $("troubleout").innerHTML = t ? `<div class="verdict ${t.urgent ? "t3" : "t1"}"><div class="big">${esc(t.t)}</div></div><ol>${t.steps.map((s) => "<li>" + esc(s) + "</li>").join("")}</ol>` : '<div class="muted">Pick a problem from the dropdown.</div>';
@@ -323,6 +339,7 @@ function noteText(x, lk) {
   if (x.purpose) Lx.push("- Drainage: " + R.tubeChoice(x.purpose).pick + ".");
   if (x.para.drain) Lx.push("- " + x.para.text);
   if (x.tube && x.tube !== "none") Lx.push(`- Chest tube (${$("tubetype").selectedOptions[0].text}), day ${num("daysin") ?? "?"}, output ${num("out24") ?? "?"} mL/24 h, ${chk("bubbling") ? "bubbling" : "no air leak"}. Removal: ${x.rm.label}${x.rm.no.length ? " - " + x.rm.no.join("; ") : ""}.`);
+  if (x.tube && x.tube !== "none" && x.cl.act !== "drain") Lx.push(`- Clamping: ${x.cl.label}. ${x.cl.steps[0]}`);
   alertsOf(x).filter((a) => a.lvl !== "info").forEach((a) => Lx.push(`- ${a.b}: ${a.t.replace(/<[^>]+>/g, "")}`));
   Lx.push("- My decision: ");
   return Lx.join("\n");
@@ -349,6 +366,9 @@ function autoFill(preset) {
   $("out24").value = f && f.drain24 != null ? f.drain24 : "";
   $("bubbling").checked = false; $("expanded").value = p.reexpand === "no" ? "no" : ""; $("settled").checked = !!p.sepsisSettled; $("fluidleft").checked = !!p.fluidLeft; $("talc").value = "";
   $("trouble").value = p.trouble || "";
+  const recent = f && f.drain.length && Date.now() - f.drain[0].t <= 6 * HR ? f.drain.filter((d) => d.t - f.drain[0].t <= 2 * HR) : [];
+  $("c-drained").value = p.drained ?? (recent.length ? recent.reduce((a2, d) => a2 + d.v, 0) : ""); $("c-min").value = p.drainMin ?? "";
+  $("c-sym").checked = !!p.clampSym; $("c-lytics").checked = false; $("c-clampmin").value = "60";
   $("ecog").value = p.ecog != null ? String(p.ecog) : "";
   $("tumour").value = p.tumour || (f ? (f.prob.meso || f.prob.lymphoma || f.prob.heme ? "low" : f.prob.breastCa || f.prob.ovary || f.prob.kidneyCa ? "mod" : f.prob.cancer ? "high" : "") : "");
   $("reexpand").value = p.reexpand || ""; $("relief").value = p.relief === true ? "yes" : p.relief === false ? "no" : "";
