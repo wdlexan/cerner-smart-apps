@@ -33,7 +33,10 @@
   const redraw = () => { drawPt(); drawOrder(); drawOpt(); };
 
   H.SCEN.forEach(([k, l]) => { const o = document.createElement("option"); o.value = k; o.textContent = l; $("scen").appendChild(o); });
-  $("scen").onchange = drawOpt; $("limit").onchange = redraw; $("orderBtn").onclick = drawOrder; $("orderTxt").onkeydown = (e) => e.key === "Enter" && drawOrder();
+  $("scen").onchange = drawOpt; $("limit").onchange = redraw; $("orderBtn").onclick = drawOrder; $("orderTxt").addEventListener("keydown", (e) => { if (e.key === "Enter") drawOrder(); }); // (an onkeydown returning false blocked typing)
+  H.DRUGS.forEach((d) => { const o = document.createElement("option"); o.value = d.name; o.textContent = d.name; $("pickDrug").appendChild(o); });
+  const fromPick = () => { if (!$("pickDrug").value) return; $("orderTxt").value = `${$("pickDrug").value} IV ${$("pickFreq").value}`; drawOrder(); };
+  $("pickDrug").onchange = fromPick; $("pickFreq").onchange = fromPick;
 
   const SAMPLES = [
     { label: "ESBL E. coli pyelo on meropenem", orders: [{ name: "meropenem", text: "1 g IV q8h", route: "IV" }, { name: "acetaminophen", text: "1 g PO q6h", route: "PO" }] },

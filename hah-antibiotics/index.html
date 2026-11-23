@@ -45,7 +45,10 @@
 
   <details class="card" open id="secPt"><summary><h2>This patient's IV antibiotics</h2></summary>
     <div id="ptOut" class="muted">Open from Cerner, or pick a made-up patient.</div>
-    <div class="row" style="margin-top:10px"><input type="text" id="orderTxt" placeholder="…or type an order, e.g. meropenem 1 g IV q8h"><button id="orderBtn">Check</button></div>
+    <div class="row" style="margin-top:10px"><b>Check an antibiotic:</b>
+      <select id="pickDrug"><option value="">Antibiotic…</option></select>
+      <select id="pickFreq"><option>q24h</option><option>q12h</option><option selected>q8h</option><option>q6h</option><option>q4h</option><option>continuous over 24 h</option></select></div>
+    <div class="row" style="margin-top:6px"><input type="text" id="orderTxt" placeholder="…or type an order, e.g. meropenem 1 g IV q8h"><button id="orderBtn">Check</button></div>
     <div id="orderOut" style="margin-top:6px"></div>
   </details>
 
@@ -68,7 +71,7 @@
   <footer>Read-only: nothing is written to the chart. Doses are typical adult regimens before renal/weight adjustment. Draft from the hospitalist's notes (Nov 2026) – not Island Health policy.</footer>
 </main>
 <script src="../hospitalist-toolkit/tools/hahabx/rules.js?v=20261123a"></script>
-<script src="../hospitalist-toolkit/tools/hahabx/app.js?v=20261123a"></script>
+<script src="../hospitalist-toolkit/tools/hahabx/app.js?v=20261123b"></script>
 <script src="../hospitalist-toolkit/subtabs.js?v=20261121f"></script>
 <script>SubTabs.mount({ store: "hahabx", top: ["#top"], tabs: [
   { key: "pt", label: "This patient", match: ["#secPt"] },
