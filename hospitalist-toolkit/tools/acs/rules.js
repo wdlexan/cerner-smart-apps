@@ -169,6 +169,39 @@
     return { isHBR, major, minor, text: isHBR ? `HIGH BLEEDING RISK (ARC-HBR: ${major.length} major, ${minor.length} minor)` : `Not high bleeding risk by ARC-HBR (${major.length} major, ${minor.length} minor)` };
   }
 
+  /* ---------- PRECISE-DAPT (Costa, Lancet 2017): bleeding risk at PCI / discharge ---------- */
+  // age y, crcl mL/min (Cockcroft-Gault), hb g/L, wbc x10^9/L, priorBleed = prior spontaneous bleeding. Official calculator equation:
+  // score = 100/5.52784356 * [0.02595618(age-50) - 0.0140439(CrCl-100) - 0.40551264(Hb g/dL-12) + 0.05697497(WBC-5) + 1.41955653(prior bleed)]
+  // with age clamped 50-90, CrCl 0-100, Hb 10-12 g/dL, WBC 5-20; total 0-100.
+  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+  function preciseDapt(o) {
+    const miss = []; ["age", "crcl", "hb", "wbc"].forEach((k) => { if (o[k] == null) miss.push(k); });
+    if (miss.length) return { score: null, miss };
+    const k = 100 / 5.52784356, hbdl = o.hb / 10;
+    const parts = [
+      ["Age " + o.age, 0.02595618 * (clamp(o.age, 50, 90) - 50) * k],
+      ["CrCl " + Math.round(o.crcl), -0.0140439 * (clamp(o.crcl, 0, 100) - 100) * k],
+      ["Hb " + Math.round(o.hb) + " g/L", -0.40551264 * (clamp(hbdl, 10, 12) - 12) * k],
+      ["WBC " + o.wbc, 0.05697497 * (clamp(o.wbc, 5, 20) - 5) * k],
+      ["Prior spontaneous bleeding", o.priorBleed ? 1.41955653 * k : 0]];
+    const raw = parts.reduce((a, x) => a + x[1], 0), score = Math.min(100, r0(raw));
+    parts.forEach((x) => (x[1] = r1(x[1]))); // shown to 1 decimal; the total is rounded once
+    const high = score >= 25;
+    return { score, parts, high, text: `PRECISE-DAPT ${score}: ${high ? "high bleeding risk (25 or more): short DAPT (3-6 months) favoured" : "under 25: standard (12 months) or longer DAPT acceptable"}` };
+  }
+
+  /* ---------- DAPT score (Yeh, JAMA 2016): extend past 12 months? ---------- */
+  // Use at about 12 months after PCI in a patient with no major bleed or ischemic event on DAPT.
+  function daptScore(o) {
+    const items = [];
+    if (o.age >= 75) items.push(["Age 75+", -2]); else if (o.age >= 65) items.push(["Age 65-74", -1]);
+    if (o.smoker) items.push(["Current smoker", 1]); if (o.dm) items.push(["Diabetes", 1]); if (o.miPresent) items.push(["MI at presentation", 1]);
+    if (o.priorMIPCI) items.push(["Prior PCI or prior MI", 1]); if (o.paclitaxel) items.push(["Paclitaxel-eluting stent", 1]); if (o.small) items.push(["Stent diameter under 3 mm", 1]);
+    if (o.chf) items.push(["CHF or LVEF under 30%", 2]); if (o.veinGraft) items.push(["Vein graft PCI", 2]);
+    const score = items.reduce((a, x) => a + x[1], 0);
+    return { score, items, extend: score >= 2, text: `DAPT score ${score}: ${score >= 2 ? "2 or more: benefit of continuing DAPT past 12 months likely outweighs bleeding (fewer MI and stent thrombosis)" : "under 2: stop the P2Y12 inhibitor at 12 months (more bleeding, little ischemic benefit)"}` };
+  }
+
   /* ---------- P2Y12 choice ---------- */
   // o: { type, oac, ich, strokeTIA, age, kg, activeBleed, cyp3a4strong: [], avBlock, dialysis, hbr, managed: pci|cabg|medical|pending, anatomyKnown }
   function p2y12(o) {
@@ -326,6 +359,6 @@
       { t: "Bleeding risk (ARC-HBR) and frailty (Clinical Frailty Scale) documented", have: null }];
   }
 
-  const api = { crcl, tropPattern, mitype, grace, timi, invasive, revasc, hbr, p2y12, anticoag, daptPlan, otherMeds, alerts, workup };
+  const api = { crcl, tropPattern, mitype, grace, timi, invasive, revasc, hbr, preciseDapt, daptScore, p2y12, anticoag, daptPlan, otherMeds, alerts, workup };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else window.ACSRules = api;
 })();

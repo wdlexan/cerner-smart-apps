@@ -177,6 +177,22 @@
         <label class="inl"><input type="checkbox" id="bca"> Active cancer (12 months)</label>
       </div>
       <div id="hbr"></div><div class="plan" id="dapt"></div></div></details>
+    <details class="card inputs" open><summary><span>DAPT scores: PRECISE-DAPT (now) and DAPT score (at 12 months)</span><span class="muted" id="dssum"></span></summary><div class="body">
+      <div class="row"><b>PRECISE-DAPT</b> <span class="muted">(age, CrCl, Hb, WBC from the chart)</span>
+        <label class="inl">WBC <input type="number" id="o-wbc" step="0.1" style="width:64px"> ×10⁹/L</label>
+        <label class="inl"><input type="checkbox" id="pd-bleed"> Prior spontaneous bleeding <span class="auto" id="pd-bleed-auto"></span></label>
+      </div>
+      <div class="row"><b>DAPT score</b> <span class="muted">(smoking, diabetes, prior MI/PCI, CHF/LVEF from the chart; stent details from the cath report)</span></div>
+      <div class="row">
+        <label class="inl"><input type="checkbox" id="ds-smoke"> Current smoker</label>
+        <label class="inl"><input type="checkbox" id="ds-prior"> Prior PCI or MI</label>
+        <label class="inl"><input type="checkbox" id="ds-small"> Stent diameter under 3 mm</label>
+        <label class="inl"><input type="checkbox" id="ds-ptx"> Paclitaxel-eluting stent</label>
+        <label class="inl"><input type="checkbox" id="ds-vg"> Vein graft PCI</label>
+      </div>
+      <div class="mini" id="dscores"></div>
+      <div class="muted" style="margin-top:8px">These scores add to, not replace, ARC-HBR and judgment. Not validated with an oral anticoagulant (triple therapy) or after CABG. PRECISE-DAPT: Costa F et al. Lancet 2017 (calculator equation as used by precisedaptscore.com). DAPT score: Yeh RW et al. JAMA 2016 (only for patients who had a stent and got through 12 months without a major bleed or ischemic event).</div>
+    </div></details>
     <details class="card" open><summary><span>Other medications: in hospital and long term</span></summary><div class="body scroll" id="meds"></div></details>
     <details class="card" open><summary><span>Chart alerts</span><span class="muted" id="alertsum"></span></summary><div class="body" id="alerts"></div></details>
     <details class="card" open><summary><span>Investigations</span></summary><div class="body" id="tests"></div></details>
@@ -200,15 +216,15 @@
 
   <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
   <script src="../../pdf-overlay.js?v=20261120p"></script>
-  <script src="rules.js?v=20261123a"></script>
-  <script src="chart.js?v=20261123a"></script>
-  <script src="samples.js?v=20261123a"></script>
-  <script src="app.js?v=20261123a"></script>
+  <script src="rules.js?v=20261123b"></script>
+  <script src="chart.js?v=20261123b"></script>
+  <script src="samples.js?v=20261123b"></script>
+  <script src="app.js?v=20261123b"></script>
   <script src="../../subtabs.js?v=20261121f"></script>
   <script>SubTabs.mount({ store: "acs", top: ["Chart alerts", "#tiles"], dotSel: ".alert.urgent, .tile.t3, .plan .urgent", tabs: [
       {"key": "assess", "label": "Assess", "match": ["Patient and situation", "Plan now", "Is it a type 1", "Risk scores"]},
       {"key": "cath", "label": "Cath & stent vs bypass", "match": ["Cath: who needs", "Stent (PCI)"]},
-      {"key": "at", "label": "DAPT & anticoagulant", "match": ["Antiplatelets and anticoagulant", "DAPT duration"]},
+      {"key": "at", "label": "DAPT & anticoagulant", "match": ["Antiplatelets and anticoagulant", "DAPT duration", "DAPT scores"]},
       {"key": "meds", "label": "Other meds", "match": ["Other medications"]},
       {"key": "dc", "label": "Tests, discharge & handout", "match": ["Investigations", "Discharge and follow-up", "Patient handout"]},
       {"key": "note", "label": "Note draft", "match": ["Note draft"]}] });</script>

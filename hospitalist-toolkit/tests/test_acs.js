@@ -84,6 +84,19 @@ ok("alert: P2Y12 for type 2", R.alerts({ type: "t2", ticagrelor: true, meds: [] 
 ok("alert: ticagrelor + clarithromycin", R.alerts({ type: "t1", ticagrelor: true, meds: ["clarithromycin 500 mg PO BID"] }).some((a) => /CYP3A4/.test(a.t)));
 ok("alert: OAC + heparin tx", R.alerts({ type: "t1", meds: ["apixaban 5 mg"], heparinTx: true }).some((a) => /both on the chart/.test(a.t)));
 
+// PRECISE-DAPT: 70 y, CrCl 60, Hb 110 g/L, WBC 8, no bleed = 9.39 + 10.16 + 7.34 + 3.09 = 29.98 -> 30
+eq("PRECISE-DAPT worked example", R.preciseDapt({ age: 70, crcl: 60, hb: 110, wbc: 8, priorBleed: false }).score, 30);
+eq("PRECISE-DAPT young healthy = 0", R.preciseDapt({ age: 45, crcl: 120, hb: 150, wbc: 4, priorBleed: false }).score, 0);
+eq("PRECISE-DAPT prior bleed alone = 26", R.preciseDapt({ age: 45, crcl: 120, hb: 150, wbc: 4, priorBleed: true }).score, 26);
+eq("PRECISE-DAPT max = 100", R.preciseDapt({ age: 95, crcl: 0, hb: 70, wbc: 30, priorBleed: true }).score, 100);
+ok("PRECISE-DAPT missing WBC", R.preciseDapt({ age: 70, crcl: 60, hb: 110 }).score === null);
+ok("PRECISE-DAPT 25 is high", R.preciseDapt({ age: 70, crcl: 60, hb: 110, wbc: 8 }).high);
+// DAPT score: 60 y smoker diabetic NSTEMI, 2.75 mm stent = 4; 78 y NSTEMI = -1
+eq("DAPT score 4", R.daptScore({ age: 60, smoker: true, dm: true, miPresent: true, small: true }).score, 4);
+eq("DAPT score -1", R.daptScore({ age: 78, miPresent: true }).score, -1);
+eq("DAPT score CHF + vein graft + 70 y = 3", R.daptScore({ age: 70, chf: true, veinGraft: true }).score, 3);
+ok("DAPT score 2 extends", R.daptScore({ age: 50, miPresent: true, dm: true }).extend);
+
 // made-up patients through the chart parser
 const S = window.ACS_SAMPLES, now = Date.now();
 const run = (i) => { const f = C.parse(S[i].build(now), { now }); return f; };

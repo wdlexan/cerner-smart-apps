@@ -17,7 +17,7 @@ function facts() {
   const hrO = num("o-hr"), sbpO = num("o-sbp"), kgO = num("o-kg");
   const hr = hrO != null ? { v: hrO, typed: true } : V("hr", 1), sbp = sbpO != null ? { v: sbpO, typed: true } : V("sbp", 1), spo2 = V("spo2", 1);
   const kg = kgO != null ? kgO : f && f.kg ? f.kg : null, age = f ? f.age : null, sex = f ? f.sex : "";
-  const c = { cr: L("cr", 7), egfr: L("egfr", 7), hb: L("hb", 3), plt: L("plt", 7), k: L("k", 3), mg: L("mg", 3), ldl: L("ldl", 365), a1c: L("a1c", 120), inr: L("inr", 7), tsh: L("tsh", 90), lactate: L("lactate", 2), qtc: L("qtc", 3) };
+  const c = { cr: L("cr", 7), egfr: L("egfr", 7), hb: L("hb", 3), plt: L("plt", 7), k: L("k", 3), mg: L("mg", 3), ldl: L("ldl", 365), a1c: L("a1c", 120), inr: L("inr", 7), wbc: L("wbc", 3), tsh: L("tsh", 90), lactate: L("lactate", 2), qtc: L("qtc", 3) };
   const cl = R.crcl(age, kg, c.cr && c.cr.v, sex);
   const tropS = f && f.l.trop ? f.l.trop.filter((x) => now - x.t < 4 * DAY) : [];
   const url = num("url") || (f && f.tropT ? 14 : 26);
@@ -41,8 +41,12 @@ function facts() {
   const p2 = R.p2y12({ type: type.kind, oac, ich: prob("ich"), strokeTIA: prob("stroke"), age, kg, activeBleed: $("bleeding").checked, cyp3a4strong: f ? f.cls.cyp3a4 : [], avBlock: prob("avb") && !prob("pacer"), dialysis: prob("dialysis"), hbr: hb.isHBR, managed, anatomyKnown: $("anatomy").value !== "unknown" });
   const ac = R.anticoag({ kg, cl, onDOAC: has("doac"), onWarfarin: has("warf"), inr: c.inr && c.inr.v, tier: inv.tier, plt: c.plt && c.plt.v, hitHx: prob("hit") });
   const dp = R.daptPlan({ type: type.kind, managed, hbr: hb.isHBR, oac });
+  const wbc = num("o-wbc") != null ? num("o-wbc") : c.wbc ? c.wbc.v : null;
+  const pd = R.preciseDapt({ age, crcl: cl, hb: c.hb && c.hb.v, wbc, priorBleed: $("pd-bleed").checked });
+  const ds = R.daptScore({ age, smoker: $("ds-smoke").checked, dm: prob("dm") || has("insulin"), miPresent: type.kind === "t1" || type.kind === "uncertain", priorMIPCI: $("ds-prior").checked,
+    paclitaxel: $("ds-ptx").checked, small: $("ds-small").checked, chf: prob("hf") || (lvef != null && lvef < 30), veinGraft: $("ds-vg").checked });
   const s = { age, sex, kg, cl, egfr, hr: hr && Math.round(hr.v), sbp: sbp && Math.round(sbp.v), spo2: spo2 && spo2.v, killip, lvef, cfs };
-  return { f, c, s, hr, sbp, tp, tropS, url, type, g, tm, inv, rv, hb, p2, ac, dp, oac, surgRisk, trigs, managed };
+  return { f, c, s, hr, sbp, pd, ds, wbc, tp, tropS, url, type, g, tm, inv, rv, hb, p2, ac, dp, oac, surgRisk, trigs, managed };
 }
 
 function tile(k, big, sub, tone) { return `<div class="tile ${tone || ""}"><div class="k">${k}</div><div class="big">${big}</div><div class="s">${sub || ""}</div></div>`; }
@@ -81,7 +85,7 @@ function draw() {
   $("plansum").textContent = x.type.label;
   $("plan").innerHTML = box("urgent", "Urgent", urgent) + box("action", "Do now", doNow) + box("", "Next", next);
 
-  drawType(x); drawRisk(x); drawInv(x); drawRv(x); drawAT(x); drawDapt(x); drawMeds(x); drawAlerts(x); drawTests(x); drawFU(x); drawHandout();
+  drawType(x); drawRisk(x); drawInv(x); drawRv(x); drawAT(x); drawDapt(x); drawScores(x); drawMeds(x); drawAlerts(x); drawTests(x); drawFU(x); drawHandout();
   $("note").value = noteText(x);
 }
 
@@ -179,6 +183,17 @@ function drawDapt(x) {
     <h3>Who needs DAPT</h3>${ul(["<b>Yes:</b> type 1 NSTEMI, whether treated with PCI, CABG or medicines alone. Default 12 months.", "<b>Shorter (1-3 months):</b> high bleeding risk; after 1 month most can drop aspirin and stay on ticagrelor alone.", "<b>Not DAPT:</b> type 2 MI, non-ischemic injury, chronic troponin elevation, MINOCA without plaque (decide with cardiology).", "<b>On an anticoagulant:</b> no long-term DAPT: anticoagulant + clopidogrel, aspirin for up to 1 week only."])}`;
 }
 
+function drawScores(x) {
+  const pd = x.pd, ds = x.ds, tbl = (rows) => `<table>${rows.map((r) => `<tr><td>${esc(r[0])}</td><td class="num">${r[1] > 0 ? "+" : ""}${r[1]}</td></tr>`).join("")}</table>`;
+  $("dssum").textContent = [pd.score != null ? "PRECISE-DAPT " + pd.score : "", "DAPT score " + ds.score].filter(Boolean).join(" · ");
+  const typeNo = ["t2", "injury", "chronic", "noMI"].includes(x.type.kind);
+  $("dscores").innerHTML = (typeNo ? '<div class="alert info" style="grid-column:1/-1">Not type 1 MI: DAPT is not indicated, so these scores do not apply.</div>' : "") +
+    `<div><div class="verdict ${pd.score == null ? "t1" : pd.high ? "t2" : "t0"}"><div class="big">PRECISE-DAPT ${pd.score ?? "?"}</div><div>${pd.score != null ? esc(pd.text.replace(/^PRECISE-DAPT \d+: /, "")) : "Needs " + esc(pd.miss.join(", ")) + (pd.miss.includes("wbc") ? " (type the WBC above)" : "") + (pd.miss.includes("crcl") ? " (CrCl needs age, weight and creatinine)" : "")}</div></div>
+      ${pd.parts ? tbl(pd.parts) : ""}<div class="muted">Use at PCI or discharge. 25 or more: consider 3-6 months of DAPT, then single antiplatelet. Under 25: 12 months (or longer). Points: age over 50, CrCl under 100, Hb under 120 g/L (maximum at 100), WBC over 5, prior bleed 26.</div></div>
+    <div><div class="verdict ${ds.extend ? "t2" : "t1"}"><div class="big">DAPT score ${ds.score}</div><div>${esc(ds.text.replace(/^DAPT score -?\d+: /, ""))}</div></div>
+      ${ds.items.length ? tbl(ds.items) : '<div class="muted">No items</div>'}<div class="muted">Use at about 12 months after a stent, if no major bleed or ischemic event on DAPT. Range -2 to 10. Extended DAPT options: ticagrelor 60 mg BID (PEGASUS) or continue clopidogrel; or aspirin + rivaroxaban 2.5 mg BID (COMPASS). Score 2+ with high PRECISE-DAPT or ARC-HBR: bleeding usually wins: discuss.</div></div>`;
+}
+
 function drawMeds(x) {
   const f = state.f, s = x.s;
   const giRisk = [];
@@ -253,7 +268,7 @@ function noteText(x) {
     if (x.p2.pick && !["None", "Hold"].includes(x.p2.pick)) L.push(`- ${x.p2.pick} ${x.p2.maint.split("(")[0].trim()}.`);
     if (!(has("doac") || has("warf"))) L.push(`- Anticoagulation: ${{ fond: "fondaparinux 2.5 mg SC daily", enox: "enoxaparin 1 mg/kg SC q12h", ufh: "IV heparin per ACS nomogram", "ufh-or-enox": "IV heparin per ACS nomogram (or enoxaparin 1 mg/kg daily)" }[x.ac.pick]} until PCI or up to 8 days if medical.`);
     else L.push("- On oral anticoagulant: held; parenteral anticoagulation timing per cardiology.");
-    L.push(`- DAPT plan: ${x.dp.headline}.`);
+    L.push(`- DAPT plan: ${x.dp.headline}.${x.pd.score != null ? " PRECISE-DAPT " + x.pd.score + (x.pd.high ? " (high bleeding risk)" : "") + "." : ""} DAPT score ${x.ds.score} (for the 12-month review).`);
     if (x.rv.rec && $("anatomy").value !== "unknown") L.push(`- Revascularization: ${x.rv.rec}${x.rv.heart ? " (heart team)" : ""}.`);
     L.push("- High-intensity statin; beta-blocker if no HF/shock risk; ACEi/ARB as indicated; PPI; stop NSAIDs.", "- Echo, lipids, A1c. K 4.0+, Mg 0.8+. Telemetry.", "- Cardiac rehab referral; written antiplatelet stop dates at discharge.");
   }
@@ -282,6 +297,10 @@ function autoTicks(preset) {
   $("complex").checked = false; $("valve").checked = false; $("culprit").checked = !!p.culpritPCI;
   $("b6").checked = !!p.bleed6; $("b12").checked = !!p.bleed12; $("bsurg").checked = false; $("bca").checked = prob("cancer");
   ["o-hr", "o-sbp", "o-kg", "qtc"].forEach((id) => ($(id).value = ""));
+  const bleedHx = !!p.bleed6 || !!p.bleed12 || prob("gibleed");
+  $("pd-bleed").checked = bleedHx; $("pd-bleed-auto").textContent = prob("gibleed") ? "GI bleed / ulcer on problem list" : "";
+  $("o-wbc").value = ""; $("ds-smoke").checked = prob("smoke"); $("ds-prior").checked = prob("priorPCI") || prob("priorCABG") || (f && f.prob.cad ? f.prob.cad.some((t) => /infarct|I25\.2|I21|I22|stent|PCI/i.test(t)) : false);
+  $("ds-small").checked = !!p.small; $("ds-ptx").checked = false; $("ds-vg").checked = false;
   const sr = { "Prior sternotomy (CABG)": prob("priorCABG"), "Severe COPD": prob("copd"), Cirrhosis: prob("cirrhosis"), Dialysis: prob("dialysis"), "Frailty 7+": (p.frail || 0) >= 7 };
   $$(".sr").forEach((el) => { el.checked = !!sr[el.value]; });
 }
