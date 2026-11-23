@@ -112,4 +112,7 @@ const mk = R.mergeSusc([{ p: R.parseSusc(ocr) }]);
 const kEr = mk.rows.find((r) => r.drug === "ertapenem");
 ok("2-organism report: Pseudomonas-intrinsic R goes to the Pseudomonas column, not Klebsiella", kEr.results[0] === "" && kEr.results[1] === "R", kEr);
 ok("same accession loaded twice is flagged", R.mergeSusc([{ p: ecoli }, { p: ecoli }]).dupes.length === 1);
+const fz = R.parseSusc("| 1 | Escherichia coli |\n| 3 | Amoxicilin-Clavulinic Acid | S |\n| 9 | Ceftiaxone | R |\n| 14 | Fosfornycin | R |\n| 17 | Nitrofurantcin | S |\n| 18 | Piperacilin/T azobactam | S |\n| 19 | Tetracyciine* | S |\n| 21 | Trimethoprim-sulfamethoxazole | S |");
+ok("OCR misspellings still read (ceftriaxone, nitrofurantoin, pip-tazo, amox-clav, fosfomycin)", ["amoxicillin-clavulanate:S", "ceftriaxone:R", "fosfomycin:R", "nitrofurantoin:S", "piperacillin-tazobactam:S", "tetracycline:S", "tmp-smx:S"].every((x) => fz.rows.some((r) => r.drug + ":" + r.results[0] === x)), fz.rows);
+ok("header lines are not read as drugs", R.parseSusc("Result Status - Modified\nMicro Reports Susceptibilities Specimen Action List\n1 Escherichia coli\n4 Ampicillin R").rows.length === 1);
 console.log(fail ? `\n${fail} FAILED` : "\nall passed"); process.exit(fail ? 1 : 0);

@@ -158,10 +158,12 @@
     const seen = {};
     // table rows: "Ceftriaxone   >=64   R    <=1   S"
     lines.forEach((l) => {
+      if (ORG_RE.test(l) && !SUSC_DRUGS.some(([, re]) => re.test(l))) return;
       const hits = SUSC_DRUGS.filter(([, re]) => re.test(l));
-      if (hits.length !== 1) return;
-      const [name] = hits[0];
-      const m0 = l.match(hits[0][1]), rest = l.slice(m0.index + m0[0].length).replace(/^[\w/-]*/, "");
+      let name, rest;
+      if (hits.length === 1) { name = hits[0][0]; const m0 = l.match(hits[0][1]); rest = l.slice(m0.index + m0[0].length).replace(/^[\w/-]*/, ""); }
+      else if (!hits.length) { const f = fuzzyDrug(l); if (!f) return; name = f.name; rest = f.rest; } // OCR misspellings: "Ceftiaxone", "Nitrofurantcin"
+      else return;
       const footnote = /^\s*\*/.test(rest);
       const after = rest.replace(/^\s*\*/, " ").split(/\s+/);
       const res = after.map(INTERP).filter(Boolean);
@@ -173,6 +175,38 @@
     const prose = (word, r) => { const re = new RegExp(word + "\\s+to\\s+([^.;]+)", "gi"); let m; while ((m = re.exec(all))) SUSC_DRUGS.forEach(([n, dre]) => { if (dre.test(m[1]) && !seen[n]) { seen[n] = 1; out.rows.push({ drug: n, results: [r], mic: "" }); } }); };
     prose("resistant", "R"); prose("(?:susceptible|sensitive)", "S"); prose("intermediate", "I");
     return out;
+  }
+
+  /* OCR often misreads one or two letters ("Ceftiaxone", "Piperacilin/Tazobactarn"). Match each word of a line that no regex caught
+     against the antibiotic names, allowing 1 wrong letter per 5 (max 2). Combination drugs are rebuilt from their parts. */
+  const FUZZY = [["amoxicillin", "amoxicillin"], ["ampicillin", "ampicillin"], ["clavulanate", "clav"], ["clavulanic", "clav"], ["penicillin", "penicillin"], ["cloxacillin", "cloxacillin"], ["oxacillin", "cloxacillin"],
+    ["piperacillin", "piperacillin-tazobactam"], ["tazobactam", "piperacillin-tazobactam"], ["cefazolin", "cefazolin"], ["cephalexin", "cephalexin"], ["cefuroxime", "cefuroxime"], ["cefoxitin", "cefoxitin"],
+    ["ceftriaxone", "ceftriaxone"], ["cefotaxime", "cefotaxime"], ["ceftazidime", "ceftazidime"], ["cefepime", "cefepime"], ["ceftaroline", "ceftaroline"], ["cefixime", "cefixime"], ["ertapenem", "ertapenem"],
+    ["meropenem", "meropenem"], ["imipenem", "imipenem"], ["aztreonam", "aztreonam"], ["gentamicin", "gentamicin"], ["tobramycin", "tobramycin"], ["amikacin", "amikacin"], ["ciprofloxacin", "ciprofloxacin"],
+    ["levofloxacin", "levofloxacin"], ["moxifloxacin", "moxifloxacin"], ["trimethoprim", "trimethoprim"], ["sulfamethoxazole", "sulfa"], ["nitrofurantoin", "nitrofurantoin"], ["fosfomycin", "fosfomycin"],
+    ["vancomycin", "vancomycin"], ["linezolid", "linezolid"], ["daptomycin", "daptomycin"], ["clindamycin", "clindamycin"], ["erythromycin", "erythromycin"], ["azithromycin", "azithromycin"],
+    ["doxycycline", "doxycycline"], ["tetracycline", "tetracycline"], ["tigecycline", "tigecycline"], ["rifampin", "rifampin"], ["metronidazole", "metronidazole"]];
+  function edits(a, b, max) {
+    if (Math.abs(a.length - b.length) > max) return max + 1;
+    let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+    for (let i = 1; i <= a.length; i++) { const cur = [i]; let lo = i; for (let j = 1; j <= b.length; j++) { cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); lo = Math.min(lo, cur[j]); } if (lo > max) return max + 1; prev = cur; }
+    return prev[b.length];
+  }
+  function fuzzyDrug(line) {
+    const words = [...line.matchAll(/[A-Za-z]{5,}/g)], found = [];
+    let end = -1;
+    words.forEach((w) => {
+      const t = w[0].toLowerCase().replace(/rn/g, "m").replace(/0/g, "o"), max = Math.min(2, Math.floor(t.length / 5));
+      let best = null, bd = max + 1;
+      FUZZY.forEach(([sp, key]) => { const d = edits(t, sp, max); if (d < bd) { bd = d; best = key; } });
+      if (best) { found.push(best); end = w.index + w[0].length; }
+    });
+    if (!found.length) return null;
+    const has = (k) => found.includes(k);
+    let name = has("clav") ? "amoxicillin-clavulanate" : has("sulfa") ? "tmp-smx" : has("piperacillin-tazobactam") ? "piperacillin-tazobactam" : null;
+    if (!name) { const u = [...new Set(found)]; if (u.length !== 1) return null; name = u[0]; }
+    if (name === "clav" || name === "sulfa") return null;
+    return { name, rest: line.slice(end) };
   }
 
   /* Specimen / accession / status / date from the report header, when the screenshot or text includes it. */
