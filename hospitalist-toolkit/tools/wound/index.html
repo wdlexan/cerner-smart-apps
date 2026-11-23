@@ -108,6 +108,7 @@ sent only where you choose: the AI server on <b>your own computer</b>, Copilot, 
 <label style="font-weight:400;color:var(--ink);font-size:14px"><input type="checkbox" id="ph-ok"> No identifying details in my photos (no face, wristband, labels, tattoos, room). Sandbox, made-up or teaching images only.</label>
 <div class="row" style="margin:8px 0 12px">
  <button class="btn" type="button" style="font-size:16px;padding:12px 18px" onclick="phSnap(true)">📷 Take photo → AI review</button>
+ <button class="btn" type="button" style="font-size:16px;padding:12px 18px;background:#c15f3c" onclick="phSnap('claude')">📷 Take photo → Claude app</button>
  <button class="btn sec" type="button" onclick="phSnap(false)">Take photo only</button>
  <input type="file" id="ph-cam" accept="image/*" capture="environment" style="display:none">
 </div>
@@ -118,6 +119,14 @@ sent only where you choose: the AI server on <b>your own computer</b>, Copilot, 
  <input type="file" id="ph-file" accept="image/jpeg,image/png,image/webp" style="display:none">
 </div>
 
+<div id="ph-claude" class="box rec" style="display:none;margin-top:10px">
+ <h4>Photo ready for Claude</h4>
+ <div class="row" style="margin-top:4px">
+  <button class="btn" type="button" style="font-size:16px;padding:12px 18px;background:#c15f3c" onclick="phToClaude()">Send to Claude ›</button>
+  <button class="btn sec" type="button" id="ph-cimg" onclick="phCopyImg()" style="display:none">Copy photo</button>
+ </div>
+ <p class="mute" id="ph-chelp" style="margin-bottom:0"></p>
+</div>
 <div id="ph-prev" style="margin-top:10px;display:none">
  <img id="ph-img" alt="Wound photo preview" style="max-width:100%;max-height:360px;border:1px solid var(--line);border-radius:6px">
  <div class="row"><span class="mute" id="ph-size"></span><button class="btn sec" onclick="phClear()">Remove photo</button></div>
@@ -696,7 +705,7 @@ function phKeyForget() { phLS.set("wound-ai-key", ""); phModeShow(); phStatus("K
   const drop = document.getElementById("ph-drop"), file = document.getElementById("ph-file");
   drop.onclick = () => file.click();
   file.onchange = () => file.files[0] && phLoad(file.files[0]);
-  const cam = document.getElementById("ph-cam"); cam.onchange = () => { const f = cam.files[0]; cam.value = ""; f && phLoad(f, phAuto ? phReview : null); };
+  const cam = document.getElementById("ph-cam"); cam.onchange = () => { const f = cam.files[0]; cam.value = ""; f && phLoad(f, phAuto === "claude" ? phClaudeReady : phAuto ? phReview : null); };
   if (navigator.canShare && navigator.canShare({ files: [new File([""], "x.jpg", { type: "image/jpeg" })] })) document.getElementById("ph-share").style.display = "";
   if (matchMedia("(pointer:coarse)").matches) { const d = document.getElementById("ph-drop"); d.firstElementChild.textContent = "Tap to choose from Photos or Files"; d.childNodes.forEach((n) => { if (n.nodeType === 3) n.textContent = " "; }); [...d.querySelectorAll("u, br, span")].forEach((n) => n.remove()); }
   drop.ondragover = (e) => { e.preventDefault(); drop.style.background = "#eef6f6"; };
@@ -727,7 +736,7 @@ function phLoad(f, then) {
   img.onerror = () => { phStatus("Could not read this image.", true); URL.revokeObjectURL(url); };
   img.src = url;
 }
-function phClear() { phData = null; document.getElementById("ph-prev").style.display = "none"; document.getElementById("ph-file").value = ""; document.getElementById("ph-out").innerHTML = ""; phLast = null; }
+function phClear() { document.getElementById("ph-claude").style.display = "none"; phData = null; document.getElementById("ph-prev").style.display = "none"; document.getElementById("ph-file").value = ""; document.getElementById("ph-out").innerHTML = ""; phLast = null; }
 function phNotes() {
   const v = (id) => document.getElementById(id).value.trim(), L = [];
   [["Location", "ph-loc"], ["Size LxWxD cm", "ph-dim"], ["Tunnelling/undermining", "ph-tun"], ["Exudate on old dressing", "ph-exu"], ["Odour after cleansing", "ph-odour"], ["Probes to bone", "ph-bone"], ["Pulses/ABI", "ph-abi"], ["Other", "ph-other"]]
@@ -736,11 +745,12 @@ function phNotes() {
 }
 let phAuto = false;
 function phSnap(auto) {
-  if (auto && !document.getElementById("ph-ok").checked) {
+  if (auto === true && !document.getElementById("ph-ok").checked) {
     phStatus("Tick the no-identifying-details box first.", true);
     const l = document.getElementById("ph-ok").parentElement; l.style.outline = "2px solid var(--bad)"; l.scrollIntoView({ block: "center" }); setTimeout(() => (l.style.outline = ""), 2500);
     return;
   }
+  if (auto === "claude" && !document.getElementById("ph-ok").checked) return phSnap(true);
   phAuto = auto; document.getElementById("ph-cam").click();
 }
 async function phCallDirect() {
@@ -855,7 +865,7 @@ function phPrompt() {
   const notes = phNotes();
   return ["You are helping a hospital physician describe a de-identified wound photo and choose a wound dressing CATEGORY (not a brand). The photo is attached (or I will paste it after this message).",
     "Describe only what is visible plus the bedside notes below. Do not guess depth, odour, warmth, probe-to-bone or perfusion. Colour in photos is unreliable; say how confident you are.",
-    "Do not search my email, files or the web.", "", "Reply in plain text with these sections:",
+    "Do not search my email, files or the web. Keep the reply short enough to read on a phone.", "", "Reply in plain text with these sections:",
     "1. What the photo shows: wound bed tissue with rough percentages (granulation, slough, eschar, epithelial), edges, periwound, exudate.",
     "2. Likely wound type and, if a pressure injury, the NPIAP stage (or unstageable / deep tissue injury), with the reason.",
     "3. Visible infection signs, or 'none visible'.",
@@ -873,6 +883,40 @@ async function phShare() {
   const file = new File([blob], "wound.jpg", { type: "image/jpeg" });
   try { await navigator.share({ files: [file], text: p }); phStatus("Shared. If the app dropped the instructions, paste them (they're on the clipboard)."); }
   catch (e) { if (e.name !== "AbortError") phStatus("Sharing failed: " + e.message, true); }
+}
+
+/* ---- Send to the Claude app (uses the user's own Claude account; no API key) ---- */
+const PH_CAN_SHARE = !!(navigator.canShare && navigator.canShare({ files: [new File([""], "x.jpg", { type: "image/jpeg" })] }));
+function phClaudeReady() {
+  const box = document.getElementById("ph-claude"); box.style.display = "";
+  document.getElementById("ph-cimg").style.display = PH_CAN_SHARE ? "none" : "";
+  document.getElementById("ph-chelp").textContent = PH_CAN_SHARE
+    ? "Tap Send to Claude, choose Claude in the share sheet, then send. If the instructions don't appear with the photo, long-press the message box and Paste (they're on the clipboard)."
+    : "Send to Claude copies the instructions and opens claude.ai: paste them (Ctrl+V), then come back, tap Copy photo and paste it into the same message (or drag the photo in), then send.";
+  box.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+async function phToClaude() {
+  if (!phData) return phStatus("Take or add a photo first.", true);
+  if (!document.getElementById("ph-ok").checked) return phStatus("Tick the no-identifying-details box first.", true);
+  const p = phPrompt();
+  if (PH_CAN_SHARE) {
+    try { await navigator.clipboard.writeText(p); } catch (e) {}
+    const blob = await (await fetch(phData)).blob(); // re-encoded copy: camera GPS/time already removed
+    try { await navigator.share({ files: [new File([blob], "wound.jpg", { type: "image/jpeg" })], text: p }); phStatus("Sent to the share sheet. Pick Claude, then send."); }
+    catch (e) { if (e.name !== "AbortError") phStatus("Sharing failed: " + e.message, true); }
+  } else {
+    try { await navigator.clipboard.writeText(p); phStatus("Instructions copied. Paste them in Claude, then use Copy photo."); } catch (e) { phStatus("Clipboard not available.", true); }
+    window.open("https://claude.ai/new", "_blank", "noopener");
+  }
+}
+async function phCopyImg() {
+  if (!phData) return;
+  try {
+    const img = new Image(); img.src = phData; await img.decode();
+    const c = document.createElement("canvas"); c.width = img.width; c.height = img.height; c.getContext("2d").drawImage(img, 0, 0);
+    const png = await new Promise((r) => c.toBlob(r, "image/png"));
+    await navigator.clipboard.write([new ClipboardItem({ "image/png": png })]); phStatus("Photo copied. Paste it into the Claude message (Ctrl+V).");
+  } catch (e) { phStatus("Couldn't copy the photo here: drag it from the preview into Claude instead.", true); }
 }
 function phCopilot() {
   const p = phPrompt();

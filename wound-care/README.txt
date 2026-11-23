@@ -31,6 +31,10 @@ Tabs
                          stays in that browser only (Forget key removes it); use a separate key
                          with a low spend limit. PH_SYSTEM in index.html mirrors the prompt in
                          ai-server/wound-server.js: keep the two in step.
+                         "Take photo -> Claude app": camera, then "Send to Claude" opens the share
+                         sheet with the photo + review instructions (also on the clipboard); pick
+                         Claude and send. Uses the user's own Claude account, no API key. On a
+                         computer it copies the instructions, opens claude.ai and offers Copy photo.
   Products & change freq Category table with filter box; skin care; what not to use.
   Wound types            Pressure injury, DFU, venous (compression by ABI), arterial,
                          surgical, skin tear, trauma, fungating, IAD, IV sites.
