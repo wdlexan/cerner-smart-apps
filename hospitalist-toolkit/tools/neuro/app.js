@@ -266,12 +266,20 @@ function drawLabs(x) {
   $("labsum").textContent = rows.length + " found";
 }
 
+/* What the chart shows for a card's drug-dependent red flags, so a general line is not read as a fact about this patient. */
+function chartNote(id) {
+  if (id !== "ms") return "";
+  let x; try { x = facts(); } catch (e) { return ""; }
+  if (!x || !state.f) return `<div class="muted" style="margin-top:4px">No chart loaded – MS therapy unknown.</div>`;
+  return x.dmt && x.dmt.length ? `<div style="margin-top:4px"><b>From the chart – MS therapy:</b> ${esc(x.dmt.join("; "))}</div>`
+    : `<div class="muted" style="margin-top:4px">From the chart: no natalizumab or other MS disease-modifying therapy found in active medications.</div>`;
+}
 function drawCard() {
   $("cardsel").innerHTML = REF.CARDS.map((c) => `<option value="${c.id}" ${state.card === c.id ? "selected" : ""}>${esc(c.title)}</option>`).join("");
   const c = REF.byId[state.card]; if (!c) { $("card").innerHTML = ""; return; }
   const ul = (a) => (a && a.length ? `<ul>${a.map((s) => `<li>${esc(s)}</li>`).join("")}</ul>` : `<div class="muted">—</div>`);
   $("card").innerHTML = `<h3 style="margin:6px 0">${esc(c.title)}</h3>
-    <div class="redbox"><b>Red flags / call now</b>${ul(c.red)}</div>
+    <div class="redbox"><b>Red flags / call now</b> <span class="muted" style="font-weight:normal">(general reference – check whether each applies to this patient)</span>${ul(c.red)}${chartNote(c.id)}</div>
     <h4>Tests to order</h4><table>${c.tests.map(([a, b]) => `<tr><td>${esc(a)}</td><td>${esc(b)}</td></tr>`).join("")}</table>
     <h4>Treatment now</h4>${ul(c.now)}<h4>This admission</h4>${ul(c.adm)}
     ${c.avoid.length ? `<h4>Avoid</h4>${ul(c.avoid)}` : ""}<h4>Who to call and when</h4>${ul(c.call)}

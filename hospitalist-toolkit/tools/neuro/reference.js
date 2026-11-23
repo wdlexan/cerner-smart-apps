@@ -106,7 +106,7 @@
       dc: ["Medicine list checked; MG alert card; neurology follow-up.", "Return for breathing or swallowing trouble."] },
 
     { id: "ms", title: "MS: true relapse vs pseudo-relapse",
-      red: ["On natalizumab (or other strong immunosuppressant) with new symptoms: think PML or opportunistic infection.",
+      red: ["IF the patient takes natalizumab (or another strong immunosuppressant) and has new symptoms: think PML or opportunistic infection.",
             "Severe myelitis or optic neuritis: think NMOSD/MOGAD (send AQP4, MOG)."],
       tests: [
         ["Trigger screen", "Temperature, CBC, CRP, urinalysis + culture (UTI is the most common trigger), CXR if indicated, new medicines"],
