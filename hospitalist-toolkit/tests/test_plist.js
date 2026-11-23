@@ -143,7 +143,7 @@ else {
       eq("mrn (leading zeros kept) and sex columns", /<c r="T1"[^>]*><is><t[^>]*>mrn</.test(x) && /<c r="U1"[^>]*><is><t[^>]*>sex</.test(x) && /<c r="T3"[^>]*><is><t[^>]*>0012345</.test(x) && /<c r="U3"[^>]*><is><t[^>]*>F</.test(x), true);
       global.window = global.window || {}; require("../consult-widget.js"); const cp = window.ConsultWidget.listPatients(window.ConsultWidget.readSheet(x, ""));
       eq("consult picker reads the file", cp.length >= 2 && cp[0].name === "Ann & Co Sample" && cp[0].mrn === "0012345" && cp[0].sex === "female" && cp[0].pmhx[0] === "COPD", true);
-      eq("colour rules to last row", /sqref="K1:K15"/.test(x) && !/sqref="[^"]*H26/.test(x), true);
+      eq("colour rules to last row", /sqref="K2:K15"/.test(x) && !/sqref="[^"]*H26/.test(x), true);
       return X.update(JSZip, fs.readFileSync(__dirname + "/../tools/plist/template.xlsx"), []).then(() => { throw new Error("blank template should be refused"); }, () => true)
         .then(() => X.build(JSZip, fs.readFileSync(__dirname + "/../tools/plist/template.xlsx"), [{ floor: "S7B", patients: [{ name: "SMITH, ANN", location: "S715 A", age: 82, todo: ["call daughter"] }] }], { spare: 1 }))
         .then((u8) => X.update(JSZip, u8, [{ floor: "S7B", patients: [{ name: "Smith, Ann", mrn: "0012", sex: "F" }, { name: "NEW, PAT", location: "S720 B", age: 60, mrn: "9", sex: "M" }] },

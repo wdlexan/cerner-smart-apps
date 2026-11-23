@@ -176,7 +176,7 @@
         return { name: `${n.family || "?"}, ${(n.given || []).join(" ")}`.trim(), location: `TEST-VGH T${701 + i} A`, age, mrn, sex: p.gender === "female" ? "F" : p.gender === "male" ? "M" : "",
           reason: "sandbox test patient", gfr: i === 0 ? 55 : "", todo: i === 0 ? ["typed by me: should stay"] : [] };
       }) }];
-      const tpl = await (await fetch("template.xlsx?v=20261120m")).arrayBuffer();
+      const tpl = await (await fetch("template.xlsx?v=20261122i")).arrayBuffer();
       const u8 = await PListXlsx.build(window.JSZip, tpl, groups, { type: "uint8array" });
       file = { name: "TEST_sandbox_list.xlsx", buf: u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength), handle: null };
       opened();

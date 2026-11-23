@@ -90,7 +90,7 @@
     xml = xml.replace(/<dimension ref="[^"]*"\/>/, `<dimension ref="A1:U${last}"/>`);
     // colour rules: stretch every column range to the last row; drop stray single cells left from the old sheet
     xml = xml.replace(/(<conditionalFormatting[^>]*sqref=")([^"]*)(")/g, (m, a, refs, b) =>
-      a + refs.split(" ").filter((r) => r.includes(":")).map((r) => r.replace(/^([A-Z]+)\d+:([A-Z]+)\d+$/, `$1${1}:$2${last}`)).join(" ") + b);
+      a + refs.split(" ").filter((r) => r.includes(":")).map((r) => r.replace(/^([A-Z]+)(\d+):([A-Z]+)\d+$/, `$1$2:$3${last}`)).join(" ") + b);
     zip.file(path, xml);
     return zip.generateAsync({ type: opts.type || "uint8array", compression: "DEFLATE" });
   }
@@ -255,7 +255,11 @@
     const hdr = rowXml[1] || ""; let lastCol = 0;
     hdr.replace(/<c r="([A-Z]+)1"/g, (m, c) => { if (cellText(hdr, c, L.sst)) lastCol = Math.max(lastCol, colNum(c)); return m; });
     let cC = L.hcols["check today"];
-    if (!cC) { cC = colName(Math.max(lastCol, colNum("S")) + 1); if (rowXml[1]) rowXml[1] = cloneRow(rowXml[1], 1, { [cC]: "check today" }); }
+    // the new column borrows the look of the "to do" column (S): header style in row 1, cell style in each row
+    const styleOf = (x, col) => ((x || "").match(new RegExp(`<c r="${col}\\d+"[^>]*?\\ss="(\\d+)"`)) || [])[1];
+    const ensure = (x, col, n, from) => { if (!x || new RegExp(`<c r="${col}${n}"`).test(x)) return x; const st = styleOf(x, from || "S");
+      return x.replace(/<\/row>$/, `<c r="${col}${n}"${st ? ` s="${st}"` : ""}/></row>`).replace(/\/>$/, `><c r="${col}${n}"${st ? ` s="${st}"` : ""}/></row>`); };
+    if (!cC) { cC = colName(Math.max(lastCol, colNum("S")) + 1); if (rowXml[1]) rowXml[1] = cloneRow(ensure(rowXml[1], cC, 1), 1, { [cC]: "check today" }); }
     const stamp = opts.date || new Date().toLocaleDateString("en-CA", { day: "numeric", month: "short" });
     const report = [];
     for (const ep of L.patients) {
@@ -266,7 +270,7 @@
       if (Object.keys(vals).length) rowXml[r] = cloneRow(x, r, vals);
       const list = (v.check || []).slice(); if (list.length) list[0] = stamp + ": " + list[0];
       const items = spread(list, 4), lastN = Math.max(ep.last || r, r);
-      for (let k = 0; k < 4; k++) { const n = r + k; if (!rowXml[n] || (k > 0 && n > lastN)) break; rowXml[n] = setCell(rowXml[n], cC, n, items[k] || ""); }
+      for (let k = 0; k < 4; k++) { const n = r + k; if (!rowXml[n] || (k > 0 && n > lastN)) break; rowXml[n] = setCell(ensure(rowXml[n], cC, n), cC, n, items[k] || ""); }
       report.push({ name: ep.name, filled: fills, check: v.check || [] });
     }
     const tidyRow = (x) => { const m = x.match(/^(<row\b[^>]*>)([\s\S]*)(<\/row>)$/); if (!m) return x.replace(/ spans="[^"]*"/, "");
@@ -276,6 +280,23 @@
     xml = xml.replace(/<sheetData>[\s\S]*<\/sheetData>|<sheetData\/>/, "<sheetData>" + L.rows.map((r) => tidyRow(rowXml[r.n])).join("") + "</sheetData>");
     xml = xml.replace(/<dimension ref="A1:([A-Z]+)(\d+)"\/>/, (m, c, n) => `<dimension ref="A1:${colName(Math.max(colNum(c), colNum(cC)))}${n}"/>`);
     if (/<cols>/.test(xml) && !new RegExp(`<col [^>]*min="${colNum(cC)}"`).test(xml)) xml = xml.replace("</cols>", `<col min="${colNum(cC)}" max="${colNum(cC)}" width="48" customWidth="1"/></cols>`);
+    // quiet colours for "check today", added once: soft red for CRITICAL, soft amber for things to do
+    if (!/SEARCH\("CRITICAL"/.test(xml) && L.zip.file("xl/styles.xml")) {
+      let st = await L.zip.file("xl/styles.xml").async("string");
+      const red = '<dxf><font><b/><color rgb="FF8E1F14"/></font><fill><patternFill><bgColor rgb="FFF8D7D3"/></patternFill></fill></dxf>';
+      const amb = '<dxf><font><color rgb="FF7A4B00"/></font><fill><patternFill><bgColor rgb="FFFCE8C8"/></patternFill></fill></dxf>';
+      let first;
+      if (/<dxfs count="(\d+)"\s*\/>/.test(st)) { first = 0; st = st.replace(/<dxfs count="\d+"\s*\/>/, `<dxfs count="2">${red}${amb}</dxfs>`); }
+      else if (/<dxfs count="(\d+)">/.test(st)) { first = +st.match(/<dxfs count="(\d+)">/)[1]; st = st.replace(/<dxfs count="\d+">/, `<dxfs count="${first + 2}">`).replace("</dxfs>", red + amb + "</dxfs>"); }
+      else { first = 0; st = st.replace(/(<\/cellStyles>|<tableStyles|<colors|<extLst|<\/styleSheet>)/, `<dxfs count="2">${red}${amb}</dxfs>$1`); }
+      L.zip.file("xl/styles.xml", st);
+      const lastRow = Math.max(...L.rows.map((r) => r.n)), c2 = cC + "2", rng = `${cC}2:${cC}${Math.max(lastRow, 200)}`;
+      const todo = ["recheck", "IV to PO", "stop date", "renal dosing", "vitals 24", "Discharge Clinic", "pending"].map((w) => `ISNUMBER(SEARCH("${w}",${c2}))`).join(",");
+      const cf = `<conditionalFormatting sqref="${rng}"><cfRule type="containsText" dxfId="${first}" priority="901" operator="containsText" text="CRITICAL"><formula>NOT(ISERROR(SEARCH("CRITICAL",${c2})))</formula></cfRule>` +
+        `<cfRule type="expression" dxfId="${first + 1}" priority="902"><formula>OR(${todo})</formula></cfRule></conditionalFormatting>`;
+      const at = xml.search(/<conditionalFormatting|<dataValidations|<hyperlinks|<printOptions|<pageMargins|<pageSetup|<headerFooter|<drawing|<legacyDrawing|<tableParts|<extLst/);
+      xml = at >= 0 ? xml.slice(0, at) + cf + xml.slice(at) : xml.replace("</worksheet>", cf + "</worksheet>");
+    }
     L.zip.file(L.path, xml);
     return { data: await L.zip.generateAsync({ type: opts.type || "uint8array", compression: "DEFLATE" }), report, column: cC };
   }
