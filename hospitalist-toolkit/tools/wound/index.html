@@ -103,12 +103,17 @@ textarea{min-height:140px;font-family:ui-monospace,Consolas,monospace;font-size:
 <div class="box warn"><h4>Privacy first</h4>
 For <b>sandbox, made-up or teaching photos only</b> until Island Health approves an AI service for patient images.
 Crop out or cover the face, wristband, MRN/labels, tattoos and room details. The photo is re-encoded in this browser (removes camera GPS/time data),
-sent to the AI server running on <b>your own computer</b>, and not saved anywhere.</div>
+sent only where you choose: the AI server on <b>your own computer</b>, Copilot, or the app you share it to. This page saves nothing.</div>
 <details open><summary>1. Add the photo</summary><div class="body">
 <div id="ph-drop" style="border:2px dashed #b9c3cf;border-radius:8px;padding:18px;text-align:center;background:#fafbfc;cursor:pointer">
  <b>Paste (Ctrl+V)</b>, drag a photo here, or <u>click to choose a file</u><br>
  <span class="mute">JPEG or PNG. iPhone HEIC photos: open and screenshot, or set Camera › Formats › Most Compatible.</span>
  <input type="file" id="ph-file" accept="image/jpeg,image/png,image/webp" style="display:none">
+</div>
+<div class="row">
+ <button class="btn" type="button" onclick="document.getElementById('ph-cam').click()">📷 Take photo</button>
+ <input type="file" id="ph-cam" accept="image/*" capture="environment" style="display:none">
+ <span class="mute">Phone: opens the camera directly. A photo taken here is not saved to your camera roll or iCloud.</span>
 </div>
 <div id="ph-prev" style="margin-top:10px;display:none">
  <img id="ph-img" alt="Wound photo preview" style="max-width:100%;max-height:360px;border:1px solid var(--line);border-radius:6px">
@@ -133,6 +138,7 @@ sent to the AI server running on <b>your own computer</b>, and not saved anywher
  <button class="btn" id="ph-go" onclick="phReview()">Review photo with AI</button>
  <button class="btn sec" onclick="phSample()">Show sample result</button>
  <button class="btn sec" onclick="phCopilot()">Copy prompt for Copilot</button>
+ <button class="btn sec" id="ph-share" onclick="phShare()" style="display:none">Share photo + prompt to an AI app</button>
  <span id="ph-status" class="mute"></span>
 </div>
 <details style="margin-top:8px"><summary style="font-size:13px">AI server setting</summary><div class="body">
@@ -616,6 +622,9 @@ const phEsc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&"
   const drop = document.getElementById("ph-drop"), file = document.getElementById("ph-file");
   drop.onclick = () => file.click();
   file.onchange = () => file.files[0] && phLoad(file.files[0]);
+  const cam = document.getElementById("ph-cam"); cam.onchange = () => cam.files[0] && phLoad(cam.files[0]);
+  if (navigator.canShare && navigator.canShare({ files: [new File([""], "x.jpg", { type: "image/jpeg" })] })) document.getElementById("ph-share").style.display = "";
+  if (matchMedia("(pointer:coarse)").matches) { const d = document.getElementById("ph-drop"); d.firstElementChild.textContent = "Tap to choose from Photos or Files"; d.childNodes.forEach((n) => { if (n.nodeType === 3) n.textContent = " "; }); [...d.querySelectorAll("u, br, span")].forEach((n) => n.remove()); }
   drop.ondragover = (e) => { e.preventDefault(); drop.style.background = "#eef6f6"; };
   drop.ondragleave = () => (drop.style.background = "#fafbfc");
   drop.ondrop = (e) => { e.preventDefault(); drop.style.background = "#fafbfc"; const f = e.dataTransfer.files[0]; f && phLoad(f); };
@@ -730,9 +739,9 @@ function phCopy() {
     `Suggested: ${d.primary}; secondary ${d.secondary}; change ${d.change}.`, (R.cannot_assess || []).length ? "To check at bedside: " + R.cannot_assess.join("; ") + "." : ""].filter(Boolean).join("\n");
   navigator.clipboard ? navigator.clipboard.writeText(txt).then(() => phStatus("Summary copied.")) : phStatus("Clipboard not available.", true);
 }
-function phCopilot() {
+function phPrompt() {
   const notes = phNotes();
-  const p = ["You are helping a hospital physician describe a de-identified wound photo and choose a wound dressing CATEGORY (not a brand). I will paste the photo after this message.",
+  return ["You are helping a hospital physician describe a de-identified wound photo and choose a wound dressing CATEGORY (not a brand). The photo is attached (or I will paste it after this message).",
     "Describe only what is visible plus the bedside notes below. Do not guess depth, odour, warmth, probe-to-bone or perfusion. Colour in photos is unreliable; say how confident you are.",
     "Do not search my email, files or the web.", "", "Reply in plain text with these sections:",
     "1. What the photo shows: wound bed tissue with rough percentages (granulation, slough, eschar, epithelial), edges, periwound, exudate.",
@@ -741,6 +750,20 @@ function phCopilot() {
     "4. Suggested dressing: primary category, secondary category, how often to change, what to avoid and why. Follow moist wound healing: match absorbency to exudate, fill cavities loosely, autolytic debridement for slough, keep dry stable heel or ischemic eschar dry, antimicrobial dressings only for local infection (2-week trial), no hydrocolloid on diabetic foot ulcers or infected wounds.",
     "5. Urgent concerns, if any.", "6. What I must check at the bedside because a photo can't show it.", "",
     "Bedside notes:", notes || "(none)", "", "This is a draft for physician and wound clinician review, not a diagnosis."].join("\n");
+}
+
+async function phShare() {
+  if (!phData) return phStatus("Add a photo first.", true);
+  if (!document.getElementById("ph-ok").checked) return phStatus("Tick the de-identified box first.", true);
+  const p = phPrompt();
+  try { await navigator.clipboard.writeText(p); } catch (e) {}
+  const blob = await (await fetch(phData)).blob(); // the re-encoded copy: camera GPS/time already removed
+  const file = new File([blob], "wound.jpg", { type: "image/jpeg" });
+  try { await navigator.share({ files: [file], text: p }); phStatus("Shared. If the app dropped the instructions, paste them (they're on the clipboard)."); }
+  catch (e) { if (e.name !== "AbortError") phStatus("Sharing failed: " + e.message, true); }
+}
+function phCopilot() {
+  const p = phPrompt();
   (navigator.clipboard ? navigator.clipboard.writeText(p) : Promise.reject()).then(
     () => { phStatus("Prompt copied. Opening Copilot Chat: paste it, then paste the photo."); window.open("https://m365.cloud.microsoft/chat", "_blank", "noopener"); },
     () => phStatus("Clipboard not available.", true));
