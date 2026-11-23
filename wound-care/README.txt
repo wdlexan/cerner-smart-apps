@@ -25,6 +25,12 @@ Tabs
                          bedside checks; "Fill Dressing chooser and compare" runs the rule-based
                          chooser on the AI reading. Sandbox/made-up/teaching photos only until
                          Island Health approves an AI service for patient images.
+                         "Take photo -> AI review": one tap opens the camera and sends the photo
+                         for review (tick the no-identifying-details box first). On a phone use
+                         AI connection > "Directly, with my API key saved on this device": the key
+                         stays in that browser only (Forget key removes it); use a separate key
+                         with a low spend limit. PH_SYSTEM in index.html mirrors the prompt in
+                         ai-server/wound-server.js: keep the two in step.
   Products & change freq Category table with filter box; skin care; what not to use.
   Wound types            Pressure injury, DFU, venous (compression by ABI), arterial,
                          surgical, skin tear, trauma, fungating, IAD, IV sites.

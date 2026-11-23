@@ -105,16 +105,19 @@ For <b>sandbox, made-up or teaching photos only</b> until Island Health approves
 Crop out or cover the face, wristband, MRN/labels, tattoos and room details. The photo is re-encoded in this browser (removes camera GPS/time data),
 sent only where you choose: the AI server on <b>your own computer</b>, Copilot, or the app you share it to. This page saves nothing.</div>
 <details open><summary>1. Add the photo</summary><div class="body">
+<label style="font-weight:400;color:var(--ink);font-size:14px"><input type="checkbox" id="ph-ok"> No identifying details in my photos (no face, wristband, labels, tattoos, room). Sandbox, made-up or teaching images only.</label>
+<div class="row" style="margin:8px 0 12px">
+ <button class="btn" type="button" style="font-size:16px;padding:12px 18px" onclick="phSnap(true)">📷 Take photo → AI review</button>
+ <button class="btn sec" type="button" onclick="phSnap(false)">Take photo only</button>
+ <input type="file" id="ph-cam" accept="image/*" capture="environment" style="display:none">
+</div>
+<p class="mute" style="margin-top:-6px">Fill in step 2 first if you can: bedside findings go with the photo. A photo taken here is not saved to your camera roll or iCloud.</p>
 <div id="ph-drop" style="border:2px dashed #b9c3cf;border-radius:8px;padding:18px;text-align:center;background:#fafbfc;cursor:pointer">
  <b>Paste (Ctrl+V)</b>, drag a photo here, or <u>click to choose a file</u><br>
  <span class="mute">JPEG or PNG. iPhone HEIC photos: open and screenshot, or set Camera › Formats › Most Compatible.</span>
  <input type="file" id="ph-file" accept="image/jpeg,image/png,image/webp" style="display:none">
 </div>
-<div class="row">
- <button class="btn" type="button" onclick="document.getElementById('ph-cam').click()">📷 Take photo</button>
- <input type="file" id="ph-cam" accept="image/*" capture="environment" style="display:none">
- <span class="mute">Phone: opens the camera directly. A photo taken here is not saved to your camera roll or iCloud.</span>
-</div>
+
 <div id="ph-prev" style="margin-top:10px;display:none">
  <img id="ph-img" alt="Wound photo preview" style="max-width:100%;max-height:360px;border:1px solid var(--line);border-radius:6px">
  <div class="row"><span class="mute" id="ph-size"></span><button class="btn sec" onclick="phClear()">Remove photo</button></div>
@@ -133,7 +136,6 @@ sent only where you choose: the AI server on <b>your own computer</b>, Copilot, 
  <div><label>Diabetes / other</label><input type="text" id="ph-other" placeholder="e.g. T2DM, on prednisone, warm, painful"></div>
 </div></div></details>
 <details open><summary>3. Review</summary><div class="body">
-<label style="font-weight:400;color:var(--ink)"><input type="checkbox" id="ph-ok"> This photo is de-identified and is a sandbox, made-up or teaching image.</label>
 <div class="row">
  <button class="btn" id="ph-go" onclick="phReview()">Review photo with AI</button>
  <button class="btn sec" onclick="phSample()">Show sample result</button>
@@ -141,9 +143,23 @@ sent only where you choose: the AI server on <b>your own computer</b>, Copilot, 
  <button class="btn sec" id="ph-share" onclick="phShare()" style="display:none">Share photo + prompt to an AI app</button>
  <span id="ph-status" class="mute"></span>
 </div>
-<details style="margin-top:8px"><summary style="font-size:13px">AI server setting</summary><div class="body">
- <label>Server address</label><input type="text" id="ph-ep" style="max-width:360px">
- <p class="mute">Start it on your own computer: <code>ai-server/wound-server.js</code> (see the top of that file). "Copy prompt for Copilot" needs no server: it copies the instructions, then paste them and the photo into Microsoft 365 Copilot Chat.</p>
+<details style="margin-top:8px" id="ph-setbox"><summary style="font-size:13px">AI connection <span class="mute" id="ph-mode-lbl"></span></summary><div class="body">
+ <label>Connect through</label>
+ <select id="ph-mode" style="max-width:420px">
+  <option value="server">AI server (on this computer, or a hosted one)</option>
+  <option value="direct">Directly, with my API key saved on this device (phone)</option>
+ </select>
+ <div id="ph-m-server" style="margin-top:8px">
+  <label>Server address</label><input type="text" id="ph-ep" style="max-width:360px">
+  <p class="mute">Desktop: start <code>ai-server/wound-server.js</code> on this computer (see the top of that file). This does not work from a phone: there, "localhost" is the phone itself. A hosted, Island Health-approved server address can go here later.</p>
+ </div>
+ <div id="ph-m-direct" style="margin-top:8px">
+  <label>Anthropic API key</label>
+  <div class="row" style="margin-top:0"><input type="password" id="ph-key" autocomplete="off" placeholder="sk-ant-…" style="max-width:300px"><button class="btn" type="button" onclick="phKeySave()">Save on this device</button><button class="btn sec" type="button" onclick="phKeyForget()">Forget key</button></div>
+  <label style="margin-top:8px">Model</label><input type="text" id="ph-model" style="max-width:220px">
+  <p class="mute">The key is stored only in this browser on this device (never in GitHub or the app files), and the photo goes straight from this device to Anthropic. Use a separate key just for this, with a low monthly spend limit set in the Anthropic console. Anyone who can unlock this phone can use it. Tap Forget key to remove it.</p>
+ </div>
+ <p class="mute">"Copy prompt for Copilot" and "Share" need no connection.</p>
 </div></details>
 </div></details>
 <div id="ph-out"></div>
@@ -615,14 +631,72 @@ function copyEl(id){const e=document.getElementById(id);e.select();navigator.cli
 const PH_DEFAULT_EP = "http://localhost:7074/wound";
 let phData = null, phLast = null;
 const phEsc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+// Same instructions as ai-server/wound-server.js (keep the two in step).
+const PH_SYSTEM = `You help a hospital physician describe a wound photo and choose a dressing CATEGORY (not a brand).
+Describe only what is visible in the photo plus what the bedside notes state. Never invent depth, odour, warmth, pain,
+probe-to-bone or perfusion findings: a photo cannot show them. Do not describe or mention anything that could identify
+the person (face, tattoos, jewellery, labels, wristbands, room details). If the image is not a wound, or is too blurred,
+dark or cropped to judge, say so in "image_quality", set "wound_visible" to false and use "unknown" values.
+Colour in photos is unreliable (lighting, camera, skin tone): lower your confidence when tissue colour is ambiguous,
+and note that erythema and deep tissue injury are harder to see on darker skin.
+
+Return ONLY a JSON object, no other text, with exactly these keys and allowed values:
+{
+  "wound_visible": true | false,
+  "image_quality": "one short sentence",
+  "description": "2-3 sentences: location if evident, size if a ruler is visible, wound bed, edges, periwound",
+  "tissue": { "granulation": 0-100, "slough": 0-100, "eschar": 0-100, "epithelial": 0-100, "necrosis_wet": 0-100 },
+  "likely_type": "pi" | "dfu" | "venous" | "arterial" | "surgical" | "skintear" | "trauma" | "fungating" | "iad" | "iv" | "unknown",
+  "type_reason": "one short sentence",
+  "stage": "1" | "2" | "3" | "4" | "u" | "dti" | "na" | "unknown",
+  "depth": "intact" | "superficial" | "full" | "cavity" | "unknown",
+  "eschar_dry_stable": true | false | null,
+  "exudate": "none" | "low" | "mod" | "heavy" | "unknown",
+  "periwound": "ok" | "mac" | "fragile" | "unknown",
+  "infection_signs": "none" | "local" | "deep" | "unknown",
+  "infection_reason": "which visible signs (e.g. friable red granulation, purulence, spreading erythema), or 'none visible'",
+  "bleeding": true | false,
+  "odour": true | false | null,
+  "probes_to_bone": true | false | null,
+  "concerns": [ "urgent or important things to act on, e.g. possible necrotizing infection, exposed bone, wet gangrene" ],
+  "cannot_assess": [ "what the photo cannot show and should be checked at the bedside" ],
+  "dressing": { "primary": "dressing category", "secondary": "category or none", "change": "frequency", "avoid": "categories to avoid and why" },
+  "confidence": "low" | "moderate" | "high"
+}
+Tissue percentages should add up to about 100 (use 0 for absent). "stage" applies to pressure injuries only; otherwise "na".
+"odour" and "probes_to_bone" come ONLY from the bedside notes; use null when the notes do not say.
+Dressing choice follows moist wound healing and wound bed preparation: match absorbency to exudate, fill cavities loosely,
+autolytic debridement for slough, keep dry stable heel or ischemic eschar dry, antimicrobial dressings only for local infection
+(2-week challenge), no hydrocolloid on diabetic foot ulcers or infected wounds.
+This is a draft for physician and wound clinician review, not a diagnosis.`;
+const PH_DEFAULT_MODEL = "claude-sonnet-5-5";
+const phLS = { get: (k, d) => { try { return localStorage.getItem(k) || d; } catch (e) { return d; } }, set: (k, v) => { try { v ? localStorage.setItem(k, v) : localStorage.removeItem(k); } catch (e) {} } };
+function phModeShow() {
+  const m = document.getElementById("ph-mode").value, hasKey = !!phLS.get("wound-ai-key", "");
+  document.getElementById("ph-m-server").style.display = m === "server" ? "" : "none";
+  document.getElementById("ph-m-direct").style.display = m === "direct" ? "" : "none";
+  document.getElementById("ph-mode-lbl").textContent = m === "direct" ? (hasKey ? "· direct (key saved on this device)" : "· direct (no key yet)") : "· server " + document.getElementById("ph-ep").value;
+  document.getElementById("ph-key").placeholder = hasKey ? "saved ✓ (paste a new one to replace)" : "sk-ant-…";
+}
+function phKeySave() {
+  const k = document.getElementById("ph-key").value.trim();
+  if (!/^sk-ant-/.test(k)) return phStatus("That doesn't look like an Anthropic key (starts with sk-ant-).", true);
+  phLS.set("wound-ai-key", k); document.getElementById("ph-key").value = ""; phModeShow(); phStatus("Key saved on this device.");
+}
+function phKeyForget() { phLS.set("wound-ai-key", ""); phModeShow(); phStatus("Key removed from this device."); }
 (function phInit() {
-  const ep = document.getElementById("ph-ep");
-  try { ep.value = localStorage.getItem("wound-ai-ep") || PH_DEFAULT_EP; } catch (e) { ep.value = PH_DEFAULT_EP; }
-  ep.onchange = () => { try { localStorage.setItem("wound-ai-ep", ep.value.trim()); } catch (e) {} };
+  const ep = document.getElementById("ph-ep"), mode = document.getElementById("ph-mode"), model = document.getElementById("ph-model");
+  ep.value = phLS.get("wound-ai-ep", PH_DEFAULT_EP);
+  ep.onchange = () => { phLS.set("wound-ai-ep", ep.value.trim()); phModeShow(); };
+  model.value = phLS.get("wound-ai-model", PH_DEFAULT_MODEL);
+  model.onchange = () => phLS.set("wound-ai-model", model.value.trim());
+  mode.value = phLS.get("wound-ai-mode", matchMedia("(pointer:coarse)").matches ? "direct" : "server");
+  mode.onchange = () => { phLS.set("wound-ai-mode", mode.value); phModeShow(); };
+  phModeShow();
   const drop = document.getElementById("ph-drop"), file = document.getElementById("ph-file");
   drop.onclick = () => file.click();
   file.onchange = () => file.files[0] && phLoad(file.files[0]);
-  const cam = document.getElementById("ph-cam"); cam.onchange = () => cam.files[0] && phLoad(cam.files[0]);
+  const cam = document.getElementById("ph-cam"); cam.onchange = () => { const f = cam.files[0]; cam.value = ""; f && phLoad(f, phAuto ? phReview : null); };
   if (navigator.canShare && navigator.canShare({ files: [new File([""], "x.jpg", { type: "image/jpeg" })] })) document.getElementById("ph-share").style.display = "";
   if (matchMedia("(pointer:coarse)").matches) { const d = document.getElementById("ph-drop"); d.firstElementChild.textContent = "Tap to choose from Photos or Files"; d.childNodes.forEach((n) => { if (n.nodeType === 3) n.textContent = " "; }); [...d.querySelectorAll("u, br, span")].forEach((n) => n.remove()); }
   drop.ondragover = (e) => { e.preventDefault(); drop.style.background = "#eef6f6"; };
@@ -635,7 +709,7 @@ const phEsc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&"
   });
 })();
 function phStatus(t, bad) { const s = document.getElementById("ph-status"); s.textContent = t; s.style.color = bad ? "var(--bad)" : ""; }
-function phLoad(f) {
+function phLoad(f, then) {
   if (!f || !/^image\/(jpeg|png|webp|gif|bmp)$/.test(f.type)) { phStatus("Not a JPEG/PNG photo" + (f && /heic|heif/i.test(f.type + f.name) ? " (HEIC: take a screenshot of it instead)" : "") + ".", true); return; }
   const url = URL.createObjectURL(f), img = new Image();
   img.onload = () => {
@@ -648,6 +722,7 @@ function phLoad(f) {
     document.getElementById("ph-prev").style.display = "";
     document.getElementById("ph-size").textContent = `${c.width} × ${c.height}px, ${Math.round(phData.length * 0.75 / 1024)} KB (camera data removed)`;
     phStatus("");
+    if (then) then();
   };
   img.onerror = () => { phStatus("Could not read this image.", true); URL.revokeObjectURL(url); };
   img.src = url;
@@ -659,18 +734,55 @@ function phNotes() {
     .forEach(([k, id]) => v(id) && L.push(k + ": " + v(id)));
   return L.join("\n");
 }
+let phAuto = false;
+function phSnap(auto) {
+  if (auto && !document.getElementById("ph-ok").checked) {
+    phStatus("Tick the no-identifying-details box first.", true);
+    const l = document.getElementById("ph-ok").parentElement; l.style.outline = "2px solid var(--bad)"; l.scrollIntoView({ block: "center" }); setTimeout(() => (l.style.outline = ""), 2500);
+    return;
+  }
+  phAuto = auto; document.getElementById("ph-cam").click();
+}
+async function phCallDirect() {
+  const key = phLS.get("wound-ai-key", "");
+  if (!key) throw new Error("no API key saved on this device (AI connection › Directly)");
+  const m = phData.match(/^data:(image\/\w+);base64,(.+)$/);
+  const r = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json", "anthropic-dangerous-direct-browser-access": "true" },
+    body: JSON.stringify({ model: phLS.get("wound-ai-model", PH_DEFAULT_MODEL), max_tokens: 1500, system: PH_SYSTEM,
+      messages: [{ role: "user", content: [
+        { type: "image", source: { type: "base64", media_type: m[1], data: m[2] } },
+        { type: "text", text: 'Bedside notes from the physician (may be empty):\n"""\n' + (phNotes() || "(none)") + '\n"""\nReturn the JSON object only.' }] }] })
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error((j.error && j.error.message) || "AI service HTTP " + r.status);
+  const out = (j.content || []).filter((c) => c.type === "text").map((c) => c.text).join(""), jm = out.match(/\{[\s\S]*\}/);
+  if (!jm) throw new Error("AI did not return JSON");
+  return JSON.parse(jm[0]);
+}
 async function phReview() {
   if (!phData) return phStatus("Add a photo first.", true);
   if (!document.getElementById("ph-ok").checked) return phStatus("Tick the de-identified box first.", true);
+  const direct = document.getElementById("ph-mode").value === "direct";
   const ep = document.getElementById("ph-ep").value.trim() || PH_DEFAULT_EP, go = document.getElementById("ph-go");
   go.disabled = true; phStatus("Reviewing… (10–30 s)");
+  document.getElementById("ph-out").innerHTML = `<div class="box">Reviewing the photo… (10–30 s)</div>`;
+  document.getElementById("ph-out").scrollIntoView({ behavior: "smooth", block: "start" });
   try {
-    const r = await fetch(ep, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ image: phData, notes: phNotes() }) });
-    const j = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(j.error || "HTTP " + r.status);
+    let j;
+    if (direct) j = await phCallDirect();
+    else {
+      const r = await fetch(ep, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ image: phData, notes: phNotes() }) });
+      j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.error || "HTTP " + r.status);
+    }
     phRender(j, false); phStatus("Done.");
+    document.getElementById("ph-out").scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (e) {
-    phStatus("AI server not reachable or failed (" + e.message + "). Is wound-server.js running on this computer? Or use Copy prompt for Copilot.", true);
+    document.getElementById("ph-out").innerHTML = "";
+    phStatus("AI review failed: " + e.message + (direct ? "" : ". Is wound-server.js running on this computer? On a phone, switch AI connection to Directly.") + " You can also use Share or Copy prompt for Copilot.", true);
+    document.getElementById("ph-setbox").open = true;
   } finally { go.disabled = false; }
 }
 const PH_SAMPLE = {
