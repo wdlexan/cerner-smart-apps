@@ -4,7 +4,7 @@
    A tab is only loaded the first time you open it, and stays loaded when you switch away. */
 
 // To add a tool: put its files in tools/<folder>/ and add a line here.
-const TOOL_V = "20261123j"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
+const TOOL_V = "20261123k"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
 const TOOLS = [
   { key: "today", label: "Today (what changed)", tags: "what changed daily trends vitals overnight summary", path: "tools/today/index.html" },
   { key: "plist", label: "Patient list (screenshot)", tags: "patient list screenshot excel spreadsheet rounding list census floor ward ocr", path: "tools/plist/index.html" },
@@ -15,6 +15,7 @@ const TOOLS = [
   { key: "meds",  label: "Meds review (Beers)", tags: "medications beers criteria elderly geriatric polypharmacy deprescribing",  path: "tools/meds/index.html" },
   { key: "g6pd",  label: "G6PD check", tags: "g6pd hemolysis drug safety rasburicase primaquine dapsone",           path: "tools/g6pd/index.html" },
   { key: "risk",  label: "Risk screen", tags: "risk screen pressure injury ulcer nutrition sleep dysphagia falls",          path: "tools/risk/index.html" },
+  { key: "wound", label: "Wound care", tags: "wound care dressing dressings pressure injury ulcer bedsore decubitus sacral heel stage braden npwt vac negative pressure foam hydrocolloid alginate hydrofibre aquacel hydrogel silver iodine honey skin tear diabetic foot venous arterial dehiscence fungating iad incontinence dermatitis nswoc", path: "tools/wound/index.html" },
   { key: "opioid", label: "Opioid safety", tags: "opioid safety narcotics naloxone morphine oxycodone hydromorphone",       path: "tools/opioid/index.html" },
   { key: "pain",  label: "Pain management", tags: "pain management analgesia",      path: "tools/pain/index.html" },
   { key: "abx",   label: "Antibiotics", tags: "antibiotics antimicrobial stewardship iv po switch duration",          path: "tools/abx/index.html" },
@@ -140,7 +141,7 @@ const GROUPS = [
   { name: "GI & endo", keys: ["liver", "ibd", "dm", "edr"] },
   { name: "Infection", keys: ["abx", "abxmap", "hahabx", "inf", "fuo"] },
   { name: "Onc & heme", keys: ["onc", "tox", "bsab", "pc", "g6pd", "sero"] },
-  { name: "Safety", keys: ["meds", "opioid", "pain", "risk", "cw", "dx"] },
+  { name: "Safety", keys: ["meds", "opioid", "pain", "risk", "wound", "cw", "dx"] },
   { name: "Admit & discharge", keys: ["ed", "hah", "hip", "consult", "mobility", "discharge", "dcclinic", "forms"] }];
 const short = (label) => label.replace(/\s*\(.*?\)\s*/g, " ").trim();
 function buildNav() {
