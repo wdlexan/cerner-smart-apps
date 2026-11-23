@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ACLS</title>
+  <style>
+    :root { --bg:#f5f7fa; --card:#fff; --ink:#1f2933; --muted:#5f6c7b; --accent:#0b6bcb; --line:#dde3ea;
+            --r-bg:#fde8e8; --r-ink:#9b1c1c; --a-bg:#fff1d6; --a-ink:#8a5200; --b-bg:#e3eefc; --b-ink:#0b4a99; --g-bg:#e4f4ea; --g-ink:#1d6b3a; --warn-bg:#fff4e5; --warn-line:#f0c27b; }
+    @media (prefers-color-scheme: dark) { :root { --bg:#111418; --card:#1a1f26; --ink:#e8edf2; --muted:#9aa7b5; --accent:#6aa9ff; --line:#2b333d;
+            --r-bg:#4a1d1d; --r-ink:#ffb3b3; --a-bg:#4a3511; --a-ink:#ffd38a; --b-bg:#14325c; --b-ink:#a9cdff; --g-bg:#16361f; --g-ink:#9be0b1; --warn-bg:#3a2e15; --warn-line:#6b5420; } }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); }
+    header { padding:14px 20px; border-bottom:1px solid var(--line); background:var(--card); }
+    header h1 { margin:0; font-size:19px; } header .sub { font-size:13px; color:var(--muted); margin-top:2px; }
+    main { max-width:980px; margin:16px auto 40px; padding:0 16px; display:grid; gap:14px; }
+    .banner { background:var(--warn-bg); border:1px solid var(--warn-line); border-radius:8px; padding:10px 14px; font-size:13px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:10px; font-size:13.5px; }
+    .card > summary { padding:10px 16px; font-weight:700; font-size:15px; cursor:pointer; display:flex; justify-content:space-between; gap:10px; }
+    .card > .body { padding:0 16px 14px; }
+    select, input, button { font:inherit; font-size:13px; padding:5px 8px; border:1px solid var(--line); border-radius:6px; background:var(--card); color:var(--ink); }
+    button { cursor:pointer; } button.primary { border-color:var(--accent); color:var(--accent); }
+    input[type=number] { width:80px; }
+    .row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:8px 0; }
+    .inl { display:inline-flex; gap:6px; align-items:center; }
+    .muted { color:var(--muted); } .err { color:var(--r-ink); }
+    .tiles { display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:10px; }
+    .tile { border-radius:10px; padding:10px 14px; border:1px solid var(--line); background:var(--card); }
+    .tile .k { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; }
+    .tile .big { font-size:22px; font-weight:700; margin:2px 0; }
+    .tile .s { font-size:12.5px; }
+    .t0 { background:var(--g-bg); color:var(--g-ink); } .t1 { background:var(--b-bg); color:var(--b-ink); } .t2 { background:var(--a-bg); color:var(--a-ink); } .t3 { background:var(--r-bg); color:var(--r-ink); }
+    .t0 .k, .t1 .k, .t2 .k, .t3 .k { color:inherit; opacity:.8; }
+    .alert { border-left:4px solid; border-radius:6px; padding:8px 12px; margin:6px 0; }
+    .alert.urgent { background:var(--r-bg); color:var(--r-ink); } .alert.action { background:var(--a-bg); color:var(--a-ink); } .alert.info { background:var(--b-bg); color:var(--b-ink); }
+    table { border-collapse:collapse; width:100%; font-size:13px; }
+    th, td { border-bottom:1px solid var(--line); padding:5px 8px; text-align:left; vertical-align:top; }
+    th { color:var(--muted); font-weight:600; }
+    .scroll { overflow-x:auto; }
+    .plan h3 { font-size:14px; margin:12px 0 4px; } .plan ul { margin:4px 0 8px 18px; padding:0; } .plan li { margin:3px 0; }
+    .chip { display:inline-block; padding:1px 8px; border-radius:10px; font-size:12px; font-weight:600; white-space:nowrap; }
+    .c-likely { background:var(--r-bg); color:var(--r-ink); } .c-possible { background:var(--a-bg); color:var(--a-ink); } .c-nodata { background:var(--b-bg); color:var(--b-ink); } .c-none { background:var(--g-bg); color:var(--g-ink); }
+    .ok { color:var(--g-ink); font-weight:700; } .bad { color:var(--r-ink); font-weight:700; } .nd { color:var(--muted); }
+    .src { font-size:12px; color:var(--muted); margin-top:8px; }
+    textarea { width:100%; min-height:220px; font:12.5px ui-monospace,Consolas,monospace; padding:8px; border:1px solid var(--line); border-radius:6px; background:var(--card); color:var(--ink); }
+    .inputs fieldset { border:1px solid var(--line); border-radius:8px; padding:6px 12px 8px; margin:6px 0; } .inputs legend { font-weight:600; font-size:13px; padding:0 4px; }
+    .auto { font-size:11px; color:var(--accent); margin-left:3px; }
+    a.tk { color:var(--accent); cursor:pointer; }
+    /* code timer */
+    .clocks { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:10px; margin:6px 0 10px; }
+    .clk { border:1px solid var(--line); border-radius:10px; padding:8px 12px; text-align:center; }
+    .clk .k { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; }
+    .clk .big { font-size:34px; font-weight:800; font-variant-numeric:tabular-nums; line-height:1.15; }
+    .clk .s { font-size:12px; }
+    .clk.due { background:var(--a-bg); color:var(--a-ink); } .clk.over { background:var(--r-bg); color:var(--r-ink); } .clk.wait { background:var(--b-bg); color:var(--b-ink); } .clk.good { background:var(--g-bg); color:var(--g-ink); }
+    .clk.due .k, .clk.over .k, .clk.wait .k, .clk.good .k { color:inherit; opacity:.85; }
+    .pads { display:grid; grid-template-columns:repeat(auto-fit, minmax(118px, 1fr)); gap:8px; margin:8px 0; }
+    .pads button { padding:12px 8px; font-size:14.5px; font-weight:700; border-radius:10px; border-width:2px; min-height:52px; }
+    .pads .grp { grid-column:1 / -1; font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin-top:4px; }
+    .b-start { background:#0b6bcb; color:#fff; border-color:#0b6bcb; } .b-shock { background:var(--r-bg); color:var(--r-ink); border-color:var(--r-ink); }
+    .b-drug { background:var(--a-bg); color:var(--a-ink); border-color:var(--a-ink); } .b-rhythm { background:var(--b-bg); color:var(--b-ink); border-color:var(--b-ink); }
+    .b-rosc { background:var(--g-bg); color:var(--g-ink); border-color:var(--g-ink); }
+    #log td { white-space:nowrap; } #log td.wrap { white-space:normal; } #log button { padding:1px 7px; font-size:12px; }
+    .ref td { white-space:normal; }
+    @media (max-width:600px) { .clk .big { font-size:28px; } main { padding:0 8px; } }
+    @media print { .noprint { display:none; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>ACLS: code timer, reversible causes, peri-arrest and after ROSC</h1>
+    <div class="sub">Code timer with 2-minute rhythm checks, epinephrine and antiarrhythmic prompts and an event log; Hs &amp; Ts filled from the chart; bradycardia and tachycardia (2025 cardioversion energies); post-ROSC checklist; code status and arrest-risk screen; code note and family update. Read-only.</div>
+  </header>
+  <main>
+    <div class="banner"><b>Decision-support draft. It orders nothing and does not replace ACLS training or the code leader.</b> Written by Claude from the 2025 AHA Guidelines for CPR and ECC (adult ALS, special circumstances, post-cardiac arrest care), as used by Heart &amp; Stroke in Canada, in its own words; <b>not verified</b>. Check doses against the Island Health code cart sheet and pharmacy before real use. The timer runs in this browser only and stores no patient details. Use made-up or Cerner sandbox patients until Island Health approves real data.</div>
+
+    <details class="card inputs" id="ptcard" open>
+      <summary><span>Patient</span><span class="muted" id="ptsum"></span></summary>
+      <div class="body">
+        <div id="pstatus" class="muted">Open from Cerner to read the chart, or pick a made-up patient. The code timer works without a patient.</div>
+        <div class="row"><select id="testsel"><option value="">Made-up patient…</option></select><button id="clear" hidden>Clear</button>
+          <label class="inl">Weight <input type="number" id="o-kg" step="0.1" style="width:70px"> kg <span class="auto" id="kgauto"></span></label></div>
+        <div id="errs" class="err" style="font-size:12.5px"></div>
+      </div>
+    </details>
+    <div class="tiles" id="tiles"></div>
+
+    <details class="card" id="timercard" open><summary><span>Code timer and event log</span><span class="muted" id="timersum"></span></summary><div class="body">
+      <div class="clocks">
+        <div class="clk" id="c-total"><div class="k">Since arrest called</div><div class="big" id="c-total-v">0:00</div><div class="s" id="c-total-s">Press Start</div></div>
+        <div class="clk" id="c-cycle"><div class="k">Next rhythm check</div><div class="big" id="c-cycle-v">2:00</div><div class="s" id="c-cycle-s">every 2 minutes</div></div>
+        <div class="clk" id="c-epi"><div class="k">Epinephrine</div><div class="big" id="c-epi-v">-</div><div class="s" id="c-epi-s"></div></div>
+        <div class="clk" id="c-count"><div class="k">Counts</div><div class="big" id="c-count-v">0 / 0</div><div class="s">shocks / epi doses</div></div>
+      </div>
+      <div id="prompts"></div>
+      <div class="pads">
+        <div class="grp">Start</div>
+        <button class="b-start" data-ev="start">Start: arrest / CPR</button>
+        <button data-ev="access" data-v="IV">IV access</button><button data-ev="access" data-v="IO">IO access</button>
+        <button data-ev="airway" data-def="advanced airway placed">Advanced airway</button>
+        <div class="grp">Rhythm check (resets the 2-minute cycle)</div>
+        <button class="b-rhythm" data-ev="rhythm" data-v="vf">VF</button><button class="b-rhythm" data-ev="rhythm" data-v="pvt">Pulseless VT</button>
+        <button class="b-rhythm" data-ev="rhythm" data-v="pea">PEA</button><button class="b-rhythm" data-ev="rhythm" data-v="asys">Asystole</button>
+        <button class="b-rosc" data-ev="rosc">ROSC (pulse back)</button><button data-ev="rearrest">Re-arrest</button>
+        <div class="grp">Shock and drugs</div>
+        <button class="b-shock" data-ev="shock" id="shock-btn">Shock 200 J</button>
+        <select id="joules" title="Shock energy" style="min-height:52px;border-radius:10px"><option value="120">Energy 120 J</option><option value="150">Energy 150 J</option><option value="200" selected>Energy 200 J</option><option value="300">Energy 300 J</option><option value="360">Energy 360 J</option></select>
+        <button class="b-drug" data-ev="epi">Epinephrine 1 mg</button>
+        <button class="b-drug" data-ev="amio" data-v="300">Amiodarone 300</button><button class="b-drug" data-ev="amio" data-v="150">Amiodarone 150</button>
+        <button class="b-drug" data-ev="lido" id="lido-btn">Lidocaine</button>
+        <select id="otherdrug" class="noprint" style="min-height:52px;border-radius:10px"><option value="">Other drug…</option>
+          <option>Calcium chloride 10% 10 mL</option><option>Sodium bicarbonate 50 mmol</option><option>Magnesium sulfate 2 g</option><option>Dextrose 25 g (D50W 50 mL)</option><option>Insulin regular 10 units IV</option>
+          <option>Naloxone 0.4 mg IV</option><option>Naloxone 2 mg IV</option><option>Alteplase 50 mg IV (suspected PE)</option><option>Lipid emulsion 20% bolus</option><option>Normal saline 1 L bolus</option><option>Blood (uncrossmatched)</option><option>DigiFab</option></select>
+        <div class="grp">Log</div>
+        <input id="freetext" placeholder="Text for Airway / Note (optional)" style="grid-column:span 2;min-height:52px;border-radius:10px">
+        <button data-ev="note" data-def="">Add note</button>
+        <button id="undo">Undo last</button>
+        <select id="endsel" style="min-height:52px;border-radius:10px"><option value="">End code…</option><option>Sustained ROSC, to ICU</option><option>Resuscitation stopped, patient died</option><option>Stopped: DNR / goals of care found</option></select>
+        <button id="reset">Reset timer</button>
+      </div>
+      <div class="row noprint">
+        <label class="inl"><input type="checkbox" id="metro"> Metronome 110/min (sound)</label>
+        <label class="inl"><input type="checkbox" id="beep" checked> Beep at rhythm check</label>
+        <button id="practice">Practice run (made-up code)</button>
+        <button id="copylog" class="primary">Copy event log</button>
+      </div>
+      <div class="scroll"><table id="log"><thead><tr><th>Clock</th><th>Since call</th><th>Event</th><th></th></tr></thead><tbody></tbody></table></div>
+      <div class="muted" style="margin-top:6px;font-size:12px">Saved in this browser only (survives switching tabs or reloading), no patient details. Reset when the code is over and the note is written.</div>
+    </div></details>
+
+    <details class="card" open><summary><span>Cardiac arrest algorithm (reference)</span></summary><div class="body plan" id="arrestref"></div></details>
+
+    <details class="card" open><summary><span>Hs &amp; Ts: reversible causes from the chart</span><span class="muted" id="hstsum"></span></summary><div class="body" id="hsts"></div></details>
+    <details class="card inputs" open><summary><span>Special situations</span></summary><div class="body">
+      <div class="row"><select id="special"><option value="">Pick a situation…</option></select></div><div class="plan" id="specialbox"></div></div></details>
+
+    <details class="card inputs" open><summary><span>Bradycardia with a pulse</span><span class="muted" id="bradysum"></span></summary><div class="body">
+      <div class="row">
+        <label class="inl">HR <input type="number" id="b-hr" style="width:64px"> <span class="auto" id="b-hr-auto"></span></label>
+        <label class="inl"><input type="checkbox" id="b-unstable"> Serious signs (hypotension, altered mental status, shock, ischemic chest pain, acute HF)</label>
+        <label class="inl"><input type="checkbox" id="b-wide"> Mobitz II / complete block with wide QRS</label>
+        <label class="inl"><input type="checkbox" id="b-tx"> Heart transplant</label>
+      </div>
+      <div class="plan" id="brady"></div></div></details>
+    <details class="card inputs" open><summary><span>Tachycardia with a pulse</span><span class="muted" id="tachysum"></span></summary><div class="body">
+      <div class="row">
+        <label class="inl">Rhythm <select id="t-rhythm">
+          <option value="narrow">Regular narrow complex (SVT)</option><option value="af">Atrial fibrillation</option><option value="flutter">Atrial flutter</option>
+          <option value="preexcited">Pre-excited AF (WPW: irregular, wide)</option><option value="mvt">Regular wide: monomorphic VT</option><option value="unknownwide">Regular wide: not sure (VT vs SVT with aberrancy)</option>
+          <option value="pvt">Polymorphic VT</option><option value="torsades">Torsades de pointes (long QT)</option></select></label>
+        <label class="inl">HR <input type="number" id="t-hr" style="width:64px"> <span class="auto" id="t-hr-auto"></span></label>
+        <label class="inl"><input type="checkbox" id="t-unstable"> Unstable because of the tachycardia</label>
+      </div>
+      <div id="energy"></div><div class="plan" id="tachy"></div></div></details>
+    <details class="card"><summary><span>Cardioversion and defibrillation energies (2025)</span></summary><div class="body scroll" id="energies"></div></details>
+    <details class="card"><summary><span>Drug doses (adult, weight-based where needed)</span><span class="muted" id="dosesum"></span></summary><div class="body scroll" id="doses"></div></details>
+
+    <details class="card inputs" open><summary><span>After ROSC: first hour checklist</span><span class="muted" id="roscsum"></span></summary><div class="body">
+      <div class="row">
+        <label class="inl">Follows commands? <select id="r-follow"><option value="">Not assessed</option><option value="yes">Yes</option><option value="no">No / cannot assess</option></select></label>
+        <label class="inl">12-lead ECG <select id="r-stemi"><option value="">Not done yet</option><option value="yes">STEMI</option><option value="no">No STEMI</option></select></label>
+        <label class="inl">Override MAP <input type="number" id="r-map" style="width:64px"></label>
+        <label class="inl">SpO2 <input type="number" id="r-spo2" style="width:64px"></label>
+        <label class="inl">PaCO2 <input type="number" id="r-pco2" style="width:64px"></label>
+      </div>
+      <div class="scroll" id="roscitems"></div><div class="plan" id="roscplan"></div>
+      <div class="muted" style="margin-top:6px">Values are the latest in the chart (last 6 hours); type over them at the bedside. See the <a class="tk" data-toolkit="acs">NSTEMI tab</a> after a coronary cause.</div></div></details>
+
+    <details class="card" open><summary><span>Code status (goals of care)</span><span class="muted" id="codesum"></span></summary><div class="body" id="code"></div></details>
+    <details class="card" open><summary><span>Arrest-risk screen (last 12 hours)</span><span class="muted" id="risksum"></span></summary><div class="body" id="risk"></div></details>
+    <details class="card"><summary><span>Before the next event: talking about CPR</span></summary><div class="body plan" id="talk"></div></details>
+
+    <details class="card inputs" open><summary><span>Code note draft</span></summary><div class="body">
+      <div class="row">
+        <label class="inl">Where <input id="n-where" size="18" placeholder="e.g. 7A room 12"></label>
+        <label class="inl">Witnessed <select id="n-wit"><option value="">?</option><option>yes</option><option>no</option></select></label>
+        <label class="inl">Monitored <select id="n-mon"><option value="">?</option><option>yes (telemetry)</option><option>no</option></select></label>
+        <label class="inl">Family <input id="n-fam" size="22" placeholder="e.g. daughter called 14:20"></label>
+      </div>
+      <textarea id="note"></textarea><div class="row"><button id="copy" class="primary">Copy</button><span class="muted">Built from the event log and the chart. Edit before pasting. Nothing is saved.</span></div></div></details>
+    <details class="card inputs"><summary><span>Family update (what to say)</span></summary><div class="body">
+      <div class="row">
+        <label class="inl">Speaking with <input id="f-who" size="16" placeholder="e.g. Mary (daughter)"></label>
+        <label class="inl">Patient's name <input id="f-pt" size="14" placeholder="e.g. John"></label>
+        <label class="inl">Outcome <select id="f-out"><option value="rosc">Heart restarted</option><option value="died">Died</option></select></label>
+        <label class="inl">Now in <input id="f-where" size="14" placeholder="the ICU"></label>
+        <label class="inl">Likely cause <input id="f-cause" size="20" placeholder="a blood clot in the lung"></label>
+      </div>
+      <textarea id="family" style="min-height:180px"></textarea><div class="row"><button id="copyfam" class="primary">Copy</button><span class="muted">Plain language; sit down, use the word "died" if they died, then pause.</span></div></div></details>
+    <details class="card"><summary><span>Team debrief (after the code)</span></summary><div class="body plan" id="debrief"></div></details>
+
+    <div class="src">Sources: 2025 AHA Guidelines for CPR and ECC: Part 9 Adult Advanced Life Support, Part 10 Adult and Pediatric Special Circumstances of Resuscitation, Part 11 Post-Cardiac Arrest Care (Circulation 2025); AHA 2025 adult cardiac arrest, tachyarrhythmia, bradycardia, electrical cardioversion and post-cardiac arrest care algorithms; Heart &amp; Stroke 2025 interim ACLS training materials (Canada); ERC-ESICM 2025 post-resuscitation care. Written in Claude's own words, not copied from the AHA algorithms.</div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+  <script src="../../pdf-overlay.js?v=20261120p"></script>
+  <script src="rules.js?v=20261123a"></script>
+  <script src="chart.js?v=20261123a"></script>
+  <script src="samples.js?v=20261123a"></script>
+  <script src="app.js?v=20261123a"></script>
+  <script src="../../subtabs.js?v=20261121f"></script>
+  <script>SubTabs.mount({ store: "acls", top: ["#ptcard", "#tiles"], dotSel: ".alert.urgent, .tile.t3, .chip.c-likely", tabs: [
+      {"key": "timer", "label": "Code timer", "match": ["#timercard", "Cardiac arrest algorithm"]},
+      {"key": "hsts", "label": "Hs & Ts", "match": ["Hs & Ts", "Special situations"]},
+      {"key": "peri", "label": "Brady & tachy", "match": ["Bradycardia", "Tachycardia", "Cardioversion and defibrillation", "Drug doses"]},
+      {"key": "rosc", "label": "After ROSC", "match": ["After ROSC"]},
+      {"key": "code", "label": "Code status & risk", "match": ["Code status", "Arrest-risk", "Before the next event"]},
+      {"key": "note", "label": "Note & family", "match": ["Code note", "Family update", "Team debrief"]}] });</script>
+</body>
+</html>
