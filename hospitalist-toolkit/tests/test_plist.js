@@ -122,7 +122,17 @@ eq("spread 5", X0.spread("a; b; c; d; e"), ["a; b", "c; d", "e"]);
 
 // Excel: rows copied from the template, colour rules stretched
 let JSZip = null; try { JSZip = require("jszip"); } catch (e) { try { JSZip = require("/opt/node-tools/node_modules/jszip"); } catch (e2) {} }
-const done = () => { console.log(fail ? fail + " FAILED" : "all passed"); process.exit(fail ? 1 : 0); };
+// restyle an old-look list: values kept, new look, daily still works on it
+const restyleP = (async () => { const JSZip = require("/opt/npm-tools/node_modules/jszip"), fs = require("fs"), path = require("path");
+  const old = fs.readFileSync(path.join(__dirname, "old-look-sample.xlsx")), tpl = fs.readFileSync(path.join(__dirname, "../tools/plist/template.xlsx"));
+  const r = await X0.restyle(JSZip, old, tpl); const a = await X0.readList(JSZip, old), b = await X0.readList(JSZip, r.data);
+  eq("restyle keeps every patient", JSON.stringify(b.patients.map((p) => [p.name, p.mrn, p.age, p.room, p.floor])), JSON.stringify(a.patients.map((p) => [p.name, p.mrn, p.age, p.room, p.floor])));
+  eq("restyle freezes name column and repeats header", /topLeftCell="G2"/.test(b.xml) && /Print_Titles/.test(await b.zip.file("xl/workbook.xml").async("string")), true);
+  eq("restyle soft colour rules", /sqref="K2:K\d+"/.test(b.xml) && /SEARCH\("CRITICAL"/.test(b.xml), true);
+  const d = await X0.daily(JSZip, r.data, () => ({ check: ["recheck Na"] }), { date: "23 Nov" }); eq("daily runs on a restyled list", d.column, "V");
+  const r2 = await X0.restyle(JSZip, r.data, tpl); eq("restyle twice is safe", (await X0.readList(JSZip, r2.data)).patients.length, a.patients.length);
+})().catch((e) => eq("restyle threw", String(e), ""));
+const done = () => restyleP.then(() => { console.log(fail ? fail + " FAILED" : "all passed"); process.exit(fail ? 1 : 0); });
 if (!JSZip) { console.log("skip Excel test (jszip not installed)"); done(); }
 else {
   const X = require("../tools/plist/xlsx.js"), fs = require("fs");

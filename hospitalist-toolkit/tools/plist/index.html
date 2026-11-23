@@ -49,7 +49,7 @@
 <body>
 <main>
   <details class="card" id="dcard" open>
-    <summary><h2 style="display:inline">Daily update from the chart</h2> <span class="small muted">fills empty cells, rebuilds "check today" · version 22 Nov i</span></summary>
+    <summary><h2 style="display:inline">Daily update from the chart</h2> <span class="small muted">fills empty cells, rebuilds "check today" · version 22 Nov j</span></summary>
     <div class="muted small" style="margin:6px 0">Open your Excel list, press Update: each patient is looked up by the <b>MRN</b> in your file and their chart is read.
       Only <b>empty</b> cells are filled (age, allergy, gfr, vtep, iv, foley, lab); what you typed is never changed. A <b>check today</b> column is rebuilt each run
       (new abnormal results, vitals out of range, antibiotic day / IV to PO, electrolytes to recheck, renal dosing, pending tests, Discharge Clinic candidates).
@@ -60,6 +60,7 @@
       <button id="dopen">📂 Open my list…</button><input id="dfile" type="file" accept=".xlsx" hidden>
       <span id="dname" class="small"></span>
       <button id="drun" disabled>Update from the chart</button>
+      <button id="dstyle" class="ghost" disabled title="Same values and columns, calmer look: one font, soft colours, frozen name column, prints one page wide">🎨 New look</button>
       <button id="dsave" disabled>Save to the same file</button>
     </div>
     <div id="dmsg" class="small muted"></div>
@@ -110,14 +111,14 @@
 </main>
 
 <script src="parse.js?v=20261119f"></script>
-<script src="xlsx.js?v=20261122i"></script>
+<script src="xlsx.js?v=20261122j"></script>
 <script src="chart.js?v=20261119b"></script>
 <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
 <script src="../discharge/rules.js?v=20261122a"></script>
 <script src="../discharge/chart.js?v=20261122a"></script>
 <script src="../dcclinic/rules.js?v=20261122a"></script>
 <script src="daily.js?v=20261122a"></script>
-<script src="dailyui.js?v=20261122g"></script>
+<script src="dailyui.js?v=20261122j"></script>
 <script>
 (function () {
   "use strict";
@@ -361,7 +362,7 @@
           (r.missing.length ? `<br><b>In your file but not on this screenshot</b> (discharged or moved? left in the file): ${esc(r.missing.join("; "))}` : "");
         return;
       }
-      const tpl = await (await fetch("template.xlsx?v=20261122i")).arrayBuffer();
+      const tpl = await (await fetch("template.xlsx?v=20261122j")).arrayBuffer();
       const blob = await PListXlsx.build(JSZip, tpl, groups, { type: "blob", spare: $("spare").checked ? 3 : 0 });
       const a = document.createElement("a"), d = taken;
       a.href = URL.createObjectURL(blob); a.download = `VGH_patient_list_${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}.xlsx`;

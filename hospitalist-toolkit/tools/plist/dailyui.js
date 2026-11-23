@@ -23,9 +23,9 @@
   }
   $("dfile").onchange = async (e) => { const f = e.target.files && e.target.files[0]; if (!f) return; file = { name: f.name, buf: await f.arrayBuffer(), handle: null }; e.target.value = ""; opened(); };
   function opened() {
-    result = null; $("dname").textContent = file.name; $("drun").disabled = false; $("dsave").disabled = true; $("dtbl").innerHTML = "";
+    result = null; $("dname").textContent = file.name; $("drun").disabled = false; $("dstyle").disabled = false; $("dsave").disabled = true; $("dtbl").innerHTML = "";
     $("dsave").textContent = file.handle ? "Save to the same file" : "Download updated file";
-    say("Ready. Press <b>Update from the chart</b>.");
+    say("Ready. Press <b>Update from the chart</b>, or <b>🎨 New look</b> to restyle the file.");
   }
 
   // every slow step gets a time limit, so the page can never sit on "connecting" forever
@@ -149,6 +149,22 @@
       $("dsave").disabled = true;
     } catch (e) { say("Could not save: " + esc(e.message || e) + (/lock|in use|NoModification|InvalidState/i.test(String(e && (e.name + e.message))) ? " (close the file in Excel first)" : ""), "err"); }
   }
+  // give the open file the new look (same values, same columns); nothing leaves this computer
+  async function restyleList() {
+    if (!file) return;
+    $("dstyle").disabled = true; $("dsave").disabled = true; $("dtbl").innerHTML = "";
+    try {
+      say("Restyling…");
+      await within(20000, loadJs(JSZIP, () => window.JSZip), "loading the Excel reader");
+      const tpl = await (await fetch("template.xlsx?v=20261122j")).arrayBuffer();
+      const r = await PListXlsx.restyle(window.JSZip, file.buf.slice(0), tpl, { type: "uint8array" });
+      result = { data: r.data };
+      file.buf = r.data.buffer.slice(r.data.byteOffset, r.data.byteOffset + r.data.byteLength); // an update after this starts from the new look
+      $("dsave").disabled = false;
+      say(`New look ready: ${r.patients} patients on ${r.floors} floor${r.floors === 1 ? "" : "s"}, every value kept. Close the file in Excel, then press <b>${file.handle ? "Save to the same file" : "Download updated file"}</b>.`, "ok");
+    } catch (e) { say("Could not restyle: " + esc(e.message || e), "err"); }
+    $("dstyle").disabled = false;
+  }
   /* ---------- test mode only: a made-up list from the Cerner sandbox's synthetic patients ---------- */
   const isTest = (() => { try { return sessionStorage.getItem("toolkit-test") === "1"; } catch (e) { return false; } })();
   function mrnOf(p) {
@@ -186,6 +202,6 @@
   }
   if (isTest) { $("dtest").hidden = false; $("dtest").onclick = makeTestList; }
 
-  $("dopen").onclick = openList; $("drun").onclick = run; $("dsave").onclick = save;
+  $("dopen").onclick = openList; $("drun").onclick = run; $("dstyle").onclick = restyleList; $("dsave").onclick = save;
   $("dsave").textContent = "Save / download";
 })();

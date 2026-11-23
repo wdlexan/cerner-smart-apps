@@ -247,6 +247,115 @@
     if (re.test(x)) x = x.replace(re, (m, attrs) => `<c r="${col}${n}"${attrs.replace(/\s*t="[^"]*"/, "")}/>`);
     return val === "" || val == null ? x : cloneRow(x, n, { [col]: val });
   }
+  // quiet colours for "check today", added once: soft red for CRITICAL, soft amber for things to do
+  async function addCheckCF(zip, xml, cC, lastRow) {
+    if (/SEARCH\("CRITICAL"/.test(xml) || !zip.file("xl/styles.xml")) return xml;
+    let st = await zip.file("xl/styles.xml").async("string");
+    const red = '<dxf><font><b/><color rgb="FF8E1F14"/></font><fill><patternFill><bgColor rgb="FFF8D7D3"/></patternFill></fill></dxf>';
+    const amb = '<dxf><font><color rgb="FF7A4B00"/></font><fill><patternFill><bgColor rgb="FFFCE8C8"/></patternFill></fill></dxf>';
+    const first = addDxfs(st, red + amb, 2); st = first.st;
+    zip.file("xl/styles.xml", st);
+    const c2 = cC + "2", rng = `${cC}2:${cC}${Math.max(lastRow, 200)}`;
+    const todo = ["recheck", "IV to PO", "stop date", "renal dosing", "vitals 24", "Discharge Clinic", "pending"].map((w) => `ISNUMBER(SEARCH("${w}",${c2}))`).join(",");
+    const cf = `<conditionalFormatting sqref="${rng}"><cfRule type="containsText" dxfId="${first.at}" priority="901" operator="containsText" text="CRITICAL"><formula>NOT(ISERROR(SEARCH("CRITICAL",${c2})))</formula></cfRule>` +
+      `<cfRule type="expression" dxfId="${first.at + 1}" priority="902"><formula>OR(${todo})</formula></cfRule></conditionalFormatting>`;
+    return insertCF(xml, cf);
+  }
+  function insertCF(xml, cf) {
+    const at = xml.search(/<conditionalFormatting|<dataValidations|<hyperlinks|<printOptions|<pageMargins|<pageSetup|<headerFooter|<drawing|<legacyDrawing|<tableParts|<extLst/);
+    return at >= 0 ? xml.slice(0, at) + cf + xml.slice(at) : xml.replace("</worksheet>", cf + "</worksheet>");
+  }
+  function addDxfs(st, items, n) { // append dxf entries; returns the index of the first one
+    let at;
+    if (/<dxfs count="\d+"\s*\/>/.test(st)) { at = 0; st = st.replace(/<dxfs count="\d+"\s*\/>/, `<dxfs count="${n}">${items}</dxfs>`); }
+    else if (/<dxfs count="\d+">/.test(st)) { at = +st.match(/<dxfs count="(\d+)">/)[1]; st = st.replace(/<dxfs count="\d+">/, `<dxfs count="${at + n}">`).replace("</dxfs>", items + "</dxfs>"); }
+    else { at = 0; st = st.replace(/(<tableStyles|<colors|<extLst|<\/styleSheet>)/, `<dxfs count="${n}">${items}</dxfs>$1`); }
+    return { st, at };
+  }
+
+  /* ---------- give an existing list the template's look, keeping every value ---------- */
+  const kids = (st, tag, child) => { const m = st.match(new RegExp(`<${tag}\\b[^>]*?(?:/>|>([\\s\\S]*?)</${tag}>)`)); if (!m || !m[1]) return [];
+    return m[1].match(new RegExp(`<${child}\\b[^>]*?/>|<${child}\\b[^>]*>[\\s\\S]*?</${child}>`, "g")) || []; };
+  function appendKids(st, tag, child, items) {
+    const have = kids(st, tag, child).length;
+    if (new RegExp(`<${tag}\\b[^>]*/>`).test(st)) st = st.replace(new RegExp(`<${tag}\\b[^>]*/>`), `<${tag} count="${items.length}">${items.join("")}</${tag}>`);
+    else st = st.replace(new RegExp(`(<${tag}\\b)[^>]*>([\\s\\S]*?)</${tag}>`), (m, a, inner) => `${a} count="${have + items.length}">${inner}${items.join("")}</${tag}>`);
+    return { st, at: have };
+  }
+  async function restyle(JSZip, data, template, opts) {
+    opts = opts || {};
+    const L = await readList(JSZip, data), T = await readList(JSZip, template);
+    if (!L.patients.length && !L.floors.length) throw new Error("this does not look like your VGH list (no patients or floors found)");
+    // 1. copy the template's fonts, fills, borders, cell styles and colour-rule styles into the file
+    const ts = await T.zip.file("xl/styles.xml").async("string");
+    let st = L.zip.file("xl/styles.xml") ? await L.zip.file("xl/styles.xml").async("string") : ts;
+    const f = appendKids(st, "fonts", "font", kids(ts, "fonts", "font")); st = f.st;
+    const fl = appendKids(st, "fills", "fill", kids(ts, "fills", "fill")); st = fl.st;
+    const b = appendKids(st, "borders", "border", kids(ts, "borders", "border")); st = b.st;
+    const xfs = kids(ts, "cellXfs", "xf").map((x) => x.replace(/\bfontId="(\d+)"/, (m, n) => `fontId="${+n + f.at}"`).replace(/\bfillId="(\d+)"/, (m, n) => `fillId="${+n + fl.at}"`)
+      .replace(/\bborderId="(\d+)"/, (m, n) => `borderId="${+n + b.at}"`).replace(/\bxfId="\d+"/, 'xfId="0"').replace(/\bnumFmtId="(\d+)"/, (m, n) => +n >= 164 ? 'numFmtId="0"' : m));
+    const x = appendKids(st, "cellXfs", "xf", xfs); st = x.st;
+    const tdx = kids(ts, "dxfs", "dxf"), d = addDxfs(st, tdx.join(""), tdx.length); st = d.st;
+    L.zip.file("xl/styles.xml", st);
+    // 2. the template's style for each column, by kind of row
+    const sOf = (rx, col) => { const m = rx.match(new RegExp(`<c r="${col}\\d+"[^>]*?\\ss="(\\d+)"`)); return m ? +m[1] + x.at : null; };
+    const tRow = (n) => (T.rows.find((r) => r.n === n) || {}).xml || "";
+    const KIND = { head: tRow(1), floor: tRow(2), name: tRow(3), pm: tRow(4), under: tRow(5) };
+    const tCols = []; KIND.head.replace(/<c r="([A-Z]+)1"/g, (m, c) => (tCols.push(c), m));
+    const lastT = Math.max(...tCols.map(colNum));
+    const kindOf = {}; L.rows.forEach((r) => (kindOf[r.n] = r.n === 1 ? "head" : "under"));
+    L.floors.forEach((fl2) => (kindOf[fl2.row] = "floor"));
+    [...L.patients, ...L.floors.flatMap((q) => q.spares)].forEach((p) => { kindOf[p.first] = "name"; for (let n = p.first + 1; n <= p.last; n++) kindOf[n] = "under";
+      const r2 = L.rows.find((r) => r.n === p.first + 1); if (r2 && /^pmhx:?/i.test(cellText(r2.xml, "F", L.sst))) kindOf[p.first + 1] = "pm"; });
+    let maxCol = lastT;
+    L.rows.forEach((r) => r.xml.replace(/<c r="([A-Z]+)\d+"[^>]*?\ss?="?[^>]*?(?:\/>|>[\s\S]*?<\/c>)/g, (m, c) => { if (/<v>|<t[ >]/.test(m)) maxCol = Math.max(maxCol, colNum(c)); return m; }));
+    const allCols = Array.from({ length: maxCol }, (_, i) => colName(i + 1)).filter((c) => colNum(c) > lastT).concat(tCols);
+    const rowsXml = L.rows.map((r) => {
+      const k = kindOf[r.n], proto = KIND[k], cells = {};
+      r.xml.replace(/<c r="([A-Z]+)\d+"[^>]*?(?:\/>|>[\s\S]*?<\/c>)/g, (m, c) => { cells[c] = m; return m; });
+      allCols.forEach((c) => { if (!cells[c]) cells[c] = `<c r="${c}${r.n}"/>`; });
+      Object.keys(cells).forEach((c) => {
+        const s2 = colNum(c) <= lastT ? sOf(proto, c) : sOf(proto, "S"); // columns past the template (e.g. check today) look like "to do"
+        cells[c] = cells[c].replace(/^<c r="[A-Z]+\d+"[^>]*?(?=\/?>)/, (open) => { open = open.replace(/\s+s="\d+"/, ""); return s2 == null ? open : `${open} s="${s2}"`; });
+      });
+      const open = r.xml.match(/^<row\b[^>]*?(?=\/?>)/)[0].replace(/\s+(s|customFormat)="[^"]*"/g, "");
+      const heads = k === "head" ? open.replace(/\s+(ht|customHeight)="[^"]*"/g, "") + ' ht="30" customHeight="1"' : open;
+      return `${heads}>${Object.keys(cells).sort((p, q) => colNum(p) - colNum(q)).map((c) => cells[c]).join("")}</row>`;
+    });
+    let xml = L.xml.replace(/<sheetData>[\s\S]*<\/sheetData>|<sheetData\/>/, "<sheetData>" + rowsXml.join("") + "</sheetData>");
+    // 3. column widths, frozen header and name column, no grid lines, print setup
+    const txml = T.xml, grab = (re) => (txml.match(re) || [])[0] || "";
+    const tColsXml = kids(txml, "cols", "col").filter((c) => +c.match(/min="(\d+)"/)[1] <= lastT).map((c) => c.replace(/\s+style="\d+"/, ""));
+    const keep = kids(xml, "cols", "col").filter((c) => +c.match(/min="(\d+)"/)[1] > lastT);
+    const colsXml = `<cols>${tColsXml.join("")}${keep.join("")}</cols>`;
+    xml = /<cols>[\s\S]*?<\/cols>/.test(xml) ? xml.replace(/<cols>[\s\S]*?<\/cols>/, colsXml) : xml.replace(/<sheetData/, colsXml + "<sheetData");
+    xml = xml.replace(/<sheetViews>[\s\S]*?<\/sheetViews>/, grab(/<sheetViews>[\s\S]*?<\/sheetViews>/));
+    if (!/<sheetViews>/.test(xml)) xml = xml.replace(/(<sheetFormatPr|<cols>)/, grab(/<sheetViews>[\s\S]*?<\/sheetViews>/) + "$1");
+    if (/<sheetPr\b[^>]*\/>/.test(xml)) xml = xml.replace(/<sheetPr\b([^>]*)\/>/, '<sheetPr$1><pageSetUpPr fitToPage="1"/></sheetPr>');
+    else if (/<sheetPr\b/.test(xml)) xml = /<pageSetUpPr/.test(xml) ? xml.replace(/<pageSetUpPr\b[^>]*\/>/, '<pageSetUpPr fitToPage="1"/>') : xml.replace("</sheetPr>", '<pageSetUpPr fitToPage="1"/></sheetPr>');
+    else xml = xml.replace(/(<dimension|<sheetViews)/, '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>$1');
+    xml = xml.replace(/<printOptions\b[^>]*\/>|<pageMargins\b[^>]*\/>|<pageSetup\b[^>]*\/>/g, "");
+    const print = grab(/<printOptions\b[^>]*\/>/) + grab(/<pageMargins\b[^>]*\/>/) + grab(/<pageSetup\b[^>]*\/>/);
+    const at2 = xml.search(/<headerFooter|<rowBreaks|<colBreaks|<drawing|<legacyDrawing|<tableParts|<extLst|<\/worksheet>/); xml = xml.slice(0, at2) + print + xml.slice(at2);
+    // 4. the template's colour rules (same meaning, softer colours), stretched to the last row
+    const lastRow = Math.max(...L.rows.map((r) => r.n), 2);
+    xml = xml.replace(/<conditionalFormatting\b[\s\S]*?<\/conditionalFormatting>/g, "");
+    const cfs = (txml.match(/<conditionalFormatting\b[\s\S]*?<\/conditionalFormatting>/g) || []).map((c) => c.replace(/dxfId="(\d+)"/g, (m, n) => `dxfId="${+n + d.at}"`)
+      .replace(/sqref="([^"]*)"/, (m, refs) => `sqref="${refs.split(" ").map((q) => q.replace(/^([A-Z]+)(\d+):([A-Z]+)\d+$/, `$1$2:$3${lastRow}`)).join(" ")}"`)).join("");
+    if (cfs) xml = insertCF(xml, cfs);
+    const cC = L.hcols["check today"]; if (cC) xml = await addCheckCF(L.zip, xml, cC, lastRow);
+    if (maxCol > lastT) xml = xml.replace(/<dimension ref="A1:[A-Z]+(\d+)"\/>/, (m, n) => `<dimension ref="A1:${colName(maxCol)}${n}"/>`);
+    L.zip.file(L.path, xml);
+    // 5. repeat the header row on every printed page
+    const wbx = await L.zip.file("xl/workbook.xml").async("string");
+    if (!/_xlnm\.Print_Titles"[^>]*localSheetId="0"|localSheetId="0"[^>]*_xlnm\.Print_Titles/.test(wbx)) {
+      const nm = ((wbx.match(/<sheet\b[^>]*name="([^"]+)"/) || [])[1] || "Sheet1").replace(/'/g, "''");
+      const dn = `<definedName name="_xlnm.Print_Titles" localSheetId="0">'${nm}'!$1:$1</definedName>`;
+      L.zip.file("xl/workbook.xml", /<definedNames>/.test(wbx) ? wbx.replace("</definedNames>", () => dn + "</definedNames>") : wbx.replace(/(<calcPr|<oleSize|<customWorkbookViews|<pivotCaches|<extLst|<\/workbook>)/, (m) => `<definedNames>${dn}</definedNames>${m}`));
+    }
+    return { data: await L.zip.generateAsync({ type: opts.type || "uint8array", compression: "DEFLATE" }), patients: L.patients.length, floors: L.floors.length };
+  }
+
   async function daily(JSZip, data, valsFor, opts) {
     opts = opts || {};
     const L = await readList(JSZip, data);
@@ -280,27 +389,11 @@
     xml = xml.replace(/<sheetData>[\s\S]*<\/sheetData>|<sheetData\/>/, "<sheetData>" + L.rows.map((r) => tidyRow(rowXml[r.n])).join("") + "</sheetData>");
     xml = xml.replace(/<dimension ref="A1:([A-Z]+)(\d+)"\/>/, (m, c, n) => `<dimension ref="A1:${colName(Math.max(colNum(c), colNum(cC)))}${n}"/>`);
     if (/<cols>/.test(xml) && !new RegExp(`<col [^>]*min="${colNum(cC)}"`).test(xml)) xml = xml.replace("</cols>", `<col min="${colNum(cC)}" max="${colNum(cC)}" width="48" customWidth="1"/></cols>`);
-    // quiet colours for "check today", added once: soft red for CRITICAL, soft amber for things to do
-    if (!/SEARCH\("CRITICAL"/.test(xml) && L.zip.file("xl/styles.xml")) {
-      let st = await L.zip.file("xl/styles.xml").async("string");
-      const red = '<dxf><font><b/><color rgb="FF8E1F14"/></font><fill><patternFill><bgColor rgb="FFF8D7D3"/></patternFill></fill></dxf>';
-      const amb = '<dxf><font><color rgb="FF7A4B00"/></font><fill><patternFill><bgColor rgb="FFFCE8C8"/></patternFill></fill></dxf>';
-      let first;
-      if (/<dxfs count="(\d+)"\s*\/>/.test(st)) { first = 0; st = st.replace(/<dxfs count="\d+"\s*\/>/, `<dxfs count="2">${red}${amb}</dxfs>`); }
-      else if (/<dxfs count="(\d+)">/.test(st)) { first = +st.match(/<dxfs count="(\d+)">/)[1]; st = st.replace(/<dxfs count="\d+">/, `<dxfs count="${first + 2}">`).replace("</dxfs>", red + amb + "</dxfs>"); }
-      else { first = 0; st = st.replace(/(<\/cellStyles>|<tableStyles|<colors|<extLst|<\/styleSheet>)/, `<dxfs count="2">${red}${amb}</dxfs>$1`); }
-      L.zip.file("xl/styles.xml", st);
-      const lastRow = Math.max(...L.rows.map((r) => r.n)), c2 = cC + "2", rng = `${cC}2:${cC}${Math.max(lastRow, 200)}`;
-      const todo = ["recheck", "IV to PO", "stop date", "renal dosing", "vitals 24", "Discharge Clinic", "pending"].map((w) => `ISNUMBER(SEARCH("${w}",${c2}))`).join(",");
-      const cf = `<conditionalFormatting sqref="${rng}"><cfRule type="containsText" dxfId="${first}" priority="901" operator="containsText" text="CRITICAL"><formula>NOT(ISERROR(SEARCH("CRITICAL",${c2})))</formula></cfRule>` +
-        `<cfRule type="expression" dxfId="${first + 1}" priority="902"><formula>OR(${todo})</formula></cfRule></conditionalFormatting>`;
-      const at = xml.search(/<conditionalFormatting|<dataValidations|<hyperlinks|<printOptions|<pageMargins|<pageSetup|<headerFooter|<drawing|<legacyDrawing|<tableParts|<extLst/);
-      xml = at >= 0 ? xml.slice(0, at) + cf + xml.slice(at) : xml.replace("</worksheet>", cf + "</worksheet>");
-    }
+    xml = await addCheckCF(L.zip, xml, cC, Math.max(...L.rows.map((r) => r.n)));
     L.zip.file(L.path, xml);
     return { data: await L.zip.generateAsync({ type: opts.type || "uint8array", compression: "DEFLATE" }), report, column: cC };
   }
 
-  const api = { build, cloneRow, spread, lines, halves, readList, update, sameP, daily };
+  const api = { build, cloneRow, spread, lines, halves, readList, update, sameP, daily, restyle };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.PListXlsx = api;
 })(this);
