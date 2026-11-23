@@ -34,11 +34,25 @@
   }
   // a copy of the client pointed at another patient (same login, same permissions)
   function forPatient(c, id) { return Object.create(c, { patient: { value: { id, read: () => c.request("Patient/" + id) } } }); }
+  /* Cerner often finds a patient by MRN only when the search names the MRN's system ("urn:oid:…|1234567").
+     Try the bare number first, then each MRN system seen on this server (learned from the open patient and the test list). */
+  const mrnSystems = new Set();
+  const isMr = (i) => /\bMR\b|MRN|medical record/i.test(JSON.stringify(i.type || {}));
+  function learnSystems(p) { (p && p.identifier || []).filter(isMr).forEach((i) => { if (i.system) mrnSystems.add(i.system); }); }
+  async function learnFromOpenPatient(c) { try { if (c.patient && c.patient.id) learnSystems(await c.request("Patient/" + c.patient.id)); } catch (e) {} }
   async function findByMrn(c, mrn) {
-    const hits = (await c.request("Patient?identifier=" + encodeURIComponent(mrn), { flat: true })).filter((p) => p.resourceType === "Patient");
-    if (!hits.length) throw new Error("no patient with MRN " + mrn);
-    if (hits.length > 1) throw new Error(hits.length + " patients matched MRN " + mrn);
-    return hits[0].id;
+    const tries = [mrn].concat(Array.from(mrnSystems).map((sys) => sys + "|" + mrn));
+    let lastErr = null;
+    for (const q of tries) {
+      try {
+        const hits = (await c.request("Patient?identifier=" + encodeURIComponent(q), { flat: true })).filter((p) => p.resourceType === "Patient");
+        const exact = hits.filter((p) => (p.identifier || []).some((i) => String(i.value || "").replace(/\D/g, "") === mrn));
+        const use = exact.length ? exact : hits;
+        if (use.length === 1) return use[0].id;
+        if (use.length > 1) throw new Error(use.length + " patients matched MRN " + mrn);
+      } catch (e) { if (/matched MRN|\b40[13]\b|forbidden|unauthori/i.test(e.message || "")) throw e; lastErr = e; }
+    }
+    throw new Error("no patient found with MRN " + mrn + (lastErr ? " (Cerner said: " + String(lastErr.message || lastErr).slice(0, 120) + ")" : ""));
   }
 
   /* light chart read for the daily list: only what the columns and "check today" need, all requests in parallel,
@@ -81,10 +95,12 @@
     if (!file) return;
     $("drun").disabled = true; $("dsave").disabled = true; $("dtbl").innerHTML = "";
     say("Working: connecting to the chart…");
+    const slow = setTimeout(() => { if (/connecting/.test($("dmsg").textContent)) say("Still connecting to the chart… (if this stays, reload the toolkit: the sign-in may have expired)"); }, 15000);
     try {
       await loadJs(JSZIP, () => window.JSZip);
       const c = await client();
       // read the charts 3 at a time, then write the file
+      await learnFromOpenPatient(c);
       const L = await PListXlsx.readList(window.JSZip, file.buf.slice(0));
       const todo = L.patients.slice(), out = new Map(); let done = 0, noAccess = 0;
       const tick = () => say(`Reading charts: ${done} of ${L.patients.length} done…`);
@@ -104,7 +120,7 @@
       say(`Read ${ok.length} of ${res.report.length} charts. Check the table, then press <b>${file.handle ? "Save to the same file" : "Download updated file"}</b>` + (file.handle ? "" : " (it goes to your Downloads folder)") + "." +
         (noAccess ? "<br><b>This launch can only read the open patient.</b> Open the toolkit from its own link (it asks you to sign in) to update the whole list." : ""), ok.length ? "muted" : "err");
     } catch (e) { say("Could not update: " + esc(e.message || e), "err"); }
-    finally { $("drun").disabled = false; }
+    finally { clearTimeout(slow); $("drun").disabled = false; }
   }
 
   async function save() {
@@ -142,7 +158,7 @@
         if (pts.length >= 5) break;
       }
       const seen = new Set(), list = [];
-      pts.forEach((p) => { const mrn = mrnOf(p); if (!mrn || seen.has(mrn)) return; seen.add(mrn); list.push({ p, mrn }); });
+      pts.forEach((p) => { learnSystems(p); const mrn = mrnOf(p); if (!mrn || seen.has(mrn)) return; seen.add(mrn); list.push({ p, mrn }); });
       if (!list.length) throw new Error("no sandbox patients with an MRN were found");
       const now = Date.now(), pick = list.slice(0, 6);
       const groups = [{ floor: "TEST", patients: pick.map(({ p, mrn }, i) => {
