@@ -35,6 +35,9 @@ Tabs
                          sheet with the photo + review instructions (also on the clipboard); pick
                          Claude and send. Uses the user's own Claude account, no API key. On a
                          computer it copies the instructions, opens claude.ai and offers Copy photo.
+                         Step 4 "Bring back Claude's reply": paste the copied reply; the
+                         instructions ask the AI to end with a json block, which fills the
+                         result panel and "Fill Dressing chooser". No block -> text only.
   Products & change freq Category table with filter box; skin care; what not to use.
   Wound types            Pressure injury, DFU, venous (compression by ABI), arterial,
                          surgical, skin tear, trauma, fungating, IAD, IV sites.

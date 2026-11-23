@@ -171,6 +171,16 @@ sent only where you choose: the AI server on <b>your own computer</b>, Copilot, 
  <p class="mute">"Copy prompt for Copilot" and "Share" need no connection.</p>
 </div></details>
 </div></details>
+<details open id="ph-backbox"><summary>4. Bring back Claude's (or Copilot's) reply</summary><div class="body">
+<p class="mute" style="margin-top:0">In the Claude app: long-press Claude's reply › <b>Copy</b> (computer: the copy icon under the reply). Then come back here and paste it below.</p>
+<textarea id="ph-reply" style="min-height:90px" placeholder="Paste Claude's whole reply here"></textarea>
+<div class="row">
+ <button class="btn" type="button" onclick="phPasteReply()">Paste from clipboard</button>
+ <button class="btn sec" type="button" onclick="phLoadReply()">Load reply</button>
+ <button class="btn sec" type="button" onclick="document.getElementById('ph-reply').value='';document.getElementById('ph-out').innerHTML=''">Clear</button>
+</div>
+<p class="mute">The reply is read here in this browser only and is not saved. Works for replies to the instructions this page sends (they end with a short json block).</p>
+</div></details>
 <div id="ph-out"></div>
 </section>
 
@@ -871,7 +881,15 @@ function phPrompt() {
     "3. Visible infection signs, or 'none visible'.",
     "4. Suggested dressing: primary category, secondary category, how often to change, what to avoid and why. Follow moist wound healing: match absorbency to exudate, fill cavities loosely, autolytic debridement for slough, keep dry stable heel or ischemic eschar dry, antimicrobial dressings only for local infection (2-week trial), no hydrocolloid on diabetic foot ulcers or infected wounds.",
     "5. Urgent concerns, if any.", "6. What I must check at the bedside because a photo can't show it.", "",
-    "Bedside notes:", notes || "(none)", "", "This is a draft for physician and wound clinician review, not a diagnosis."].join("\n");
+    "Bedside notes:", notes || "(none)", "",
+    "At the very end, after the sections above, add ONE code block labelled json (my app reads it) with exactly these keys:",
+    '{"wound_visible":true|false,"image_quality":"","description":"","tissue":{"granulation":0-100,"slough":0-100,"eschar":0-100,"epithelial":0-100,"necrosis_wet":0-100},' +
+    '"likely_type":"pi|dfu|venous|arterial|surgical|skintear|trauma|fungating|iad|iv|unknown","type_reason":"","stage":"1|2|3|4|u|dti|na|unknown",' +
+    '"depth":"intact|superficial|full|cavity|unknown","eschar_dry_stable":true|false|null,"exudate":"none|low|mod|heavy|unknown","periwound":"ok|mac|fragile|unknown",' +
+    '"infection_signs":"none|local|deep|unknown","infection_reason":"","bleeding":true|false,"odour":true|false|null,"probes_to_bone":true|false|null,' +
+    '"concerns":[],"cannot_assess":[],"dressing":{"primary":"","secondary":"","change":"","avoid":""},"confidence":"low|moderate|high"}',
+    "Pick one value where options are shown. odour and probes_to_bone come only from the bedside notes (null if not stated).", "",
+    "This is a draft for physician and wound clinician review, not a diagnosis."].join("\n");
 }
 
 async function phShare() {
@@ -891,7 +909,7 @@ function phClaudeReady() {
   const box = document.getElementById("ph-claude"); box.style.display = "";
   document.getElementById("ph-cimg").style.display = PH_CAN_SHARE ? "none" : "";
   document.getElementById("ph-chelp").textContent = PH_CAN_SHARE
-    ? "Tap Send to Claude, choose Claude in the share sheet, then send. If the instructions don't appear with the photo, long-press the message box and Paste (they're on the clipboard)."
+    ? "Tap Send to Claude, choose Claude in the share sheet, then send. If the instructions don't appear with the photo, long-press the message box and Paste (they're on the clipboard). When Claude answers, copy the reply and paste it in step 4 below."
     : "Send to Claude copies the instructions and opens claude.ai: paste them (Ctrl+V), then come back, tap Copy photo and paste it into the same message (or drag the photo in), then send.";
   box.scrollIntoView({ behavior: "smooth", block: "center" });
 }
@@ -917,6 +935,41 @@ async function phCopyImg() {
     const png = await new Promise((r) => c.toBlob(r, "image/png"));
     await navigator.clipboard.write([new ClipboardItem({ "image/png": png })]); phStatus("Photo copied. Paste it into the Claude message (Ctrl+V).");
   } catch (e) { phStatus("Couldn't copy the photo here: drag it from the preview into Claude instead.", true); }
+}
+
+/* ---- Bring an AI app's reply back into the page ---- */
+async function phPasteReply() {
+  try { document.getElementById("ph-reply").value = await navigator.clipboard.readText(); phLoadReply(); }
+  catch (e) { phStatus("Couldn't read the clipboard here: tap in the box, choose Paste, then Load reply.", true); document.getElementById("ph-reply").focus(); }
+}
+function phExtractJson(t) {
+  const blocks = [...t.matchAll(/```(?:json)?\s*([\s\S]*?)```/gi)].map((m) => m[1]).reverse();
+  const brace = t.lastIndexOf('{"wound_visible"'); if (brace >= 0) blocks.push(t.slice(brace));
+  for (let b of blocks) {
+    b = b.trim().replace(/[\u201c\u201d]/g, '"').replace(/,\s*([}\]])/g, "$1"); // smart quotes, trailing commas
+    const end = b.lastIndexOf("}"); if (b[0] !== "{" || end < 0) continue;
+    try { const j = JSON.parse(b.slice(0, end + 1)); if (j && (j.dressing || j.tissue || "wound_visible" in j)) return j; } catch (e) {}
+  }
+  return null;
+}
+function phLoadReply() {
+  const t = document.getElementById("ph-reply").value.trim();
+  if (!t) return phStatus("Paste the reply first.", true);
+  const j = phExtractJson(t);
+  const readable = t.replace(/```(?:json)?[\s\S]*?```/gi, "").replace(/\{"wound_visible"[\s\S]*$/, "").trim();
+  const full = `<details><summary style="font-size:14px">Full reply (as written)</summary><div class="body"><div style="white-space:pre-wrap;font-size:13px">${phEsc(readable)}</div></div></details>`;
+  if (j) {
+    phRender(j, false);
+    document.getElementById("ph-out").insertAdjacentHTML("afterbegin", `<div class="box ok"><b>Loaded from the pasted AI reply.</b> <span class="mute">Check it against the photo and the bedside.</span></div>`);
+    document.getElementById("ph-out").insertAdjacentHTML("beforeend", full);
+    phStatus("Reply loaded.");
+  } else {
+    phLast = null;
+    document.getElementById("ph-out").innerHTML = `<div class="box warn"><b>Couldn't find the json block</b> at the end of the reply, so the dropdowns can't be filled. Showing the text only. (Was the reply from these instructions? Ask Claude: "add the json block".)</div>` +
+      `<div class="box"><div style="white-space:pre-wrap;font-size:13px">${phEsc(readable)}</div></div>`;
+    phStatus("Text only: no json block found.", true);
+  }
+  document.getElementById("ph-out").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 function phCopilot() {
   const p = phPrompt();
