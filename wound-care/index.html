@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wound Care – Hospitalist Toolkit</title>
+<script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#1d2430;--mute:#5d6878;--line:#dde2e8;--acc:#0b6e74;--acc2:#e6f3f3;--warn:#a35200;--warnbg:#fff4e5;--bad:#a4161a;--badbg:#fdecec;--ok:#1b6b3a;--okbg:#e8f5ec}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+header{background:var(--acc);color:#fff;padding:10px 16px;display:flex;flex-wrap:wrap;gap:8px 20px;align-items:baseline}
+header h1{font-size:18px;margin:0}
+#pt{font-size:13px;opacity:.95}
+nav{display:flex;flex-wrap:wrap;gap:4px;padding:8px 12px 0;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+nav button{border:1px solid var(--line);border-bottom:none;background:#f0f2f5;padding:7px 12px;border-radius:6px 6px 0 0;cursor:pointer;font-size:13px;color:var(--ink)}
+nav button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+main{padding:14px;max-width:1150px;margin:auto}
+.tab{display:none}.tab.on{display:block}
+details{background:var(--card);border:1px solid var(--line);border-radius:8px;margin:0 0 10px}
+details>summary{cursor:pointer;padding:9px 12px;font-weight:600;font-size:15px;list-style:none;display:flex;align-items:center;gap:8px}
+details>summary::before{content:"▸";color:var(--acc);transition:transform .15s}
+details[open]>summary::before{transform:rotate(90deg)}
+details>summary::-webkit-details-marker{display:none}
+.body{padding:0 14px 12px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+th{background:#eef1f4}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+label{display:block;font-size:12px;color:var(--mute);margin-bottom:3px;font-weight:600}
+select,input[type=text],input[type=number],textarea{width:100%;padding:6px 8px;border:1px solid #c5ccd5;border-radius:6px;font:inherit;background:#fff}
+textarea{min-height:140px;font-family:ui-monospace,Consolas,monospace;font-size:12.5px}
+.btn{background:var(--acc);color:#fff;border:none;border-radius:6px;padding:7px 12px;cursor:pointer;font:inherit}
+.btn.sec{background:#fff;color:var(--acc);border:1px solid var(--acc)}
+.box{border-radius:8px;padding:10px 12px;margin:8px 0;border:1px solid var(--line);background:#fff}
+.box.rec{background:var(--acc2);border-color:#b9dcdc}
+.box.warn{background:var(--warnbg);border-color:#f0cf9e}
+.box.bad{background:var(--badbg);border-color:#f2b8b8}
+.box.ok{background:var(--okbg);border-color:#b7dfc4}
+.box h4{margin:0 0 4px;font-size:14px}
+.box ul{margin:4px 0 0;padding-left:20px}
+.pill{display:inline-block;padding:1px 8px;border-radius:10px;font-size:12px;background:#eef1f4;margin:1px 3px 1px 0}
+.pill.bad{background:var(--badbg);color:var(--bad)}.pill.warn{background:var(--warnbg);color:var(--warn)}.pill.ok{background:var(--okbg);color:var(--ok)}
+.mute{color:var(--mute);font-size:12.5px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
+.score{font-size:22px;font-weight:700}
+.filter{max-width:340px;margin-bottom:8px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Wound Care</h1>
+  <span id="pt">Reference mode (not launched from PowerChart)</span>
+</header>
+<nav id="nav"></nav>
+<main>
+
+<!-- ============ CHOOSER ============ -->
+<section class="tab" id="t-chooser" data-label="Dressing chooser">
+<details open><summary>Describe the wound</summary><div class="body">
+<div class="grid">
+ <div><label>Wound type</label><select id="c-type">
+  <option value="pi">Pressure injury</option><option value="dfu">Diabetic foot ulcer</option>
+  <option value="venous">Venous leg ulcer</option><option value="arterial">Arterial / ischemic ulcer</option>
+  <option value="surgical">Surgical wound / dehiscence</option><option value="skintear">Skin tear</option>
+  <option value="trauma">Traumatic / laceration / abrasion</option><option value="fungating">Malignant / fungating</option>
+  <option value="iad">Incontinence-associated dermatitis</option><option value="iv">IV / line site</option></select></div>
+ <div><label>Pressure injury stage</label><select id="c-stage">
+  <option value="na">n/a</option><option value="1">Stage 1</option><option value="2">Stage 2</option><option value="3">Stage 3</option>
+  <option value="4">Stage 4</option><option value="u">Unstageable</option><option value="dti">Deep tissue injury</option></select></div>
+ <div><label>Depth</label><select id="c-depth">
+  <option value="intact">Intact skin</option><option value="superficial">Superficial / partial thickness</option>
+  <option value="full">Full thickness, shallow</option><option value="cavity">Cavity / tunnelling / undermining</option></select></div>
+ <div><label>Wound bed tissue</label><select id="c-tissue">
+  <option value="gran">Granulating / epithelializing</option><option value="slough">Slough</option>
+  <option value="eschar">Dry, stable eschar</option><option value="wetnec">Wet / boggy necrosis</option></select></div>
+ <div><label>Exudate</label><select id="c-exu">
+  <option value="none">None / dry</option><option value="low" selected>Low</option>
+  <option value="mod">Moderate</option><option value="heavy">Heavy</option></select></div>
+ <div><label>Infection / bioburden</label><select id="c-inf">
+  <option value="none">No signs</option><option value="local">Local / superficial (NERDS ≥3)</option>
+  <option value="deep">Deep / spreading (STONEES ≥3, cellulitis, systemic)</option></select></div>
+ <div><label>Periwound skin</label><select id="c-peri">
+  <option value="ok">Intact</option><option value="mac">Macerated</option><option value="fragile">Fragile / elderly / steroid skin</option></select></div>
+ <div><label>Perfusion (lower limb)</label><select id="c-perf">
+  <option value="na">n/a (not leg/foot)</option><option value="ok">Adequate (ABI 0.8–1.3, palpable pulses)</option>
+  <option value="mod">Reduced (ABI 0.5–0.8)</option><option value="poor">Poor / unknown (ABI &lt;0.5, absent pulses)</option></select></div>
+ <div><label>Other</label>
+  <div><input type="checkbox" id="c-bleed"> <span>Minor bleeding</span></div>
+  <div><input type="checkbox" id="c-odour"> <span>Malodour</span></div>
+  <div><input type="checkbox" id="c-bone"> <span>Probes to bone / exposed bone</span></div>
+  <div><input type="checkbox" id="c-anticoag"> <span>Anticoagulated / bleeding risk</span></div>
+ </div>
+</div>
+<div class="row"><button class="btn" onclick="runChooser()">Suggest dressing</button>
+<button class="btn sec" onclick="sendToOrder()">Send to order writer</button></div>
+</div></details>
+<div id="c-out"></div>
+</section>
+
+<!-- ============ PRODUCTS ============ -->
+<section class="tab" id="t-products" data-label="Products & change frequency">
+<details open><summary>Dressing categories</summary><div class="body">
+<input class="filter" type="text" id="p-filter" placeholder="Filter (e.g. cavity, heavy, silver)…" oninput="renderProducts()">
+<div id="p-table"></div>
+<p class="mute">Brand names vary by health-authority contract — order by category and nursing will substitute the formulary product. Change intervals are typical maximums; change sooner if the dressing is saturated (strike-through), leaking, lifting, or the wound needs inspection. Always follow the specific product's instructions.</p>
+</div></details>
+<details><summary>Skin care / prevention products</summary><div class="body">
+<ul>
+<li>pH-balanced <b>no-rinse cleanser</b> (avoid soap and water on fragile skin)</li>
+<li><b>Moisturizer</b> daily for dry skin (not between toes in diabetics)</li>
+<li><b>Barrier cream</b> — dimethicone (mild/prevention) or zinc-based (established IAD)</li>
+<li><b>No-sting liquid barrier film</b> (e.g., Cavilon) — periwound protection, under adhesives, IAD</li>
+<li>Silicone adhesive remover for fragile skin; avoid tape directly on elderly skin</li>
+<li>Incontinence pads: one breathable layer only — stacked pads defeat pressure-redistributing surfaces</li>
+</ul></div></details>
+<details><summary>What not to use</summary><div class="body">
+<ul>
+<li><b>Wet-to-dry gauze</b> — non-selective, painful debridement; cools the wound; not recommended</li>
+<li><b>Hydrogen peroxide, Dakin's/hypochlorite, povidone-iodine soaks</b> on clean granulating wounds — cytotoxic (short-term use on infected/necrotic wounds only, with wound clinician)</li>
+<li><b>Hydrocolloid / occlusive dressings</b> on diabetic foot ulcers, infected wounds or heavy exudate</li>
+<li><b>Moist dressings or debridement</b> of dry stable eschar on heels or ischemic limbs</li>
+<li><b>Silver &gt; 2 weeks</b> without reassessment; <b>cadexomer iodine</b> in thyroid disease, renal failure, pregnancy/lactation, iodine allergy, large wounds</li>
+<li>Tight packing of cavities</li>
+</ul></div></details>
+</section>
+
+<!-- ============ WOUND TYPES ============ -->
+<section class="tab" id="t-types" data-label="Wound types">
+<div class="row" style="margin-bottom:10px"><label style="margin:0">Jump to:</label>
+<select id="w-jump" style="max-width:260px" onchange="jumpType(this.value)"></select></div>
+<div id="w-list"></div>
+</section>
+
+<!-- ============ PRESSURE INJURY ============ -->
+<section class="tab" id="t-pi" data-label="Pressure injury">
+<details open><summary>Staging (NPIAP) and treatment by stage</summary><div class="body"><div id="pi-table"></div></div></details>
+<details><summary>Braden scale</summary><div class="body">
+<div class="grid" id="braden"></div>
+<div class="row"><span>Total: </span><span class="score" id="b-score">—</span><span id="b-risk"></span></div>
+<div id="b-plan"></div>
+</div></details>
+<details><summary>Prevention bundle</summary><div class="body"><ul>
+<li><b>Reposition</b> on an individualized schedule (often q2h in bed, q1h in chair); 30° lateral tilt; HOB ≤30° unless contraindicated</li>
+<li><b>Heels off the bed</b> — pillow under calves or heel-offloading boots; check heels every shift</li>
+<li><b>Support surface</b>: high-spec foam for at-risk; active / alternating-pressure or low-air-loss for high risk, stage 3–4, or multiple injuries</li>
+<li><b>Prophylactic silicone multilayer foam</b> on sacrum and heels for high-risk patients (ICU, hip fracture, immobile); peel back and inspect skin daily</li>
+<li><b>Device-related</b>: check under O2 tubing, masks, collars, casts, catheters, SCDs; pad and move devices</li>
+<li><b>Moisture</b>: manage incontinence, barrier cream, breathable pads</li>
+<li><b>Nutrition</b>: screen; dietitian referral if at risk. NPIAP: 30–35 kcal/kg/day, protein 1.25–1.5 g/kg/day (adjust for renal disease); high-protein oral supplement for stage 2+ injuries in malnourished patients</li>
+<li><b>Hip fracture / ortho</b>: heel offloading and sacral foam from ED; early mobilization post-op</li>
+</ul></div></details>
+</section>
+
+<!-- ============ NPWT ============ -->
+<section class="tab" id="t-npwt" data-label="NPWT / VAC">
+<details open><summary>Candidate check</summary><div class="body">
+<p class="mute">Tick everything that applies. Negative pressure is ordered with (or by) the wound clinician / surgical team at most sites.</p>
+<div class="grid">
+<div><b>Indication</b>
+ <div><input type="checkbox" class="n-ind" value="Stage 3–4 pressure injury (after debridement)"> Stage 3–4 pressure injury after debridement</div>
+ <div><input type="checkbox" class="n-ind" value="Dehisced / open surgical wound"> Dehisced / open surgical wound</div>
+ <div><input type="checkbox" class="n-ind" value="Diabetic foot wound after debridement/amputation"> DFU after debridement / amputation</div>
+ <div><input type="checkbox" class="n-ind" value="Traumatic wound"> Traumatic / large soft-tissue wound</div>
+ <div><input type="checkbox" class="n-ind" value="Skin graft / flap fixation"> Skin graft / flap fixation</div>
+ <div><input type="checkbox" class="n-ind" value="High-risk closed incision"> High-risk closed incision (PICO / Prevena type)</div>
+ <div><input type="checkbox" class="n-ind" value="Moderate-heavy exudate"> Moderate–heavy exudate</div>
+</div>
+<div><b>Contraindications</b>
+ <div><input type="checkbox" class="n-ci" value="Malignancy in the wound"> Malignancy in the wound bed/margins</div>
+ <div><input type="checkbox" class="n-ci" value="Untreated osteomyelitis"> Untreated osteomyelitis</div>
+ <div><input type="checkbox" class="n-ci" value="Necrotic tissue / eschar present"> Necrotic tissue / eschar not debrided</div>
+ <div><input type="checkbox" class="n-ci" value="Non-enteric or unexplored fistula"> Non-enteric or unexplored fistula</div>
+ <div><input type="checkbox" class="n-ci" value="Exposed blood vessels, nerves, anastomosis or organs"> Exposed vessels, nerves, anastomosis or organs</div>
+</div>
+<div><b>Precautions</b>
+ <div><input type="checkbox" class="n-pr" value="Active bleeding / difficult hemostasis"> Active bleeding / difficult hemostasis</div>
+ <div><input type="checkbox" class="n-pr" value="Anticoagulation or antiplatelet therapy"> Anticoagulant / antiplatelet</div>
+ <div><input type="checkbox" class="n-pr" value="Untreated wound infection"> Untreated infection</div>
+ <div><input type="checkbox" class="n-pr" value="Wound near major vessel or fragile bone fragments"> Near major vessel / bone fragments</div>
+ <div><input type="checkbox" class="n-pr" value="Poor perfusion (ischemic limb)"> Poor perfusion / ischemic limb</div>
+ <div><input type="checkbox" class="n-pr" value="Unable to maintain a seal (e.g. perineum, frequent stool)"> Hard to seal (perianal / incontinence)</div>
+ <div><input type="checkbox" class="n-pr" value="Patient/caregiver can't manage device at discharge"> Can't manage device at discharge</div>
+</div>
+</div>
+<div id="n-out"></div>
+</div></details>
+<details open><summary>Settings and dressing changes</summary><div class="body">
+<table>
+<tr><th>Item</th><th>Usual practice</th></tr>
+<tr><td>Pressure</td><td><b>−125 mmHg continuous</b> standard. Lower (−75 to −100 mmHg) for pain, fragile tissue, poor perfusion, near vessels, or grafts per surgeon. Intermittent mode may increase granulation but is less comfortable and leaks more.</td></tr>
+<tr><td>Foam</td><td><b>Black (polyurethane, granufoam)</b>: most wounds, promotes granulation. <b>White (polyvinyl alcohol)</b>: over tendon, tunnels/undermining, sensitive or painful beds, near vessels. Silver foam if bioburden. Contact layer under foam if fragile bed.</td></tr>
+<tr><td>Change frequency</td><td><b>Every 48–72 h (at least 3×/week)</b>. Every 12–24 h if infected. Grafts: often left 4–5 days per surgeon. Single-use portable systems (PICO-type, ~−80 mmHg) up to 7 days for low–moderate exudate.</td></tr>
+<tr><td>Foam count</td><td>Document the number of foam pieces placed and removed every change (retained foam → infection).</td></tr>
+<tr><td>Therapy interruption</td><td>If therapy is off for more than <b>~2 h</b> (per manufacturer), remove the foam and apply a conventional moist dressing.</td></tr>
+<tr><td>Canister</td><td>Change when full or at least weekly. Record output each shift.</td></tr>
+<tr><td>Reassess</td><td>Measure weekly. Expect ~15–30% area reduction in 1–2 weeks; if no progress by 2 weeks, re-evaluate (infection, offloading, nutrition, perfusion).</td></tr>
+<tr><td>Stop / wean</td><td>Granulation near skin level, ready for closure/graft, or no benefit. Stop for bleeding, worsening infection, or unmanageable pain.</td></tr>
+</table></div></details>
+<details><summary>Troubleshooting</summary><div class="body"><ul>
+<li><b>Bright red blood in tubing or canister</b>: stop therapy, leave dressing, apply direct pressure, call surgery urgently; check coagulation / anticoagulants.</li>
+<li><b>Leak alarm</b>: patch with drape; paste/strip around creases; barrier film periwound; bridge the dressing away from skin folds or perineum.</li>
+<li><b>Pain at changes</b>: premedicate 30–60 min before, instil 1% lidocaine into foam before removal (if allowed locally), use white foam / contact layer, lower pressure.</li>
+<li><b>Maceration</b>: barrier film, cut foam to wound edge only, increase change frequency.</li>
+<li><b>Fever / new erythema / odour</b>: remove and inspect wound; cultures; consider infection.</li>
+<li><b>Discharge</b>: arrange home/community nursing and a portable device; confirm supply funding before the day of discharge.</li>
+</ul></div></details>
+</section>
+
+<!-- ============ CHART ============ -->
+<section class="tab" id="t-chart" data-label="From chart">
+<details open><summary>Wound-related problems</summary><div class="body" id="ch-cond"><p class="mute">Launch from PowerChart to pull the patient's data.</p></div></details>
+<details open><summary>Healing labs</summary><div class="body" id="ch-labs"><p class="mute">—</p></div></details>
+<details open><summary>Medications that matter for wounds</summary><div class="body" id="ch-meds"><p class="mute">—</p></div></details>
+</section>
+
+<!-- ============ ORDER & CONSULT ============ -->
+<section class="tab" id="t-order" data-label="Order & consult">
+<details open><summary>Wound care order writer</summary><div class="body">
+<div class="grid">
+<div><label>Location</label><input type="text" id="o-loc" placeholder="e.g. sacrum, L heel"></div>
+<div><label>Wound type / stage</label><input type="text" id="o-type" placeholder="e.g. stage 3 pressure injury"></div>
+<div><label>Cleanse with</label><select id="o-clean"><option>normal saline</option><option>sterile water</option><option>tap water (chronic wound, per policy)</option><option>surfactant wound cleanser</option></select></div>
+<div><label>Primary dressing</label><select id="o-prim"></select></div>
+<div><label>Secondary dressing</label><select id="o-sec"><option>none</option><option>silicone-bordered foam</option><option>superabsorbent pad</option><option>transparent film</option><option>dry gauze + tape/wrap</option><option>charcoal odour-control pad</option></select></div>
+<div><label>Change</label><select id="o-freq"><option>daily and PRN</option><option>every 2 days and PRN</option><option>every 3 days and PRN</option><option>every 3–5 days and PRN</option><option>every 5–7 days and PRN</option><option>twice daily</option><option>Mon/Wed/Fri (NPWT)</option></select></div>
+<div><label>Periwound</label><select id="o-peri"><option>no-sting barrier film to periwound</option><option>zinc barrier cream to periwound</option><option>none</option></select></div>
+</div>
+<div style="margin-top:8px">
+<div><input type="checkbox" id="o-off" checked> Offloading / repositioning per prevention bundle</div>
+<div><input type="checkbox" id="o-heel"> Heels floated / offloading boots</div>
+<div><input type="checkbox" id="o-surf"> Pressure-redistributing mattress</div>
+<div><input type="checkbox" id="o-diet"> Dietitian referral</div>
+<div><input type="checkbox" id="o-wc"> Wound clinician (NSWOC) consult</div>
+<div><input type="checkbox" id="o-photo" checked> Measure and photograph weekly; notify MRP if larger, new odour, erythema, fever</div>
+</div>
+<div class="row"><button class="btn" onclick="buildOrder()">Build order text</button><button class="btn sec" onclick="copyEl('o-text')">Copy</button></div>
+<textarea id="o-text"></textarea>
+</div></details>
+<details open><summary>Consult message</summary><div class="body">
+<div class="grid">
+<div><label>To</label><select id="m-to"><option>Wound clinician (NSWOC)</option><option>Plastic surgery</option><option>General surgery</option><option>Vascular surgery</option><option>Orthopedics</option><option>Infectious diseases</option></select></div>
+<div><label>Dr. / name</label><input type="text" id="m-dr" placeholder="___"></div>
+<div><label>Question</label><input type="text" id="m-q" placeholder="e.g. NPWT candidacy / debridement"></div>
+</div>
+<div class="row"><button class="btn" onclick="buildMsg()">Build message</button><button class="btn sec" onclick="copyEl('m-text')">Copy</button></div>
+<textarea id="m-text" style="min-height:110px"></textarea>
+<div class="box warn"><h4>When to refer</h4><ul>
+<li><b>Wound clinician</b>: stage 3, 4, unstageable or DTI pressure injury; non-healing &gt;2–4 weeks; NPWT candidates; multiple wounds; complex periwound</li>
+<li><b>Surgery (urgent)</b>: necrotizing infection signs, abscess, wet necrosis, dehiscence with exposed structures, NPWT bleeding</li>
+<li><b>Vascular</b>: ABI &lt;0.5 or absent pulses, arterial ulcer, DFU with ischemia, toe pressure &lt;30 mmHg</li>
+<li><b>Ortho / ID</b>: probe-to-bone, exposed bone, suspected osteomyelitis</li>
+<li><b>Plastics</b>: large stage 4 for flap, skin graft, complex trauma</li>
+</ul></div>
+</div></details>
+</section>
+
+<!-- ============ REFERENCES ============ -->
+<section class="tab" id="t-refs" data-label="References">
+<details open><summary>Sources used</summary><div class="body"><ol>
+<li>EPUAP/NPIAP/PPPIA. Prevention and Treatment of Pressure Ulcers/Injuries: Clinical Practice Guideline, 3rd ed. 2019.</li>
+<li>NPIAP Pressure Injury Stages (2016 revised definitions).</li>
+<li>Wounds Canada. Foundations of Best Practice for Skin and Wound Management (pressure injury, DFU, venous leg ulcer, skin tear series).</li>
+<li>Sibbald RG et al. Wound Bed Preparation 2021. Adv Skin Wound Care 2021 (NERDS / STONEES).</li>
+<li>IWGDF/IDSA Guidelines on the prevention and management of diabetes-related foot disease, 2023.</li>
+<li>International Skin Tear Advisory Panel (ISTAP) best practice recommendations, 2018.</li>
+<li>International Wound Infection Institute. Wound Infection in Clinical Practice, 2022 (antimicrobial dressings, 2-week challenge).</li>
+<li>Manufacturer instructions for NPWT systems (therapy interruption, change intervals).</li>
+</ol>
+<p class="mute">Your health authority's wound formulary and NSWOC protocols take precedence. Content is decision support, not a substitute for wound clinician assessment.</p>
+</div></details>
+</section>
+
+</main>
+
+<script>
+/* ===================== DATA ===================== */
+const PRODUCTS = [
+ {cat:"Transparent film", use:"Superficial, low- or no-exudate wounds; stage 1 protection; secondary dressing; IV sites", ex:"Tegaderm, OpSite", freq:"Up to 7 days (IV sites per line policy)", avoid:"Moderate–heavy exudate, infected wounds, fragile skin (tears on removal)", tags:"superficial low none iv secondary"},
+ {cat:"Foam (silicone-bordered)", use:"Moderate exudate; pressure injury prevention and treatment; secondary over fillers", ex:"Allevyn, Biatain, Mepilex Border", freq:"3–7 days; prevention foam: peel back and inspect daily, replace q3–7 days", avoid:"Dry wounds (no exudate to absorb)", tags:"moderate low prevention pressure secondary"},
+ {cat:"Hydrocolloid", use:"Low exudate, superficial or shallow wounds; keeps wound moist; autolytic debridement of thin slough", ex:"DuoDERM / Granuflex, NU DERM", freq:"3–7 days", avoid:"Infection, heavy exudate, diabetic foot ulcers, ischemic wounds, fragile skin, cavities", tags:"low slough superficial autolytic"},
+ {cat:"Gelling fibre / hydrofibre", use:"Moderate-to-heavy exudate; cavities and tunnels (loosely filled); slough", ex:"Aquacel, Aquacel Extra, Durafiber", freq:"Up to 7 days; usually q1–3 days when heavily exuding (change at saturation)", avoid:"Dry wounds", tags:"moderate heavy cavity tunnel slough filler"},
+ {cat:"Alginate", use:"Heavy exudate; minor bleeding (hemostatic); packing cavities", ex:"Curasorb, SeaSorb, Sorbsan, Kaltostat", freq:"Daily to q3 days (daily if heavy); needs secondary dressing", avoid:"Dry wounds, eschar, exposed bone/tendon (dries out)", tags:"heavy bleeding cavity packing filler"},
+ {cat:"Hydrogel", use:"Dry or sloughy wounds that need moisture; autolytic debridement; painful dry wounds", ex:"Purilon, Intrasite, Aquaflo, Solosite", freq:"Daily to q3 days; needs secondary (film or foam)", avoid:"Moderate–heavy exudate (macerates); dry stable heel/ischemic eschar", tags:"dry none slough autolytic"},
+ {cat:"Contact layer / low-adherent", use:"Fragile wound beds, skin tears, grafts, under NPWT foam", ex:"Mepitel, Adaptic Touch, Urgotul, Xeroform", freq:"Contact layer up to 7–14 days (Mepitel ≤14); change secondary as needed. Xeroform daily–q3 days", avoid:"Alone on heavy exudate without an absorbent secondary", tags:"fragile skin tear graft npwt"},
+ {cat:"Antimicrobial: silver", use:"Local infection / biofilm or high risk (short course)", ex:"Aquacel Ag, Acticoat, Mepilex Ag, Silvercel", freq:"3–7 days per product; 2-week challenge then reassess", avoid:"Long-term use without indication; MRI (remove first); silver sensitivity", tags:"infection biofilm silver antimicrobial"},
+ {cat:"Antimicrobial: cadexomer iodine", use:"Biofilm / critical colonization; sloughy chronic wounds", ex:"Iodosorb, Iodoflex, Inadine (PVP-I mesh)", freq:"When colour changes brown → grey/white (usually q2–3 days); max 50 g per application, 150 g/week, course ≤3 months", avoid:"Thyroid disease, renal dysfunction, iodine allergy, pregnancy/lactation, extensive burns or large wounds, lithium", tags:"infection biofilm iodine antimicrobial slough"},
+ {cat:"Antimicrobial: honey / DACC", use:"Biofilm, slough, odour; medical-grade Leptospermum honey; DACC binds bacteria", ex:"Medihoney, Activon, Cutimed Sorbact", freq:"Honey daily to q3 days; Sorbact q3–7 days", avoid:"Honey: bee allergy; may sting; can raise glucose minimally", tags:"infection biofilm honey slough odour antimicrobial"},
+ {cat:"Absorbent / superabsorbent pads", use:"Secondary dressing for heavy exudate", ex:"Primapore, Megapore, Zetuvit Plus, Mextra", freq:"Daily to q3 days or at saturation", avoid:"As primary on fragile beds without contact layer", tags:"heavy secondary"},
+ {cat:"Odour control (charcoal)", use:"Malodorous or fungating wounds (secondary layer)", ex:"CarboFLEX, Actisorb", freq:"Daily or when saturated (wet charcoal stops working)", avoid:"—", tags:"odour fungating secondary"},
+ {cat:"Negative pressure (NPWT)", use:"Full-thickness wounds, moderate–heavy exudate, after debridement (see NPWT tab)", ex:"V.A.C., PICO, Prevena, Renasys", freq:"q48–72 h (≥3×/week); q12–24 h if infected; PICO up to 7 days", avoid:"Malignancy, untreated osteomyelitis, necrosis, unexplored fistula, exposed vessels/organs", tags:"npwt vac heavy cavity full"},
+];
+
+const PI_STAGES = [
+ {s:"Stage 1", d:"Intact skin, non-blanchable erythema (may look different in darker skin — check warmth, firmness, pain)", tx:"Offload, protect: transparent film or prophylactic silicone foam; barrier for moisture", freq:"Film up to 7 d; foam inspect daily, q3–7 d"},
+ {s:"Stage 2", d:"Partial-thickness loss with exposed dermis; pink/red moist bed or intact/ruptured serum blister. No slough, granulation or eschar", tx:"Hydrocolloid or thin foam (low exudate); silicone foam (moderate); hydrogel + film if dry. Rule out IAD, MASD, skin tear", freq:"3–7 days"},
+ {s:"Stage 3", d:"Full-thickness skin loss; fat visible; granulation and rolled edges common; slough/eschar may be present; no bone, tendon or muscle", tx:"Fill dead space loosely (hydrofibre/alginate) + foam; antimicrobial if bioburden; consider NPWT after debridement. Wound clinician consult", freq:"Fillers q1–3 d; foam cover q3 d"},
+ {s:"Stage 4", d:"Full-thickness skin and tissue loss with exposed or palpable fascia, muscle, tendon, ligament, cartilage or bone", tx:"As stage 3 + assess osteomyelitis (probe to bone, imaging, ESR/CRP, bone biopsy); surgery/plastics; NPWT if no contraindications", freq:"Fillers q1–2 d; NPWT q48–72 h"},
+ {s:"Unstageable", d:"Full-thickness loss obscured by slough or eschar", tx:"Debride slough (autolytic: hydrogel/hydrofibre; sharp by clinician). <b>Do not debride stable dry eschar on heels or ischemic limbs</b> — keep dry, protect, offload", freq:"Autolytic dressings q1–3 d; dry eschar: inspect daily"},
+ {s:"Deep tissue injury", d:"Persistent non-blanchable deep red, maroon or purple discolouration, or blood-filled blister; may evolve rapidly", tx:"Offload completely, protect with silicone foam, monitor daily — may open to stage 3/4 over days", freq:"Foam inspect daily"},
+ {s:"Device-related / mucosal", d:"From medical devices; stage the skin injury with the system above. Mucosal injuries are not staged", tx:"Reposition / pad device, thin foam under device, review need for device", freq:"Inspect each shift"},
+];
+
+const BRADEN = [
+ {k:"Sensory perception", o:["1 Completely limited","2 Very limited","3 Slightly limited","4 No impairment"]},
+ {k:"Moisture", o:["1 Constantly moist","2 Very moist","3 Occasionally moist","4 Rarely moist"]},
+ {k:"Activity", o:["1 Bedfast","2 Chairfast","3 Walks occasionally","4 Walks frequently"]},
+ {k:"Mobility", o:["1 Completely immobile","2 Very limited","3 Slightly limited","4 No limitation"]},
+ {k:"Nutrition", o:["1 Very poor","2 Probably inadequate","3 Adequate","4 Excellent"]},
+ {k:"Friction & shear", o:["1 Problem","2 Potential problem","3 No apparent problem"]},
+];
+
+const TYPES = [
+ {id:"pi", t:"Pressure injury", parts:[
+  ["Key points","Stage it (Pressure injury tab). Relieve pressure — no dressing heals a wound that is still loaded. Assess nutrition, moisture, mobility."],
+  ["Dressings","Stage 1–2: film, hydrocolloid, foam. Stage 3–4: filler + foam ± antimicrobial; NPWT after debridement. Heel eschar: dry and protected."],
+  ["Refer","Wound clinician for stage 3+, unstageable, DTI. Surgery/plastics for stage 4, osteomyelitis, flap."]]},
+ {id:"dfu", t:"Diabetic foot ulcer", parts:[
+  ["Assess","Probe to bone, X-ray (MRI if equivocal), pulses / ABI / toe pressure (ABI falsely high with calcification), monofilament, HbA1c. Classify infection (IWGDF/IDSA: mild, moderate, severe)."],
+  ["Treat","<b>Offload</b> (total contact cast or removable walker made irremovable for plantar ulcers); sharp debridement of callus/necrosis; glycemic control; revascularize if ischemic."],
+  ["Dressings","Choose by exudate (foam, hydrofibre, alginate); antimicrobial if local infection. <b>Avoid hydrocolloid/occlusive</b>. Inspect daily — change daily–q3 days."],
+  ["Urgent","Deep abscess, gas, necrotizing infection, wet gangrene, sepsis → surgery same day. Moderate–severe infection → systemic antibiotics (see Infections tab)."]]},
+ {id:"venous", t:"Venous leg ulcer", parts:[
+  ["Assess","Gaiter area, shallow, irregular, exudative; edema, hemosiderin, lipodermatosclerosis. <b>ABI before compression</b>."],
+  ["Compression by ABI","0.8–1.3: full compression (≈40 mmHg, multilayer). 0.5–0.8: reduced compression (≈20–30 mmHg) with specialist input. &lt;0.5: no compression — vascular referral. &gt;1.3: non-compressible, get toe-brachial index."],
+  ["Dressings","Absorbent foam or superabsorbent under compression; hydrofibre/alginate if heavy; barrier for periwound/eczema. Change with compression, usually 1–3×/week."],
+  ["Other","Leg elevation, calf exercise; treat venous eczema (topical steroid to skin, not wound); ASA/pentoxifylline adjunct per specialist; refer for venous duplex/ablation."]]},
+ {id:"arterial", t:"Arterial / ischemic ulcer", parts:[
+  ["Assess","Distal, punched out, pale/dry base, painful, worse elevated; absent pulses, ABI &lt;0.5 or toe pressure &lt;30 mmHg."],
+  ["Treat","<b>Vascular referral</b> — revascularization is the treatment. Antiplatelet, statin, smoking cessation, pain control."],
+  ["Dressings","Dry stable eschar: <b>keep dry</b>, protect (dry gauze/foam), no debridement, no moist dressings until perfused. Open wet wounds: non-adherent, gentle; no compression."]]},
+ {id:"surgical", t:"Surgical wound / dehiscence", parts:[
+  ["Closed incision","Leave primary dressing 48 h unless soaked; then film or island dressing; showers usually OK after 48 h per surgeon."],
+  ["Dehiscence","Notify surgeon. Superficial: moist healing, fill loosely + foam. Fascial dehiscence / visible bowel = surgical emergency (cover with saline-moist gauze, NPO)."],
+  ["Infection","Open, drain, culture; antibiotics if cellulitis/systemic signs. NPWT often for open abdominal/sternal or large wounds per surgeon."]]},
+ {id:"skintear", t:"Skin tear", parts:[
+  ["ISTAP type","Type 1: no skin loss (flap repositions). Type 2: partial flap loss. Type 3: total flap loss."],
+  ["Treat","Control bleeding, cleanse, gently realign flap with a moist swab. Silicone contact layer (Mepitel) ± silicone foam. Draw an <b>arrow</b> on the dressing showing removal direction (away from flap base)."],
+  ["Frequency","Leave contact layer 5–7 days (up to 14) unless soiled — avoid disturbing the flap."],
+  ["Avoid","Adhesive strips, films, hydrocolloids, tape on skin. Long sleeves / limb protectors; moisturize twice daily for prevention."]]},
+ {id:"trauma", t:"Traumatic wounds / abrasions", parts:[
+  ["Treat","Irrigate, remove debris, tetanus status. Abrasions: contact layer or hydrocolloid/foam. Lacerations: closure decisions per time and contamination."],
+  ["Dressing","Low exudate: film/hydrocolloid; moderate: foam. Change q2–3 days, PRN."]]},
+ {id:"fungating", t:"Malignant / fungating wound", parts:[
+  ["Goal","Usually palliative: comfort, odour, exudate, bleeding — not healing."],
+  ["Odour","Topical metronidazole gel (or crushed tablets) to wound bed daily; charcoal secondary; honey or DACC; manage infection."],
+  ["Bleeding","Non-adherent contact layer; alginate; topical tranexamic acid soak or pressure; avoid trauma at changes. Radiation oncology for persistent bleeding."],
+  ["Exudate / pain","Superabsorbent; premedicate before changes; topical lidocaine. NPWT contraindicated."]]},
+ {id:"iad", t:"Incontinence-associated dermatitis", parts:[
+  ["Recognize","Diffuse, shiny erythema, blurred edges, in skin folds/perineum; superficial, not over bony prominences — <b>not a pressure injury</b>. Check for candida (satellite lesions)."],
+  ["Treat","Manage incontinence cause; pH-balanced no-rinse cleanser; zinc barrier cream or barrier film after each episode; antifungal if candida; breathable pads only. Consider fecal management system for liquid stool."]]},
+ {id:"iv", t:"IV / line sites", parts:[
+  ["Dressing","Transparent semi-permeable film (CHG-impregnated for CVCs per policy). Change film q7 days, gauze dressings q2 days, or sooner if damp, loose or soiled."]]},
+];
+
+/* ===================== TABS ===================== */
+const nav = document.getElementById("nav");
+document.querySelectorAll(".tab").forEach((t,i)=>{
+ const b=document.createElement("button"); b.textContent=t.dataset.label;
+ b.onclick=()=>showTab(t.id); b.dataset.t=t.id; nav.appendChild(b);
+});
+function showTab(id){
+ document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.id===id));
+ nav.querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.t===id));
+}
+showTab("t-chooser");
+
+/* ===================== PRODUCTS ===================== */
+function renderProducts(){
+ const q=(document.getElementById("p-filter").value||"").toLowerCase();
+ const rows=PRODUCTS.filter(p=>!q||(p.cat+p.use+p.ex+p.tags+p.avoid).toLowerCase().includes(q));
+ document.getElementById("p-table").innerHTML="<table><tr><th>Category</th><th>Use</th><th>Examples</th><th>Change frequency</th><th>Avoid</th></tr>"+
+  rows.map(p=>`<tr><td><b>${p.cat}</b></td><td>${p.use}</td><td>${p.ex}</td><td>${p.freq}</td><td>${p.avoid}</td></tr>`).join("")+"</table>";
+}
+renderProducts();
+
+/* ===================== WOUND TYPES ===================== */
+(function(){
+ const jump=document.getElementById("w-jump");
+ jump.innerHTML='<option value="">— choose —</option>'+TYPES.map(t=>`<option value="${t.id}">${t.t}</option>`).join("");
+ document.getElementById("w-list").innerHTML=TYPES.map(t=>`<details id="w-${t.id}"><summary>${t.t}</summary><div class="body"><table>${t.parts.map(p=>`<tr><th style="width:150px">${p[0]}</th><td>${p[1]}</td></tr>`).join("")}</table></div></details>`).join("");
+})();
+function jumpType(id){ if(!id)return; const d=document.getElementById("w-"+id); d.open=true; d.scrollIntoView({behavior:"smooth"}); }
+
+/* ===================== PRESSURE INJURY ===================== */
+document.getElementById("pi-table").innerHTML="<table><tr><th>Stage</th><th>Description</th><th>Treatment</th><th>Change</th></tr>"+
+ PI_STAGES.map(s=>`<tr><td><b>${s.s}</b></td><td>${s.d}</td><td>${s.tx}</td><td>${s.freq}</td></tr>`).join("")+"</table>";
+document.getElementById("braden").innerHTML=BRADEN.map((b,i)=>`<div><label>${b.k}</label><select class="bsel" onchange="braden()"><option value="">—</option>${b.o.map(o=>`<option value="${o[0]}">${o}</option>`).join("")}</select></div>`).join("");
+function braden(){
+ const v=[...document.querySelectorAll(".bsel")].map(s=>s.value);
+ if(v.some(x=>!x)){document.getElementById("b-score").textContent="—";document.getElementById("b-risk").innerHTML="";document.getElementById("b-plan").innerHTML="";return;}
+ const s=v.reduce((a,b)=>a+ +b,0); let r,c;
+ if(s<=9){r="Very high risk";c="bad"}else if(s<=12){r="High risk";c="bad"}else if(s<=14){r="Moderate risk";c="warn"}else if(s<=18){r="Mild risk";c="warn"}else{r="Low risk";c="ok"}
+ document.getElementById("b-score").textContent=s;
+ document.getElementById("b-risk").innerHTML=`<span class="pill ${c}">${r}</span>`;
+ const plan=[];
+ if(s<=18) plan.push("Prevention bundle: repositioning schedule, heels floated, skin check each shift");
+ if(s<=14) plan.push("Pressure-redistributing mattress; prophylactic silicone foam to sacrum and heels");
+ if(s<=12) plan.push("Active/alternating-pressure or low-air-loss surface; dietitian referral; consider wound clinician");
+ if(+v[1]<=2) plan.push("Moisture: continence plan, barrier cream, breathable pads");
+ if(+v[4]<=2) plan.push("Nutrition: dietitian, protein supplement");
+ if(+v[5]<=2) plan.push("Friction/shear: lift sheet, HOB ≤30°, slide sheets");
+ document.getElementById("b-plan").innerHTML=plan.length?`<div class="box rec"><ul>${plan.map(p=>`<li>${p}</li>`).join("")}</ul></div>`:"";
+}
+
+/* ===================== CHOOSER LOGIC ===================== */
+let lastRec=null;
+function g(id){const e=document.getElementById(id);return e.type==="checkbox"?e.checked:e.value}
+function runChooser(){
+ const w={type:g("c-type"),stage:g("c-stage"),depth:g("c-depth"),tissue:g("c-tissue"),exu:g("c-exu"),inf:g("c-inf"),peri:g("c-peri"),perf:g("c-perf"),bleed:g("c-bleed"),odour:g("c-odour"),bone:g("c-bone"),anticoag:g("c-anticoag")};
+ let prim=[],sec=[],freq="",avoid=[],act=[],urgent=[],npwt=null;
+
+ // Urgent flags
+ if(w.inf==="deep") urgent.push("Deep/spreading infection: assess for cellulitis, abscess, necrotizing infection, osteomyelitis, sepsis. Systemic antibiotics, cultures (deep tissue after debridement, not surface swab), surgical review if abscess/necrosis/gas.");
+ if(w.tissue==="wetnec") urgent.push("Wet/boggy necrosis: needs surgical or sharp debridement — consult surgery / wound clinician.");
+ if(w.bone) urgent.push("Probes to bone: high likelihood of osteomyelitis — X-ray/MRI, ESR/CRP, bone biopsy/culture; ortho or ID input.");
+ if(w.perf==="poor") urgent.push("Poor or unknown perfusion: ABI/toe pressures and vascular referral before debridement or compression.");
+
+ // Special wound types first
+ if(w.depth==="intact" || w.stage==="1" || w.stage==="dti"){
+  prim=["Prophylactic silicone multilayer foam (or transparent film for stage 1)"]; freq="Peel back and inspect daily; replace q3–7 days";
+  act.push("Complete offloading of the area; prevention bundle");
+  if(w.stage==="dti") act.push("DTI may evolve to stage 3/4 over days — document and re-stage daily");
+ } else if(w.type==="iad"){
+  prim=["No dressing — pH-balanced no-rinse cleanser + zinc barrier cream or barrier film"]; freq="After each incontinence episode; barrier film q24–72 h";
+  act.push("Treat incontinence cause; antifungal if satellite lesions (candida)");
+ } else if(w.type==="skintear"){
+  prim=["Silicone contact layer (e.g., Mepitel)"]; sec=["Silicone-bordered foam if exuding"]; freq="Leave contact layer 5–7 days (up to 14); change secondary PRN";
+  act.push("Realign flap; draw an arrow showing removal direction"); avoid.push("Adhesive strips, films, hydrocolloid, tape on skin");
+ } else if(w.type==="iv"){
+  prim=["Transparent film (CHG-impregnated for CVCs per policy)"]; freq="Film q7 days; gauze q2 days; sooner if damp/loose";
+ } else if(w.tissue==="eschar" && (w.type==="arterial"||w.perf==="poor"||w.perf==="mod"||/heel/i.test(document.getElementById("o-loc").value)||w.stage==="u")){
+  prim=["Leave dry stable eschar intact — keep dry; protect with dry gauze or silicone foam"]; freq="Inspect daily; change dressing q2–3 days";
+  avoid.push("Moist dressings, hydrogel, debridement until perfusion confirmed adequate");
+  act.push("Offload heels completely; vascular assessment");
+ } else {
+  // Exudate-driven core choice
+  const cav = w.depth==="cavity";
+  if(w.exu==="none"){
+   prim=["Hydrogel"]; sec=[w.peri==="fragile"?"Silicone-bordered foam":"Transparent film or thin foam"]; freq="Daily to q3 days";
+  } else if(w.exu==="low"){
+   if(cav){prim=["Hydrofibre or hydrogel-impregnated gauze, loosely filled"]; sec=["Silicone-bordered foam"]; freq="Filler q1–3 days"}
+   else if(w.depth==="superficial" && w.inf==="none" && w.type!=="dfu" && w.peri!=="fragile" && w.type!=="arterial"){prim=["Hydrocolloid","or thin silicone foam"]; freq="3–7 days"}
+   else {prim=["Thin silicone-bordered foam"]; freq="3–7 days"}
+  } else if(w.exu==="mod"){
+   if(cav){prim=["Gelling fibre / hydrofibre rope, loosely filled"]; sec=["Silicone-bordered foam"]; freq="Filler q1–3 days; cover with it"}
+   else {prim=["Silicone-bordered foam"]; freq="q3 days (up to 5–7 if not saturated)"}
+  } else {
+   prim=[cav?"Alginate or hydrofibre rope, loosely filled":"Hydrofibre or alginate"]; sec=["Superabsorbent pad (or bordered foam)"]; freq="Daily to q2 days";
+  }
+  // Slough
+  if(w.tissue==="slough"){
+   act.push("Slough: autolytic debridement — "+(w.exu==="none"||w.exu==="low"?"hydrogel / hydrocolloid":"hydrofibre")+"; consider cadexomer iodine or medical honey; sharp debridement by wound clinician if thick");
+  }
+  // Infection
+  if(w.inf!=="none"){
+   const am = w.exu==="heavy"||w.exu==="mod" ? "Silver hydrofibre/alginate (e.g., Aquacel Ag) or cadexomer iodine" : "Silver foam, cadexomer iodine, or medical honey";
+   prim = [am+" (replaces plain primary)"];
+   act.push("Antimicrobial dressing as a 2-week challenge, then reassess; stop if bioburden resolved");
+   avoid.push("Hydrocolloid / occlusive dressings on infected wounds");
+   if(freq.startsWith("3–7")) freq="q2–3 days while infected";
+  }
+  if(w.bleed){ act.push("Minor bleeding: alginate as primary (hemostatic); non-adherent contact layer to protect bed"); if(!prim.join().match(/lginate/)) prim.push("+ alginate where bleeding"); }
+  if(w.odour){ sec.push("Charcoal odour-control pad"); act.push("Malodour: cleanse well, treat bioburden; topical metronidazole for fungating wounds"); }
+  if(w.type==="fungating"){ act.push("Palliative goals: odour, exudate, bleeding, pain; non-adherent layers; premedicate before changes"); avoid.push("NPWT"); }
+  if(w.type==="dfu"){ act.push("Offload (total contact cast / walker); inspect daily; probe to bone; HbA1c; pulses/toe pressures"); avoid.push("Hydrocolloid / occlusive dressings on DFU"); }
+  if(w.type==="venous"){
+   if(w.perf==="ok") act.push("Full compression (ABI 0.8–1.3) over dressing; change with compression 1–3×/week");
+   else if(w.perf==="mod") act.push("Reduced compression only with specialist input (ABI 0.5–0.8)");
+   else act.push("Get ABI before any compression");
+  }
+  if(w.type==="arterial") { act.push("Vascular referral; no compression"); avoid.push("Compression, aggressive debridement"); }
+  if(w.type==="surgical") act.push("Notify surgeon for dehiscence; visible fascia/bowel = emergency");
+ }
+ if(w.peri==="mac"){ act.push("Maceration: no-sting barrier film to periwound; step up absorbency; change more often"); }
+ if(w.peri==="fragile"){ act.push("Fragile skin: silicone adhesives only; no tape on skin"); avoid.push("Films and hydrocolloid on fragile skin (stripping)"); }
+ if(w.depth==="cavity") act.push("Cavity: fill loosely (never pack tight); document number of pieces and tunnel depth (clock positions)");
+
+ // NPWT candidacy
+ const fullThick = w.depth==="full"||w.depth==="cavity"||w.stage==="3"||w.stage==="4";
+ const npwtCI=[]; if(w.tissue==="eschar"||w.tissue==="wetnec") npwtCI.push("necrosis/eschar present (debride first)");
+ if(w.type==="fungating") npwtCI.push("malignancy in wound"); if(w.bone) npwtCI.push("possible untreated osteomyelitis");
+ if(w.perf==="poor") npwtCI.push("poor perfusion");
+ if(fullThick && (w.exu==="mod"||w.exu==="heavy") && w.type!=="iad"){
+  npwt = npwtCI.length ? {c:"warn",t:"Could be an NPWT candidate once addressed: "+npwtCI.join("; ")}
+                       : {c:"ok",t:"NPWT candidate — full-thickness wound with moderate–heavy exudate. Discuss with wound clinician/surgery; see NPWT tab."+(w.anticoag||w.bleed?" Caution: bleeding risk / anticoagulation.":"")+(w.inf!=="none"?" Infection present: treat it first, then consider silver foam and more frequent changes (q12–24 h).":"")};
+ }
+
+ // Referral
+ if(["3","4","u","dti"].includes(w.stage)||w.depth==="cavity"||w.type==="dfu") act.push("Refer to wound clinician (NSWOC)");
+ act.push("Treat the cause: offloading, compression (venous, after ABI), revascularization, glucose control, nutrition");
+
+ lastRec={w,prim,sec,freq};
+ let h="";
+ if(urgent.length) h+=`<div class="box bad"><h4>Act first</h4><ul>${urgent.map(x=>`<li>${x}</li>`).join("")}</ul></div>`;
+ h+=`<div class="box rec"><h4>Suggested dressing</h4>
+   <div><b>Primary:</b> ${prim.join(" ")}</div>
+   <div><b>Secondary:</b> ${sec.length?sec.join(" + "):"none needed / per product"}</div>
+   <div><b>Change:</b> ${freq} and PRN if saturated, leaking or lifting</div></div>`;
+ if(npwt) h+=`<div class="box ${npwt.c}"><h4>Negative pressure (VAC)</h4>${npwt.t}</div>`;
+ if(act.length) h+=`<div class="box"><h4>Also do</h4><ul>${[...new Set(act)].map(x=>`<li>${x}</li>`).join("")}</ul></div>`;
+ if(avoid.length) h+=`<div class="box warn"><h4>Avoid</h4><ul>${[...new Set(avoid)].map(x=>`<li>${x}</li>`).join("")}</ul></div>`;
+ h+=`<p class="mute">Decision support based on wound bed preparation principles; confirm with the wound clinician and local formulary.</p>`;
+ document.getElementById("c-out").innerHTML=h;
+}
+
+/* ===================== NPWT CHECK ===================== */
+document.querySelectorAll(".n-ind,.n-ci,.n-pr").forEach(c=>c.addEventListener("change",npwtCheck));
+function npwtCheck(){
+ const v=s=>[...document.querySelectorAll(s+":checked")].map(x=>x.value);
+ const ind=v(".n-ind"),ci=v(".n-ci"),pr=v(".n-pr"); let h="";
+ if(ci.length) h+=`<div class="box bad"><h4>Not a candidate now</h4>Contraindication: ${ci.join("; ")}. Address (debride, treat osteomyelitis, biopsy) and reassess.</div>`;
+ else if(ind.length) h+=`<div class="box ok"><h4>Reasonable NPWT candidate</h4>Indication: ${ind.join("; ")}. Usual start: −125 mmHg continuous, black foam (white over tendon/tunnels), change q48–72 h.</div>`;
+ if(pr.length) h+=`<div class="box warn"><h4>Precautions</h4><ul>${pr.map(x=>`<li>${x}</li>`).join("")}</ul>Consider lower pressure (−75 to −100 mmHg), contact layer, close monitoring of canister for blood, and discharge planning early.</div>`;
+ document.getElementById("n-out").innerHTML=h;
+}
+
+/* ===================== ORDER WRITER ===================== */
+document.getElementById("o-prim").innerHTML=["transparent film","silicone-bordered foam","hydrocolloid","hydrofibre (gelling fibre), loosely fill cavity","alginate, loosely fill cavity","hydrogel","silicone contact layer","silver hydrofibre","silver foam","cadexomer iodine","medical-grade honey","barrier cream only (no dressing)","leave dry eschar intact, dry gauze cover","NPWT −125 mmHg continuous, black foam"].map(x=>`<option>${x}</option>`).join("");
+function sendToOrder(){
+ if(!lastRec) runChooser(); const r=lastRec; const p=r.prim.join(" ").toLowerCase();
+ const pick=(sel,txt)=>{const o=[...document.getElementById(sel).options].find(o=>txt(o.value.toLowerCase())); if(o) document.getElementById(sel).value=o.value;};
+ const map=[["silver hydro",x=>x.includes("silver hydro")],["silver",x=>x.includes("silver foam")],["iodine",x=>x.includes("iodine")],["honey",x=>x.includes("honey")],["contact",x=>x.includes("contact")],["eschar",x=>x.includes("eschar")],["barrier",x=>x.includes("barrier")],["alginate",x=>x.startsWith("alginate")],["hydrofibre",x=>x.startsWith("hydrofibre")],["gelling",x=>x.startsWith("hydrofibre")],["hydrogel",x=>x==="hydrogel"],["hydrocolloid",x=>x==="hydrocolloid"],["film",x=>x==="transparent film"],["foam",x=>x==="silicone-bordered foam"]];
+ for(const [k,f] of map){ if(p.includes(k)){pick("o-prim",f);break;} }
+ const s=r.sec.join(" ").toLowerCase();
+ pick("o-sec",x=> s.includes("superabsorbent")?x.includes("superabsorbent"): s.includes("charcoal")?x.includes("charcoal"): s.includes("foam")?x.includes("foam"): s.includes("film")?x.includes("film"): x==="none");
+ const f=r.freq.toLowerCase();
+ pick("o-freq",x=> f.startsWith("daily")?x.startsWith("daily"): f.includes("q1–3")||f.includes("q2–3")?x.startsWith("every 2"): f.startsWith("3–7")||f.includes("q3–7")?x.startsWith("every 3–5"): f.includes("5–7")?x.startsWith("every 5"): x.startsWith("every 3 "));
+ const st={"1":"stage 1","2":"stage 2","3":"stage 3","4":"stage 4","u":"unstageable","dti":"deep tissue"}[r.w.stage];
+ document.getElementById("o-type").value=(st?st+" ":"")+document.getElementById("c-type").selectedOptions[0].text.toLowerCase();
+ document.getElementById("o-wc").checked=["3","4","u","dti"].includes(r.w.stage)||r.w.type==="dfu";
+ buildOrder(); showTab("t-order");
+}
+function buildOrder(){
+ const L=[]; const loc=g("o-loc")||"___";
+ L.push(`Wound care – ${loc} (${g("o-type")||"wound"}):`);
+ L.push(`- Cleanse with ${g("o-clean")}, pat periwound dry.`);
+ if(g("o-peri")!=="none") L.push(`- Apply ${g("o-peri")}.`);
+ L.push(`- Primary: ${g("o-prim")}.`);
+ if(g("o-sec")!=="none") L.push(`- Secondary: ${g("o-sec")}.`);
+ L.push(`- Change ${g("o-freq")} (if saturated, leaking or lifting).`);
+ if(g("o-off")) L.push("- Reposition per individualized schedule; keep pressure off the wound.");
+ if(g("o-heel")) L.push("- Float heels / heel-offloading boots.");
+ if(g("o-surf")) L.push("- Pressure-redistributing mattress.");
+ if(g("o-diet")) L.push("- Dietitian referral: pressure injury / wound healing.");
+ if(g("o-wc")) L.push("- Wound clinician (NSWOC) consult.");
+ if(g("o-photo")) L.push("- Measure and photograph weekly. Notify MRP if wound larger, new odour, spreading erythema, purulence or fever.");
+ document.getElementById("o-text").value=L.join("\n");
+}
+
+/* ===================== CONSULT MESSAGE ===================== */
+let PT={name:"[name]",age:"[age]",mrn:"[MRN]"};
+function buildMsg(){
+ const dr=g("m-dr")||"___", q=g("m-q")||"assessment and dressing plan";
+ const wound=(g("o-type")||"wound")+(g("o-loc")?" at "+g("o-loc"):"");
+ document.getElementById("m-text").value=
+`Hello Dr. ${dr}, This is Wayne, hospitalist. I have ${PT.name}, ${PT.age}, MRN ${PT.mrn}, with a ${wound}. Current dressing: ${g("o-prim")}, changed ${g("o-freq")}. Would you be able to see them for ${q}? Your help is much appreciated. Thanks, Wayne`;
+}
+function copyEl(id){const e=document.getElementById(id);e.select();navigator.clipboard?navigator.clipboard.writeText(e.value):document.execCommand("copy");}
+
+/* ===================== FHIR (when launched) ===================== */
+const WOUND_RX=/pressure (ulcer|injury)|decubitus|bedsore|ulcer of (skin|foot|leg|heel|sacr)|diabetic foot|venous (stasis )?ulcer|arterial ulcer|wound|dehiscen|skin tear|osteomyelitis|cellulitis|fungating|gangrene/i;
+const MED_FLAGS=[
+ {rx:/prednis|dexameth|hydrocort|methylpred/i, t:"Corticosteroid — impairs healing; consider vitamin A per wound clinician", c:"warn"},
+ {rx:/warfarin|apixaban|rivaroxaban|dabigatran|edoxaban|heparin|enoxaparin|dalteparin|tinzaparin/i, t:"Anticoagulant — NPWT bleeding precaution; caution with sharp debridement", c:"bad"},
+ {rx:/clopidogrel|ticagrelor|prasugrel/i, t:"Antiplatelet — bleeding precaution for NPWT/debridement", c:"warn"},
+ {rx:/methotrexate|tacrolimus|mycophenol|azathioprine|cyclosporin|sirolimus|everolimus/i, t:"Immunosuppressant — impaired healing, infection risk", c:"warn"},
+ {rx:/bevacizumab|ramucirumab|sunitinib|sorafenib|pazopanib|regorafenib|lenvatinib|cabozantinib|axitinib/i, t:"Anti-VEGF agent — wound-healing complications, dehiscence", c:"bad"},
+ {rx:/levothyrox|lithium/i, t:"Thyroid disease / lithium — avoid cadexomer iodine", c:"warn"},
+ {rx:/insulin|metformin|gliclazide|sitagliptin|linagliptin|empagliflozin|dapagliflozin|canagliflozin|semaglutide|dulaglutide/i, t:"Diabetes therapy — check glucose control and foot exam", c:""},
+];
+const LABS=[["Albumin",/albumin/i,"<30 g/L: poor nutrition marker (also inflammation)"],["HbA1c",/a1c|hemoglobin a1/i,">8%: impaired healing"],["Glucose",/^glucose|glucose.*(serum|plasma|random)/i,""],["Hemoglobin",/^h(a)?emoglobin$|^hgb|hemoglobin \[mass/i,"<80–90 g/L impairs oxygen delivery"],["WBC",/leukocyte|wbc|white blood/i,""],["CRP",/c reactive|crp/i,"Rising: consider infection/osteomyelitis"],["ESR",/sedimentation|esr/i,">70 mm/h supports osteomyelitis"],["Creatinine",/creatinine/i,"Renal dysfunction: avoid cadexomer iodine"],["Prealbumin",/prealbumin|transthyretin/i,""],["Vitamin C / Zinc",/ascorb|vitamin c|zinc/i,""]];
+const txt=c=>c?.text||c?.coding?.[0]?.display||"";
+FHIR.oauth2.ready().then(async client=>{
+ const pat=await client.patient.read();
+ const n=pat.name?.[0]; const nm=n?((n.given||[]).join(" ")+" "+(n.family||"")).trim():"Unknown";
+ const age=pat.birthDate?Math.floor((Date.now()-new Date(pat.birthDate))/3.15576e10):"?";
+ const mrn=(pat.identifier||[]).find(i=>/mrn|medical record/i.test(i.type?.text||i.type?.coding?.[0]?.display||""))?.value||pat.identifier?.[0]?.value||"";
+ PT={name:nm,age:age+" y",mrn};
+ document.getElementById("pt").textContent=`${nm} · ${age} y · ${pat.gender||""} · MRN ${mrn}`;
+ showTab("t-chart");
+ const pid=client.patient.id;
+ const flat=b=>(b||[]).flatMap(x=>x.entry||[]).map(e=>e.resource).filter(Boolean);
+ // Conditions
+ client.request(`Condition?patient=${pid}&_count=100`,{pageLimit:3}).then(r=>{
+  const c=flat(Array.isArray(r)?r:[r]).filter(x=>WOUND_RX.test(txt(x.code)));
+  document.getElementById("ch-cond").innerHTML=c.length?"<ul>"+c.map(x=>`<li>${txt(x.code)} <span class="mute">${x.clinicalStatus?.coding?.[0]?.code||""} ${x.onsetDateTime?.slice(0,10)||x.recordedDate?.slice(0,10)||""}</span></li>`).join("")+"</ul>":"<p class='mute'>No wound-related problems on the problem list — check nursing skin assessment.</p>";
+  const s=c.map(x=>txt(x.code)).join(" ");
+  if(/pressure|decubitus/i.test(s)) document.getElementById("c-type").value="pi";
+  else if(/diabetic foot/i.test(s)) document.getElementById("c-type").value="dfu";
+  else if(/venous/i.test(s)) document.getElementById("c-type").value="venous";
+ }).catch(e=>document.getElementById("ch-cond").textContent="Could not load conditions: "+e.message);
+ // Labs
+ client.request(`Observation?patient=${pid}&category=laboratory&_count=200&_sort=-date`,{pageLimit:2}).then(r=>{
+  const obs=flat(Array.isArray(r)?r:[r]); const rows=[];
+  for(const [lab,rx,note] of LABS){
+   const o=obs.find(x=>rx.test(txt(x.code))&&x.valueQuantity);
+   if(o) rows.push(`<tr><td>${lab}</td><td>${o.valueQuantity.value} ${o.valueQuantity.unit||""}</td><td>${(o.effectiveDateTime||"").slice(0,10)}</td><td class="mute">${note}</td></tr>`);
+  }
+  document.getElementById("ch-labs").innerHTML=rows.length?`<table><tr><th>Lab</th><th>Latest</th><th>Date</th><th>Relevance</th></tr>${rows.join("")}</table>`:"<p class='mute'>No relevant labs found. Consider albumin, HbA1c, CBC, CRP/ESR if osteomyelitis suspected.</p>";
+ }).catch(e=>document.getElementById("ch-labs").textContent="Could not load labs: "+e.message);
+ // Meds
+ client.request(`MedicationRequest?patient=${pid}&status=active&_count=100`,{pageLimit:2}).then(r=>{
+  const meds=flat(Array.isArray(r)?r:[r]).map(m=>txt(m.medicationCodeableConcept)||m.medicationReference?.display||"").filter(Boolean);
+  const hits=[]; let anticoag=false;
+  for(const m of meds) for(const f of MED_FLAGS) if(f.rx.test(m)){hits.push(`<li><b>${m}</b> — <span class="pill ${f.c}">${f.t}</span></li>`); if(/Anticoag|Antiplatelet/.test(f.t)) anticoag=true;}
+  if(anticoag) document.getElementById("c-anticoag").checked=true;
+  document.getElementById("ch-meds").innerHTML=hits.length?`<ul>${hits.join("")}</ul>`:`<p class='mute'>No healing-relevant medications flagged among ${meds.length} active orders.</p>`;
+ }).catch(e=>document.getElementById("ch-meds").textContent="Could not load medications: "+e.message);
+}).catch(()=>{/* reference mode */});
+</script>
+</body>
+</html>
