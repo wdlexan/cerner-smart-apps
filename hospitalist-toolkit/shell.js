@@ -4,7 +4,7 @@
    A tab is only loaded the first time you open it, and stays loaded when you switch away. */
 
 // To add a tool: put its files in tools/<folder>/ and add a line here.
-const TOOL_V = "20261122g"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
+const TOOL_V = "20261122h"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
 const TOOLS = [
   { key: "today", label: "Today (what changed)", tags: "what changed daily trends vitals overnight summary", path: "tools/today/index.html" },
   { key: "plist", label: "Patient list (screenshot)", tags: "patient list screenshot excel spreadsheet rounding list census floor ward ocr", path: "tools/plist/index.html" },
@@ -114,8 +114,7 @@ async function start(client) {
   if (testMode) $("patient").innerHTML = `<span style="background:#fff3cd;color:#7a4b00;border-radius:10px;padding:1px 8px;font-weight:700;margin-right:6px">TEST MODE · open sandbox, no login</span>${esc($("patient").textContent)}`;
   $("msg").remove();
 
-  $("tabs").innerHTML = TOOLS.map((t) => `<button data-k="${t.key}">${esc(t.label)}</button>`).join("");
-  document.querySelectorAll("#tabs button").forEach((b) => (b.onclick = () => show(b.dataset.k)));
+  buildNav();
   setupSearch();
 
   // Open the tab named in the address (#labs), else the last one used, else Today
@@ -123,6 +122,62 @@ async function start(client) {
   if (!TOOLS.some((t) => t.key === first)) { try { first = localStorage.getItem(TAB_KEY); } catch (e) {} }
   if (!TOOLS.some((t) => t.key === first)) first = TOOLS[0].key;
   show(first);
+}
+
+// ---- Tool menus: a few pinned tools, then pull-down menus by topic (desktop). The phone keeps one scrolling row.
+// Every tool also has a (hidden) plain button in #tabs, so search results and links like #tabs button[data-k="…"] keep working.
+const PINNED = ["today", "plist"];
+const GROUPS = [
+  { name: "Chart", keys: ["labs", "crit", "notes", "exam", "watch", "ai", "calc"] },
+  { name: "Heart & lung", keys: ["chf", "af", "ild"] },
+  { name: "Kidney", keys: ["aki", "lytes", "hypona", "acidbase", "ktx"] },
+  { name: "Neuro", keys: ["neuro", "stroke", "seizure", "dementia", "pd", "ae"] },
+  { name: "GI & endo", keys: ["liver", "ibd", "dm", "edr"] },
+  { name: "Infection", keys: ["abx", "abxmap", "inf"] },
+  { name: "Onc & heme", keys: ["onc", "tox", "bsab", "pc", "g6pd", "sero"] },
+  { name: "Safety", keys: ["meds", "opioid", "pain", "risk", "cw", "dx"] },
+  { name: "Admit & discharge", keys: ["ed", "hah", "hip", "consult", "mobility", "discharge", "dcclinic", "forms"] }];
+const short = (label) => label.replace(/\s*\(.*?\)\s*/g, " ").trim();
+function buildNav() {
+  const nav = $("tabs"), have = new Set(TOOLS.map((t) => t.key)), lab = (k) => (TOOLS.find((t) => t.key === k) || {}).label || k;
+  const flat = TOOLS.map((t) => `<button data-k="${t.key}">${esc(t.label)}</button>`).join("");
+  if (POCKET) { nav.innerHTML = flat; nav.querySelectorAll("button[data-k]").forEach((b) => (b.onclick = () => show(b.dataset.k))); return; }
+  const used = new Set(PINNED.concat(GROUPS.flatMap((g) => g.keys)));
+  const groups = GROUPS.map((g) => ({ name: g.name, keys: g.keys.filter((k) => have.has(k)) })).concat([{ name: "More", keys: TOOLS.map((t) => t.key).filter((k) => !used.has(k)) }]).filter((g) => g.keys.length);
+  nav.classList.add("menus-on");
+  const PIN_LABEL = { today: "Today", plist: "Patient list" };
+  nav.innerHTML = `<span class="menus">${PINNED.filter((k) => have.has(k)).map((k) => `<button data-k="${k}" title="${esc(lab(k))}">${esc(PIN_LABEL[k] || lab(k))}</button>`).join("")}` +
+    groups.map((g, i) => `<button class="gbtn" data-g="${i}" aria-haspopup="menu" aria-expanded="false">${esc(g.name)} <span class="caret">▾</span><span class="gcur"></span></button>`).join("") +
+    `</span><span class="flat">${flat}</span>`;
+  nav.querySelectorAll("button[data-k]").forEach((b) => (b.onclick = () => show(b.dataset.k)));
+  let menu = document.getElementById("gmenu");
+  if (!menu) { menu = document.createElement("div"); menu.id = "gmenu"; menu.setAttribute("role", "menu"); menu.hidden = true; document.body.appendChild(menu); }
+  let openBtn = null;
+  const close = () => { menu.hidden = true; if (openBtn) { openBtn.setAttribute("aria-expanded", "false"); openBtn.classList.remove("open"); } openBtn = null; };
+  const open = (btn) => {
+    if (openBtn === btn) { close(); return; }
+    close(); const g = groups[+btn.dataset.g]; openBtn = btn; btn.setAttribute("aria-expanded", "true"); btn.classList.add("open");
+    menu.innerHTML = g.keys.map((k) => `<button role="menuitem" data-k="${k}" class="${k === window.__tkTab ? "on" : ""}">${esc(lab(k))}</button>`).join("");
+    menu.querySelectorAll("button").forEach((b) => (b.onclick = () => { close(); show(b.dataset.k); }));
+    const r = btn.getBoundingClientRect(); menu.hidden = false;
+    menu.style.top = Math.round(r.bottom + 2) + "px"; menu.style.left = Math.round(Math.min(r.left, window.innerWidth - menu.offsetWidth - 8)) + "px";
+    (menu.querySelector("button.on") || menu.querySelector("button")).focus();
+  };
+  nav.querySelectorAll(".gbtn").forEach((b) => { b.onclick = (e) => { e.stopPropagation(); open(b); }; b.onkeydown = (e) => { if (e.key === "ArrowDown") { e.preventDefault(); if (openBtn !== b) open(b); } }; });
+  menu.onkeydown = (e) => {
+    const items = Array.from(menu.querySelectorAll("button")), i = items.indexOf(document.activeElement);
+    if (e.key === "ArrowDown") { e.preventDefault(); items[(i + 1) % items.length].focus(); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); items[(i - 1 + items.length) % items.length].focus(); }
+    else if (e.key === "Escape") { const b = openBtn; close(); if (b) b.focus(); }
+    else if (e.key === "Tab") close();
+  };
+  document.addEventListener("click", (e) => { if (!menu.hidden && !menu.contains(e.target)) close(); });
+  window.addEventListener("resize", close); nav.addEventListener("scroll", close);
+  window.addEventListener("blur", () => setTimeout(() => { if (document.activeElement && document.activeElement.tagName === "IFRAME") close(); }, 0)); // clicked into a tool
+  window.__markMenus = (key) => nav.querySelectorAll(".gbtn").forEach((b) => {
+    const g = groups[+b.dataset.g], on = g.keys.includes(key);
+    b.classList.toggle("on", on); b.querySelector(".gcur").textContent = on ? " · " + short(lab(key)) : "";
+  });
 }
 
 // ---- Find a tool: type to filter the tabs. Matches the tab name and clinical words (e.g. "sodium" finds Hyponatremia).
@@ -138,7 +193,8 @@ function setupSearch() {
   };
   const filter = () => {
     const keys = box.value.trim() ? matches() : TOOLS.map((t) => t.key);
-    document.querySelectorAll("#tabs button").forEach((b) => (b.hidden = !keys.includes(b.dataset.k)));
+    $("tabs").classList.toggle("searching", !!box.value.trim()); // menus give way to a flat list of matches while typing
+    document.querySelectorAll("#tabs .flat button[data-k], #tabs.searching button[data-k], #tabs:not(.menus-on) button[data-k]").forEach((b) => (b.hidden = !keys.includes(b.dataset.k)));
     none.hidden = keys.length > 0;
     return keys;
   };
@@ -167,7 +223,8 @@ function show(key) {
     $("frames").appendChild(f);
   }
   document.querySelectorAll("#frames iframe").forEach((x) => x.classList.toggle("on", x === f));
-  document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("on", b.dataset.k === key));
+  document.querySelectorAll("#tabs button[data-k]").forEach((b) => b.classList.toggle("on", b.dataset.k === key));
+  if (window.__markMenus) window.__markMenus(key);
   if (POCKET) { const b = document.querySelector(`#tabs button[data-k="${key}"]`); if (b) b.scrollIntoView({ inline: "center", block: "nearest" }); }
   history.replaceState(null, "", "#" + key);
   try { localStorage.setItem(TAB_KEY, key); } catch (e) {}
