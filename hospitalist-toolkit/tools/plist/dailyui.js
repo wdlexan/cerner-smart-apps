@@ -22,7 +22,11 @@
     } catch (e) { if (e && e.name !== "AbortError") say("Could not open the file: " + esc(e.message || e), "err"); }
   }
   $("dfile").onchange = async (e) => { const f = e.target.files && e.target.files[0]; if (!f) return; file = { name: f.name, buf: await f.arrayBuffer(), handle: null }; e.target.value = ""; opened(); };
-  function opened() { result = null; $("dname").textContent = file.name; $("drun").disabled = false; $("dsave").disabled = true; $("dtbl").innerHTML = ""; say("Ready. Press <b>Update from the chart</b>."); }
+  function opened() {
+    result = null; $("dname").textContent = file.name; $("drun").disabled = false; $("dsave").disabled = true; $("dtbl").innerHTML = "";
+    $("dsave").textContent = file.handle ? "Save to the same file" : "Download updated file";
+    say("Ready. Press <b>Update from the chart</b>.");
+  }
 
   async function client() {
     if (typeof FHIR === "undefined") throw new Error("the chart connection didn't load");
@@ -40,6 +44,7 @@
   async function run() {
     if (!file) return;
     $("drun").disabled = true; $("dsave").disabled = true; $("dtbl").innerHTML = "";
+    say("Working: connecting to the chart…");
     try {
       await loadJs(JSZIP, () => window.JSZip);
       const c = await client();
@@ -63,10 +68,10 @@
       $("dtbl").innerHTML = `<tr><th>Patient</th><th>Filled (empty cells only)</th><th>Check today</th></tr>` + res.report.map((r) => `<tr><td>${esc(r.name)}</td>` +
         (r.error ? `<td colspan="2" class="err">${esc(r.error)}</td>` : `<td>${r.filled.length ? esc(r.filled.join(", ")) : '<span class="muted">nothing empty to fill</span>'}</td><td>${r.check.length ? esc(r.check.join(" · ")) : '<span class="muted">nothing flagged</span>'}</td>`) + "</tr>").join("");
       $("dsave").disabled = !ok.length;
-      say(`Read ${ok.length} of ${res.report.length} charts. Check the table, then press <b>${canSaveBack && file.handle ? "Save to " + esc(file.name) : "Download updated file"}</b>.` +
+      say(`Read ${ok.length} of ${res.report.length} charts. Check the table, then press <b>${file.handle ? "Save to the same file" : "Download updated file"}</b>` + (file.handle ? "" : " (it goes to your Downloads folder)") + "." +
         (noAccess ? "<br><b>This launch can only read the open patient.</b> Open the toolkit from its own link (it asks you to sign in) to update the whole list." : ""), ok.length ? "muted" : "err");
     } catch (e) { say("Could not update: " + esc(e.message || e), "err"); }
-    $("drun").disabled = false;
+    finally { $("drun").disabled = false; }
   }
 
   async function save() {
@@ -80,7 +85,7 @@
       } else {
         const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([result.data], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
         a.download = file.name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-        say(`Downloaded an updated <b>${esc(file.name)}</b>. Move it into your OneDrive folder (this browser can't save over the original).`, "ok");
+        say(`Downloaded <b>${esc(file.name)}</b> to your <b>Downloads</b> folder (in Edge: the download icon at the top right, or press Ctrl+J). To update the same file each day, move it into your OneDrive folder and open it with <b>📂 Open my list…</b>.`, "ok");
       }
       $("dsave").disabled = true;
     } catch (e) { say("Could not save: " + esc(e.message || e) + (/lock|in use|NoModification|InvalidState/i.test(String(e && (e.name + e.message))) ? " (close the file in Excel first)" : ""), "err"); }
@@ -123,5 +128,5 @@
   if (isTest) { $("dtest").hidden = false; $("dtest").onclick = makeTestList; }
 
   $("dopen").onclick = openList; $("drun").onclick = run; $("dsave").onclick = save;
-  $("dsave").textContent = canSaveBack ? "Save to the same file" : "Download updated file";
+  $("dsave").textContent = "Save / download";
 })();
