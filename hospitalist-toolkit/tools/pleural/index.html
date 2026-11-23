@@ -140,6 +140,7 @@
       <div id="clamp"></div></div></details>
     <details class="card" open><summary><span>Intrapleural tPA + DNase (MIST2)</span></summary><div class="body plan" id="lytics"></div></details>
     <details class="card" open><summary><span>Chest tube orders and daily care</span></summary><div class="body plan" id="orders"></div></details>
+    <details class="card" open><summary><span>Who to call for chest tube help: 8N respiratory nurse</span></summary><div class="body plan" id="nursecard"></div></details>
     <details class="card inputs" open><summary><span>Chest tube in place: status</span></summary><div class="body">
       <div class="row">
         <label class="inl">Tube <select id="tubetype"><option value="none">No tube</option><option value="small">Small-bore 8-14 F</option><option value="large">Large-bore 20-32 F</option><option value="ipc">Indwelling pleural catheter</option></select></label>
@@ -184,7 +185,7 @@
   <script src="rules.js?v=20261123b"></script>
   <script src="chart.js?v=20261123a"></script>
   <script src="samples.js?v=20261123b"></script>
-  <script src="app.js?v=20261123b"></script>
+  <script src="app.js?v=20261123c"></script>
   <script src="../../subtabs.js?v=20261121f"></script>
   <script>SubTabs.mount({ store: "pleural", top: ["Chart alerts", "#tiles"], dotSel: ".alert.urgent, .tile.t3, .plan .urgent", tabs: [
       {"key": "assess", "label": "Assess", "match": ["Patient and situation", "Plan now"]},
@@ -192,7 +193,7 @@
       {"key": "causes", "label": "Causes", "match": ["Likely causes", "All causes"]},
       {"key": "img", "label": "Imaging", "match": ["Imaging reports", "Imaging: what to look for"]},
       {"key": "tap", "label": "Tap & chest tube", "match": ["Thoracentesis", "Chest tube: which tube", "When to clamp", "Intrapleural tPA", "Chest tube orders"]},
-      {"key": "tube", "label": "Tube problems & removal", "match": ["Chest tube in place", "Chest tube problems", "When to remove"]},
+      {"key": "tube", "label": "Tube problems & removal", "match": ["Who to call for chest tube help", "Chest tube in place", "Chest tube problems", "When to remove"]},
       {"key": "spec", "label": "Empyema & cancer", "match": ["Pleural infection", "Malignant effusion"]},
       {"key": "dc", "label": "Discharge & handout", "match": ["Discharge and follow-up", "Patient handout"]},
       {"key": "note", "label": "Note draft", "match": ["Note draft"]}] });</script>

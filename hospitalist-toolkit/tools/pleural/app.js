@@ -9,6 +9,9 @@ const num = (id) => { const el = $(id); if (!el) return null; const v = parseFlo
 const val = (id) => ($(id) ? $(id).value : "");
 const chk = (id) => !!($(id) && $(id).checked);
 const state = { f: null };
+/* VGH pleural support nurse (local resource) */
+const PLEURAL_NURSE = { name: "Janine Gerritts", unit: "8N", role: "respiratory nurse with expertise in pleural disease" };
+const nurseLine = () => `Ward nurses can call ${PLEURAL_NURSE.name} (${PLEURAL_NURSE.unit} ${PLEURAL_NURSE.role}) directly for chest tube questions, flushing and poorly draining tubes.`;
 const has = (k) => !!(state.f && state.f.cls[k] && state.f.cls[k].length);
 const prob = (k) => !!(state.f && state.f.prob[k]);
 const box = (cls, h, items) => (items.length ? `<div class="${cls}"><h3>${h}</h3>${ul(items)}</div>` : "");
@@ -73,7 +76,7 @@ function alertsOf(x) {
   if ((x.ctx === "cirrhosis" || prob("cirrhosis")) && (x.purpose === "hepatic" || x.fl.light.kind === "transudate") && (x.tube && x.tube !== "none" && x.tube !== "ipc" || x.purpose === "hepatic"))
     add("urgent", "Hepatic hydrothorax", "Avoid a chest tube: massive fluid and protein loss, kidney failure, infection, high mortality. Therapeutic tap, diuretics, TIPS / transplant referral (hepatology).");
   if ((ids.has("empyema") || ids.has("infected") || ids.has("lowpH")) && (!x.tube || x.tube === "none")) add("urgent", "Needs drainage", "Pus, organisms or pH under 7.2: chest tube now (12-14 F, ultrasound-guided) plus antibiotics.");
-  if (x.infection && x.tube && x.tube !== "none" && chk("fluidleft") && !chk("settled")) add("action", "Residual infected collection", "Tube in but collection remains and infection not settling: flush/check the tube, then intrapleural tPA 10 mg + DNase 5 mg BID × 3 days or thoracic surgery (VATS).");
+  if (x.infection && x.tube && x.tube !== "none" && chk("fluidleft") && !chk("settled")) add("action", "Residual infected collection", `Tube in but collection remains and infection not settling: flush/check the tube, then intrapleural tPA 10 mg + DNase 5 mg BID × 3 days or thoracic surgery (VATS). ${PLEURAL_NURSE.name} (${PLEURAL_NURSE.unit}) can help the ward nurses with flushing and troubleshooting.`);
   if (x.cl.act === "now") add("urgent", "Clamp the chest tube", x.cl.label + ". " + x.cl.why[0]);
   if (x.cl.act === "never" && x.tube && x.tube !== "none") add("action", "Bubbling drain", "Do not clamp.");
   if (x.surg) add("urgent", "Hemothorax: surgery criteria", `${x.dr[0] && x.dr[0].v >= 1500 ? "1.5 L or more at insertion" : x.over200 + " hourly outputs of 200 mL or more"}: call thoracic surgery now; reverse anticoagulation; transfuse.`);
@@ -137,7 +140,7 @@ function draw() {
   const A = alertsOf(x);
   $("alertsum").textContent = A.length ? `${A.filter((a) => a.lvl === "urgent").length} urgent, ${A.length} total` : "none";
   $("alerts").innerHTML = A.length ? A.map((a) => `<div class="alert ${a.lvl}"><b>${a.b}:</b>${a.t}</div>`).join("") : '<div class="muted">No alerts.</div>';
-  drawPlan(x, lk); drawFluid(x); drawCauses(x, lk); drawImaging(x); drawTap(x); drawTube(x); drawClamp(x); drawTrouble(); drawRemoval(x); drawInfection(x); drawMalignant(x); drawFU(x, lk); drawHandout();
+  drawPlan(x, lk); drawFluid(x); drawCauses(x, lk); drawImaging(x); drawTap(x); drawTube(x); drawClamp(x); drawNurse(); drawTrouble(); drawRemoval(x); drawInfection(x); drawMalignant(x); drawFU(x, lk); drawHandout();
   $("note").value = noteText(x, lk);
   state.lastX = x;
 }
@@ -238,7 +241,7 @@ function drawTube(x) {
   $("orders").innerHTML = ul(["Drain bottle below the chest, never clamp a bubbling tube, keep the tubing free of loops.", "Record output every 4-8 h (hourly for hemothorax), bubbling (yes/no, with cough), swinging, and site.",
     "Small-bore flushes: 20 mL saline every 6-8 h via three-way tap; subtract flush volume from output.", "Suction is not routine; -10 to -20 cmH2O if the lung does not re-expand or air leak persists.",
     "Daily CXR is not routine: image after insertion, if the clinical picture changes, and before removal decisions.", "Analgesia: regular acetaminophen, NSAID if safe, opioid PRN. Mobilise with the drain.",
-    "Antibiotics are not needed for the drain itself (except trauma per local practice)."]);
+    "Antibiotics are not needed for the drain itself (except trauma per local practice).", nurseLine()]);
 }
 
 function drawClamp(x) {
@@ -255,7 +258,14 @@ function drawClamp(x) {
 }
 function drawTrouble() {
   const k = val("trouble"), t = R.TROUBLE[k];
-  $("troubleout").innerHTML = t ? `<div class="verdict ${t.urgent ? "t3" : "t1"}"><div class="big">${esc(t.t)}</div></div><ol>${t.steps.map((s) => "<li>" + esc(s) + "</li>").join("")}</ol>` : '<div class="muted">Pick a problem from the dropdown.</div>';
+  const nurse = t ? `<div class="alert info"><b>Help:</b>${esc(nurseLine())}${["notDraining", "airLeak", "subcut", "dislodged", "highOutput", "pain"].includes(k) ? "" : " Urgent problems still go to the physician first."}</div>` : "";
+  $("troubleout").innerHTML = t ? `<div class="verdict ${t.urgent ? "t3" : "t1"}"><div class="big">${esc(t.t)}</div></div><ol>${t.steps.map((s) => "<li>" + esc(s) + "</li>").join("")}</ol>${nurse}` : '<div class="muted">Pick a problem from the dropdown.</div>';
+}
+function drawNurse() {
+  $("nursecard").innerHTML = `<div class="verdict t1"><div class="big">${esc(PLEURAL_NURSE.name)}, ${esc(PLEURAL_NURSE.unit)}</div><div>Highly knowledgeable and experienced ${esc(PLEURAL_NURSE.role)}. Her role is to help with pleural disease management.</div></div>
+    <h3>Ward nurses can call her directly for</h3>${ul(["Chest tube questions", "Flushing small-bore tubes (how, how often, how to record the flush volume)", "Poorly draining or blocked tubes: troubleshooting the circuit, three-way tap, swing and position"])}
+    <h3>She may also flag to us</h3>${ul(["Problems that need physician involvement, such as a loculated effusion that may need intrapleural tPA + DNase", "Residual collections, possible tube malposition, or a tube that may be ready to come out"])}
+    <div class="muted">Urgent problems (bleeding, sudden breathlessness, tension, re-expansion edema) still go to the physician / rapid response first.</div>`;
 }
 
 function drawRemoval(x) {
