@@ -43,15 +43,17 @@
     button.chart { padding:2px 8px; font-size:12px; white-space:nowrap; }
     details.card > summary { cursor:pointer; } .dtbl { border-collapse:collapse; margin-top:8px; font-size:12.5px; width:100%; }
     .dtbl th, .dtbl td { border-bottom:1px solid #e3e8ee; padding:4px 8px; text-align:left; vertical-align:top; } .dtbl th { background:#f3f6f9; }
+    .dtbl td.stay { white-space:nowrap; font-family:ui-monospace,Consolas,monospace; letter-spacing:-1px; } .dtbl td.stay.ok { color:#2f5321; } .dtbl td.stay.near { background:#fce8c8; color:#7a4b00; font-weight:700; } .dtbl td.stay.over { background:#f8d7d3; color:#8e1f14; font-weight:700; }
     .err { color:#b00020; } .ok { color:#1d6b3a; }
   </style>
 </head>
 <body>
 <main>
   <details class="card" id="dcard" open>
-    <summary><h2 style="display:inline">Daily update from the chart</h2> <span class="small muted">fills empty cells, rebuilds "check today" · version 22 Nov j</span></summary>
+    <summary><h2 style="display:inline">Daily update from the chart</h2> <span class="small muted">fills empty cells, rebuilds "check today" · version 22 Nov k</span></summary>
     <div class="muted small" style="margin:6px 0">Open your Excel list, press Update: each patient is looked up by the <b>MRN</b> in your file and their chart is read.
-      Only <b>empty</b> cells are filled (age, allergy, gfr, vtep, iv, foley, lab); what you typed is never changed. A <b>check today</b> column is rebuilt each run
+      Only <b>empty</b> cells are filled (age, allergy, gfr, vtep, iv, foley, lab); what you typed is never changed.
+      A <b>stay</b> bar shows days in hospital against a target (▰▰▰▰▰▱▱ 5/7; type another number such as <b>10</b> in a patient's stay cell to change their target). One day before the target, check today says <b>start discharge Rx and note</b>. A <b>check today</b> column is rebuilt each run
       (new abnormal results, vitals out of range, antibiotic day / IV to PO, electrolytes to recheck, renal dosing, pending tests, Discharge Clinic candidates).
       Keep the file in your <b>OneDrive</b> folder: in Edge or Chrome the update is saved straight back to it and syncs. Close it in Excel before saving.
       Read-only: nothing is written to Cerner, and your list never leaves this computer and your OneDrive.</div>
@@ -111,14 +113,14 @@
 </main>
 
 <script src="parse.js?v=20261119f"></script>
-<script src="xlsx.js?v=20261122j"></script>
+<script src="xlsx.js?v=20261122k"></script>
 <script src="chart.js?v=20261119b"></script>
 <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
 <script src="../discharge/rules.js?v=20261122a"></script>
 <script src="../discharge/chart.js?v=20261122a"></script>
 <script src="../dcclinic/rules.js?v=20261122a"></script>
-<script src="daily.js?v=20261122a"></script>
-<script src="dailyui.js?v=20261122j"></script>
+<script src="daily.js?v=20261122k"></script>
+<script src="dailyui.js?v=20261122k"></script>
 <script>
 (function () {
   "use strict";

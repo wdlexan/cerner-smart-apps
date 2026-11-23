@@ -96,6 +96,7 @@
     return PListDaily.values(f, raw, g.allergies, { pending: DcRules.pending, dcc });
   }
 
+  const stayCls = (t) => { const m = String(t || "").match(/ (\d+)\/(\d+)$/); if (!m) return ""; return +m[1] >= +m[2] ? "over" : +m[1] >= +m[2] - 1 ? "near" : "ok"; };
   async function run() {
     if (!file) return;
     $("drun").disabled = true; $("dsave").disabled = true; $("dtbl").innerHTML = "";
@@ -124,7 +125,7 @@
       const res = await PListXlsx.daily(window.JSZip, file.buf.slice(0), async (p) => { const r = out.get(p.first); if (!r) return null; if (r.e) throw r.e; return r.v; }, { type: "uint8array" });
       result = res;
       const ok = res.report.filter((r) => !r.error && !r.skipped);
-      $("dtbl").innerHTML = `<tr><th>Patient</th><th>Filled (empty cells only)</th><th>Check today</th></tr>` + res.report.map((r) => `<tr><td>${esc(r.name)}</td>` +
+      $("dtbl").innerHTML = `<tr><th>Patient</th><th>Stay</th><th>Filled (empty cells only)</th><th>Check today</th></tr>` + res.report.map((r) => `<tr><td>${esc(r.name)}</td><td class="stay ${stayCls(r.stay)}">${esc(r.stay || "")}</td>` +
         (r.error ? `<td colspan="2" class="err">${esc(r.error)}</td>` : `<td>${r.filled.length ? esc(r.filled.join(", ")) : '<span class="muted">nothing empty to fill</span>'}</td><td>${r.check.length ? esc(r.check.join(" · ")) : '<span class="muted">nothing flagged</span>'}</td>`) + "</tr>").join("");
       $("dsave").disabled = !ok.length;
       say(`Read ${ok.length} of ${res.report.length} charts. Check the table, then press <b>${file.handle ? "Save to the same file" : "Download updated file"}</b>` + (file.handle ? "" : " (it goes to your Downloads folder)") + "." +

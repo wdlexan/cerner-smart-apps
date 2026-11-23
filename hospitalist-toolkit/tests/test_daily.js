@@ -83,5 +83,37 @@ else {
           eq("day 2: Bo skipped and untouched", cell(x2, "K" + rB), "42");
         }));
     })
+    .then(() => { // stay bar and the discharge reminder
+      eq("bar 5/7", X.stayBar(5, 7), "▰▰▰▰▰▱▱ 5/7"); eq("bar 9/7", X.stayBar(9, 7), "▰▰▰▰▰▰▰+2 9/7"); eq("bar 0/7", X.stayBar(0, 7), "▱▱▱▱▱▱▱ 0/7");
+      eq("target typed 10", X.stayTarget("10"), 10); eq("target from old bar", X.stayTarget("▰▰▱ 3/10"), 10); eq("target blank = 7", X.stayTarget(""), 7);
+      eq("los from admit cell", X.losFromCell("17-Nov (LOS 5 d)", new Date(2026, 10, 22, 9).getTime()), 5);
+      eq("los across new year", X.losFromCell("30-Dec", new Date(2027, 0, 2, 9).getTime()), 3);
+      eq("5/7 no reminder", X.stayCheck(5, 7), null); eq("6/7 reminder", X.stayCheck(6, 7), "day 6/7: start discharge Rx and note");
+      eq("8/7 past target", X.stayCheck(8, 7), "day 8/7: past target, discharge Rx and note ready?");
+      const D = require("../tools/plist/daily.js"), now = new Date(2026, 10, 22, 9).getTime();
+      eq("los from the chart admission", D.values({ now }, { encounters: [{ period: { start: new Date(2026, 10, 16, 14).toISOString() } }] }, []).los, 5);
+      return X.build(JSZip, tpl, [{ floor: "S7B", patients: [
+        { name: "Stay, Six", location: "S7B-VGH S715 A", admit: "16-Nov (LOS 6 d)", mrn: "1", sex: "F" },
+        { name: "Stay, Two", location: "S7B-VGH S716 B", admit: "20-Nov", mrn: "2", sex: "M" }] }])
+        .then((u8) => X.daily(JSZip, u8, (p) => (/Six/.test(p.name) ? { los: 6, check: ["CRITICAL K 6.4", "recheck Na"] } : { check: [] }), { date: "22 Nov", now }))
+        .then((res) => sheet(res.data).then((x) => {
+          const rowOf = (name) => +x.match(new RegExp(`<row r="(\\d+)"[^>]*>(?:(?!</row>)[\\s\\S])*${name}`))[1];
+          const r6 = rowOf("Stay, Six"), r2 = rowOf("Stay, Two"), sC = res.stayColumn, cC = res.column;
+          eq("stay header", cell(x, sC + "1"), "stay");
+          eq("stay bar 6/7", cell(x, sC + r6), "▰▰▰▰▰▰▱ 6/7");
+          eq("stay from typed admit date", cell(x, sC + r2), "▰▰▱▱▱▱▱ 2/7");
+          eq("reminder after CRITICAL", [cell(x, cC + r6), cell(x, cC + (r6 + 1))], ["22 Nov: CRITICAL K 6.4", "day 6/7: start discharge Rx and note"]);
+          eq("stay colour rules", /SEARCH\("discharge Rx"/.test(x) && new RegExp(`sqref="${sC}2:`).test(x), true);
+          // you change Two's target to 3: next day 3/3 is past target
+          const set = x.replace(new RegExp(`<c r="${sC}${r2}"[^>]*?(?:/>|>[\\s\\S]*?</c>)`), `<c r="${sC}${r2}" t="inlineStr"><is><t>3</t></is></c>`);
+          return JSZip.loadAsync(res.data).then((z) => { z.file("xl/worksheets/sheet1.xml", set); return z.generateAsync({ type: "uint8array" }); })
+            .then((u) => X.daily(JSZip, u, () => ({ check: [] }), { date: "23 Nov", now: now + 86400000 }))
+            .then((res2) => sheet(res2.data).then((x2) => {
+              eq("typed target 3 kept: 3/3", cell(x2, sC + r2), "▰▰▰ 3/3");
+              eq("past target reminder", cell(x2, cC + r2), "23 Nov: day 3/3: past target, discharge Rx and note ready?");
+              eq("colour rules not doubled", (x2.match(/SEARCH\("discharge Rx"/g) || []).length, 1);
+            }));
+        }));
+    })
     .then(done).catch((e) => { console.log("FAIL", e); fail++; done(); });
 }

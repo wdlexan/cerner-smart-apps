@@ -248,17 +248,28 @@
     return val === "" || val == null ? x : cloneRow(x, n, { [col]: val });
   }
   // quiet colours for "check today", added once: soft red for CRITICAL, soft amber for things to do
-  async function addCheckCF(zip, xml, cC, lastRow) {
-    if (/SEARCH\("CRITICAL"/.test(xml) || !zip.file("xl/styles.xml")) return xml;
+  async function addCheckCF(zip, xml, cC, lastRow, sC) {
+    if (!zip.file("xl/styles.xml")) return xml;
+    if (/SEARCH\("discharge Rx"/.test(xml) && (!sC || new RegExp(`sqref="${sC}2:`).test(xml))) return xml; // already current
+    xml = xml.replace(/<conditionalFormatting\b[^>]*>(?:(?!<\/conditionalFormatting>)[\s\S])*?priority="9\d\d"[\s\S]*?<\/conditionalFormatting>/g, ""); // older check-today rules
     let st = await zip.file("xl/styles.xml").async("string");
     const red = '<dxf><font><b/><color rgb="FF8E1F14"/></font><fill><patternFill><bgColor rgb="FFF8D7D3"/></patternFill></fill></dxf>';
     const amb = '<dxf><font><color rgb="FF7A4B00"/></font><fill><patternFill><bgColor rgb="FFFCE8C8"/></patternFill></fill></dxf>';
-    const first = addDxfs(st, red + amb, 2); st = first.st;
+    const ambB = '<dxf><font><b/><color rgb="FF7A4B00"/></font><fill><patternFill><bgColor rgb="FFFCE8C8"/></patternFill></fill></dxf>';
+    const grn = '<dxf><font><color rgb="FF2F5321"/></font></dxf>';
+    const first = addDxfs(st, red + amb + ambB + grn, 4); st = first.st;
     zip.file("xl/styles.xml", st);
     const c2 = cC + "2", rng = `${cC}2:${cC}${Math.max(lastRow, 200)}`;
-    const todo = ["recheck", "IV to PO", "stop date", "renal dosing", "vitals 24", "Discharge Clinic", "pending"].map((w) => `ISNUMBER(SEARCH("${w}",${c2}))`).join(",");
-    const cf = `<conditionalFormatting sqref="${rng}"><cfRule type="containsText" dxfId="${first.at}" priority="901" operator="containsText" text="CRITICAL"><formula>NOT(ISERROR(SEARCH("CRITICAL",${c2})))</formula></cfRule>` +
+    const todo = ["recheck", "IV to PO", "stop date", "renal dosing", "vitals 24", "Discharge Clinic", "pending", "discharge Rx"].map((w) => `ISNUMBER(SEARCH("${w}",${c2}))`).join(",");
+    let cf = `<conditionalFormatting sqref="${rng}"><cfRule type="containsText" dxfId="${first.at}" priority="901" operator="containsText" text="CRITICAL"><formula>NOT(ISERROR(SEARCH("CRITICAL",${c2})))</formula></cfRule>` +
       `<cfRule type="expression" dxfId="${first.at + 1}" priority="902"><formula>OR(${todo})</formula></cfRule></conditionalFormatting>`;
+    if (sC) { // stay: green while on track, amber (bold) from the day before target, red at or past target
+      const s2 = sC + "2", n = `VALUE(MID(${s2},FIND(" ",${s2})+1,FIND("/",${s2})-FIND(" ",${s2})-1))`, t = `VALUE(MID(${s2},FIND("/",${s2})+1,3))`;
+      cf += `<conditionalFormatting sqref="${sC}2:${sC}${Math.max(lastRow, 200)}">` +
+        `<cfRule type="expression" dxfId="${first.at}" priority="903" stopIfTrue="1"><formula>IFERROR(${n}&gt;=${t},FALSE)</formula></cfRule>` +
+        `<cfRule type="expression" dxfId="${first.at + 2}" priority="904" stopIfTrue="1"><formula>IFERROR(${n}&gt;=${t}-1,FALSE)</formula></cfRule>` +
+        `<cfRule type="expression" dxfId="${first.at + 3}" priority="905"><formula>IFERROR(${n}&gt;=0,FALSE)</formula></cfRule></conditionalFormatting>`;
+    }
     return insertCF(xml, cf);
   }
   function insertCF(xml, cf) {
@@ -343,7 +354,7 @@
     const cfs = (txml.match(/<conditionalFormatting\b[\s\S]*?<\/conditionalFormatting>/g) || []).map((c) => c.replace(/dxfId="(\d+)"/g, (m, n) => `dxfId="${+n + d.at}"`)
       .replace(/sqref="([^"]*)"/, (m, refs) => `sqref="${refs.split(" ").map((q) => q.replace(/^([A-Z]+)(\d+):([A-Z]+)\d+$/, `$1$2:$3${lastRow}`)).join(" ")}"`)).join("");
     if (cfs) xml = insertCF(xml, cfs);
-    const cC = L.hcols["check today"]; if (cC) xml = await addCheckCF(L.zip, xml, cC, lastRow);
+    const cC = L.hcols["check today"]; if (cC) xml = await addCheckCF(L.zip, xml.replace(/SEARCH\("discharge Rx"/g, "SEARCH(\"x\""), cC, lastRow, L.hcols["stay"]);
     if (maxCol > lastT) xml = xml.replace(/<dimension ref="A1:[A-Z]+(\d+)"\/>/, (m, n) => `<dimension ref="A1:${colName(maxCol)}${n}"/>`);
     L.zip.file(L.path, xml);
     // 5. repeat the header row on every printed page
@@ -354,6 +365,31 @@
       L.zip.file("xl/workbook.xml", /<definedNames>/.test(wbx) ? wbx.replace("</definedNames>", () => dn + "</definedNames>") : wbx.replace(/(<calcPr|<oleSize|<customWorkbookViews|<pivotCaches|<extLst|<\/workbook>)/, (m) => `<definedNames>${dn}</definedNames>${m}`));
     }
     return { data: await L.zip.generateAsync({ type: opts.type || "uint8array", compression: "DEFLATE" }), patients: L.patients.length, floors: L.floors.length };
+  }
+
+  /* ---------- stay bar: "▰▰▰▰▰▱▱ 5/7" ---------- */
+  const STAY_TARGET = 7;
+  function stayTarget(txt) { // what you typed in the stay cell sets the target: "10", "/10" or an old bar "… 5/10"; else 7
+    const t = String(txt || "").trim(), m = t.match(/\/\s*(\d{1,2})\s*$/) || t.match(/^(\d{1,2})$/);
+    const n = m ? +m[1] : STAY_TARGET; return n >= 1 && n <= 60 ? n : STAY_TARGET;
+  }
+  function stayBar(los, target) {
+    const slots = target <= 14 ? target : 10, done = Math.min(slots, Math.round((Math.min(los, target) / target) * slots));
+    return "▰".repeat(done) + "▱".repeat(slots - done) + (los > target ? "+" + (los - target) : "") + " " + los + "/" + target;
+  }
+  const MON = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 };
+  function losFromCell(txt, now) { // "17-Nov (LOS 5 d)" in the admit date column, when the chart gives no admission
+    const t = String(txt || ""), d = t.match(/(\d{1,2})[-\s]([A-Za-z]{3})/);
+    if (d && MON[d[2].toLowerCase()] != null) { const n = new Date(now); let a = new Date(n.getFullYear(), MON[d[2].toLowerCase()], +d[1]);
+      if (a.getTime() > now + 86400000) a = new Date(n.getFullYear() - 1, a.getMonth(), a.getDate());
+      const t0 = new Date(n.getFullYear(), n.getMonth(), n.getDate()).getTime(); return Math.max(0, Math.round((t0 - a.getTime()) / 86400000)); }
+    const l = t.match(/LOS\s*(\d+)/i); return l ? +l[1] : null;
+  }
+  function stayCheck(los, target) {
+    if (los == null) return null;
+    if (los >= target) return `day ${los}/${target}: past target, discharge Rx and note ready?`;
+    if (los >= target - 1) return `day ${los}/${target}: start discharge Rx and note`;
+    return null;
   }
 
   async function daily(JSZip, data, valsFor, opts) {
@@ -368,7 +404,10 @@
     const styleOf = (x, col) => ((x || "").match(new RegExp(`<c r="${col}\\d+"[^>]*?\\ss="(\\d+)"`)) || [])[1];
     const ensure = (x, col, n, from) => { if (!x || new RegExp(`<c r="${col}${n}"`).test(x)) return x; const st = styleOf(x, from || "S");
       return x.replace(/<\/row>$/, `<c r="${col}${n}"${st ? ` s="${st}"` : ""}/></row>`).replace(/\/>$/, `><c r="${col}${n}"${st ? ` s="${st}"` : ""}/></row>`); };
+    let sC = L.hcols["stay"];
+    if (!sC) { sC = colName(Math.max(lastCol, colNum("S")) + 1); lastCol = colNum(sC); if (rowXml[1]) rowXml[1] = cloneRow(ensure(rowXml[1], sC, 1), 1, { [sC]: "stay" }); }
     if (!cC) { cC = colName(Math.max(lastCol, colNum("S")) + 1); if (rowXml[1]) rowXml[1] = cloneRow(ensure(rowXml[1], cC, 1), 1, { [cC]: "check today" }); }
+    const now = opts.now || Date.now();
     const stamp = opts.date || new Date().toLocaleDateString("en-CA", { day: "numeric", month: "short" });
     const report = [];
     for (const ep of L.patients) {
@@ -377,10 +416,15 @@
       const r = ep.first, x = rowXml[r], vals = {}, fills = [];
       FILL.forEach(([col, k]) => { const val = v[k]; if (val == null || val === "") return; if (!cellText(x, col, L.sst)) { vals[col] = typeof val === "number" ? val : String(val); fills.push(k); } });
       if (Object.keys(vals).length) rowXml[r] = cloneRow(x, r, vals);
-      const list = (v.check || []).slice(); if (list.length) list[0] = stamp + ": " + list[0];
+      // stay bar: days from the chart's admission, else from the admit date you typed; target from the stay cell (7 if blank)
+      const target = stayTarget(cellText(rowXml[r], sC, L.sst)), los = v.los != null ? v.los : losFromCell(cellText(rowXml[r], "G", L.sst), now);
+      rowXml[r] = setCell(ensure(rowXml[r], sC, r, "G"), sC, r, los == null ? (cellText(rowXml[r], sC, L.sst) || "") : stayBar(los, target));
+      const list = (v.check || []).slice(), sc = stayCheck(los, target);
+      if (sc) list.splice(list.filter((c) => /^CRITICAL/.test(c)).length, 0, sc); // right after any CRITICAL results
+      if (list.length) list[0] = stamp + ": " + list[0];
       const items = spread(list, 4), lastN = Math.max(ep.last || r, r);
       for (let k = 0; k < 4; k++) { const n = r + k; if (!rowXml[n] || (k > 0 && n > lastN)) break; rowXml[n] = setCell(ensure(rowXml[n], cC, n), cC, n, items[k] || ""); }
-      report.push({ name: ep.name, filled: fills, check: v.check || [] });
+      report.push({ name: ep.name, filled: fills, check: list.map((c, i) => (i === 0 ? c.slice(stamp.length + 2) : c)), stay: los == null ? "" : stayBar(los, target) });
     }
     const tidyRow = (x) => { const m = x.match(/^(<row\b[^>]*>)([\s\S]*)(<\/row>)$/); if (!m) return x.replace(/ spans="[^"]*"/, "");
       const cells = m[2].match(/<c r="[A-Z]+\d+"[^>]*?(?:\/>|>[\s\S]*?<\/c>)/g) || [];
@@ -388,12 +432,13 @@
       return m[1].replace(/ spans="[^"]*"/, "") + cells.join("") + m[3]; };
     xml = xml.replace(/<sheetData>[\s\S]*<\/sheetData>|<sheetData\/>/, "<sheetData>" + L.rows.map((r) => tidyRow(rowXml[r.n])).join("") + "</sheetData>");
     xml = xml.replace(/<dimension ref="A1:([A-Z]+)(\d+)"\/>/, (m, c, n) => `<dimension ref="A1:${colName(Math.max(colNum(c), colNum(cC)))}${n}"/>`);
+    if (/<cols>/.test(xml) && !new RegExp(`<col [^>]*min="${colNum(sC)}"`).test(xml)) xml = xml.replace("</cols>", `<col min="${colNum(sC)}" max="${colNum(sC)}" width="17" customWidth="1"/></cols>`);
     if (/<cols>/.test(xml) && !new RegExp(`<col [^>]*min="${colNum(cC)}"`).test(xml)) xml = xml.replace("</cols>", `<col min="${colNum(cC)}" max="${colNum(cC)}" width="48" customWidth="1"/></cols>`);
-    xml = await addCheckCF(L.zip, xml, cC, Math.max(...L.rows.map((r) => r.n)));
+    xml = await addCheckCF(L.zip, xml, cC, Math.max(...L.rows.map((r) => r.n)), sC);
     L.zip.file(L.path, xml);
-    return { data: await L.zip.generateAsync({ type: opts.type || "uint8array", compression: "DEFLATE" }), report, column: cC };
+    return { data: await L.zip.generateAsync({ type: opts.type || "uint8array", compression: "DEFLATE" }), report, column: cC, stayColumn: sC };
   }
 
-  const api = { build, cloneRow, spread, lines, halves, readList, update, sameP, daily, restyle };
+  const api = { build, cloneRow, spread, lines, halves, readList, update, sameP, daily, restyle, stayBar, stayTarget, losFromCell, stayCheck };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.PListXlsx = api;
 })(this);

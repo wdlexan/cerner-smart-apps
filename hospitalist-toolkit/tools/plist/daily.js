@@ -78,6 +78,10 @@
     try { pend = (opts.pending ? opts.pending(f) : []).map((p) => p.what).filter(Boolean); } catch (e) {}
     if (pend.length) out.lab = pend.slice(0, 5).join("; ") + (pend.length > 5 ? "; +" + (pend.length - 5) + " more" : "");
 
+    // days in hospital (whole days since the admission started), for the stay bar
+    const enc = (raw.encounters || [])[0], st0 = enc && enc.period && enc.period.start && new Date(enc.period.start).getTime();
+    if (st0 && !(enc.period.end && new Date(enc.period.end).getTime() < now)) out.los = Math.max(0, Math.floor((now - st0) / DAY));
+
     /* ---------- check today ---------- */
     const C = out.check;
     abnormalLabs24(raw, now).slice(0, 4).forEach((l) => C.push(`${l.crit ? "CRITICAL " : "new "}${l.name} ${l.v}${l.flag && !/^A/.test(l.flag) ? " " + l.flag : ""}`));
