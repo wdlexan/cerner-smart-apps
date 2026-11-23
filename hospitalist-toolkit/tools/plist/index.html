@@ -56,6 +56,7 @@
       Keep the file in your <b>OneDrive</b> folder: in Edge or Chrome the update is saved straight back to it and syncs. Close it in Excel before saving.
       Read-only: nothing is written to Cerner, and your list never leaves this computer and your OneDrive.</div>
     <div class="row">
+      <button id="dtest" class="ghost" hidden title="Test mode only: builds a list of the Cerner sandbox's made-up patients">🧪 Make a test list (sandbox)</button>
       <button id="dopen">📂 Open my list…</button><input id="dfile" type="file" accept=".xlsx" hidden>
       <span id="dname" class="small"></span>
       <button id="drun" disabled>Update from the chart</button>
@@ -116,7 +117,7 @@
 <script src="../discharge/chart.js?v=20261122a"></script>
 <script src="../dcclinic/rules.js?v=20261122a"></script>
 <script src="daily.js?v=20261122a"></script>
-<script src="dailyui.js?v=20261122a"></script>
+<script src="dailyui.js?v=20261122b"></script>
 <script>
 (function () {
   "use strict";

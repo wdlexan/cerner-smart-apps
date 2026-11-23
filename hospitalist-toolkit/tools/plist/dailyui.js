@@ -85,6 +85,43 @@
       $("dsave").disabled = true;
     } catch (e) { say("Could not save: " + esc(e.message || e) + (/lock|in use|NoModification|InvalidState/i.test(String(e && (e.name + e.message))) ? " (close the file in Excel first)" : ""), "err"); }
   }
+  /* ---------- test mode only: a made-up list from the Cerner sandbox's synthetic patients ---------- */
+  const isTest = (() => { try { return sessionStorage.getItem("toolkit-test") === "1"; } catch (e) { return false; } })();
+  function mrnOf(p) {
+    const ids = p.identifier || [];
+    const mr = ids.find((i) => /\bMR\b|MRN|medical record/i.test(JSON.stringify(i.type || {}))) || ids.find((i) => /mrn|medical/i.test(i.system || "")) || null;
+    return mr ? String(mr.value || "").trim() : "";
+  }
+  async function makeTestList() {
+    const btn = $("dtest"); btn.disabled = true;
+    try {
+      say("Finding test patients in the Cerner sandbox…");
+      await loadJs(JSZIP, () => window.JSZip);
+      const c = await client();
+      let pts = [];
+      for (const q of ["Patient?family=SMART&_count=10", "Patient?family=PETERS&_count=5", "Patient?name=a&_count=10"]) {
+        try { pts = pts.concat((await c.request(q, { flat: true })).filter((p) => p.resourceType === "Patient")); } catch (e) {}
+        if (pts.length >= 5) break;
+      }
+      const seen = new Set(), list = [];
+      pts.forEach((p) => { const mrn = mrnOf(p); if (!mrn || seen.has(mrn)) return; seen.add(mrn); list.push({ p, mrn }); });
+      if (!list.length) throw new Error("no sandbox patients with an MRN were found");
+      const now = Date.now(), pick = list.slice(0, 6);
+      const groups = [{ floor: "TEST", patients: pick.map(({ p, mrn }, i) => {
+        const n = (p.name || [])[0] || {}, age = p.birthDate ? Math.floor((now - new Date(p.birthDate)) / (365.25 * 864e5)) : "";
+        return { name: `${n.family || "?"}, ${(n.given || []).join(" ")}`.trim(), location: `TEST-VGH T${701 + i} A`, age, mrn, sex: p.gender === "female" ? "F" : p.gender === "male" ? "M" : "",
+          reason: "sandbox test patient", gfr: i === 0 ? 55 : "", todo: i === 0 ? ["typed by me: should stay"] : [] };
+      }) }];
+      const tpl = await (await fetch("template.xlsx?v=20261120m")).arrayBuffer();
+      const u8 = await PListXlsx.build(window.JSZip, tpl, groups, { type: "uint8array" });
+      file = { name: "TEST_sandbox_list.xlsx", buf: u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength), handle: null };
+      opened();
+      say(`Made a test list of ${pick.length} sandbox patients (${esc(pick.map((x) => x.mrn).join(", "))}). The first one has a typed gfr (55) and to-do, to show they are kept. Now press <b>Update from the chart</b>.`, "ok");
+    } catch (e) { say("Could not make a test list: " + esc(e.message || e), "err"); }
+    btn.disabled = false;
+  }
+  if (isTest) { $("dtest").hidden = false; $("dtest").onclick = makeTestList; }
+
   $("dopen").onclick = openList; $("drun").onclick = run; $("dsave").onclick = save;
   $("dsave").textContent = canSaveBack ? "Save to the same file" : "Download updated file";
 })();
