@@ -20,6 +20,7 @@ const TOOLS = [
   { key: "abx",   label: "Antibiotics", tags: "antibiotics antimicrobial stewardship iv po switch duration",          path: "tools/abx/index.html" },
   { key: "abxmap", label: "Antibiotic chooser (body map)", tags: "antibiotic chooser body map which antibiotic empiric choice site lung skin bladder kidney prostate colon gallbladder joint brain sinus dental groin sepsis c diff allergy mrsa esbl pseudomonas", path: "tools/abxmap/index.html" },
   { key: "hahabx", label: "HaH antibiotics (home IV)", tags: "hospital at home hah opat home iv antibiotics elastomeric ball continuous infusion cadd pump nurse visits bid tid meropenem ertapenem piperacillin tazobactam cloxacillin cefazolin probenecid penicillin ceftazidime vancomycin", path: "tools/hahabx/index.html" },
+  { key: "fuo",   label: "Fever of unknown origin (FUO)", tags: "fuo fever of unknown origin pyrexia prolonged fever unexplained fever nosocomial fever neutropenic fever drug fever hlh hscore still disease yamaguchi gca giant cell arteritis temporal arteritis pet-ct pet ct endocarditis culture negative tb tuberculosis lymphoma ferritin night sweats relative bradycardia", path: "tools/fuo/index.html" },
   { key: "inf",   label: "Infections by site", tags: "infections sepsis pneumonia uti cellulitis source",   path: "tools/infections/index.html" },
   { key: "cw",    label: "Choosing Wisely", tags: "choosing wisely low value tests overuse",      path: "tools/cw/index.html", keepHeader: true }, // its header holds the Look back control
   { key: "dx",    label: "Diagnosis check", tags: "diagnosis check cognitive bias second look missed differential harm",      path: "tools/dx/index.html", keepHeader: true }, // its header holds the Look back control
@@ -135,7 +136,7 @@ const GROUPS = [
   { name: "Kidney", keys: ["aki", "lytes", "hypona", "acidbase", "ktx"] },
   { name: "Neuro", keys: ["neuro", "stroke", "seizure", "dementia", "pd", "ae"] },
   { name: "GI & endo", keys: ["liver", "ibd", "dm", "edr"] },
-  { name: "Infection", keys: ["abx", "abxmap", "hahabx", "inf"] },
+  { name: "Infection", keys: ["abx", "abxmap", "hahabx", "inf", "fuo"] },
   { name: "Onc & heme", keys: ["onc", "tox", "bsab", "pc", "g6pd", "sero"] },
   { name: "Safety", keys: ["meds", "opioid", "pain", "risk", "cw", "dx"] },
   { name: "Admit & discharge", keys: ["ed", "hah", "hip", "consult", "mobility", "discharge", "dcclinic", "forms"] }];

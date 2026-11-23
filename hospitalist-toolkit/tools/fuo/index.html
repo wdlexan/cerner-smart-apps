@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fever of unknown origin</title>
+  <style>
+    :root { --bg:#f5f7fa; --card:#fff; --ink:#1f2933; --muted:#5f6c7b; --accent:#0b6bcb; --line:#dde3ea;
+            --r-bg:#fde8e8; --r-ink:#9b1c1c; --a-bg:#fff1d6; --a-ink:#8a5200; --b-bg:#e3eefc; --b-ink:#0b4a99; --g-bg:#e4f4ea; --g-ink:#1d6b3a; --warn-bg:#fff4e5; --warn-line:#f0c27b; }
+    @media (prefers-color-scheme: dark) { :root { --bg:#111418; --card:#1a1f26; --ink:#e8edf2; --muted:#9aa7b5; --accent:#6aa9ff; --line:#2b333d;
+            --r-bg:#4a1d1d; --r-ink:#ffb3b3; --a-bg:#4a3511; --a-ink:#ffd38a; --b-bg:#14325c; --b-ink:#a9cdff; --g-bg:#16361f; --g-ink:#9be0b1; --warn-bg:#3a2e15; --warn-line:#6b5420; } }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); }
+    header { padding:14px 20px; border-bottom:1px solid var(--line); background:var(--card); }
+    header h1 { margin:0; font-size:19px; } header .sub { font-size:13px; color:var(--muted); margin-top:2px; }
+    main { max-width:980px; margin:16px auto 40px; padding:0 16px; display:grid; gap:14px; }
+    .banner { background:var(--warn-bg); border:1px solid var(--warn-line); border-radius:8px; padding:10px 14px; font-size:13px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:10px; font-size:13.5px; }
+    .card > summary { padding:10px 16px; font-weight:700; font-size:15px; cursor:pointer; display:flex; justify-content:space-between; gap:10px; }
+    .card > .body { padding:0 16px 14px; }
+    select, input, button { font:inherit; font-size:13px; padding:5px 8px; border:1px solid var(--line); border-radius:6px; background:var(--card); color:var(--ink); }
+    button { cursor:pointer; } button.primary { border-color:var(--accent); color:var(--accent); }
+    input[type=number] { width:80px; }
+    .row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:8px 0; }
+    .inl { display:inline-flex; gap:6px; align-items:center; }
+    .muted { color:var(--muted); } .err { color:var(--r-ink); }
+    .tiles { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px; }
+    .tile { border-radius:10px; padding:10px 14px; border:1px solid var(--line); background:var(--card); }
+    .tile .k { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; }
+    .tile .big { font-size:26px; font-weight:700; margin:2px 0; }
+    .tile .s { font-size:12.5px; }
+    .t0 { background:var(--g-bg); color:var(--g-ink); } .t1 { background:var(--b-bg); color:var(--b-ink); } .t2 { background:var(--a-bg); color:var(--a-ink); } .t3 { background:var(--r-bg); color:var(--r-ink); }
+    .t0 .k, .t1 .k, .t2 .k, .t3 .k { color:inherit; opacity:.8; }
+    .alert { border-left:4px solid; border-radius:6px; padding:8px 12px; margin:6px 0; }
+    .alert b { margin-right:6px; }
+    .alert.urgent { background:var(--r-bg); color:var(--r-ink); } .alert.action { background:var(--a-bg); color:var(--a-ink); } .alert.info { background:var(--b-bg); color:var(--b-ink); }
+    table { border-collapse:collapse; width:100%; font-size:13px; }
+    th, td { border-bottom:1px solid var(--line); padding:5px 8px; text-align:left; white-space:nowrap; }
+    th { color:var(--muted); font-weight:600; }
+    td.num { text-align:right; font-variant-numeric:tabular-nums; } td.wrap { white-space:normal; }
+    td.hi { color:var(--r-ink); font-weight:600; } td.old { color:var(--a-ink); }
+    .scroll { overflow-x:auto; }
+    .plan h3 { font-size:14px; margin:12px 0 4px; } .plan ul { margin:4px 0 8px 18px; padding:0; } .plan li { margin:3px 0; }
+    .plan .urgent h3 { color:var(--r-ink); } .plan .action h3 { color:var(--a-ink); }
+    .chip { display:inline-block; padding:1px 8px; border-radius:10px; font-size:12px; font-weight:600; }
+    .c-yes { background:var(--g-bg); color:var(--g-ink); } .c-no { background:var(--r-bg); color:var(--r-ink); } .c-unknown { background:var(--a-bg); color:var(--a-ink); }
+    .src { font-size:12px; color:var(--muted); margin-top:8px; }
+    svg text { fill:var(--muted); font-size:11px; }
+    .mgrid { display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:10px; margin:8px 0; }
+    .mgrid fieldset { border:1px solid var(--line); border-radius:8px; padding:6px 12px 8px; margin:0; display:grid; gap:6px; }
+    .mgrid legend { font-weight:600; font-size:13px; padding:0 4px; }
+    .mgrid label:not(.inl) { display:grid; grid-template-columns:90px 80px auto; align-items:center; gap:6px; }
+    .mgrid .u { font-size:12px; color:var(--muted); }
+    .mgrid label select { grid-column:span 2; justify-self:start; }
+    input.typed { border-color:var(--accent); font-weight:600; }
+    .verdict { border-radius:10px; padding:10px 14px; margin:10px 0 6px; }
+    .verdict .big { font-size:18px; font-weight:700; }
+    tr.match td { background:var(--b-bg); color:var(--b-ink); font-weight:600; }
+    td.lv-flag { color:var(--a-ink); font-weight:600; } td.lv-ok { color:var(--g-ink); font-weight:600; }
+    .flag { color:var(--r-ink); font-weight:700; }
+    .agent td { white-space:normal; vertical-align:top; } .st-ok { color:var(--g-ink); font-weight:700; } .st-caution { color:var(--a-ink); font-weight:700; } .st-avoid { color:var(--r-ink); font-weight:700; }
+    .esc-now { background:var(--r-bg); color:var(--r-ink); } .esc-today { background:var(--a-bg); color:var(--a-ink); } .esc-later { background:var(--b-bg); color:var(--b-ink); }
+    .esc { border-radius:6px; padding:6px 10px; margin:5px 0; } .esc b { margin-right:6px; }
+    textarea { width:100%; min-height:220px; font:12.5px ui-monospace,Consolas,monospace; padding:8px; border:1px solid var(--line); border-radius:6px; background:var(--card); color:var(--ink); }
+    .check li.have { color:var(--g-ink); } .check li.miss { color:var(--ink); } .check .why { color:var(--muted); font-size:12px; }
+    .mini { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:10px; } .mini .ttl { font-weight:600; font-size:13px; }
+    .bands td { white-space:normal; } tr.me td { background:var(--b-bg); color:var(--b-ink); font-weight:600; }
+    .handout { border:1px dashed var(--line); border-radius:8px; padding:10px 14px; background:var(--card); max-height:420px; overflow:auto; }
+    .rv { border-radius:10px; padding:10px 14px; margin:8px 0; } .rv .big { font-size:17px; font-weight:700; }
+    .rv-pci { background:var(--b-bg); color:var(--b-ink); } .rv-cabg { background:var(--a-bg); color:var(--a-ink); } .rv-both { background:var(--g-bg); color:var(--g-ink); } .rv-info { background:var(--card); border:1px solid var(--line); }
+    .inputs fieldset { border:1px solid var(--line); border-radius:8px; padding:6px 12px 8px; margin:6px 0; } .inputs legend { font-weight:600; font-size:13px; padding:0 4px; }
+    .inputs .row { margin:4px 0; } .auto { font-size:11px; color:var(--accent); margin-left:3px; }
+    .ref td { white-space:normal; vertical-align:top; }
+    tr.dim td { opacity:.55; } .dd { border:1px solid var(--line); border-radius:8px; padding:6px 10px; margin:6px 0; } .dd > summary { cursor:pointer; } .ddb { margin-top:6px; display:grid; gap:4px; }
+    .inputs fieldset .row label.inl { min-width:260px; }
+    @media print { .noprint { display:none; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Fever of unknown origin: is it FUO, what fits, what to test next</h1>
+    <div class="sub">Fever curve and FUO type (classic, nosocomial, neutropenic, HIV), lab and drug clues from the chart, differential ranked by this patient's clues, staged workup with what is done, HScore (HLH), Yamaguchi (Still's) and GCA criteria, when to treat empirically and when to wait, who to involve, handout and note. Read-only.</div>
+  </header>
+  <main>
+    <div class="banner"><b>Decision-support draft. It orders nothing.</b> Rules were written by Claude from Durack and Street's FUO categories, the Haidar and Singh NEJM 2022 review, Bleeker-Rovers' structured approach, PET-CT studies, the HScore, Yamaguchi and 2022 ACR/EULAR GCA criteria, and have <b>not been verified</b>: check with infectious diseases, rheumatology and hematology before real use. Tests and drugs are found by code and <b>name</b>, so something not shown may still be in the chart (use "Mark" in the workup lists). Use made-up or Cerner sandbox patients until Island Health approves real data.</div>
+
+    <details class="card inputs" open>
+      <summary><span>Patient and situation</span><span class="muted" id="ptsum"></span></summary>
+      <div class="body">
+        <div id="pstatus" class="muted">Open from Cerner to read the chart, or pick a made-up patient:</div>
+        <div class="row"><select id="testsel"><option value="">Made-up patient…</option></select><button id="clear" hidden>Clear</button></div>
+        <div id="errs" class="err" style="font-size:12.5px"></div>
+        <fieldset><legend>Timeline <span class="auto">blank = worked out from the chart</span></legend>
+          <div class="row">
+            <label class="inl">Fever started <input type="number" id="feverStart" style="width:64px"> days ago</label>
+            <label class="inl">Admitted <input type="number" id="admitted" style="width:64px"> days ago</label>
+            <label class="inl">Fever on admission <select id="poa"><option value="">from chart</option><option value="yes">yes</option><option value="no">no (began in hospital)</option></select></label>
+          </div>
+          <div class="row">
+            <label class="inl"><input type="checkbox" id="unstable"> Unstable / septic now</label>
+            <label class="inl"><input type="checkbox" id="miliary"> Suspect miliary TB or TB meningitis</label>
+          </div>
+        </fieldset>
+        <div id="ticks"></div>
+      </div>
+    </details>
+
+    <div class="tiles" id="tiles"></div>
+    <details class="card" open><summary><span>Chart alerts</span><span class="muted" id="alertsum"></span></summary><div class="body" id="alerts"></div></details>
+    <details class="card" open><summary><span>Plan now</span><span class="muted" id="plansum"></span></summary><div class="body plan" id="plan"></div></details>
+    <details class="card" open><summary><span>Does this meet FUO? Fever curve and type</span><span class="muted" id="typesum"></span></summary><div class="body" id="curve"></div></details>
+    <details class="card" open><summary><span>Clues from the chart</span><span class="muted" id="cluesum"></span></summary><div class="body" id="clues"></div></details>
+    <details class="card" open><summary><span>Drug fever check</span><span class="muted" id="drugsum"></span></summary><div class="body" id="drugs"></div></details>
+    <details class="card" open><summary><span>Differential: what fits this patient</span><span class="muted" id="ddxsum"></span></summary><div class="body" id="ddx"></div></details>
+    <details class="card inputs" open><summary><span>All causes by category</span></summary><div class="body">
+      <div class="row"><label class="inl">Show <select id="catsel"><option value="">All categories</option><option>Infection</option><option>Cancer</option><option>Inflammatory</option><option>Other</option></select></label></div>
+      <div class="scroll" id="allddx"></div></div></details>
+    <details class="card" open><summary><span>Workup stage 1: the minimum before calling it FUO</span><span class="muted" id="w1sum"></span></summary><div class="body" id="w1"></div></details>
+    <details class="card" open><summary><span>Workup stage 2: targeted by clues</span><span class="muted" id="w2sum"></span></summary><div class="body" id="w2"></div></details>
+    <details class="card" open><summary><span>Workup stage 3: PET-CT and biopsy</span></summary><div class="body" id="w3"></div></details>
+    <details class="card inputs" open><summary><span>HLH: HScore</span><span class="muted" id="hssum"></span></summary><div class="body">
+      <div class="row"><label class="inl"><input type="checkbox" id="hs-immuno"> Known immunosuppression (HIV, long-term steroids or immunosuppressants)</label><label class="inl"><input type="checkbox" id="hemophago"> Hemophagocytosis on marrow aspirate</label></div>
+      <div id="hs"></div></div></details>
+    <details class="card" open><summary><span>Adult-onset Still's: Yamaguchi criteria</span><span class="muted" id="yamsum"></span></summary><div class="body" id="yam"></div></details>
+    <details class="card inputs" open><summary><span>Giant cell arteritis: 2022 ACR/EULAR criteria</span><span class="muted" id="gcasum"></span></summary><div class="body">
+      <div class="row" id="gcain"></div><div id="gcaout"></div></div></details>
+    <details class="card" open><summary><span>Treat now or wait? Who to involve</span></summary><div class="body plan" id="tx"></div></details>
+    <details class="card" open><summary><span>Discharge and follow-up</span></summary><div class="body plan" id="fu"></div></details>
+    <details class="card" open><summary><span>Patient handout: fever not explained yet</span></summary><div class="body">
+      <div class="row">
+        <label class="inl">Pending tests <input id="h-pend" size="34" placeholder="e.g. PET-CT, lymph node biopsy, TB cultures"></label>
+        <label class="inl">Follow-up <input id="h-fu" size="30" placeholder="e.g. ID clinic Dr. ___ in 2 weeks"></label>
+        <label class="inl">Clinic phone <input id="h-phone" size="16"></label>
+      </div>
+      <div class="row"><button id="h-print" class="primary">Open printable handout</button><span class="muted">Plain language. Extra sections appear for GCA, chemo/neutropenia, drug fever and valve infection.</span></div>
+      <div class="handout" id="handout"></div></div></details>
+    <details class="card"><summary><span>Note draft</span></summary><div class="body"><textarea id="note"></textarea><div class="row"><button id="copy" class="primary">Copy</button><span class="muted">Edit before pasting. Nothing is saved.</span></div></div></details>
+    <div class="src">Sources: Petersdorf RG, Beeson PB. Medicine 1961; Durack DT, Street AC. Curr Clin Top Infect Dis 1991; Haidar G, Singh N. Fever of unknown origin. N Engl J Med 2022;386:463-77; Wright WF, Auwaerter PG. Am Fam Physician 2022; Bleeker-Rovers CP et al. Medicine 2007 (structured approach, potentially diagnostic clues); Kouijzer IJE et al. Semin Nucl Med 2018 (FDG PET-CT in FUO); Fardet L et al. Arthritis Rheumatol 2014 (HScore); Henter JI et al. HLH-2004; Yamaguchi M et al. J Rheumatol 1992; Ponte C et al. 2022 ACR/EULAR GCA criteria, Ann Rheum Dis 2022; Cunha BA. Clin Microbiol Infect 2000 (relative bradycardia); Patel RA, Gallagher JC. Pharmacotherapy 2010 (drug fever); Fowler VG et al. 2023 Duke-ISCVID endocarditis criteria; Beck DB et al. NEJM 2020 (VEXAS).</div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+  <script src="rules.js?v=20261123a"></script>
+  <script src="chart.js?v=20261123a"></script>
+  <script src="samples.js?v=20261123a"></script>
+  <script src="app.js?v=20261123a"></script>
+  <script src="../../subtabs.js?v=20261121f"></script>
+  <script>SubTabs.mount({ store: "fuo", top: ["Chart alerts", "#tiles"], dotSel: ".alert.urgent, .tile.t3, .plan .urgent", tabs: [
+      {"key": "assess", "label": "Assess", "match": ["Patient and situation", "Plan now", "Does this meet FUO"]},
+      {"key": "clues", "label": "Clues & drug fever", "match": ["Clues from the chart", "Drug fever check"]},
+      {"key": "ddx", "label": "Differential", "match": ["Differential: what fits", "All causes by category"]},
+      {"key": "workup", "label": "Workup", "match": ["Workup stage 1", "Workup stage 2", "Workup stage 3"]},
+      {"key": "scores", "label": "HLH, Still's, GCA", "match": ["HLH: HScore", "Adult-onset Still's", "Giant cell arteritis"]},
+      {"key": "tx", "label": "Treat, consult, discharge", "match": ["Treat now or wait", "Discharge and follow-up", "Patient handout"]},
+      {"key": "note", "label": "Note draft", "match": ["Note draft"]}] });</script>
+</body>
+</html>
