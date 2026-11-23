@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NSTEMI</title>
+  <style>
+    :root { --bg:#f5f7fa; --card:#fff; --ink:#1f2933; --muted:#5f6c7b; --accent:#0b6bcb; --line:#dde3ea;
+            --r-bg:#fde8e8; --r-ink:#9b1c1c; --a-bg:#fff1d6; --a-ink:#8a5200; --b-bg:#e3eefc; --b-ink:#0b4a99; --g-bg:#e4f4ea; --g-ink:#1d6b3a; --warn-bg:#fff4e5; --warn-line:#f0c27b; }
+    @media (prefers-color-scheme: dark) { :root { --bg:#111418; --card:#1a1f26; --ink:#e8edf2; --muted:#9aa7b5; --accent:#6aa9ff; --line:#2b333d;
+            --r-bg:#4a1d1d; --r-ink:#ffb3b3; --a-bg:#4a3511; --a-ink:#ffd38a; --b-bg:#14325c; --b-ink:#a9cdff; --g-bg:#16361f; --g-ink:#9be0b1; --warn-bg:#3a2e15; --warn-line:#6b5420; } }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); }
+    header { padding:14px 20px; border-bottom:1px solid var(--line); background:var(--card); }
+    header h1 { margin:0; font-size:19px; } header .sub { font-size:13px; color:var(--muted); margin-top:2px; }
+    main { max-width:980px; margin:16px auto 40px; padding:0 16px; display:grid; gap:14px; }
+    .banner { background:var(--warn-bg); border:1px solid var(--warn-line); border-radius:8px; padding:10px 14px; font-size:13px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:10px; font-size:13.5px; }
+    .card > summary { padding:10px 16px; font-weight:700; font-size:15px; cursor:pointer; display:flex; justify-content:space-between; gap:10px; }
+    .card > .body { padding:0 16px 14px; }
+    select, input, button { font:inherit; font-size:13px; padding:5px 8px; border:1px solid var(--line); border-radius:6px; background:var(--card); color:var(--ink); }
+    button { cursor:pointer; } button.primary { border-color:var(--accent); color:var(--accent); }
+    input[type=number] { width:80px; }
+    .row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:8px 0; }
+    .inl { display:inline-flex; gap:6px; align-items:center; }
+    .muted { color:var(--muted); } .err { color:var(--r-ink); }
+    .tiles { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px; }
+    .tile { border-radius:10px; padding:10px 14px; border:1px solid var(--line); background:var(--card); }
+    .tile .k { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; }
+    .tile .big { font-size:26px; font-weight:700; margin:2px 0; }
+    .tile .s { font-size:12.5px; }
+    .t0 { background:var(--g-bg); color:var(--g-ink); } .t1 { background:var(--b-bg); color:var(--b-ink); } .t2 { background:var(--a-bg); color:var(--a-ink); } .t3 { background:var(--r-bg); color:var(--r-ink); }
+    .t0 .k, .t1 .k, .t2 .k, .t3 .k { color:inherit; opacity:.8; }
+    .alert { border-left:4px solid; border-radius:6px; padding:8px 12px; margin:6px 0; }
+    .alert b { margin-right:6px; }
+    .alert.urgent { background:var(--r-bg); color:var(--r-ink); } .alert.action { background:var(--a-bg); color:var(--a-ink); } .alert.info { background:var(--b-bg); color:var(--b-ink); }
+    table { border-collapse:collapse; width:100%; font-size:13px; }
+    th, td { border-bottom:1px solid var(--line); padding:5px 8px; text-align:left; white-space:nowrap; }
+    th { color:var(--muted); font-weight:600; }
+    td.num { text-align:right; font-variant-numeric:tabular-nums; } td.wrap { white-space:normal; }
+    td.hi { color:var(--r-ink); font-weight:600; } td.old { color:var(--a-ink); }
+    .scroll { overflow-x:auto; }
+    .plan h3 { font-size:14px; margin:12px 0 4px; } .plan ul { margin:4px 0 8px 18px; padding:0; } .plan li { margin:3px 0; }
+    .plan .urgent h3 { color:var(--r-ink); } .plan .action h3 { color:var(--a-ink); }
+    .chip { display:inline-block; padding:1px 8px; border-radius:10px; font-size:12px; font-weight:600; }
+    .c-yes { background:var(--g-bg); color:var(--g-ink); } .c-no { background:var(--r-bg); color:var(--r-ink); } .c-unknown { background:var(--a-bg); color:var(--a-ink); }
+    .src { font-size:12px; color:var(--muted); margin-top:8px; }
+    svg text { fill:var(--muted); font-size:11px; }
+    .mgrid { display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:10px; margin:8px 0; }
+    .mgrid fieldset { border:1px solid var(--line); border-radius:8px; padding:6px 12px 8px; margin:0; display:grid; gap:6px; }
+    .mgrid legend { font-weight:600; font-size:13px; padding:0 4px; }
+    .mgrid label:not(.inl) { display:grid; grid-template-columns:90px 80px auto; align-items:center; gap:6px; }
+    .mgrid .u { font-size:12px; color:var(--muted); }
+    .mgrid label select { grid-column:span 2; justify-self:start; }
+    input.typed { border-color:var(--accent); font-weight:600; }
+    .verdict { border-radius:10px; padding:10px 14px; margin:10px 0 6px; }
+    .verdict .big { font-size:18px; font-weight:700; }
+    tr.match td { background:var(--b-bg); color:var(--b-ink); font-weight:600; }
+    td.lv-flag { color:var(--a-ink); font-weight:600; } td.lv-ok { color:var(--g-ink); font-weight:600; }
+    .flag { color:var(--r-ink); font-weight:700; }
+    .agent td { white-space:normal; vertical-align:top; } .st-ok { color:var(--g-ink); font-weight:700; } .st-caution { color:var(--a-ink); font-weight:700; } .st-avoid { color:var(--r-ink); font-weight:700; }
+    .esc-now { background:var(--r-bg); color:var(--r-ink); } .esc-today { background:var(--a-bg); color:var(--a-ink); } .esc-later { background:var(--b-bg); color:var(--b-ink); }
+    .esc { border-radius:6px; padding:6px 10px; margin:5px 0; } .esc b { margin-right:6px; }
+    textarea { width:100%; min-height:220px; font:12.5px ui-monospace,Consolas,monospace; padding:8px; border:1px solid var(--line); border-radius:6px; background:var(--card); color:var(--ink); }
+    .check li.have { color:var(--g-ink); } .check li.miss { color:var(--ink); } .check .why { color:var(--muted); font-size:12px; }
+    .mini { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:10px; } .mini .ttl { font-weight:600; font-size:13px; }
+    .bands td { white-space:normal; } tr.me td { background:var(--b-bg); color:var(--b-ink); font-weight:600; }
+    .handout { border:1px dashed var(--line); border-radius:8px; padding:10px 14px; background:var(--card); max-height:420px; overflow:auto; }
+    .rv { border-radius:10px; padding:10px 14px; margin:8px 0; } .rv .big { font-size:17px; font-weight:700; }
+    .rv-pci { background:var(--b-bg); color:var(--b-ink); } .rv-cabg { background:var(--a-bg); color:var(--a-ink); } .rv-both { background:var(--g-bg); color:var(--g-ink); } .rv-info { background:var(--card); border:1px solid var(--line); }
+    .inputs fieldset { border:1px solid var(--line); border-radius:8px; padding:6px 12px 8px; margin:6px 0; } .inputs legend { font-weight:600; font-size:13px; padding:0 4px; }
+    .inputs .row { margin:4px 0; } .auto { font-size:11px; color:var(--accent); margin-left:3px; }
+    .ref td { white-space:normal; vertical-align:top; }
+    @media print { .noprint { display:none; } }
+  </style>
+</head>
+<body>
+  </style>
+</head>
+<body>
+  <header>
+    <h1>NSTEMI: type 1 or 2, cath timing, stent or bypass, DAPT and other medications</h1>
+    <div class="sub">Troponin pattern, type 1 vs type 2 MI, GRACE and TIMI, who needs cath and how soon, who qualifies for PCI vs CABG, P2Y12 choice and anticoagulant dose, DAPT duration by bleeding risk (ARC-HBR) and anticoagulant use, secondary prevention, discharge and handout. Read-only.</div>
+  </header>
+  <main>
+    <div class="banner"><b>Decision-support draft. It orders nothing.</b> Rules and doses were written by Claude from the 2025 ACC/AHA ACS guideline, the 2023 ESC ACS guideline, the 2021 ACC/AHA revascularization guideline, the CCS antiplatelet and 2021 dyslipidemia guidelines, ARC-HBR and the Fourth Universal Definition of MI, and have <b>not been verified</b>: check with cardiology and Island Health pharmacy before real use. The cath and surgery decision belongs to the cardiologist / heart team; this tab helps you prepare and ask. Tests and drugs are found by code and <b>name</b>, so something not shown may still be in the chart. Use made-up or Cerner sandbox patients until Island Health approves real data.</div>
+
+    <details class="card inputs" open>
+      <summary><span>Patient and situation</span><span class="muted" id="ptsum"></span></summary>
+      <div class="body">
+        <div id="pstatus" class="muted">Open from Cerner to read the chart, or pick a made-up patient:</div>
+        <div class="row"><select id="testsel"><option value="">Made-up patient…</option></select><button id="clear" hidden>Clear</button></div>
+        <div id="errs" class="err" style="font-size:12.5px"></div>
+        <fieldset><legend>Ischemia (needed to call it MI)</legend>
+          <div class="row">
+            <label class="inl"><input type="checkbox" id="symp"> Ischemic chest pain / anginal equivalent</label>
+            <label class="inl"><input type="checkbox" id="ecgisch"> New ischemic ECG changes (ST depression, T inversion)</label>
+            <label class="inl"><input type="checkbox" id="wma"> New wall-motion abnormality (echo)</label>
+            <label class="inl"><input type="checkbox" id="thromb"> Culprit lesion / thrombus on angiography</label>
+          </div>
+          <div class="row">
+            <label class="inl"><input type="checkbox" id="stdev"> ST deviation 0.5 mm or more</label>
+            <label class="inl"><input type="checkbox" id="dynst"> Dynamic ST/T changes</label>
+            <label class="inl"><input type="checkbox" id="tste"> Transient ST elevation</label>
+            <label class="inl">hs-troponin 99th percentile <input type="number" id="url" style="width:70px"> ng/L</label>
+          </div>
+        </fieldset>
+        <fieldset><legend>Supply/demand triggers (type 2 MI) <span class="auto">ticked from the chart when found</span></legend>
+          <div class="row" id="trigs">
+            <label class="inl"><input type="checkbox" class="trig" value="anemia"> Anemia / bleeding</label>
+            <label class="inl"><input type="checkbox" class="trig" value="tachy"> Tachyarrhythmia (AF RVR, SVT, VT)</label>
+            <label class="inl"><input type="checkbox" class="trig" value="hypotension"> Hypotension / shock</label>
+            <label class="inl"><input type="checkbox" class="trig" value="hypoxia"> Hypoxia</label>
+            <label class="inl"><input type="checkbox" class="trig" value="sepsis"> Sepsis</label>
+            <label class="inl"><input type="checkbox" class="trig" value="htn"> Severe hypertension</label>
+            <label class="inl"><input type="checkbox" class="trig" value="brady"> Severe bradycardia</label>
+            <label class="inl"><input type="checkbox" class="trig" value="spasm"> Spasm / cocaine</label>
+          </div>
+        </fieldset>
+        <fieldset><legend>Very high risk (cath within 2 h)</legend>
+          <div class="row">
+            <label class="inl"><input type="checkbox" class="vh" value="shock"> Hemodynamic instability / cardiogenic shock</label>
+            <label class="inl"><input type="checkbox" class="vh" value="refractory"> Recurrent or refractory pain on treatment</label>
+            <label class="inl"><input type="checkbox" class="vh" value="arrhythmia"> VT/VF or cardiac arrest</label>
+            <label class="inl"><input type="checkbox" class="vh" value="mech"> Mechanical complication (new MR / VSD murmur)</label>
+            <label class="inl"><input type="checkbox" class="vh" value="ahf"> Acute HF from ischemia</label>
+            <label class="inl"><input type="checkbox" class="vh" value="stElevIntermittent"> Recurrent intermittent ST elevation</label>
+          </div>
+        </fieldset>
+        <fieldset><legend>Risk score items and goals</legend>
+          <div class="row">
+            <label class="inl">Killip <select id="killip"><option value="1">I: no HF</option><option value="2">II: crackles, S3, JVP up</option><option value="3">III: pulmonary edema</option><option value="4">IV: cardiogenic shock</option></select></label>
+            <label class="inl"><input type="checkbox" id="arrest"> Cardiac arrest at admission</label>
+            <label class="inl"><input type="checkbox" id="angina2"> 2+ angina episodes in 24 h</label>
+            <label class="inl">LVEF <input type="number" id="lvef" style="width:60px"> %</label>
+          </div>
+          <div class="row">
+            <label class="inl">Clinical Frailty Scale <select id="cfs"><option value="">?</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option></select></label>
+            <label class="inl"><input type="checkbox" id="dementia"> Moderate-severe dementia</label>
+            <label class="inl"><input type="checkbox" id="lifelim"> Limited life expectancy / comfort goals</label>
+            <label class="inl"><input type="checkbox" id="declines"> Declines cath</label>
+            <label class="inl"><input type="checkbox" id="bleeding"> Active bleeding now</label>
+          </div>
+          <div class="row muted">Override chart values: <label class="inl">HR <input type="number" id="o-hr" style="width:64px"></label> <label class="inl">SBP <input type="number" id="o-sbp" style="width:64px"></label> <label class="inl">Weight <input type="number" id="o-kg" step="0.1" style="width:64px"> kg</label> <label class="inl">QTc <input type="number" id="qtc" style="width:64px"></label></div>
+        </fieldset>
+      </div>
+    </details>
+
+    <div class="tiles" id="tiles"></div>
+    <details class="card" open><summary><span>Plan now</span><span class="muted" id="plansum"></span></summary><div class="body plan" id="plan"></div></details>
+    <details class="card" open><summary><span>Is it a type 1 NSTEMI? Troponin and MI type</span><span class="muted" id="typesum"></span></summary><div class="body" id="type"></div></details>
+    <details class="card" open><summary><span>Risk scores: GRACE and TIMI</span><span class="muted" id="risksum"></span></summary><div class="body" id="risk"></div></details>
+    <details class="card" open><summary><span>Cath: who needs it and how soon</span><span class="muted" id="invsum"></span></summary><div class="body plan" id="inv"></div></details>
+    <details class="card inputs" open><summary><span>Stent (PCI) or bypass (CABG)? Who qualifies</span><span class="muted" id="rvsum"></span></summary><div class="body">
+      <div class="row">
+        <label class="inl">Managed with <select id="managed"><option value="pending">Cath not done yet</option><option value="pci">PCI (stent)</option><option value="cabg">CABG planned</option><option value="medical">Medical only (no revascularization)</option></select></label>
+        <label class="inl">Angiography <select id="anatomy"><option value="unknown">Not done yet</option><option value="minoca">No obstructive CAD (MINOCA)</option><option value="1v">1-vessel disease</option><option value="2v">2-vessel disease</option><option value="3v">3-vessel disease</option><option value="lm">Left main disease</option></select></label>
+        <label class="inl"><input type="checkbox" id="plad"> Proximal LAD involved</label>
+        <label class="inl">SYNTAX <input type="number" id="syntax" style="width:60px"></label>
+      </div>
+      <div class="row">
+        <label class="inl"><input type="checkbox" id="complex"> Complex lesions (CTO, heavy calcium, bifurcation)</label>
+        <label class="inl"><input type="checkbox" id="valve"> Also needs valve / aortic surgery</label>
+        <label class="inl"><input type="checkbox" id="culprit"> Culprit already stented</label>
+      </div>
+      <div class="row"><b>Surgical risk:</b> <span id="srisk"></span></div>
+      <div id="rv"></div>
+      <h3 style="font-size:14px;margin:12px 0 4px">Who qualifies for what (reference)</h3>
+      <div class="scroll" id="rvref"></div>
+    </div></details>
+    <details class="card" open><summary><span>Antiplatelets and anticoagulant now</span><span class="muted" id="atsum"></span></summary><div class="body plan" id="at"></div></details>
+    <details class="card inputs" open><summary><span>DAPT duration and bleeding risk (ARC-HBR)</span><span class="muted" id="daptsum"></span></summary><div class="body">
+      <div class="row"><b>Add what the chart cannot tell:</b>
+        <label class="inl"><input type="checkbox" id="b6"> Bleed needing admission/transfusion in 6 months</label>
+        <label class="inl"><input type="checkbox" id="b12"> ... in 12 months</label>
+        <label class="inl"><input type="checkbox" id="bsurg"> Major surgery in 30 days, or non-deferrable surgery coming</label>
+        <label class="inl"><input type="checkbox" id="bca"> Active cancer (12 months)</label>
+      </div>
+      <div id="hbr"></div><div class="plan" id="dapt"></div></div></details>
+    <details class="card" open><summary><span>Other medications: in hospital and long term</span></summary><div class="body scroll" id="meds"></div></details>
+    <details class="card" open><summary><span>Chart alerts</span><span class="muted" id="alertsum"></span></summary><div class="body" id="alerts"></div></details>
+    <details class="card" open><summary><span>Investigations</span></summary><div class="body" id="tests"></div></details>
+    <details class="card" open><summary><span>Discharge and follow-up</span></summary><div class="body plan" id="fu"></div></details>
+    <details class="card" open><summary><span>Patient handout: after a heart attack</span></summary><div class="body">
+      <div class="row">
+        <label class="inl">Blood thinner 1 <input id="h-a" size="26" placeholder="e.g. aspirin 81 mg once a day"></label>
+        <label class="inl">Blood thinner 2 <input id="h-b" size="26" placeholder="e.g. ticagrelor 90 mg twice a day"></label>
+        <label class="inl">Until <input id="h-until" size="14" placeholder="e.g. Dec 2027"></label>
+      </div>
+      <div class="row">
+        <label class="inl">Follow-up <input id="h-fu" size="26" placeholder="e.g. cardiology Dr. ___ in 4-6 weeks"></label>
+        <label class="inl">Clinic phone <input id="h-phone" size="16"></label>
+        <label class="inl"><input type="checkbox" id="h-stent" checked> Had a stent</label>
+      </div>
+      <div class="row"><button id="h-print" class="primary">Open printable handout</button><span class="muted">Plain language. Nothing about the patient is filled in except what you type here.</span></div>
+      <div class="handout" id="handout"></div></div></details>
+    <details class="card"><summary><span>Note draft</span></summary><div class="body"><textarea id="note"></textarea><div class="row"><button id="copy" class="primary">Copy</button><span class="muted">Edit before pasting. Nothing is saved.</span></div></div></details>
+    <div class="src">Sources: Rao SV et al. 2025 ACC/AHA/ACEP/NAEMSP/SCAI ACS guideline (JACC/Circulation 2025); Byrne RA et al. 2023 ESC ACS guideline; Lawton JS et al. 2021 ACC/AHA/SCAI revascularization guideline; Neumann FJ et al. 2018 ESC/EACTS revascularization guideline; Thygesen K et al. Fourth Universal Definition of MI 2018; Urban P et al. ARC-HBR, Circulation 2019; Granger CB et al. GRACE, Arch Intern Med 2003; Antman EM et al. TIMI, JAMA 2000; Pearson GJ et al. CCS 2021 dyslipidemia; trials PLATO, TRITON, ISAR-REACT 5, TWILIGHT, MASTER DAPT, AUGUSTUS, FREEDOM, SYNTAX, EXCEL, NOBLE, STICH, SENIOR-RITA, MINT, COMMIT, REDUCE-AMI, REBOOT, BETAMI-DANBLOCK, CLEAR SYNERGY, EMPACT-MI, DAPA-MI, IAMI, DETO2X.</div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+  <script src="../../pdf-overlay.js?v=20261120p"></script>
+  <script src="rules.js?v=20261123a"></script>
+  <script src="chart.js?v=20261123a"></script>
+  <script src="samples.js?v=20261123a"></script>
+  <script src="app.js?v=20261123a"></script>
+  <script src="../../subtabs.js?v=20261121f"></script>
+  <script>SubTabs.mount({ store: "acs", top: ["Chart alerts", "#tiles"], dotSel: ".alert.urgent, .tile.t3, .plan .urgent", tabs: [
+      {"key": "assess", "label": "Assess", "match": ["Patient and situation", "Plan now", "Is it a type 1", "Risk scores"]},
+      {"key": "cath", "label": "Cath & stent vs bypass", "match": ["Cath: who needs", "Stent (PCI)"]},
+      {"key": "at", "label": "DAPT & anticoagulant", "match": ["Antiplatelets and anticoagulant", "DAPT duration"]},
+      {"key": "meds", "label": "Other meds", "match": ["Other medications"]},
+      {"key": "dc", "label": "Tests, discharge & handout", "match": ["Investigations", "Discharge and follow-up", "Patient handout"]},
+      {"key": "note", "label": "Note draft", "match": ["Note draft"]}] });</script>
+</body>
+</html>

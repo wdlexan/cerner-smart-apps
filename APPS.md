@@ -59,3 +59,11 @@ Toolkit tab only (hospitalist-toolkit/tools/ild/, key ild, open with #ild).
 - Handout (911/ER lists, oxygen safety, nintedanib, pirfenidone, steroids, immunosuppression, HP exposure, stopped drug) and editable note. Consult button defaults to Respirology.
 - Six made-up patients (?demo=1..6). UNVERIFIED draft. Tests: node hospitalist-toolkit/tests/test_ild.js
 - Drug list tab added (Nov 2026, druglist.js): ≈90 cancer drugs in 18 classes (platinum, taxanes, antimetabolites, anthracyclines, alkylators, topoisomerase inhibitors, vinca/microtubule, other chemo, checkpoint inhibitors, bispecifics/cell therapy, ADCs, monoclonal antibodies, targeted pills by group, hormone therapy, radiopharmaceuticals/bone drugs, intravesical BCG). Each row: usual schedule (q2w/q3w/q4w, days on/off, oral daily), common side effects, serious side effects to watch for. Search box; rows matching the patient's medication list are highlighted; "Only this patient's drugs" filter. Typical schedules only – BC Cancer protocol is the source of truth.
+
+## 22. NSTEMI (ACS)
+
+Toolkit tab only (hospitalist-toolkit/tools/acs/, key acs, open with #acs). Sub-tabs: Assess, Cath & stent vs bypass, DAPT & anticoagulant, Other meds, Tests/discharge/handout, Note draft.
+- Chart: hs-troponin series (4 days), vitals, Hb/platelets/creatinine/eGFR/K/Mg, LDL, A1c, INR, lactate; antiplatelets, anticoagulants (therapeutic vs prophylactic heparin), statin, beta-blocker, ACEi/ARB, MRA, SGLT2i, PPI, NSAIDs, steroids, PDE5 inhibitors, strong CYP3A4 drugs; problem list (CAD, diabetes, AF, ICH/stroke, GI bleed, cirrhosis, CKD/dialysis, dementia, prior CABG).
+- Decides: MI type (type 1 / type 2 / injury / chronic), GRACE and TIMI, cath timing tier, PCI vs CABG after angiography, P2Y12 inhibitor and parenteral anticoagulant with doses, ARC-HBR and DAPT duration (incl. on OAC and before CABG), other ACS medications.
+- Six made-up patients (?demo=1..6): classic type 1, frail 87 F on apixaban, type 2 MI with sepsis/anemia/AF (ticagrelor wrongly ordered), 3-vessel + diabetes + LVEF 35% (CABG), very high risk in shock, prior stroke + GI bleed + clarithromycin.
+- UNVERIFIED draft from the 2025 ACC/AHA ACS, 2023 ESC ACS and 2021 ACC/AHA revascularization guidelines. Tests: node hospitalist-toolkit/tests/test_acs.js

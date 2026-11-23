@@ -4,7 +4,7 @@
    A tab is only loaded the first time you open it, and stays loaded when you switch away. */
 
 // To add a tool: put its files in tools/<folder>/ and add a line here.
-const TOOL_V = "20261123d"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
+const TOOL_V = "20261123e"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
 const TOOLS = [
   { key: "today", label: "Today (what changed)", tags: "what changed daily trends vitals overnight summary", path: "tools/today/index.html" },
   { key: "plist", label: "Patient list (screenshot)", tags: "patient list screenshot excel spreadsheet rounding list census floor ward ocr", path: "tools/plist/index.html" },
@@ -45,6 +45,7 @@ const TOOLS = [
   { key: "dementia", label: "Dementia workup", tags: "dementia cognitive impairment memory delirium workup",  path: "tools/dementia/index.html" },
   { key: "aki",   label: "AKI", tags: "aki acute kidney injury creatinine renal",                  path: "tools/aki/index.html" },
   { key: "chf",   label: "Heart failure (CHF)",  tags: "chf heart failure hf adhf congestion nt-probnp bnp diuretic furosemide lasix bumetanide torsemide metolazone acetazolamide gdmt entresto sglt2 amyloid amyloidosis edema handout dry weight", path: "tools/chf/index.html" },
+  { key: "acs",   label: "NSTEMI (ACS)", tags: "nstemi acs acute coronary syndrome mi myocardial infarction heart attack troponin type 2 mi dapt dual antiplatelet aspirin ticagrelor prasugrel clopidogrel heparin enoxaparin fondaparinux cath angiography pci stent cabg bypass syntax grace timi bleeding risk arc-hbr statin beta blocker cardiac rehab", path: "tools/acs/index.html" },
   { key: "af",    label: "AF (acute illness)",   tags: "atrial fibrillation afib a fib rapid ventricular rvr rate control digoxin metoprolol beta blocker diltiazem amiodarone anticoagulation chads65 pneumonia sepsis", path: "tools/af/index.html" },
   { key: "lytes", label: "Electrolytes (K, PO4, Ca, Mg)", tags: "electrolytes hypomagnesemia hypermagnesemia potassium hypokalemia hyperkalemia phosphate phosphorus hypophosphatemia hyperphosphatemia calcium hypocalcemia hypercalcemia magnesium lytes refeeding tumour lysis", path: "tools/lytes/index.html" },
   { key: "acidbase", label: "Acid-base", tags: "acid base abg vbg blood gas anion gap ph co2 bicarbonate",         path: "tools/acidbase/index.html" },
@@ -130,7 +131,7 @@ async function start(client) {
 const PINNED = ["today", "plist"];
 const GROUPS = [
   { name: "Chart", keys: ["labs", "crit", "notes", "exam", "watch", "ai", "calc"] },
-  { name: "Heart & lung", keys: ["chf", "af", "ild"] },
+  { name: "Heart & lung", keys: ["acs", "chf", "af", "ild"] },
   { name: "Kidney", keys: ["aki", "lytes", "hypona", "acidbase", "ktx"] },
   { name: "Neuro", keys: ["neuro", "stroke", "seizure", "dementia", "pd", "ae"] },
   { name: "GI & endo", keys: ["liver", "ibd", "dm", "edr"] },
