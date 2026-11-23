@@ -239,6 +239,47 @@
     return { data: await L.zip.generateAsync({ type: opts.type || "uint8array", compression: "DEFLATE" }), added, filled, missing };
   }
 
-  const api = { build, cloneRow, spread, lines, halves, readList, update, sameP };
+  // ---- daily update of a list file: fill EMPTY chart cells, rebuild the app's own "check today" column ----
+  // valsFor(patient) -> { age, allergy, gfr, vtep, iv, foley, lab, check: [..] } or null (skip). Nothing typed by the user is changed.
+  const FILL = [["E", "age"], ["J", "allergy"], ["K", "gfr"], ["L", "vtep"], ["P", "iv"], ["Q", "foley"], ["R", "lab"]];
+  function setCell(x, col, n, val) { // blank the cell (keeping its look), then put the value in
+    const re = new RegExp(`<c r="${col}${n}"([^>]*?)(?:\\/>|>[\\s\\S]*?<\\/c>)`);
+    if (re.test(x)) x = x.replace(re, (m, attrs) => `<c r="${col}${n}"${attrs.replace(/\s*t="[^"]*"/, "")}/>`);
+    return val === "" || val == null ? x : cloneRow(x, n, { [col]: val });
+  }
+  async function daily(JSZip, data, valsFor, opts) {
+    opts = opts || {};
+    const L = await readList(JSZip, data);
+    if (!L.patients.length) throw new Error("no patients found in that file (is it your VGH list?)");
+    let xml = L.xml; const rowXml = {}; L.rows.forEach((r) => (rowXml[r.n] = r.xml));
+    const hdr = rowXml[1] || ""; let lastCol = 0;
+    hdr.replace(/<c r="([A-Z]+)1"/g, (m, c) => { if (cellText(hdr, c, L.sst)) lastCol = Math.max(lastCol, colNum(c)); return m; });
+    let cC = L.hcols["check today"];
+    if (!cC) { cC = colName(Math.max(lastCol, colNum("S")) + 1); if (rowXml[1]) rowXml[1] = cloneRow(rowXml[1], 1, { [cC]: "check today" }); }
+    const stamp = opts.date || new Date().toLocaleDateString("en-CA", { day: "numeric", month: "short" });
+    const report = [];
+    for (const ep of L.patients) {
+      let v = null; try { v = await valsFor(ep); } catch (e) { report.push({ name: ep.name, error: e.message || String(e) }); continue; }
+      if (!v) { report.push({ name: ep.name, skipped: true }); continue; }
+      const r = ep.first, x = rowXml[r], vals = {}, fills = [];
+      FILL.forEach(([col, k]) => { const val = v[k]; if (val == null || val === "") return; if (!cellText(x, col, L.sst)) { vals[col] = typeof val === "number" ? val : String(val); fills.push(k); } });
+      if (Object.keys(vals).length) rowXml[r] = cloneRow(x, r, vals);
+      const list = (v.check || []).slice(); if (list.length) list[0] = stamp + ": " + list[0];
+      const items = spread(list, 4), lastN = Math.max(ep.last || r, r);
+      for (let k = 0; k < 4; k++) { const n = r + k; if (!rowXml[n] || (k > 0 && n > lastN)) break; rowXml[n] = setCell(rowXml[n], cC, n, items[k] || ""); }
+      report.push({ name: ep.name, filled: fills, check: v.check || [] });
+    }
+    const tidyRow = (x) => { const m = x.match(/^(<row\b[^>]*>)([\s\S]*)(<\/row>)$/); if (!m) return x.replace(/ spans="[^"]*"/, "");
+      const cells = m[2].match(/<c r="[A-Z]+\d+"[^>]*?(?:\/>|>[\s\S]*?<\/c>)/g) || [];
+      cells.sort((p, q) => colNum(p.match(/<c r="([A-Z]+)/)[1]) - colNum(q.match(/<c r="([A-Z]+)/)[1]));
+      return m[1].replace(/ spans="[^"]*"/, "") + cells.join("") + m[3]; };
+    xml = xml.replace(/<sheetData>[\s\S]*<\/sheetData>|<sheetData\/>/, "<sheetData>" + L.rows.map((r) => tidyRow(rowXml[r.n])).join("") + "</sheetData>");
+    xml = xml.replace(/<dimension ref="A1:([A-Z]+)(\d+)"\/>/, (m, c, n) => `<dimension ref="A1:${colName(Math.max(colNum(c), colNum(cC)))}${n}"/>`);
+    if (/<cols>/.test(xml) && !new RegExp(`<col [^>]*min="${colNum(cC)}"`).test(xml)) xml = xml.replace("</cols>", `<col min="${colNum(cC)}" max="${colNum(cC)}" width="48" customWidth="1"/></cols>`);
+    L.zip.file(L.path, xml);
+    return { data: await L.zip.generateAsync({ type: opts.type || "uint8array", compression: "DEFLATE" }), report, column: cC };
+  }
+
+  const api = { build, cloneRow, spread, lines, halves, readList, update, sameP, daily };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.PListXlsx = api;
 })(this);

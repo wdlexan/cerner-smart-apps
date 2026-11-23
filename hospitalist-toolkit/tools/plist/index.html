@@ -41,10 +41,29 @@
     .warn { background:#fde8e8; color:#7a1b1b; border-radius:6px; padding:6px 10px; margin-top:6px; font-size:13px; }
     .found { font-size:12px; color:#52606d; margin-top:6px; }
     button.chart { padding:2px 8px; font-size:12px; white-space:nowrap; }
+    details.card > summary { cursor:pointer; } .dtbl { border-collapse:collapse; margin-top:8px; font-size:12.5px; width:100%; }
+    .dtbl th, .dtbl td { border-bottom:1px solid #e3e8ee; padding:4px 8px; text-align:left; vertical-align:top; } .dtbl th { background:#f3f6f9; }
+    .err { color:#b00020; } .ok { color:#1d6b3a; }
   </style>
 </head>
 <body>
 <main>
+  <details class="card" id="dcard" open>
+    <summary><h2 style="display:inline">Daily update from the chart</h2> <span class="small muted">fills empty cells, rebuilds "check today"</span></summary>
+    <div class="muted small" style="margin:6px 0">Open your Excel list, press Update: each patient is looked up by the <b>MRN</b> in your file and their chart is read.
+      Only <b>empty</b> cells are filled (age, allergy, gfr, vtep, iv, foley, lab); what you typed is never changed. A <b>check today</b> column is rebuilt each run
+      (new abnormal results, vitals out of range, antibiotic day / IV to PO, electrolytes to recheck, renal dosing, pending tests, Discharge Clinic candidates).
+      Keep the file in your <b>OneDrive</b> folder: in Edge or Chrome the update is saved straight back to it and syncs. Close it in Excel before saving.
+      Read-only: nothing is written to Cerner, and your list never leaves this computer and your OneDrive.</div>
+    <div class="row">
+      <button id="dopen">📂 Open my list…</button><input id="dfile" type="file" accept=".xlsx" hidden>
+      <span id="dname" class="small"></span>
+      <button id="drun" disabled>Update from the chart</button>
+      <button id="dsave" disabled>Save to the same file</button>
+    </div>
+    <div id="dmsg" class="small muted"></div>
+    <table class="dtbl" id="dtbl"></table>
+  </details>
   <div class="card">
     <h2>Patient list from a screenshot → Excel</h2>
     <div class="muted small">Take a screenshot of your PowerChart patient list (include the header row: Name, Location or Room / Bed, Age …), then paste it here.
@@ -90,8 +109,14 @@
 </main>
 
 <script src="parse.js?v=20261119f"></script>
-<script src="xlsx.js?v=20261120r"></script>
+<script src="xlsx.js?v=20261122a"></script>
 <script src="chart.js?v=20261119b"></script>
+<script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+<script src="../discharge/rules.js?v=20261122a"></script>
+<script src="../discharge/chart.js?v=20261122a"></script>
+<script src="../dcclinic/rules.js?v=20261122a"></script>
+<script src="daily.js?v=20261122a"></script>
+<script src="dailyui.js?v=20261122a"></script>
 <script>
 (function () {
   "use strict";
