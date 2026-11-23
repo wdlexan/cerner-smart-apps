@@ -162,7 +162,7 @@
     } catch (e) { st.textContent = "Could not read the image: " + (e.message || e); return false; }
   }
   async function readImages(files) {
-    files = files.filter((f) => /^image\//.test(f.type)); let added = 0;
+    files = files.filter(isImg); let added = 0;
     for (let i = 0; i < files.length; i++) if (await readImage(files[i], i + 1, files.length)) added++;
     if (worker) { try { await worker.terminate(); } catch (e) {} worker = null; }
     if (files.length > 1) $("suscStatus").textContent = `${added} of ${files.length} screenshots read. ` + $("suscStatus").textContent;
@@ -221,10 +221,18 @@
   const drop = $("drop");
   ["dragenter", "dragover"].forEach((e) => drop.addEventListener(e, (ev) => { ev.preventDefault(); drop.classList.add("over"); }));
   ["dragleave", "drop"].forEach((e) => drop.addEventListener(e, (ev) => { ev.preventDefault(); drop.classList.remove("over"); }));
-  drop.addEventListener("drop", (ev) => readImages([...(ev.dataTransfer.files || [])]));
+  // accept a drop anywhere on the page (so a near-miss never opens the image in place of the app), and files with no type (some snipping tools)
+  const isImg = (f) => f && (/^image\//.test(f.type) || /\.(png|jpe?g|bmp|gif|webp|tiff?)$/i.test(f.name || ""));
+  const dropped = (ev) => { const dt = ev.dataTransfer; if (!dt) return []; const fs = [...(dt.files || [])]; return (fs.length ? fs : [...(dt.items || [])].filter((i) => i.kind === "file").map((i) => i.getAsFile())).filter(isImg); };
+  document.addEventListener("dragover", (ev) => { ev.preventDefault(); if (ev.dataTransfer) ev.dataTransfer.dropEffect = "copy"; });
+  document.addEventListener("drop", (ev) => {
+    ev.preventDefault(); drop.classList.remove("over");
+    const fs = dropped(ev);
+    if (fs.length) readImages(fs); else $("suscStatus").textContent = "Nothing readable was dropped – save or copy the screenshot as an image (PNG/JPG), or paste it with Ctrl+V.";
+  });
   document.addEventListener("paste", (ev) => {
     if (ev.target && /textarea|input/i.test(ev.target.tagName)) return;
-    const its = [...((ev.clipboardData && ev.clipboardData.items) || [])].filter((x) => /^image\//.test(x.type));
+    const its = [...((ev.clipboardData && ev.clipboardData.items) || [])].filter((x) => x.kind === "file" && /^image\//.test(x.type));
     if (its.length) { ev.preventDefault(); readImages(its.map((x) => x.getAsFile())); } else { const t = ev.clipboardData && ev.clipboardData.getData("text"); if (t) { $("suscText").value = t; addResult(t, "pasted text"); } }
   });
   $("suscFile").onchange = () => { readImages([...$("suscFile").files]); $("suscFile").value = ""; };
