@@ -143,50 +143,93 @@
     for (let i = 0; i < q.length; i += 4) { const v = q[i] > 170 ? 255 : 0; q[i] = q[i + 1] = q[i + 2] = v; }
     o.putImageData(od, 0, 0); return out;
   }
-  async function readImage(file) {
-    const st = $("suscStatus"); st.textContent = "Reading the screenshot in this browser…";
+  // Several results can be loaded (one per screenshot / pasted text / chart report); each keeps its own column.
+  state.results = [];
+  let worker = null;
+  async function getWorker() {
+    if (worker) return worker;
+    await loadTess(); $("suscStatus").textContent = "Recognizing text (first time downloads the OCR program, ~10 s)…";
+    worker = await Tesseract.createWorker("eng"); await worker.setParameters({ tessedit_pageseg_mode: "6", preserve_interword_spaces: "1" });
+    return worker;
+  }
+  async function readImage(file, k, of) {
+    const st = $("suscStatus"); st.textContent = "Reading screenshot" + (of > 1 ? ` ${k} of ${of}` : "") + " in this browser…";
     try {
       const url = URL.createObjectURL(file), img = new Image(); await new Promise((ok, bad) => { img.onload = ok; img.onerror = () => bad(new Error("not an image")); img.src = url; });
-      await loadTess(); st.textContent = "Recognizing text (first time downloads the OCR program, ~10 s)…";
-      const worker = await Tesseract.createWorker("eng"); await worker.setParameters({ tessedit_pageseg_mode: "6", preserve_interword_spaces: "1" });
-      const { data } = await worker.recognize(prep(img)); await worker.terminate(); URL.revokeObjectURL(url);
-      $("suscText").value = data.text; $("suscText").closest("details").open = true;
-      useText(data.text, "screenshot (OCR) – check every row against the result");
-    } catch (e) { st.textContent = "Could not read the image: " + (e.message || e); }
+      const w = await getWorker(); const { data } = await w.recognize(prep(img)); URL.revokeObjectURL(url);
+      $("suscText").value = data.text;
+      return addResult(data.text, "screenshot (OCR)");
+    } catch (e) { st.textContent = "Could not read the image: " + (e.message || e); return false; }
   }
-  function useText(text, src) {
-    const p = R.expandSusc(R.parseSusc(text));
-    if (!p.rows.length) { $("suscStatus").textContent = "No antibiotic results found in that " + (src.startsWith("screenshot") ? "screenshot – try cropping to the table, or paste the text." : "text."); return; }
-    state.susc = p; state.suscSrc = src;
-    if (p.flags.mrsa) $("rMrsa").checked = true; if (p.flags.esbl) $("rEsbl").checked = true; if (p.organisms.some((o) => /pseudomonas/i.test(o))) $("rPseudo").checked = true;
-    drawSusc(); draw();
+  async function readImages(files) {
+    files = files.filter((f) => /^image\//.test(f.type)); let added = 0;
+    for (let i = 0; i < files.length; i++) if (await readImage(files[i], i + 1, files.length)) added++;
+    if (worker) { try { await worker.terminate(); } catch (e) {} worker = null; }
+    if (files.length > 1) $("suscStatus").textContent = `${added} of ${files.length} screenshots read. ` + $("suscStatus").textContent;
   }
+  function addResult(text, src) {
+    const p = R.parseSusc(text);
+    if (!p.rows.length) { $("suscStatus").textContent = "No antibiotic results found in that " + (src.startsWith("screenshot") ? "screenshot – try cropping to the table, or paste the text." : "text."); return false; }
+    const sig = JSON.stringify([p.organisms, p.rows, p.meta]);
+    if (state.results.some((r) => r.sig === sig)) { $("suscStatus").textContent = "That result is already loaded."; return false; }
+    const m = p.meta, label = [m.specimen && m.specimen + " culture", m.date, m.accession && "acc …" + m.accession.slice(-4), m.status].filter(Boolean).join(" · ");
+    state.results.push({ p, src, sig, label });
+    applyFlags(p); remerge(); return true;
+  }
+  function applyFlags(p) {
+    const e = R.expandSusc(JSON.parse(JSON.stringify(p)));
+    if (e.flags.mrsa) $("rMrsa").checked = true; if (e.flags.esbl) $("rEsbl").checked = true; if (p.organisms.some((o) => /pseudomonas/i.test(o))) $("rPseudo").checked = true;
+  }
+  function remerge() { state.susc = state.results.length ? R.mergeSusc(state.results) : null; drawSusc(); draw(); }
   function drawSusc() {
     const p = state.susc;
     if (!p) { $("suscOut").innerHTML = ""; $("suscStatus").textContent = ""; return; }
-    const n = Math.max(1, p.organisms.length, ...p.rows.filter((r) => !r.derived).map((r) => r.results.length));
-    const orgs = Array.from({ length: n }, (_, i) => p.organisms[i] || "Organism " + (i + 1));
-    const sel = (ri, ci, v) => `<select data-r="${ri}" data-c="${ci}">${["", "S", "I", "R"].map((x) => `<option${x === (v || "") ? " selected" : ""}>${x}</option>`).join("")}</select>`;
+    const cols = p.cols, many = state.results.length > 1;
+    const sel = (ri, c, v, inf) => `<select data-r="${ri}" data-c="${c}"${inf ? ` title="Inferred: ${esc(inf)} – not on the report"` : ""}>${["", "S", "I", "R"].map((x) => `<option${x === (v || "") ? " selected" : ""}>${x}</option>`).join("")}</select>`;
     const real = p.rows.map((r, i) => [r, i]).filter(([r]) => !r.derived), der = p.rows.filter((r) => r.derived);
-    $("suscStatus").textContent = `From ${state.suscSrc}. ${real.length} antibiotic result(s)${p.flags.mrsa ? " · MRSA" : ""}${p.flags.esbl ? " · ESBL" : ""}${p.flags.cre ? " · carbapenemase" : ""}. Edit any cell that is wrong.`;
-    $("suscOut").innerHTML = `<table class="stab"><tr><th>Antibiotic</th>${orgs.map((o) => `<th>${esc(o)}</th>`).join("")}<th>MIC</th></tr>${real.map(([r, i]) => `<tr><td>${esc(r.drug)}</td>${orgs.map((_, c) => `<td class="s${r.results[c] || ""}">${sel(i, c, r.results[c])}</td>`).join("")}<td class="muted">${esc(r.mic || "")}</td></tr>`).join("")}</table>
-      ${n > 1 ? '<div class="small muted">With 2+ organisms, a blank cell for the first organism can shift results into the wrong column – check against the report.</div>' : ""}
-      ${der.length ? `<div class="small muted" style="margin-top:4px">Inferred (not on the report): ${der.map((r) => `${esc(r.drug)} ${r.results[0]} (${esc(r.derived)})`).join(" · ")}</div>` : ""}`;
-    $("suscOut").querySelectorAll("select").forEach((x) => (x.onchange = () => { const r = p.rows[+x.dataset.r]; r.results[+x.dataset.c] = x.value; r.results = r.results.map((v) => v || ""); drawSusc(); draw(); }));
+    const srcs = [...new Set(state.results.map((r) => r.src))].join(", ");
+    $("suscStatus").textContent = `${state.results.length} result${many ? "s" : ""} loaded (${srcs}) – check every row against the report. ${real.length} antibiotic(s)${p.flags.mrsa ? " · MRSA" : ""}${p.flags.esbl ? " · ESBL" : ""}${p.flags.cre ? " · carbapenemase" : ""}. Edit any cell that is wrong.`;
+    const chips = state.results.map((r, ri) => `<div class="small" style="display:flex;gap:6px;align-items:center;margin-top:3px"><b>#${ri + 1}</b>
+      <input data-lab="${ri}" value="${esc(r.label)}" placeholder="label, e.g. urine 20-Nov" style="flex:1;min-width:120px;max-width:340px;font-size:12px;padding:1px 4px">
+      <span class="muted">${esc(r.p.organisms.join(", ") || "organism not read")}${r.p.meta.modified ? ' · <b style="color:var(--r-ink)">Modified</b>' : ""}</span>
+      <button data-del="${ri}" title="Remove this result" style="padding:0 6px">×</button></div>`).join("");
+    const warn = [];
+    p.dupes.forEach((d) => warn.push(`Accession …${esc(d.accession.slice(-4))} is loaded ${d.ri.length} times (#${d.ri.map((i) => i + 1).join(", #")}) – usually an original and a Modified/corrected report. Keep the latest and remove the other.`));
+    const seen = {};
+    p.discord.forEach((d) => { (seen[d.org] = seen[d.org] || []).push(`${d.drug} ${d.vals.map((x) => `${x.v} in #${cols[x.i].ri + 1}`).join(" / ")}`); });
+    Object.keys(seen).forEach((o) => warn.push(`<b>${esc(o)}</b> results differ between cultures: ${esc(seen[o].join("; "))}. Different isolates or a corrected report – the regimen badges use the worst result; check which is current.`));
+    if (real.some(([r]) => r.footnote)) warn.push("* = the lab added a comment to that antibiotic – read it in PowerChart.");
+    const allS = real.filter(([r]) => r.allS).map(([r]) => r.drug);
+    $("suscOut").innerHTML = `${chips}
+      ${warn.length ? `<div class="small" style="margin-top:6px;padding:6px 8px;border-radius:6px;background:var(--a-bg);color:var(--a-ink)">${warn.map((w) => "⚠ " + w).join("<br>")}</div>` : ""}
+      <table class="stab"><tr><th>Antibiotic</th>${cols.map((c) => `<th>${many ? `<span class="muted">#${c.ri + 1}</span> ` : ""}${esc(c.org)}${c.label ? `<div class="small muted" style="font-weight:normal">${esc(c.label)}</div>` : ""}</th>`).join("")}</tr>
+      ${real.map(([r, i]) => `<tr${r.discord ? ' style="outline:2px solid var(--r-ink)"' : ""}><td>${esc(r.drug)}${r.footnote ? " *" : ""}${r.allS ? ' <span class="small" title="Susceptible in every column">✓ all</span>' : ""}</td>${cols.map((_, c) => `<td class="s${r.results[c] || ""}"${r.inf[c] ? ' style="font-style:italic;opacity:.75"' : ""}>${sel(i, c, r.results[c], r.inf[c])}${r.mics[c] ? ` <span class="small muted">${esc(r.mics[c])}</span>` : ""}</td>`).join("")}</tr>`).join("")}</table>
+      ${allS.length ? `<div class="small" style="margin-top:4px">Susceptible in every column: <b>${esc(allS.join(", "))}</b></div>` : ""}
+      <div class="small muted" style="margin-top:4px">Italic cells are inferred (not on the report). ${many ? "Each screenshot keeps its own column; the same organism from two cultures is not merged." : "Paste or drop more screenshots to add other organisms or cultures."}</div>
+      ${der.length ? `<div class="small muted" style="margin-top:4px">Inferred only (not on any report): ${der.map((r) => `${esc(r.drug)} ${R.worstOf(r.results)} (${esc(r.derived)})`).join(" · ")}</div>` : ""}`;
+    $("suscOut").querySelectorAll("select").forEach((x) => (x.onchange = () => {
+      const col = cols[+x.dataset.c], res = state.results[col.ri].p, drug = p.rows[+x.dataset.r].drug;
+      let row = res.rows.find((r) => r.drug === drug);
+      if (!row) { row = { drug, results: [], mic: "" }; res.rows.push(row); }
+      row.results[col.oc] = x.value; row.results = Array.from({ length: Math.max(row.results.length, col.oc + 1) }, (_, k) => row.results[k] || "");
+      remerge();
+    }));
+    $("suscOut").querySelectorAll("input[data-lab]").forEach((x) => (x.onchange = () => { state.results[+x.dataset.lab].label = x.value; remerge(); }));
+    $("suscOut").querySelectorAll("button[data-del]").forEach((x) => (x.onclick = () => { state.results.splice(+x.dataset.del, 1); remerge(); }));
   }
   window.__abxPrep = prep; // for testing the image cleanup
   const drop = $("drop");
   ["dragenter", "dragover"].forEach((e) => drop.addEventListener(e, (ev) => { ev.preventDefault(); drop.classList.add("over"); }));
   ["dragleave", "drop"].forEach((e) => drop.addEventListener(e, (ev) => { ev.preventDefault(); drop.classList.remove("over"); }));
-  drop.addEventListener("drop", (ev) => { const f = [...(ev.dataTransfer.files || [])].find((x) => /^image\//.test(x.type)); if (f) readImage(f); });
+  drop.addEventListener("drop", (ev) => readImages([...(ev.dataTransfer.files || [])]));
   document.addEventListener("paste", (ev) => {
     if (ev.target && /textarea|input/i.test(ev.target.tagName)) return;
-    const it = [...((ev.clipboardData && ev.clipboardData.items) || [])].find((x) => /^image\//.test(x.type));
-    if (it) { ev.preventDefault(); readImage(it.getAsFile()); } else { const t = ev.clipboardData && ev.clipboardData.getData("text"); if (t) { $("suscText").value = t; useText(t, "pasted text"); } }
+    const its = [...((ev.clipboardData && ev.clipboardData.items) || [])].filter((x) => /^image\//.test(x.type));
+    if (its.length) { ev.preventDefault(); readImages(its.map((x) => x.getAsFile())); } else { const t = ev.clipboardData && ev.clipboardData.getData("text"); if (t) { $("suscText").value = t; addResult(t, "pasted text"); } }
   });
-  $("suscFile").onchange = () => { const f = $("suscFile").files[0]; if (f) readImage(f); };
-  $("suscRead").onclick = () => useText($("suscText").value, "pasted text");
-  $("suscClear").onclick = () => { state.susc = null; $("suscText").value = ""; drawSusc(); draw(); };
+  $("suscFile").onchange = () => { readImages([...$("suscFile").files]); $("suscFile").value = ""; };
+  $("suscRead").onclick = () => addResult($("suscText").value, "pasted text");
+  $("suscClear").onclick = () => { state.results = []; state.susc = null; $("suscText").value = ""; drawSusc(); draw(); };
 
   // ---- chart ----
   function prefill(f) {
@@ -206,9 +249,10 @@
     if (f.pregnant) why.push("pregnancy on problem list");
     if (f.cls.abx.length) why.push("current antibiotics: " + f.cls.abx.join("; "));
     $("critFrom").textContent = "From the chart: " + why.join(" · ");
-    state.susc = null;
-    const rep = (f.microReports || []).find((m) => R.parseSusc(m.text).rows.length);
-    if (rep) { useText(rep.text, "chart micro report" + (rep.t ? " (" + new Date(rep.t).toLocaleDateString("en-CA") + ")" : "")); } else drawSusc();
+    state.results = []; state.susc = null;
+    const reps = (f.microReports || []).filter((m) => R.parseSusc(m.text).rows.length).slice(0, 4); // newest 4 culture results, each its own column
+    reps.forEach((rep) => { if (!addResult(rep.text, "chart")) return; const r = state.results[state.results.length - 1]; if (r && rep.t && !r.p.meta.date) r.label = [r.label, new Date(rep.t).toLocaleDateString("en-CA")].filter(Boolean).join(" · "); });
+    if (state.results.length) remerge(); else drawSusc();
     state.chartSites = SITES.filter((s) => s.match && f.probs.some((p) => s.match.test(p.text))).map((s) => s.id);
     if (state.chartSites.length) pick(state.chartSites[0]); else markMap();
   }

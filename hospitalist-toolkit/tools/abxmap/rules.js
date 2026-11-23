@@ -146,8 +146,9 @@
   const INTERP = (t) => { t = t.replace(/[§$]/g, (c) => (c === "§" ? "S" : "")).replace(/^[=:.,;'"`]+|[=:.,;'"`]+$/g, "").toUpperCase(); if (/^(S|SUSC\w*|SENS\w*)$/.test(t)) return "S"; if (/^(R|RES\w*)$/.test(t)) return "R"; if (/^(I|INT\w*|SDD)$/.test(t)) return "I"; return null; };
 
   function parseSusc(text) {
-    const out = { organisms: [], flags: { mrsa: false, esbl: false, cre: false }, rows: [] };
-    const lines = String(text || "").replace(/\r/g, "").split("\n").map((l) => l.replace(/[|]/g, " ").trim()).filter(Boolean);
+    const out = { organisms: [], flags: { mrsa: false, esbl: false, cre: false }, rows: [], meta: suscMeta(text) };
+    // PowerChart's susceptibility grid has row numbers (1, 2, 3 ...) at the start of each line - drop them so they are not read as MICs
+    const lines = String(text || "").replace(/\r/g, "").split("\n").map((l) => l.replace(/[|]/g, " ").trim().replace(/^\d{1,3}[.)]?\s+(?=[A-Za-z])/, "")).filter(Boolean);
     lines.forEach((l) => { const m = l.match(ORG_RE); if (m && !SUSC_DRUGS.some(([, re]) => re.test(l)) && out.organisms.length < 3) { const o = m[1].replace(/\s+/g, " "); if (!out.organisms.some((x) => x.toLowerCase() === o.toLowerCase())) out.organisms.push(o); } });
     const all = lines.join(" ");
     if (!out.organisms.length) { const m = all.match(ORG_RE); if (m) out.organisms.push(m[1].replace(/\s+/g, " ")); } // one-line reports: "E. coli ... resistant to X"
@@ -160,15 +161,83 @@
       const hits = SUSC_DRUGS.filter(([, re]) => re.test(l));
       if (hits.length !== 1) return;
       const [name] = hits[0];
-      const after = l.replace(hits[0][1], " ").split(/\s+/);
+      const m0 = l.match(hits[0][1]), rest = l.slice(m0.index + m0[0].length).replace(/^[\w/-]*/, "");
+      const footnote = /^\s*\*/.test(rest);
+      const after = rest.replace(/^\s*\*/, " ").split(/\s+/);
       const res = after.map(INTERP).filter(Boolean);
       if (!res.length || res.length > 4) return;
-      const mic = (l.match(/[<>]=?\s*\d+(\.\d+)?|\b\d+(\.\d+)?\b/) || [""])[0];
-      if (!seen[name]) { seen[name] = 1; out.rows.push({ drug: name, results: res, mic }); }
+      const mic = (rest.match(/[<>]=?\s*\d+(\.\d+)?|\b\d+(\.\d+)?\b/) || [""])[0];
+      if (!seen[name]) { seen[name] = 1; out.rows.push(Object.assign({ drug: name, results: res, mic }, footnote ? { footnote: true } : {})); }
     });
     // prose: "resistant to ceftriaxone and ciprofloxacin; susceptible to ertapenem, nitrofurantoin"
     const prose = (word, r) => { const re = new RegExp(word + "\\s+to\\s+([^.;]+)", "gi"); let m; while ((m = re.exec(all))) SUSC_DRUGS.forEach(([n, dre]) => { if (dre.test(m[1]) && !seen[n]) { seen[n] = 1; out.rows.push({ drug: n, results: [r], mic: "" }); } }); };
     prose("resistant", "R"); prose("(?:susceptible|sensitive)", "S"); prose("intermediate", "I");
+    return out;
+  }
+
+  /* Specimen / accession / status / date from the report header, when the screenshot or text includes it. */
+  function suscMeta(text) {
+    const t = String(text || ""), g = (re) => { const m = t.match(re); return m ? m[1].replace(/\s+/g, " ").trim() : ""; };
+    const spec = g(/\b(urine|blood|sputum|wound|tissue|csf|bone|joint fluid|fluid|swab|bal|bronchial wash|stool|catheter tip|abscess)\b[^\n]{0,20}?\bculture/i);
+    const status = g(/result status\s*[-:]\s*(modified|corrected|amended|auth\s*\(verified\)|verified|final|preliminary|prelim)/i);
+    return { specimen: spec ? spec.charAt(0).toUpperCase() + spec.slice(1).toLowerCase() : "", accession: g(/accession\s*(?:no\.?|#)?\s*[:#]?\s*([A-Z0-9-]{6,})/i),
+      status, modified: /modified|corrected|amended/i.test(status), date: g(/collect\w*\s*[:-]?\s*(\d{1,2}[- ][A-Za-z]{3}[- ]\d{4}|\d{4}-\d{2}-\d{2})/i) };
+  }
+  const orgKey = (o) => String(o || "").toLowerCase().replace(/^e\.\s*coli$/, "escherichia coli").replace(/^s\.\s*aureus$/, "staphylococcus aureus").replace(/\s+/g, " ").trim();
+  const worstOf = (v) => (v.includes("R") ? "R" : v.includes("I") ? "I" : v.includes("S") ? "S" : "");
+
+  /* Several results (one per screenshot / pasted text / chart report) -> one table, one column per organism per result.
+     The same organism from two cultures is never merged: different results are flagged instead.
+     list = [{ p: parseSusc() output, label }]. Returns the shape parseSusc returns (so assess/suscNotes/consultMsg work) plus cols and discord. */
+  function mergeSusc(list) {
+    const out = { organisms: [], flags: { mrsa: false, esbl: false, cre: false }, rows: [], cols: [], discord: [], dupes: [] };
+    const byDrug = {}, rowOf = (d) => byDrug[d] || (byDrug[d] = out.rows[out.rows.push({ drug: d, results: [], inf: [], mics: [], footnote: false }) - 1]);
+    (list || []).forEach((item, ri) => {
+      const raw = item.p, p = expandSusc(JSON.parse(JSON.stringify(raw)));
+      ["mrsa", "esbl", "cre"].forEach((k) => (out.flags[k] = out.flags[k] || p.flags[k]));
+      const n = Math.max(1, p.organisms.length, ...p.rows.filter((r) => !r.derived).map((r) => r.results.length));
+      const first = out.cols.length;
+      for (let oc = 0; oc < n; oc++) out.cols.push({ ri, oc, org: p.organisms[oc] || (n > 1 ? "Organism " + (oc + 1) : "Organism"), label: item.label || "", meta: raw.meta || {} });
+      const colsHere = (re) => out.cols.slice(first).filter((c) => re.test(c.org)).map((c) => c.oc);
+      p.rows.filter((r) => !r.derived).forEach((r) => {
+        const row = rowOf(r.drug); if (r.footnote) row.footnote = true;
+        for (let oc = 0; oc < n; oc++) if (r.results[oc]) { row.results[first + oc] = r.results[oc]; row.inf[first + oc] = ""; if (r.mic && n === 1) row.mics[first + oc] = r.mic; }
+      });
+      p.rows.filter((r) => r.derived).forEach((r) => {
+        let targets, val = () => r.results[0];
+        const same = r.derived.match(/^same as (.+)$/);
+        if (same) { const src = p.rows.find((x) => x.drug === same[1] && !x.derived); targets = [...Array(n).keys()]; val = (oc) => (src ? src.results[oc] : r.results[0]); }
+        else if (/pseudomonas/i.test(r.derived)) targets = colsHere(/pseudomonas/i);
+        else if (/enterococcus/i.test(r.derived)) targets = colsHere(/enterococcus/i);
+        else if (/MRSA|MSSA/.test(r.derived)) targets = n === 1 ? [0] : colsHere(/aureus|staph/i);
+        else targets = [...Array(n).keys()]; // ESBL / carbapenemase: report-level flag
+        const row = rowOf(r.drug);
+        targets.forEach((oc) => { const v = val(oc); if (v && !row.results[first + oc]) { row.results[first + oc] = v; row.inf[first + oc] = r.derived; } });
+      });
+    });
+    const N = out.cols.length;
+    out.rows = out.rows.filter((r) => r.results.some(Boolean));
+    out.rows.forEach((r) => {
+      for (let c = 0; c < N; c++) { r.results[c] = r.results[c] || ""; r.inf[c] = r.inf[c] || ""; }
+      const filled = r.results.map((v, c) => (v ? c : -1)).filter((c) => c >= 0);
+      if (filled.length && filled.every((c) => r.inf[c])) r.derived = [...new Set(filled.map((c) => r.inf[c]))].join("; ");
+      r.allS = N > 1 && filled.length === N && r.results.every((v) => v === "S");
+    });
+    out.organisms = [...new Set(out.cols.map((c) => c.org).filter((o) => !/^Organism/.test(o)))];
+    // same organism in two or more results with different calls
+    const groups = {};
+    out.cols.forEach((c, i) => { const k = orgKey(c.org); if (!/^organism/.test(k)) (groups[k] = groups[k] || []).push(i); });
+    Object.keys(groups).forEach((k) => {
+      const idx = groups[k]; if (new Set(idx.map((i) => out.cols[i].ri)).size < 2) return;
+      out.rows.forEach((r) => {
+        const vals = idx.filter((i) => r.results[i] && !r.inf[i]).map((i) => ({ i, v: r.results[i] }));
+        if (new Set(vals.map((x) => x.v)).size > 1) { r.discord = true; out.discord.push({ org: out.cols[idx[0]].org, drug: r.drug, vals }); }
+      });
+    });
+    // the same accession loaded twice (e.g. the original and a Modified report)
+    const acc = {};
+    (list || []).forEach((it, ri) => { const a = it.p.meta && it.p.meta.accession; if (a) (acc[a] = acc[a] || []).push(ri); });
+    Object.keys(acc).forEach((a) => acc[a].length > 1 && out.dupes.push({ accession: a, ri: acc[a] }));
     return out;
   }
 
@@ -235,6 +304,6 @@
     return { text: `Hello Dr. ${o.drName || "___"},\n\nThis is Wayne, hospitalist. ${body}\n\nYour help is much appreciated.\n\nThanks,\nWayne${sig ? "\n" + sig : ""}`, words: words(body) + 4 };
   }
 
-  const api = { consultMsg, CONSULT_NOUN, parseSusc, expandSusc, suscNotes, SUSC_DRUGS, DRUGS, drugsIn, ivVanco, conditionsOf, assess, choose, allergyLines, crcl, note };
+  const api = { consultMsg, CONSULT_NOUN, parseSusc, expandSusc, mergeSusc, suscMeta, worstOf, suscNotes, SUSC_DRUGS, DRUGS, drugsIn, ivVanco, conditionsOf, assess, choose, allergyLines, crcl, note };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else window.AbxMapRules = api;
 })();

@@ -94,4 +94,22 @@ cm = R.consultMsg({ service: "General surgery", age: 70, sex: "male", site: site
 ok("consult: long extra still trimmed to ~55 words", cm.words <= 60, cm.words);
 ok("consult: blank doctor and MRN placeholders", /Hello Dr\. ___/.test(cm.text) && /MRN ___/.test(cm.text));
 ok("one-line report: organism found", R.parseSusc("Escherichia coli >10^8 CFU/L, ESBL producer. Resistant to ceftriaxone and ciprofloxacin; susceptible to ertapenem.").organisms[0] === "Escherichia coli");
+// several screenshots: PowerChart grid row numbers, one column per result, same organism kept apart and flagged
+const ecoli = R.parseSusc("Urine Culture - Accession: 000002025009003905\nResult Status - Auth (Verified)\n1 Escherichia coli\n2 MIC Intrp\n4 Ampicillin R\n5 Cefazolin R\n13 Ertapenem S\n15 Gentamicin S\n21 Trimethoprim/Sulfamethoxazole S");
+ok("grid row numbers are not MICs", ecoli.rows.every((r) => r.mic === ""), ecoli.rows.map((r) => r.mic));
+ok("header: urine, accession, verified", ecoli.meta.specimen === "Urine" && ecoli.meta.accession === "000002025009003905" && /verified/i.test(ecoli.meta.status) && !ecoli.meta.modified, ecoli.meta);
+const psA = R.parseSusc("Result Status - Modified\n1 Pseudomonas aeruginosa\n2 E Interp\n3 Ceftazidime* I\n4 Ciprofloxacin R\n5 Gentamicin S\n6 Piperacillin/Tazobactam R\n7 Tobramycin S");
+const psB = R.parseSusc("Result Status - Auth (Verified)\n1 Pseudomonas aeruginosa\n2 MIC Intrp\n3 Ceftazidime S\n4 Ciprofloxacin R\n5 Gentamicin S\n6 Piperacillin/Tazobactam S\n7 Tobramycin S");
+ok("Pseudomonas grid: 5 drugs, ceftazidime footnote, modified", psA.rows.length === 5 && psA.rows.find((r) => r.drug === "ceftazidime").footnote && psA.meta.modified, psA);
+const mg = R.mergeSusc([{ p: ecoli }, { p: psA }, { p: psB }]);
+ok("merge: 3 columns, 2 organism names", mg.cols.length === 3 && mg.organisms.length === 2, mg.cols);
+ok("merge: Pseudomonas results disagree on pip-tazo and ceftazidime", mg.discord.map((d) => d.drug).sort().join() === "ceftazidime,piperacillin-tazobactam", mg.discord);
+ok("merge: gentamicin S in all three", mg.rows.find((r) => r.drug === "gentamicin").allS);
+const ert = mg.rows.find((r) => r.drug === "ertapenem");
+ok("merge: Pseudomonas ertapenem inferred only in the Pseudomonas columns", ert.results.join() === "S,R,R" && !ert.inf[0] && ert.inf[1], ert);
+ok("merge: worst result drives the regimen badge", R.assess("Piperacillin-tazobactam 4.5 g IV q6h", { allergy: "none", risks: {}, susc: mg }).status === "avoid");
+const mk = R.mergeSusc([{ p: R.parseSusc(ocr) }]);
+const kEr = mk.rows.find((r) => r.drug === "ertapenem");
+ok("2-organism report: Pseudomonas-intrinsic R goes to the Pseudomonas column, not Klebsiella", kEr.results[0] === "" && kEr.results[1] === "R", kEr);
+ok("same accession loaded twice is flagged", R.mergeSusc([{ p: ecoli }, { p: ecoli }]).dupes.length === 1);
 console.log(fail ? `\n${fail} FAILED` : "\nall passed"); process.exit(fail ? 1 : 0);
