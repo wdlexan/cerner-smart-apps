@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HaH antibiotics</title>
+<script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --ink:#1f2933; --muted:#5f6b7a; --line:#dde2e8; --accent:#175cd3;
+    --red:#b42318; --red-bg:#fdecea; --amber:#b54708; --amber-bg:#fef4e6; --green:#067647; --green-bg:#e7f6ee; --blue:#175cd3; --blue-bg:#eaf1fd; --gray-bg:#f0f1f3; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; background:var(--bg); color:var(--ink); }
+  header { background:#1d2939; color:#fff; padding:10px 18px; display:flex; gap:16px; align-items:baseline; flex-wrap:wrap; }
+  header h1 { font-size:17px; margin:0; } header .pt { font-size:13px; opacity:.9; }
+  main { max-width:1100px; margin:0 auto; padding:14px 18px 40px; display:grid; gap:14px; }
+  details.card { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:10px 16px; }
+  details.card > summary { cursor:pointer; list-style:none; } details.card > summary::-webkit-details-marker { display:none; }
+  details.card > summary h2 { display:inline; font-size:15px; margin:0; } details.card > summary::before { content:"▸ "; color:var(--muted); } details.card[open] > summary::before { content:"▾ "; }
+  details.card[open] > summary { margin-bottom:10px; }
+  .banner { border-radius:8px; padding:10px 14px; border:1px solid #bcd3f7; background:var(--blue-bg); }
+  .banner small { display:block; color:var(--ink); margin-top:3px; }
+  table { width:100%; border-collapse:collapse; } th, td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; }
+  .pill { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; font-weight:600; }
+  .ok { background:var(--green-bg); color:var(--green); } .elasto { background:var(--blue-bg); color:var(--blue); } .pharm { background:var(--amber-bg); color:var(--amber); }
+  .bad { background:var(--red-bg); color:var(--red); } .unk { background:var(--gray-bg); color:var(--muted); }
+  .muted { color:var(--muted); } .small { font-size:12.5px; }
+  select, input[type=text] { font:inherit; padding:6px 8px; border:1px solid var(--line); border-radius:6px; background:#fff; }
+  input[type=text] { flex:1; min-width:260px; } .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  button { font:inherit; padding:6px 12px; border-radius:6px; border:1px solid var(--accent); background:var(--accent); color:#fff; cursor:pointer; }
+  ul { margin:4px 0; padding-left:20px; } footer { font-size:12px; color:var(--muted); }
+</style>
+</head>
+<body>
+<header><h1>Hospital at Home – IV antibiotic options</h1><span class="pt" id="ptBanner">Loading…</span></header>
+<main>
+  <div class="banner" id="top">
+    <div class="row"><b>Nurse bolus visits allowed a day:</b>
+      <select id="limit"><option value="2" selected>2 (BID) – more than BID needs an elastomeric</option><option value="3">3 (TID)</option><option value="1">1 (once daily)</option></select>
+      <span class="muted small" id="pstatus"></span>
+      <select id="demo" style="margin-left:auto"><option value="">Made-up patient…</option></select>
+    </div>
+    <small>HaH nurses visit at most TID. Antibiotics due more often than the bolus limit must be compounded into an elastomeric ("ball") that runs over 24 h – only drugs stable ~24 h at 25–32 °C qualify. UNVERIFIED draft: confirm every regimen with HaH pharmacy.</small>
+  </div>
+
+  <details class="card" open id="secPt"><summary><h2>This patient's IV antibiotics</h2></summary>
+    <div id="ptOut" class="muted">Open from Cerner, or pick a made-up patient.</div>
+    <div class="row" style="margin-top:10px"><input type="text" id="orderTxt" placeholder="…or type an order, e.g. meropenem 1 g IV q8h"><button id="orderBtn">Check</button></div>
+    <div id="orderOut" style="margin-top:6px"></div>
+  </details>
+
+  <details class="card" open id="secOpt"><summary><h2>Options by organism (fewest nurse visits first)</h2></summary>
+    <div class="row"><b>Organism / situation:</b> <select id="scen"></select></div>
+    <div id="optOut" style="margin-top:8px"></div>
+  </details>
+
+  <details class="card" open id="secElasto"><summary><h2>24-hour elastomeric – compatible</h2></summary><div id="elastoOut"></div></details>
+
+  <details class="card" open id="secNo"><summary><h2>Cannot go in a 24-hour elastomeric – and workarounds</h2></summary>
+    <ul>
+      <li><b>Meropenem</b>: unstable at room/body temperature after ~4–6 h, so not a 24-h device. <b>Locally, meropenem balls can be made</b> – HaH pharmacy sets the device, duration and number of changes a day; confirm the nurses can do the changes.</li>
+      <li><b>Imipenem</b>: unstable after ~4–6 h – no 24-h device.</li>
+      <li><b>ESBL E. coli / Enterobacterales without Pseudomonas</b>: switch to <b>ertapenem 1 g IV q24h</b> (standard OPAT daily bolus).</li>
+      <li><b>Pseudomonas needing a carbapenem</b>: meropenem balls per pharmacy (above), a programmable CADD pump giving q8h doses from a refrigerated cassette (if stability allows), switch to <b>ceftazidime</b> or <b>piperacillin-tazobactam</b> elastomeric if susceptible – otherwise inpatient care.</li>
+      <li><b>Ampicillin</b>: short stability – use penicillin G elastomeric, ceftriaxone, or oral amoxicillin as the infection allows.</li>
+    </ul>
+  </details>
+  <footer>Read-only: nothing is written to the chart. Doses are typical adult regimens before renal/weight adjustment. Draft from the hospitalist's notes (Nov 2026) – not Island Health policy.</footer>
+</main>
+<script src="../hospitalist-toolkit/tools/hahabx/rules.js?v=20261123a"></script>
+<script src="../hospitalist-toolkit/tools/hahabx/app.js?v=20261123a"></script>
+<script src="../hospitalist-toolkit/subtabs.js?v=20261121f"></script>
+<script>SubTabs.mount({ store: "hahabx", top: ["#top"], tabs: [
+  { key: "pt", label: "This patient", match: ["#secPt"] },
+  { key: "opt", label: "Options by organism", match: ["#secOpt"] },
+  { key: "ref", label: "Elastomeric reference", match: ["#secElasto", "#secNo"] }] });</script>
+<script src="../hospitalist-toolkit/consult-widget.js?v=20261122a"></script>
+</body>
+</html>

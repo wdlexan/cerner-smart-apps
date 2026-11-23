@@ -4,7 +4,7 @@
    A tab is only loaded the first time you open it, and stays loaded when you switch away. */
 
 // To add a tool: put its files in tools/<folder>/ and add a line here.
-const TOOL_V = "20261122k"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
+const TOOL_V = "20261123a"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
 const TOOLS = [
   { key: "today", label: "Today (what changed)", tags: "what changed daily trends vitals overnight summary", path: "tools/today/index.html" },
   { key: "plist", label: "Patient list (screenshot)", tags: "patient list screenshot excel spreadsheet rounding list census floor ward ocr", path: "tools/plist/index.html" },
@@ -19,6 +19,7 @@ const TOOLS = [
   { key: "pain",  label: "Pain management", tags: "pain management analgesia",      path: "tools/pain/index.html" },
   { key: "abx",   label: "Antibiotics", tags: "antibiotics antimicrobial stewardship iv po switch duration",          path: "tools/abx/index.html" },
   { key: "abxmap", label: "Antibiotic chooser (body map)", tags: "antibiotic chooser body map which antibiotic empiric choice site lung skin bladder kidney prostate colon gallbladder joint brain sinus dental groin sepsis c diff allergy mrsa esbl pseudomonas", path: "tools/abxmap/index.html" },
+  { key: "hahabx", label: "HaH antibiotics (home IV)", tags: "hospital at home hah opat home iv antibiotics elastomeric ball continuous infusion cadd pump nurse visits bid tid meropenem ertapenem piperacillin tazobactam cloxacillin cefazolin probenecid penicillin ceftazidime vancomycin", path: "tools/hahabx/index.html" },
   { key: "inf",   label: "Infections by site", tags: "infections sepsis pneumonia uti cellulitis source",   path: "tools/infections/index.html" },
   { key: "cw",    label: "Choosing Wisely", tags: "choosing wisely low value tests overuse",      path: "tools/cw/index.html", keepHeader: true }, // its header holds the Look back control
   { key: "dx",    label: "Diagnosis check", tags: "diagnosis check cognitive bias second look missed differential harm",      path: "tools/dx/index.html", keepHeader: true }, // its header holds the Look back control
@@ -133,7 +134,7 @@ const GROUPS = [
   { name: "Kidney", keys: ["aki", "lytes", "hypona", "acidbase", "ktx"] },
   { name: "Neuro", keys: ["neuro", "stroke", "seizure", "dementia", "pd", "ae"] },
   { name: "GI & endo", keys: ["liver", "ibd", "dm", "edr"] },
-  { name: "Infection", keys: ["abx", "abxmap", "inf"] },
+  { name: "Infection", keys: ["abx", "abxmap", "hahabx", "inf"] },
   { name: "Onc & heme", keys: ["onc", "tox", "bsab", "pc", "g6pd", "sero"] },
   { name: "Safety", keys: ["meds", "opioid", "pain", "risk", "cw", "dx"] },
   { name: "Admit & discharge", keys: ["ed", "hah", "hip", "consult", "mobility", "discharge", "dcclinic", "forms"] }];
