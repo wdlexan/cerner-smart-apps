@@ -138,6 +138,6 @@
     return { raw: { patient, obs, medreqs, admins, conditions }, errors };
   }
 
-  const api = { parse, gather, latest, wtChange, loopDose, MED, PROB, DAY, HR };
+  const api = { parse, gather, latest, wtChange, loopDose, MED, PROB, LABS, VITALS, DAY, HR };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else window.CHFChart = api;
 })();

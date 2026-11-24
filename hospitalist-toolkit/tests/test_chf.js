@@ -132,5 +132,19 @@ let E3 = EC.parse("Severely reduced left ventricular systolic function. Large pe
 eq("echo3 qualitative EF", EC.efCat(E3).key, "low"); ok("echo3 tamponade", E3.tamponade); ok("echo3 thrombus", !!E3.thrombus);
 let E4 = EC.parse("No pericardial effusion. No LV thrombus. LVEF 55-60%. Mild mitral regurgitation.");
 ok("echo4 negatives", !E4.effusion && !E4.thrombus && E4.mr === "mild");
+
+// labs from a screenshot
+const LS = require("../tools/chf/labshot.js");
+let LR = LS.parseLabs(LS.SAMPLE, C.LABS);
+eq("labshot count", LR.length, 24);
+ok("labshot NT-proBNP in the 3rd date column", LR.find((e) => e.id === "nt").t === new Date(2026, 10, 22, 21, 15).getTime());
+ok("labshot newest sodium 134 dated 24 Nov", LR.find((e) => e.id === "na" && e.v === 134).t === new Date(2026, 10, 24, 5, 40).getTime());
+LR = LS.parseLabs("Creatinine 112 umol/L H  Ref 60-110\neGFR 52 mL/min/1.73m2\nHemoglobin A1c 7.6 %\nUrine Sodium 42 mmol/L\nTroponin I HS <5 ng/L\nCO2 24\nHgb 98 L", C.LABS);
+eq("labshot ref range ignored", LR.filter((e) => e.id === "cr").length, 1); eq("labshot eGFR not 1.73", LR.find((e) => e.id === "egfr").v, 52);
+eq("labshot A1c not Hb", LR.find((e) => e.v === 7.6).id, "a1c"); eq("labshot urine Na", LR.find((e) => e.v === 42).id, "una"); eq("labshot CO2", LR.find((e) => e.v === 24).id, "hco3");
+LR = LS.parseLabs("\t24-Nov-2026 05:40\t23-Nov-2026 06:10\t22-Nov-2026 21:15\nNT-proBNP\t\t\t8450\nSodium\t134\t136\t138", C.LABS);
+ok("labshot tab columns", LR.find((e) => e.id === "nt").t === new Date(2026, 10, 22, 21, 15).getTime());
+const LO = C.parse({ obs: LS.toObs(LS.parseLabs("Creatinine 131\nMagnesium 0.68", C.LABS, { now: 1e12 }), C.LABS) }, { now: 1e12 });
+ok("labshot -> chart reader", LO.l.cr[0].v === 131 && LO.l.mg[0].v === 0.68);
 console.log(fail ? fail + " FAILED" : "all passed");
 process.exit(fail ? 1 : 0);

@@ -220,7 +220,7 @@ function noteText(x, nt, ntc, ivDaily, resp, dry, days, crc) {
 
 /* ---- load ---- */
 function load(raw, note, errors, preset) {
-  state.f = raw ? C.parse(raw) : null; state.flags = {}; state.why = {}; const p = (preset && preset.sit) || {}, f = state.f;
+  state.raw = raw || null; state.f = raw ? C.parse(raw) : null; state.flags = {}; state.why = {}; const p = (preset && preset.sit) || {}, f = state.f;
   $("ef").value = p.ef || (f && f.prob.hfref ? "low" : f && f.prob.hfpef ? "pres" : "unknown");
   $("dry").value = p.dry != null ? p.dry : ""; $("una").value = p.una != null ? p.una : ""; $("uo").value = "";
   // home loop dose: from preset, else from an oral loop order

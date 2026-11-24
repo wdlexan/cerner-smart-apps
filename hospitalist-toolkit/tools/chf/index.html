@@ -65,6 +65,8 @@
     .check li.have { color:var(--g-ink); } .check li.miss { color:var(--ink); } .check .why { color:var(--muted); font-size:12px; }
     .mini { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:10px; } .mini .ttl { font-weight:600; font-size:13px; }
     .bands td { white-space:normal; } tr.me td { background:var(--b-bg); color:var(--b-ink); font-weight:600; }
+    .drop { border:2px dashed var(--line); border-radius:10px; padding:16px; text-align:center; cursor:pointer; color:var(--muted); }
+    .drop.over { border-color:var(--accent); background:var(--b-bg); } .drop b { color:var(--accent); }
     .handout { border:1px dashed var(--line); border-radius:8px; padding:10px 14px; background:var(--card); max-height:420px; overflow:auto; }
     @media print { .noprint { display:none; } }
   </style>
@@ -109,6 +111,23 @@
       </div>
     </details>
 
+    <details class="card" id="ls-card" open><summary><span>Labs from a screenshot</span><span class="muted" id="lssum"></span></summary><div class="body">
+      <div class="drop" id="ls-drop"><div class="dz"><b>Paste a screenshot of the lab results (Ctrl+V)</b>, drag one here, or click to choose a picture</div>
+        <div class="dz" style="font-size:12px;margin-top:4px">Results Review or a lab flowsheet: one result per row, or several dates in columns. Read in this browser; nothing is sent anywhere.</div></div>
+      <input type="file" id="ls-file" accept="image/*" multiple hidden>
+      <div class="row">
+        <label class="inl">Several results in a row, no dates shown: <select id="ls-order"><option value="newestFirst">newest is first (left)</option><option value="newestLast">newest is last (right)</option></select></label>
+        <label class="inl" id="ls-agewrap">Age <input type="number" id="ls-age" style="width:60px"> <span class="muted">(no chart open: for the NT-proBNP age cut-off)</span></label>
+        <label class="inl">Newest result taken <input type="datetime-local" id="ls-when"> <span class="muted">(blank = now; used only when the picture has no dates)</span></label>
+      </div>
+      <details><summary class="muted" style="cursor:pointer">Picture won't read? Paste the lab text instead</summary>
+        <textarea id="ls-text" style="min-height:110px" placeholder="Paste lab result text here"></textarea>
+        <div class="row"><button id="ls-readtext">Read the text</button><button id="ls-sample">Load made-up results</button></div></details>
+      <div id="ls-status" class="muted" style="margin:6px 0"></div>
+      <div id="ls-rows" class="scroll"></div>
+      <div class="row"><button id="ls-use" class="primary" disabled>Add these labs to the page</button><button id="ls-add">+ Add a lab by hand</button><button id="ls-clear">Remove screenshot labs</button></div>
+    </div></details>
+
     <div class="tiles" id="tiles"></div>
     <details class="card" open><summary><span>Plan now</span><span class="muted" id="plansum"></span></summary><div class="body plan" id="plan"></div></details>
     <details class="card" open><summary><span>NT-proBNP: is it heart failure? (by age)</span><span class="muted" id="ntsum"></span></summary><div class="body" id="nt"></div></details>
@@ -149,15 +168,16 @@
   <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
   <script src="../../pdf-overlay.js?v=20261120p"></script>
   <script src="rules.js?v=20261121a"></script>
-  <script src="chart.js?v=20261124a"></script>
+  <script src="chart.js?v=20261124b"></script>
   <script src="samples.js?v=20261124a"></script>
   <script src="handout.js?v=20261121a"></script>
   <script src="ischemia.js?v=20261124a"></script>
   <script src="echo.js?v=20261124a"></script>
-  <script src="app.js?v=20261124a"></script>
+  <script src="labshot.js?v=20261124a"></script>
+  <script src="app.js?v=20261124b"></script>
   <script src="../../subtabs.js?v=20261121f"></script>
   <script>SubTabs.mount({ store: "chf", top: ["Chart alerts", "#tiles"], dotSel: ".alert.urgent, .tile.t3, .plan .urgent", tabs: [
-      {"key": "assess", "label": "Assess", "match": ["Patient and situation", "Plan now", "is it heart failure", "Weight, NT-proBNP"]},
+      {"key": "assess", "label": "Assess", "match": ["Patient and situation", "Labs from a screenshot", "Plan now", "is it heart failure", "Weight, NT-proBNP"]},
       {"key": "echo", "label": "Echo", "match": ["Echo report"]},
       {"key": "diur", "label": "Diuretics & IV→PO", "match": ["Diuretics:", "Switching IV to oral"]},
       {"key": "gdmt", "label": "GDMT", "match": ["Long-term treatment"]},
