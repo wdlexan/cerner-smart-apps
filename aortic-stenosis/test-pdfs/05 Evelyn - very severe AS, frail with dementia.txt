@@ -1,0 +1,68 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, EVELYN                    DOB: 1934-01-28     Sex: F
+MRN: TESTAS05                            Age: 92
+Address: 55 Trial Avenue, Esquimalt BC V9A 0E5
+ED arrival: 2026-11-22 02:30    Admitted: 2026-11-22 05:30 (Hospitalist)
+
+HOSPITALIST ADMISSION NOTE
+Date of service: 2026-11-22 04:30
+92 year old woman from residential care with advanced Alzheimer dementia (dependent for all
+ADLs, nonverbal most days), admitted with heart failure and a syncopal episode at the care
+home. Clinical Frailty Scale 7. Family (daughter is substitute decision maker) asks about
+valve treatment.
+
+HOSPITALIST PROGRESS NOTE
+Date of service: 2026-11-24 03:30
+Very severe AS. Given advanced dementia and severe frailty, valve replacement unlikely to
+improve quality of life. Goals of care meeting planned with daughter; current code status
+full. Gentle diuresis, avoid nitrates.
+
+VITAL SIGNS
+2026-11-22 03:30 BP: 102/58 HR: 96 Temp: 36.5 C SpO2: 90%
+2026-11-24 01:30 BP: 96/54 HR: 84 Temp: 36.6 C SpO2: 94%
+Weight: 47 kg
+
+LABORATORY RESULTS
+Collected: 2026-11-22 04:30
+Test                      Result           Units           Reference       Flag
+
+Hemoglobin                104              g/L             115 - 155       L   
+
+Creatinine                118              umol/L          45 - 90         H   
+
+eGFR                      34               mL/min/1.73m2   > 60            L   
+
+NT-proBNP                 12600            ng/L            < 450           H   
+
+Albumin                   27               g/L             35 - 50         L   
+
+
+ACTIVE MEDICATION ORDERS
+Furosemide 20 mg IV BID
+Donepezil 5 mg PO daily
+Acetaminophen 650 mg PO q6h PRN
+
+ACTIVE PROBLEM LIST
+Heart failure
+Aortic stenosis
+Alzheimer dementia, advanced
+Syncope
+Frailty
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, EVELYN MRN TESTAS05         Page 1
+
+CARDIAC AND RADIOLOGY REPORTS
+
+TRANSTHORACIC ECHOCARDIOGRAM
+Date of exam: 2026-11-23 03:30
+IMPRESSION:
+BP 98/56. BSA 1.42 m2. Trileaflet aortic valve, severely calcified, immobile. AV Vmax 5.2
+m/s, mean gradient 68 mmHg. LVOT diameter 1.8 cm, LVOT VTI 20 cm, AV VTI 120 cm. AVA
+(continuity) 0.42 cm2. DVI 0.17. SVi 36 mL/m2. LVEF 55%. Moderate mitral regurgitation,
+severe MAC. RVSP 55 mmHg. CONCLUSION: Very severe aortic stenosis.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, EVELYN MRN TESTAS05         Page 2

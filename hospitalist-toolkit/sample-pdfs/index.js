@@ -2,6 +2,36 @@
 // Files are copies of each app's test-pdfs/ (regenerate there, then copy here). Folder = condition.
 window.SAMPLE_PDFS = [
  {
+  "folder": "Aortic stenosis",
+  "label": "01 Doris - hip fracture with severe AS",
+  "file": "Aortic stenosis/01 Doris - hip fracture with severe AS.pdf"
+ },
+ {
+  "folder": "Aortic stenosis",
+  "label": "02 Harold - low-flow low-gradient, low EF",
+  "file": "Aortic stenosis/02 Harold - low-flow low-gradient, low EF.pdf"
+ },
+ {
+  "folder": "Aortic stenosis",
+  "label": "03 Margaret - paradoxical low-flow, CT calcium",
+  "file": "Aortic stenosis/03 Margaret - paradoxical low-flow, CT calcium.pdf"
+ },
+ {
+  "folder": "Aortic stenosis",
+  "label": "04 Ronald - asymptomatic bicuspid, dilated aorta",
+  "file": "Aortic stenosis/04 Ronald - asymptomatic bicuspid, dilated aorta.pdf"
+ },
+ {
+  "folder": "Aortic stenosis",
+  "label": "05 Evelyn - very severe AS, frail with dementia",
+  "file": "Aortic stenosis/05 Evelyn - very severe AS, frail with dementia.pdf"
+ },
+ {
+  "folder": "Aortic stenosis",
+  "label": "06 Frank - high gradient from anemia (GI bleed)",
+  "file": "Aortic stenosis/06 Frank - high gradient from anemia (GI bleed).pdf"
+ },
+ {
   "folder": "Autoimmune encephalitis",
   "label": "01 Amelia - anti-NMDAR",
   "file": "Autoimmune encephalitis/01 Amelia - anti-NMDAR.pdf"

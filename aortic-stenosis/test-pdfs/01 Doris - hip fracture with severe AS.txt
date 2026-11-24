@@ -1,0 +1,88 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, DORIS                     DOB: 1942-03-14     Sex: F
+MRN: TESTAS01                            Age: 84
+Address: 11 Test Lane, Victoria BC V8R 0A1
+ED arrival: 2026-11-23 03:30    Admitted: 2026-11-23 06:30 (Hospitalist)
+
+ED PHYSICIAN NOTE
+Date of service: 2026-11-23 04:30
+84 year old woman, fall at home going up the stairs: felt light-headed and greyed out on
+exertion just before she fell. Shortened externally rotated left leg. Loud ejection systolic
+murmur radiating to the carotids. Left femoral neck fracture on x-ray. Admit to orthopedics
+with hospitalist co-management.
+
+HOSPITALIST CONSULT NOTE
+Date of service: 2026-11-23 07:30
+Known aortic stenosis, last echo 2 years ago moderate. Over the past 6 months exertional
+dyspnea walking one block and two episodes of exertional presyncope. Lives alone, walks with
+a cane, independent ADLs, Clinical Frailty Scale 5. Plan urgent echo, inform anesthesia of
+severe AS, do not delay hip surgery, avoid nitrates and over-diuresis. Cardiology referral
+for TAVI after recovery.
+
+VITAL SIGNS
+2026-11-23 04:30 BP: 118/64 HR: 92 Temp: 36.8 C SpO2: 95%
+2026-11-23 21:30 BP: 106/58 HR: 88 Temp: 37.0 C SpO2: 94%
+2026-11-24 07:30 BP: 112/60 HR: 84 Temp: 36.9 C SpO2: 95%
+Weight: 58 kg
+
+LABORATORY RESULTS
+Collected: 2026-11-23 05:30
+Test                      Result           Units           Reference       Flag
+
+Hemoglobin                112              g/L             115 - 155       L   
+
+Creatinine                96               umol/L          45 - 90         H   
+
+eGFR                      47               mL/min/1.73m2   > 60            L   
+
+Sodium                    136              mmol/L          135 - 145           
+
+Potassium                 4.2              mmol/L          3.5 - 5.0           
+
+NT-proBNP                 2900             ng/L            < 450           H   
+
+Troponin                  21               ng/L            < 16            H   
+
+
+ACTIVE MEDICATION ORDERS
+Acetaminophen 1 g PO q6h
+Hydromorphone 0.5 mg PO q4h PRN pain
+Enoxaparin 30 mg subcut daily
+Ramipril 2.5 mg PO daily (held)
+Furosemide 20 mg PO daily
+
+ACTIVE PROBLEM LIST
+Fracture of neck of left femur
+Aortic stenosis
+Hypertension
+Chronic kidney disease stage 3a
+Osteoporosis
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, DORIS MRN TESTAS01         Page 1
+
+CARDIAC AND RADIOLOGY REPORTS
+
+X-RAY LEFT HIP
+Date of exam: 2026-11-23 04:30
+IMPRESSION:
+Displaced subcapital fracture of the left femoral neck.
+
+TRANSTHORACIC ECHOCARDIOGRAM
+Date of exam: 2026-11-24 03:30
+IMPRESSION:
+BP 112/60. BSA 1.58 m2. Trileaflet aortic valve, severely calcified, severely reduced
+opening. AV Vmax 4.6 m/s, peak gradient 85 mmHg, mean gradient 52 mmHg. LVOT diameter 1.9
+cm, LVOT VTI 21 cm, AV VTI 105 cm. AVA (continuity) 0.57 cm2. DVI 0.20. SVi 38 mL/m2.
+Concentric LVH, LVEF 60%. Mild mitral regurgitation. RVSP 42 mmHg. CONCLUSION: Severe
+high-gradient aortic stenosis with preserved LV function, progressed from moderate in 2024.
+
+ECG 12 LEAD
+Date of exam: 2026-11-23 04:30
+IMPRESSION:
+Sinus rhythm 90. Left ventricular hypertrophy with strain. QRS 96 ms.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, DORIS MRN TESTAS01         Page 2

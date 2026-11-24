@@ -1,0 +1,87 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, HAROLD                    DOB: 1950-08-02     Sex: M
+MRN: TESTAS02                            Age: 76
+Address: 22 Sample Road, Saanich BC V8X 0B2
+ED arrival: 2026-11-21 11:30    Admitted: 2026-11-21 14:30 (Hospitalist)
+
+HOSPITALIST ADMISSION NOTE
+Date of service: 2026-11-21 13:30
+76 year old man admitted with decompensated heart failure: orthopnea, 6 kg weight gain,
+bilateral crackles. Prior CABG 2012 (sternotomy, LIMA-LAD patent). Ischemic cardiomyopathy.
+Ejection murmur. Echo shows low EF with a small calcified aortic valve but low gradient. IV
+furosemide started.
+
+CARDIOLOGY CONSULT NOTE
+Date of service: 2026-11-23 13:30
+Classical low-flow low-gradient aortic stenosis with reduced EF. Dobutamine stress echo
+shows flow reserve and true severe AS. Heart Team referral for transfemoral TAVI given prior
+sternotomy. Continue cautious diuresis, avoid nitrates.
+
+VITAL SIGNS
+2026-11-21 12:30 BP: 104/66 HR: 102 Temp: 36.7 C SpO2: 89%
+2026-11-23 03:30 BP: 98/62 HR: 88 Temp: 36.8 C SpO2: 94%
+2026-11-24 06:30 BP: 100/60 HR: 80 Temp: 36.6 C SpO2: 96%
+Weight: 84 kg
+
+LABORATORY RESULTS
+Collected: 2026-11-21 13:30
+Test                      Result           Units           Reference       Flag
+
+Hemoglobin                128              g/L             135 - 175       L   
+
+Creatinine                132              umol/L          60 - 110        H   
+
+eGFR                      46               mL/min/1.73m2   > 60            L   
+
+Sodium                    133              mmol/L          135 - 145       L   
+
+NT-proBNP                 8400             ng/L            < 450           H   
+
+Troponin                  38               ng/L            < 16            H   
+
+
+ACTIVE MEDICATION ORDERS
+Furosemide 40 mg IV BID
+Bisoprolol 2.5 mg PO daily
+Dapagliflozin 10 mg PO daily
+Spironolactone 12.5 mg PO daily
+Aspirin 81 mg PO daily
+Atorvastatin 80 mg PO daily
+
+ACTIVE PROBLEM LIST
+Heart failure with reduced ejection fraction
+Aortic stenosis
+Coronary artery disease, prior CABG
+Chronic kidney disease stage 3a
+Type 2 diabetes
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, HAROLD MRN TESTAS02         Page 1
+
+CARDIAC AND RADIOLOGY REPORTS
+
+TRANSTHORACIC ECHOCARDIOGRAM
+Date of exam: 2026-11-21 21:30
+IMPRESSION:
+BP 100/62. BSA 2.02 m2. Trileaflet aortic valve, heavily calcified, restricted. AV Vmax 3.3
+m/s, mean gradient 26 mmHg. LVOT diameter 2.2 cm, LVOT VTI 15 cm, AV VTI 69 cm. AVA
+(continuity) 0.83 cm2. DVI 0.22. SVi 28 mL/m2. Dilated LV, global hypokinesis, LVEF 30%.
+Moderate functional mitral regurgitation. RVSP 48 mmHg. CONCLUSION: Low-flow low-gradient
+aortic stenosis with reduced EF. Dobutamine stress echo recommended.
+
+DOBUTAMINE STRESS ECHOCARDIOGRAM
+Date of exam: 2026-11-23 11:30
+IMPRESSION:
+Dobutamine to 20 mcg/kg/min. Stroke volume rose 34% (contractile reserve present). At peak:
+AV Vmax 4.3 m/s, mean gradient 44 mmHg, AVA 0.86 cm2. CONCLUSION: True severe aortic
+stenosis.
+
+ECG 12 LEAD
+Date of exam: 2026-11-21 12:30
+IMPRESSION:
+Sinus tachycardia 102. Right bundle branch block. Old inferior Q waves.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, HAROLD MRN TESTAS02         Page 2

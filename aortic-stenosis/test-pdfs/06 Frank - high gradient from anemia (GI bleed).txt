@@ -1,0 +1,85 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, FRANK                     DOB: 1947-09-12     Sex: M
+MRN: TESTAS06                            Age: 79
+Address: 66 Mock Road, Sidney BC V8L 0F6
+ED arrival: 2026-11-22 21:30    Admitted: 2026-11-23 00:30 (Hospitalist)
+
+HOSPITALIST ADMISSION NOTE
+Date of service: 2026-11-22 23:30
+79 year old man admitted with melena and hemoglobin 78, on apixaban for atrial fibrillation.
+Exertional dyspnea for 3 weeks since the bleeding started; previously walked 2 km daily
+without symptoms. Known moderate AS (2025). Recurrent iron deficiency anemia over 2 years
+with angiodysplasia on prior capsule study.
+
+HOSPITALIST PROGRESS NOTE
+Date of service: 2026-11-24 05:30
+Echo during anemia: high gradient but valve area 1.25 cm2 and high stroke volume index, in
+keeping with a high-flow state from anemia. Repeat echo once hemoglobin corrected. Recurrent
+angiodysplasia bleeding with AS: consider Heyde syndrome, send von Willebrand multimers. GI
+for endoscopy.
+
+VITAL SIGNS
+2026-11-22 22:30 BP: 108/60 HR: 112 Temp: 36.9 C SpO2: 96%
+2026-11-23 21:30 BP: 118/64 HR: 96 Temp: 36.8 C SpO2: 97%
+2026-11-24 07:30 BP: 122/66 HR: 88 Temp: 36.7 C SpO2: 97%
+Weight: 76 kg
+
+LABORATORY RESULTS
+Collected: 2026-11-22 22:30
+Test                      Result           Units           Reference       Flag
+
+Hemoglobin                78               g/L             135 - 175       L   
+
+Ferritin                  9                ug/L            30 - 400        L   
+
+Creatinine                104              umol/L          60 - 110            
+
+eGFR                      60               mL/min/1.73m2   > 60                
+
+Urea                      16.2             mmol/L          2.5 - 8.0       H   
+
+NT-proBNP                 720              ng/L            < 450           H   
+
+LABORATORY RESULTS
+Collected: 2026-11-24 03:30
+Test                      Result           Units           Reference       Flag
+
+Hemoglobin                86               g/L             135 - 175       L   
+
+
+ACTIVE MEDICATION ORDERS
+Pantoprazole 40 mg IV BID
+Apixaban 5 mg PO BID (held)
+Metoprolol 25 mg PO BID
+Iron sucrose 300 mg IV once
+
+ACTIVE PROBLEM LIST
+Upper GI bleed
+Iron deficiency anemia
+Angiodysplasia
+Aortic stenosis
+Atrial fibrillation
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, FRANK MRN TESTAS06         Page 1
+
+CARDIAC AND RADIOLOGY REPORTS
+
+TRANSTHORACIC ECHOCARDIOGRAM
+Date of exam: 2026-11-23 15:30
+IMPRESSION:
+BP 116/62. HR 98. BSA 1.90 m2. Trileaflet aortic valve, moderately calcified. AV Vmax 4.1
+m/s, mean gradient 41 mmHg. LVOT diameter 2.3 cm, LVOT VTI 26 cm, AV VTI 86 cm. AVA
+(continuity) 1.25 cm2. DVI 0.30. SVi 57 mL/m2. Hyperdynamic LV, LVEF 70%. Mild aortic
+regurgitation. CONCLUSION: High gradient with valve area above 1.0 cm2 during anemia;
+high-flow state likely. Repeat after correction of anemia.
+
+ECG 12 LEAD
+Date of exam: 2026-11-22 22:30
+IMPRESSION:
+Atrial fibrillation 112. Nonspecific ST changes.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, FRANK MRN TESTAS06         Page 2

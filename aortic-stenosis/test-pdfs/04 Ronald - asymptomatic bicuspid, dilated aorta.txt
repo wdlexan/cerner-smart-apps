@@ -1,0 +1,67 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, RONALD                    DOB: 1958-11-07     Sex: M
+MRN: TESTAS04                            Age: 68
+Address: 44 Example Street, Langford BC V9B 0D4
+ED arrival: 2026-11-22 17:30    Admitted: 2026-11-22 20:30 (Hospitalist)
+
+HOSPITALIST ADMISSION NOTE
+Date of service: 2026-11-22 19:30
+68 year old man admitted with cellulitis of the right leg. Murmur noted. Cycles 30 km three
+times a week without dyspnea, chest pain or dizziness. No limitation. Known bicuspid valve
+from a childhood murmur, lost to follow-up.
+
+HOSPITALIST PROGRESS NOTE
+Date of service: 2026-11-24 04:30
+Echo: severe high-gradient AS in a bicuspid valve, normal EF, ascending aorta 4.7 cm.
+Asymptomatic and active. Discussed early intervention (ESC 2025) and that surgery would also
+address the aorta. Outpatient cardiology and cardiac surgery referral; exercise test as
+outpatient.
+
+VITAL SIGNS
+2026-11-22 18:30 BP: 142/82 HR: 88 Temp: 38.1 C SpO2: 97%
+2026-11-23 23:30 BP: 134/78 HR: 70 Temp: 36.9 C SpO2: 98%
+Weight: 88 kg
+
+LABORATORY RESULTS
+Collected: 2026-11-22 19:30
+Test                      Result           Units           Reference       Flag
+
+Hemoglobin                146              g/L             135 - 175           
+
+Creatinine                84               umol/L          60 - 110            
+
+eGFR                      84               mL/min/1.73m2   > 60                
+
+NT-proBNP                 210              ng/L            < 125           H   
+
+WBC                       12.8             x10^9/L         4.0 - 11.0      H   
+
+
+ACTIVE MEDICATION ORDERS
+Cefazolin 2 g IV q8h
+Rosuvastatin 10 mg PO daily
+
+ACTIVE PROBLEM LIST
+Cellulitis right leg
+Bicuspid aortic valve with aortic stenosis
+Dilated ascending aorta
+Dyslipidemia
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, RONALD MRN TESTAS04         Page 1
+
+CARDIAC AND RADIOLOGY REPORTS
+
+TRANSTHORACIC ECHOCARDIOGRAM
+Date of exam: 2026-11-23 13:30
+IMPRESSION:
+BP 132/78. BSA 2.05 m2. Bicuspid aortic valve (fusion of right and left cusps, raphe),
+heavily calcified. AV Vmax 4.3 m/s, mean gradient 46 mmHg. LVOT diameter 2.3 cm, LVOT VTI 23
+cm, AV VTI 98 cm. AVA (continuity) 0.97 cm2. DVI 0.23. SVi 46 mL/m2. LVEF 62%. Ascending
+aorta 4.7 cm. Trace aortic regurgitation. CONCLUSION: Severe high-gradient aortic stenosis,
+bicuspid valve, dilated ascending aorta.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, RONALD MRN TESTAS04         Page 2

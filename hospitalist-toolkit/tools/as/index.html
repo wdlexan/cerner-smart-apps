@@ -87,7 +87,7 @@ pre,.scroll{overflow-x:auto}code{overflow-wrap:anywhere}html{scroll-padding-top:
 @media(max-width:600px){table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px}.stack td{display:flow-root;border:0;padding:3px 0;padding-inline-start:8em;text-align:start}.stack td::before{content:attr(data-l);float:inline-start;width:7.5em;margin-inline-start:-8em;white-space:normal;color:var(--mute)}.stack td:empty{display:none}}
 </style>
 <script>new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}}).observe(document,{childList:true,subtree:true})</script>
-<script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.4/build/fhir-client.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.4/build/fhir-client.min.js"></script><script src="../../pdf-overlay.js?v=20261120p"></script>
 </head>
 <body>
 <header class="band">
@@ -112,7 +112,8 @@ pre,.scroll{overflow-x:auto}code{overflow-wrap:anywhere}html{scroll-padding-top:
 <div>
 <h2>Paste the echo report</h2>
 <textarea id="paste" aria-label="Echo report text"></textarea>
-<div class="row"><button class="btn" id="readBtn">Read report</button><button class="btn ghost" id="clearBtn">Clear</button><button class="btn ghost" id="sampleBtn">Load sample</button></div>
+<div class="row"><button class="btn" id="readBtn">Read report</button><button class="btn ghost" id="clearBtn">Clear</button></div>
+<div style="max-width:420px"><label for="sampleSel">Or load a made-up sample patient</label><select id="sampleSel"><option value="">Choose a sample patient…</option></select></div>
 <p class="small" id="sampleNote">A sample report is loaded to show how it works. Every value below can be edited.</p>
 </div>
 <div class="verdict" id="verdict" aria-live="polite"></div>
@@ -328,17 +329,7 @@ pre,.scroll{overflow-x:auto}code{overflow-wrap:anywhere}html{scroll-padding-top:
 {
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const SAMPLE=`TRANSTHORACIC ECHOCARDIOGRAM
-Indication: Exertional dyspnea, systolic murmur.
-BP 138/72 mmHg. HR 74. BSA 1.82 m2.
-Left ventricle: Normal size. Concentric LVH, IVSd 1.3 cm. LVEF 60-65%. Grade II diastolic dysfunction.
-Aortic valve: Trileaflet, severely calcified with reduced cusp excursion.
-AV Vmax 3.6 m/s. AV peak gradient 52 mmHg. AV mean gradient 31 mmHg.
-LVOT diameter 2.0 cm. LVOT VTI 17 cm. AV VTI 78 cm.
-AVA (continuity) 0.69 cm2. DVI 0.22. SVi 30 mL/m2.
-Mild aortic regurgitation. Mild mitral regurgitation. Mild MAC.
-RVSP 38 mmHg. Left atrium moderately dilated.
-CONCLUSION: Severely calcified aortic valve. Discordant gradients; low-flow, low-gradient severe aortic stenosis with preserved EF cannot be excluded. Suggest CT aortic valve calcium score.`;
+/*SAMPLES*/const SAMPLES=[{"label": "01 Doris - hip fracture with severe AS", "name": "Doris Demo", "mrn": "TESTAS01", "age": 84, "sex": "F", "bnp": 2900.0, "hgb": 112.0, "egfr": 47.0, "sx": ["dysp", "sync"], "none": false, "dse": "", "cac": null, "echo": "TRANSTHORACIC ECHOCARDIOGRAM (2026-11-24 03:30)\nBP 112/60. BSA 1.58 m2. Trileaflet aortic valve, severely calcified, severely reduced opening. AV Vmax 4.6 m/s, peak gradient 85 mmHg, mean gradient 52 mmHg. LVOT diameter 1.9 cm, LVOT VTI 21 cm, AV VTI 105 cm. AVA (continuity) 0.57 cm2. DVI 0.20. SVi 38 mL/m2. Concentric LVH, LVEF 60%. Mild mitral regurgitation. RVSP 42 mmHg.\nCONCLUSION: Severe high-gradient aortic stenosis with preserved LV function, progressed from moderate in 2024.", "cfs": "5", "le": "1to10", "tf": ["tricuspid", "access"]}, {"label": "02 Harold - low-flow low-gradient, low EF", "name": "Harold Demo", "mrn": "TESTAS02", "age": 76, "sex": "M", "bnp": 8400.0, "hgb": 128.0, "egfr": 46.0, "sx": ["dysp", "hf"], "none": false, "dse": "true", "cac": null, "echo": "TRANSTHORACIC ECHOCARDIOGRAM (2026-11-21 21:30)\nBP 100/62. BSA 2.02 m2. Trileaflet aortic valve, heavily calcified, restricted. AV Vmax 3.3 m/s, mean gradient 26 mmHg. LVOT diameter 2.2 cm, LVOT VTI 15 cm, AV VTI 69 cm. AVA (continuity) 0.83 cm2. DVI 0.22. SVi 28 mL/m2. Dilated LV, global hypokinesis, LVEF 30%. Moderate functional mitral regurgitation. RVSP 48 mmHg.\nCONCLUSION: Low-flow low-gradient aortic stenosis with reduced EF. Dobutamine stress echo recommended.", "cfs": "4", "le": "1to10", "tf": ["tricuspid", "access", "sternot"]}, {"label": "03 Margaret - paradoxical low-flow, CT calcium", "name": "Margaret Demo", "mrn": "TESTAS03", "age": 81, "sex": "F", "bnp": 980.0, "hgb": 118.0, "egfr": 64.0, "sx": ["dysp", "angina"], "none": false, "dse": "", "cac": 1650, "echo": "TRANSTHORACIC ECHOCARDIOGRAM (2026-11-23 07:30)\nBP 128/70. BSA 1.82 m2. Trileaflet aortic valve, severely calcified, reduced cusp excursion. AV Vmax 3.6 m/s, peak gradient 52 mmHg, mean gradient 31 mmHg. LVOT diameter 2.0 cm, LVOT VTI 17 cm, AV VTI 78 cm. AVA (continuity) 0.69 cm2. DVI 0.22. SVi 30 mL/m2. Small LV cavity, concentric LVH, LVEF 63%. Mild aortic regurgitation.\nCONCLUSION: Discordant grading; paradoxical low-flow low-gradient severe AS possible. Suggest CT valve calcium score.", "cfs": "4", "le": "1to10", "tf": ["tricuspid", "access"]}, {"label": "04 Ronald - asymptomatic bicuspid, dilated aorta", "name": "Ronald Demo", "mrn": "TESTAS04", "age": 68, "sex": "M", "bnp": 210.0, "hgb": 146.0, "egfr": 84.0, "sx": [], "none": true, "dse": "", "cac": null, "echo": "TRANSTHORACIC ECHOCARDIOGRAM (2026-11-23 13:30)\nBP 132/78. BSA 2.05 m2. Bicuspid aortic valve (fusion of right and left cusps, raphe), heavily calcified. AV Vmax 4.3 m/s, mean gradient 46 mmHg. LVOT diameter 2.3 cm, LVOT VTI 23 cm, AV VTI 98 cm. AVA (continuity) 0.97 cm2. DVI 0.23. SVi 46 mL/m2. LVEF 62%. Ascending aorta 4.7 cm. Trace aortic regurgitation.\nCONCLUSION: Severe high-gradient aortic stenosis, bicuspid valve, dilated ascending aorta.", "cfs": "1", "le": "10to20", "tf": ["access"]}, {"label": "05 Evelyn - very severe AS, frail with dementia", "name": "Evelyn Demo", "mrn": "TESTAS05", "age": 92, "sex": "F", "bnp": 12600.0, "hgb": 104.0, "egfr": 34.0, "sx": ["dysp", "sync", "hf"], "none": false, "dse": "", "cac": null, "echo": "TRANSTHORACIC ECHOCARDIOGRAM (2026-11-23 03:30)\nBP 98/56. BSA 1.42 m2. Trileaflet aortic valve, severely calcified, immobile. AV Vmax 5.2 m/s, mean gradient 68 mmHg. LVOT diameter 1.8 cm, LVOT VTI 20 cm, AV VTI 120 cm. AVA (continuity) 0.42 cm2. DVI 0.17. SVi 36 mL/m2. LVEF 55%. Moderate mitral regurgitation, severe MAC. RVSP 55 mmHg.\nCONCLUSION: Very severe aortic stenosis.", "cfs": "7", "le": "lt1", "tf": ["tricuspid", "dementia"]}, {"label": "06 Frank - high gradient from anemia (GI bleed)", "name": "Frank Demo", "mrn": "TESTAS06", "age": 79, "sex": "M", "bnp": 720.0, "hgb": 78.0, "egfr": 60.0, "sx": ["dysp"], "none": false, "dse": "", "cac": null, "echo": "TRANSTHORACIC ECHOCARDIOGRAM (2026-11-23 15:30)\nBP 116/62. HR 98. BSA 1.90 m2. Trileaflet aortic valve, moderately calcified. AV Vmax 4.1 m/s, mean gradient 41 mmHg. LVOT diameter 2.3 cm, LVOT VTI 26 cm, AV VTI 86 cm. AVA (continuity) 1.25 cm2. DVI 0.30. SVi 57 mL/m2. Hyperdynamic LV, LVEF 70%. Mild aortic regurgitation.\nCONCLUSION: High gradient with valve area above 1.0 cm2 during anemia; high-flow state likely. Repeat after correction of anemia.", "cfs": "3", "le": "1to10", "tf": ["tricuspid", "access"]}];/*END SAMPLES*/
 
 const F=[['vmax','Vmax (m/s)'],['mg','Mean gradient (mmHg)'],['pg','Peak gradient (mmHg)'],['ava','AVA (cm²)'],['avai','AVA index (cm²/m²)'],['dvi','Velocity ratio (DVI)'],['lvef','LVEF (%)'],['svi','SV index (mL/m²)'],['sv','Stroke volume (mL)'],['lvotd','LVOT diameter (cm)'],['lvotvti','LVOT VTI (cm)'],['avvti','AV VTI (cm)'],['bsa','BSA (m²)'],['sbp','SBP at echo (mmHg)'],['rvsp','RVSP (mmHg)']];
 const SX=[['dysp','Exertional dyspnea or reduced exercise tolerance'],['angina','Angina'],['sync','Syncope or presyncope on exertion'],['hf','Heart failure admission'],['fatigue','Fatigue / decline, unclear if from AS'],['eto','Symptoms or BP fall on exercise test']];
@@ -421,7 +412,10 @@ function grade(v){
   // CT calcium
   if(v.cac!=null&&v.sex){const [lik,vl,un]=v.sex==='M'?[2000,3000,1600]:[1200,1600,800];R.ct=v.cac>=vl?'very likely':v.cac>=lik?'likely':v.cac<un?'unlikely':'indeterminate'}
   if(v.vmax==null&&v.mg==null&&v.ava==null){R.type='none';R.label='Paste a report or enter values';R.sev=0;return R}
-  if(hi){R.type='HG';R.sev=3;R.label=R.vsev?'Very severe aortic stenosis':'Severe aortic stenosis, high gradient';R.confirmed=true;
+  const highFlow=hi&&v.ava!=null&&v.ava>1.0&&((v.svi!=null&&v.svi>=50)||(v.hgb!=null&&v.hgb<100));
+  if(highFlow){R.type='HF';R.sev=2.5;R.label='High gradient from a high-flow state (AVA above 1.0)';R.confirmed=false;
+    R.note=`Valve area ${r1(v.ava,2)} cm² with ${v.svi!=null&&v.svi>=50?'high stroke volume index ('+r1(v.svi,0)+')':''}${v.svi!=null&&v.svi>=50&&v.hgb!=null&&v.hgb<100?' and ':''}${v.hgb!=null&&v.hgb<100?'Hb '+v.hgb:''}: correct the cause (anemia, sepsis, fever, thyroid, fistula, AR) and repeat the echo before calling it severe.`}
+  else if(hi){R.type='HG';R.sev=3;R.label=R.vsev?'Very severe aortic stenosis':'Severe aortic stenosis, high gradient';R.confirmed=true;
     if(v.ava!=null&&v.ava>1.0)R.note='High gradient with AVA above 1.0: look for a high-flow state (anemia, AR, sepsis, fistula) or an LVOT measurement error. If flow is normal, treat as severe.'}
   else if(smallA){
     if(lowEF){R.type='LFrEF';R.sev=2.5;R.label='Low-flow, low-gradient AS with reduced EF';
@@ -442,6 +436,7 @@ function grade(v){
   // stage
   const sevC=R.confirmed;
   if(sevC){if(R.type==='HG')R.stage=v.symp?'D1':(lowEF?'C2':'C1');else if(R.type==='LFrEF')R.stage=v.symp?'D2':'C2';else R.stage=v.symp?'D3':'C1'}
+  else if(R.type==='HF')R.stage='Recheck';
   else if(['LFrEF','LFpEF','LGx','NFLG'].includes(R.type))R.stage=R.type==='LFrEF'?'Possible D2':R.type==='LFpEF'?'Possible D3':'B or D3';
   else if(R.type==='MOD'||R.type==='MILD')R.stage='B';else if(R.type==='SCL')R.stage='A';
   R.severe=!!sevC;R.lowEF=lowEF;return R}
@@ -454,7 +449,7 @@ function ruler(name,val,unit,min,max,bands,rev,fmt){
 
 function renderVerdict(v,R){
   const col=R.sev>=2.5?'var(--sev)':R.sev>=2?'var(--mod)':'var(--mild)';
-  const chips=[];if(R.stage)chips.push(`Stage ${R.stage}`);if(v.lvef!=null)chips.push(`LVEF ${r1(v.lvef,0)}%`);if(v.svi!=null)chips.push(`SVi ${r1(v.svi,0)} mL/m² ${v.svi<35?'(low flow)':'(normal flow)'}`);chips.push(v.symp?'Symptomatic':v.none?'Asymptomatic':'Symptoms not entered');
+  const chips=[];if(R.stage)chips.push(`Stage ${R.stage}`);if(v.lvef!=null)chips.push(`LVEF ${r1(v.lvef,0)}%`);if(v.svi!=null)chips.push(`SVi ${r1(v.svi,0)} mL/m² ${v.svi<35?'(low flow)':v.svi>=50?'(high flow)':'(normal flow)'}`);chips.push(v.symp?'Symptomatic':v.none?'Asymptomatic':'Symptoms not entered');
   let h=`<div class="small">Computed grade</div><div class="vbig" style="color:${col}">${esc(R.label)}</div><div>${chips.map(c=>`<span class="chip">${esc(c)}</span>`).join('')}</div>`;
   h+=ruler('Peak velocity',v.vmax,'m/s',1,6,[[3,'--mild'],[4,'--mod'],[6,'--sev']],false,x=>r1(x));
   h+=ruler('Mean gradient',v.mg,'mmHg',0,80,[[20,'--mild'],[40,'--mod'],[80,'--sev']],false,x=>r1(x,0));
@@ -470,6 +465,7 @@ function renderVerdict(v,R){
 
 function renderPath(v,R){
   const S=[
+   ['hf',R.type==='HF','High gradient but AVA >1.0 with high flow or anemia','Flow-dependent gradient. Treat the high-flow state (anemia, sepsis, AR, fistula, thyroid) and repeat the echo; if the gradient stays high at normal flow, treat as severe.'],
    ['hg',R.type==='HG','High gradient (Vmax ≥4 or MG ≥40)','Severe AS. Symptoms decide D1 vs C1/C2. If AVA >1.0, rule out a high-flow state or LVOT error.'],
    ['small',['LFrEF','LFpEF','NFLG','LGx'].includes(R.type),'Low gradient but AVA ≤1.0 (or AVAi ≤0.6, DVI <0.25)','Discordant. Check measurements first, then sort by LVEF and flow.'],
    ['lfref',R.type==='LFrEF','LVEF <50%: classical low-flow, low-gradient','Dobutamine stress echo. True severe if Vmax ≥4 or MG ≥40 with AVA ≤1.0 at higher flow. Pseudo-severe if AVA rises above 1.0. No flow reserve (SV rise <20%): CT calcium score.'],
@@ -481,7 +477,7 @@ function renderPath(v,R){
 
 function nprobnpULN(age){return age!=null&&age>=75?450:125}
 function renderRules(v,R){
-  const sev=R.severe,possible=!sev&&['LFrEF','LFpEF','LGx','NFLG'].includes(R.type)&&R.type!=='NFLG';
+  const sev=R.severe,possible=!sev&&['LFrEF','LFpEF','LGx','HF'].includes(R.type);
   const bnpHigh=v.bnp!=null?v.bnp>3*nprobnpULN(v.age):null;
   const rules=[
    [sev&&v.symp?'yes':(possible&&v.symp?'maybe':'no'),'Severe AS with symptoms (D1–D3)','AHA I · ESC I'],
@@ -493,7 +489,7 @@ function renderRules(v,R){
    [sev&&v.prog!=null&&v.prog>=0.3?'yes':(sev&&v.prog==null?'maybe':'no'),'Severe AS with rapid progression (Vmax ≥0.3 m/s per year)','AHA IIa · ESC IIa'],
    [sev&&v.lvef!=null&&v.lvef>=50&&v.lvef<60?'maybe':'no','LVEF falling to <60% on 3 serial studies','AHA IIb'],
    [R.type==='MOD'?'maybe':'no','Moderate AS and going for other cardiac surgery','AHA IIb · ESC IIa'],
-   [possible?'maybe':'no','Low-gradient AS not yet confirmed: finish DSE / CT calcium before deciding','Workup']];
+   [possible?'maybe':'no',R.type==='HF'?'High-flow state: correct it and repeat the echo before deciding':'Low-gradient AS not yet confirmed: finish DSE / CT calcium before deciding','Workup']];
   const ic={yes:'✓',no:'–',maybe:'?'};
   $('rules').innerHTML=rules.map(([s,t,c])=>`<div class="rule ${s}"><span class="ic">${ic[s]}</span><span>${t}</span><span class="cls">${c}</span></div>`).join('');
   const any=rules.some(r=>r[0]==='yes');
@@ -511,17 +507,17 @@ function renderLean(v,R){
   if(cfs>=5&&cfs<8)pT.push(`Frailty (CFS ${cfs})`);
   if(sts!=null){if(sts>=8)pT.push(`STS-PROM ${sts}% (high risk)`);else if(sts>=4)pT.push(`STS-PROM ${sts}% (intermediate)`);else pS.push(`STS-PROM ${sts}% (low risk)`)}
   if(c('sternot'))pT.push('Prior sternotomy / chest radiation');if(c('porcelain'))pT.push('Porcelain aorta / hostile chest');if(c('lung'))pT.push('Severe organ disease');if(c('pref'))pT.push('Patient preference');
-  if(!c('tricuspid'))pS.push('Bicuspid or unknown morphology');if(!c('access'))pS.push('Femoral access unconfirmed or poor');
+  if(!c('tricuspid')&&/bicuspid|raphe/i.test($('paste').value))pS.push('Bicuspid valve');const conf=[];if(!c('access'))conf.push('Femoral access (CT TAVI protocol)');if(!c('tricuspid')&&!/bicuspid/i.test($('paste').value))conf.push('Valve morphology');
   if(c('cabg'))pS.push('Needs CABG');if(c('root'))pS.push('Aorta >4.5 cm needs repair');if(c('mv'))pS.push('Other valve needs surgery');
   if(c('endo'))stop.push('Active endocarditis: treat first, TAVI contraindicated');
   if(le==='lt1')stop.push('Life expectancy under 1 year: AVR unlikely to help');
   if(cfs>=8)stop.push('Very severe frailty or terminal illness');if(c('dementia'))stop.push('Advanced dementia: benefit doubtful, goals of care first');
   let lean;
-  if(!R.severe&&!['LFrEF','LFpEF','LGx'].includes(R.type))lean='No valve replacement indicated yet';
-  else if(stop.some(s=>/under 1 year|Very severe|endocarditis/.test(s)))lean='Palliative focus or treat the barrier first';
+  if(!R.severe&&!['LFrEF','LFpEF','LGx','HF'].includes(R.type))lean='No valve replacement indicated yet';
+  else if(stop.some(s=>/under 1 year|Very severe|endocarditis/.test(s))||(c('dementia')&&cfs>=7))lean='Palliative focus or treat the barrier first';
   else lean=pT.length>pS.length+1?'Leans TAVI':pS.length>pT.length+1?'Leans surgical AVR':'Heart Team decision: either could fit';
   const li=a=>a.length?`<ul>${a.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'<p class="small">None entered.</p>';
-  $('leanBox').innerHTML=`<div class="small">For this patient</div><div class="lean">${lean}</div><div class="cols"><div><b>Favours TAVI</b>${li(pT)}</div><div><b>Favours SAVR</b>${li(pS)}</div><div><b>Barriers</b>${li(stop)}</div></div><p class="small">A guide for the referral conversation; the Heart Team makes the final call with the patient.</p>`;
+  $('leanBox').innerHTML=`<div class="small">For this patient</div><div class="lean">${lean}</div><div class="cols"><div><b>Favours TAVI</b>${li(pT)}</div><div><b>Favours SAVR</b>${li(pS)}</div><div><b>Barriers</b>${li(stop)}</div></div>${conf.length?`<p class="small">Still to confirm: ${esc(conf.join('; '))}.</p>`:''}<p class="small">A guide for the referral conversation; the Heart Team makes the final call with the patient.</p>`;
   return lean}
 
 function draft(v,R,any,lean){
@@ -534,6 +530,7 @@ function draft(v,R,any,lean){
   L.push('Plan:');
   if(any)L.push(`- Meets indication for AVR. Refer to cardiology / Heart Team for TAVI vs SAVR (${lean}).`);
   else if(['LFrEF','LFpEF','LGx','NFLG'].includes(R.type)&&!R.severe)L.push(`- Confirm severity: ${R.type==='LFrEF'&&!v.dse?'dobutamine stress echo':'CT aortic valve calcium score'}; discuss with cardiology.`);
+  else if(R.type==='HF')L.push('- High-flow state: correct anemia/cause, repeat echo once Hb and flow normal. If recurrent GI bleeding with angiodysplasia, consider Heyde syndrome (von Willebrand multimers); discuss with cardiology.');
   else if(R.type==='MOD')L.push('- Moderate AS: repeat echo in 1-2 years or sooner with symptoms.');
   else if(R.type==='HG')L.push('- Severe AS, asymptomatic: cardiology referral to discuss early intervention vs 6-12 monthly echo.');
   const skip=k=>(k==='dse'&&R.type!=='LFrEF')||(k==='cac'&&(R.type==='HG'||v.cac!=null));
@@ -585,12 +582,19 @@ function update(regen){
 function read(){const p=parse($('paste').value);fill(p);
   const t=$('paste').value;const a=t.match(/(\d{2,3})\s*(?:y\/?o|yo|year[- ]old|yrs?)/i);if(a&&!$('age').value)$('age').value=a[1];
   const s=t.match(/\b(female|woman|male|man)\b/i);if(s&&!$('sex').value)$('sex').value=/^f|^w/i.test(s[1])?'F':'M';
-  if(/dyspn|short(?:ness)? of breath|\bsob\b/i.test(t))$('x_dysp').checked=true;if(/syncop/i.test(t))$('x_sync').checked=true;if(/angina|chest pain/i.test(t))$('x_angina').checked=true;
+  if(/dyspn|short(?:ness)? of breath|\bsob\b/i.test(t))$('x_dysp').checked=true;if(/syncop/i.test(t))$('x_sync').checked=true;if(/trileaflet|tricuspid aortic/i.test(t))$('tf_tricuspid').checked=true;if(/bicuspid|raphe/i.test(t))$('tf_tricuspid').checked=false;if(/angina|chest pain/i.test(t))$('x_angina').checked=true;
   update()}
 
 $('readBtn').onclick=read;
-$('clearBtn').onclick=()=>{$('paste').value='';for(const [k] of F){$('f_'+k).value='';$('s_'+k).textContent=''}other=[];reported='';$('sampleNote').textContent='Paste an echo report and press Read report.';update(true)};
-$('sampleBtn').onclick=()=>{$('paste').value=SAMPLE;$('age').value=81;$('sex').value='F';$('bnp').value=980;$('hgb').value=118;$('x_dysp').checked=true;$('le').value='1to10';$('cfs').value='4';['tricuspid','access'].forEach(k=>$('tf_'+k).checked=true);$('sampleNote').textContent='Sample report and patient (81-year-old woman) loaded to show how it works.';read()};
+$('clearBtn').onclick=()=>{resetAll();$('sampleSel').value='';$('paste').value='';for(const [k] of F){$('f_'+k).value='';$('s_'+k).textContent=''}other=[];reported='';$('sampleNote').textContent='Paste an echo report and press Read report.';update(true)};
+function resetAll(){document.querySelectorAll('main input').forEach(e=>{if(e.type==='checkbox')e.checked=false;else e.value=''});document.querySelectorAll('main select').forEach(e=>{if(e.id!=='cto'&&e.id!=='sampleSel')e.value=''});for(const [k] of F)$('s_'+k).textContent='';other=[];reported=''}
+$('sampleSel').innerHTML+=SAMPLES.map((x,i)=>`<option value="${i}">${esc(x.label)}</option>`).join('');
+function loadSample(i){const x=SAMPLES[i];if(!x)return;resetAll();$('sampleSel').value=String(i);
+  $('paste').value=x.echo;$('age').value=x.age;$('sex').value=x.sex;if(x.bnp!=null)$('bnp').value=x.bnp;if(x.hgb!=null)$('hgb').value=x.hgb;if(x.egfr!=null)$('egfr').value=x.egfr;
+  x.sx.forEach(k=>$('x_'+k).checked=true);$('x_none').checked=!!x.none;$('dse').value=x.dse||'';if(x.cac!=null)$('cac').value=x.cac;
+  $('cfs').value=x.cfs||'';$('le').value=x.le||'';(x.tf||[]).forEach(k=>$('tf_'+k).checked=true);$('cname').value=x.name;$('cmrn').value=x.mrn;
+  $('sampleNote').textContent='Made-up sample patient: '+x.label+'. Not a real person.';read();update(true)}
+$('sampleSel').onchange=e=>{if(e.target.value!=='')loadSample(+e.target.value)};
 document.addEventListener('input',e=>{if(e.target.id==='noteTxt'||e.target.id==='consultTxt'||e.target.id==='handTxt'||e.target.id==='paste')return;if(e.target.id&&e.target.id.startsWith('f_'))$('s_'+e.target.id.slice(2)).textContent=' edited';update()});
 document.addEventListener('change',e=>{if(['TEXTAREA'].includes(e.target.tagName))return;update()});
 $('regen').onclick=()=>update(true);
@@ -617,19 +621,38 @@ async function smart(){
     const latest=async code=>{try{const b=await client.request(`Observation?patient=${client.patient.id}&code=http://loinc.org|${code}&_count=10`,{flat:true});const o=b.filter(x=>x.valueQuantity).sort((a,b)=>(b.effectiveDateTime||'').localeCompare(a.effectiveDateTime||''))[0];return o?o.valueQuantity.value:null}catch(e){return null}};
     const [bnp,hgb,egfr]=await Promise.all([latest('33762-6'),latest('718-7'),latest('62238-1,33914-3,98979-8')]);
     if(bnp!=null)$('bnp').value=bnp;if(hgb!=null)$('hgb').value=hgb;if(egfr!=null)$('egfr').value=egfr;
+    const dec=d=>{try{return decodeURIComponent(escape(atob(d)))}catch(e){try{return atob(d)}catch(_){return ''}}};
+    const newest=(a,k)=>a.sort((x,y)=>String(y[k]||'').localeCompare(String(x[k]||'')));
+    let docs=[],drs=[],conds=[];
+    try{docs=newest(await client.request(`DocumentReference?patient=${client.patient.id}&_count=50`,{flat:true}),'date')}catch(e){}
+    try{drs=newest(await client.request(`DiagnosticReport?patient=${client.patient.id}&_count=100`,{flat:true}),'effectiveDateTime')}catch(e){}
+    try{conds=await client.request(`Condition?patient=${client.patient.id}&_count=100`,{flat:true})}catch(e){}
+    const dtext=d=>(d.type?.text||'')+' '+(d.description||'')+' '+(d.type?.coding?.[0]?.display||'');
+    const STRESS=/stress|dobutamine|\bdse\b/i;
     let txt='';
-    try{const ds=await client.request(`DocumentReference?patient=${client.patient.id}&_count=50`,{flat:true});
-      const e=ds.filter(d=>/echo/i.test((d.type?.text||'')+(d.description||'')+(d.type?.coding?.[0]?.display||''))).sort((a,b)=>(b.date||'').localeCompare(a.date||''))[0];
-      const att=e?.content?.[0]?.attachment;
-      if(att?.data)txt=decodeURIComponent(escape(atob(att.data)));
-      else if(att?.url){txt=await client.request({url:att.url,headers:{Accept:'text/plain'}}).catch(()=> '');if(typeof txt!=='string')txt=''}
-    }catch(e){}
-    if(!txt){try{const dr=await client.request(`DiagnosticReport?patient=${client.patient.id}&_count=50`,{flat:true});const e=dr.filter(d=>/echo/i.test(d.code?.text||'')).sort((a,b)=>(b.effectiveDateTime||'').localeCompare(a.effectiveDateTime||''))[0];if(e)txt=e.conclusion||(e.presentedForm?.[0]?.data?decodeURIComponent(escape(atob(e.presentedForm[0].data))):'')}catch(e){}}
+    const ed=docs.find(d=>/echo/i.test(dtext(d))&&!STRESS.test(dtext(d)));
+    if(ed){const att=ed.content?.[0]?.attachment;if(att?.data)txt=dec(att.data);else if(att?.url){txt=await client.request({url:att.url,headers:{Accept:'text/plain'}}).catch(()=>'');if(typeof txt!=='string')txt=''}}
+    if(!txt){const e=drs.find(d=>/echo/i.test(d.code?.text||'')&&!STRESS.test(d.code?.text||''));if(e)txt=(e.code?.text||'')+'\n'+(e.conclusion||(e.presentedForm?.[0]?.data?dec(e.presentedForm[0].data):''))}
+    const dse=drs.find(d=>STRESS.test(d.code?.text||'')&&/echo/i.test(d.code?.text||''));
+    if(dse){const c=dse.conclusion||'';$('dse').value=/true severe/i.test(c)?'true':/pseudo/i.test(c)?'pseudo':/no (?:contractile|flow) reserve/i.test(c)?'nocr':''}
+    const ct=drs.find(d=>/calcium scor|agatston/i.test((d.code?.text||'')+' '+(d.conclusion||'')));
+    if(ct){const m=(ct.conclusion||'').match(/(\d{2,5})\s*(?:agatston|au\b)/i);if(m)$('cac').value=m[1]}
+    // notes and problem list: symptoms and Heart Team factors (first 15 notes; negated mentions skipped)
+    const notes=docs.slice(0,15).map(d=>d.content?.[0]?.attachment?.data?dec(d.content[0].attachment.data):'').join('\n')+'\n'+conds.map(c=>c.code?.text||'').join('. ');
+    const notesN=notes.replace(/\s+/g,' ');
+    const pos=re=>{const g=new RegExp(re.source,'gi');let m;while((m=g.exec(notesN))){const pre=notesN.slice(Math.max(0,m.index-25),m.index);if(!/\b(?:no|denies|denied|without|nor)\b[^.]*$/i.test(pre))return true}return false};
+    if(pos(/exertional dyspn|dyspnea on exertion|short of breath on exertion|orthopnea/))$('x_dysp').checked=true;
+    if(pos(/angina|chest (?:pain|tightness|pressure)/))$('x_angina').checked=true;
+    if(pos(/presyncope|syncop|greyed out|light-headed on exertion/))$('x_sync').checked=true;
+    if(pos(/admitted with (?:decompensated )?heart failure|decompensated heart failure/))$('x_hf').checked=true;
+    if(pos(/prior cabg|sternotomy|chest radiation/))$('tf_sternot').checked=true;
+    if(pos(/advanced (?:\w+ )?dementia/))$('tf_dementia').checked=true;
+    const cf=notesN.match(/clinical frailty scale\s*(?:score\s*)?(\d)/i);if(cf)$('cfs').value=+cf[1]<=3?'1':+cf[1]>=8?'8':cf[1];
     txt=txt.replace(/<[^>]+>/g,' ');
     if(txt){$('paste').value=txt;$('sampleNote').textContent='Latest echo report pulled from the chart. Check the values below.';read()}
     else{$('sampleNote').textContent='No echo report found in the chart: paste one above.';update(true)}
     return true}catch(e){$('pt').textContent='Chart launch failed: paste mode.';return false}}
-smart().then(ok=>{if(!ok)$('sampleBtn').click()});
+smart().then(ok=>{if(ok)return;const m=location.search.match(/[?&]demo=(\d+)/);loadSample(m?Math.max(0,+m[1]-1):2)});
 }
 </script>
 </body>

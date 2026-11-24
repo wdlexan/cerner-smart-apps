@@ -1,0 +1,81 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: DEMO, MARGARET                  DOB: 1945-05-19     Sex: F
+MRN: TESTAS03                            Age: 81
+Address: 33 Demo Crescent, Oak Bay BC V8S 0C3
+ED arrival: 2026-11-22 07:30    Admitted: 2026-11-22 10:30 (Hospitalist)
+
+HOSPITALIST ADMISSION NOTE
+Date of service: 2026-11-22 09:30
+81 year old woman admitted with community-acquired pneumonia. On recovery notes exertional
+dyspnea for a year, now walking half a block, and exertional chest tightness. Long-standing
+hypertension. Murmur. Independent, Clinical Frailty Scale 4.
+
+HOSPITALIST PROGRESS NOTE
+Date of service: 2026-11-24 05:30
+Echo: discordant grading with small calcified valve, low gradient, normal EF and low stroke
+volume index (paradoxical low-flow low-gradient). BP controlled at the time of echo. CT
+calcium score done: 1650 AU, severe AS very likely in a woman. Refer cardiology / Heart
+Team.
+
+VITAL SIGNS
+2026-11-22 08:30 BP: 162/84 HR: 96 Temp: 38.2 C SpO2: 92%
+2026-11-23 13:30 BP: 128/70 HR: 78 Temp: 36.9 C SpO2: 96%
+2026-11-24 06:30 BP: 124/68 HR: 74 Temp: 36.7 C SpO2: 97%
+Weight: 61 kg
+
+LABORATORY RESULTS
+Collected: 2026-11-22 10:30
+Test                      Result           Units           Reference       Flag
+
+Hemoglobin                118              g/L             115 - 155           
+
+Creatinine                78               umol/L          45 - 90             
+
+eGFR                      64               mL/min/1.73m2   > 60                
+
+NT-proBNP                 980              ng/L            < 450           H   
+
+WBC                       14.2             x10^9/L         4.0 - 11.0      H   
+
+
+ACTIVE MEDICATION ORDERS
+Ceftriaxone 1 g IV daily
+Amlodipine 5 mg PO daily
+Ramipril 5 mg PO daily
+Atorvastatin 20 mg PO daily
+
+ACTIVE PROBLEM LIST
+Community-acquired pneumonia
+Aortic stenosis
+Hypertension
+Osteoarthritis
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, MARGARET MRN TESTAS03         Page 1
+
+CARDIAC AND RADIOLOGY REPORTS
+
+X-RAY CHEST
+Date of exam: 2026-11-22 08:30
+IMPRESSION:
+Right lower lobe consolidation.
+
+TRANSTHORACIC ECHOCARDIOGRAM
+Date of exam: 2026-11-23 07:30
+IMPRESSION:
+BP 128/70. BSA 1.82 m2. Trileaflet aortic valve, severely calcified, reduced cusp excursion.
+AV Vmax 3.6 m/s, peak gradient 52 mmHg, mean gradient 31 mmHg. LVOT diameter 2.0 cm, LVOT
+VTI 17 cm, AV VTI 78 cm. AVA (continuity) 0.69 cm2. DVI 0.22. SVi 30 mL/m2. Small LV cavity,
+concentric LVH, LVEF 63%. Mild aortic regurgitation. CONCLUSION: Discordant grading;
+paradoxical low-flow low-gradient severe AS possible. Suggest CT valve calcium score.
+
+CT AORTIC VALVE CALCIUM SCORE
+Date of exam: 2026-11-24 03:30
+IMPRESSION:
+Aortic valve calcium score 1650 Agatston units. In a woman this makes severe aortic stenosis
+very likely. Ascending aorta 3.4 cm.
+
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | DEMO, MARGARET MRN TESTAS03         Page 2
