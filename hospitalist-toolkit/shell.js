@@ -4,7 +4,7 @@
    A tab is only loaded the first time you open it, and stays loaded when you switch away. */
 
 // To add a tool: put its files in tools/<folder>/ and add a line here.
-const TOOL_V = "20261123q"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
+const TOOL_V = "20261124a"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
 const TOOLS = [
   { key: "today", label: "Today (what changed)", tags: "what changed daily trends vitals overnight summary", path: "tools/today/index.html" },
   { key: "plist", label: "Patient list (screenshot)", tags: "patient list screenshot excel spreadsheet rounding list census floor ward ocr", path: "tools/plist/index.html" },
@@ -46,6 +46,7 @@ const TOOLS = [
   { key: "pd",    label: "Parkinson disease", tags: "parkinson pd levodopa",    path: "tools/pd/index.html" },
   { key: "dementia", label: "Dementia workup", tags: "dementia cognitive impairment memory delirium workup",  path: "tools/dementia/index.html" },
   { key: "aki",   label: "AKI", tags: "aki acute kidney injury creatinine renal",                  path: "tools/aki/index.html" },
+  { key: "as",    label: "Aortic stenosis", tags: "aortic stenosis as tavi tavr savr avr valve echo gradient low flow low gradient dobutamine calcium score heart team murmur", path: "tools/as/index.html" },
   { key: "chf",   label: "Heart failure (CHF)",  tags: "chf heart failure hf adhf congestion nt-probnp bnp diuretic furosemide lasix bumetanide torsemide metolazone acetazolamide gdmt entresto sglt2 amyloid amyloidosis edema handout dry weight", path: "tools/chf/index.html" },
   { key: "acs",   label: "NSTEMI (ACS)", tags: "nstemi acs acute coronary syndrome mi myocardial infarction heart attack troponin type 2 mi dapt dual antiplatelet aspirin ticagrelor prasugrel clopidogrel heparin enoxaparin fondaparinux cath angiography pci stent cabg bypass syntax grace timi bleeding risk arc-hbr statin beta blocker cardiac rehab", path: "tools/acs/index.html" },
   { key: "pleural", label: "Pleural effusion", tags: "pleural effusion thoracentesis tap chest tube chest drain pigtail ipc indwelling pleural catheter pleurx talc pleurodesis empyema parapneumonic hemothorax chylothorax hepatic hydrothorax light criteria exudate transudate pleural fluid ph ldh glucose ada tpa dnase mist2 rapid lent air leak subcutaneous emphysema re-expansion pulmonary edema", path: "tools/pleural/index.html" },
@@ -135,7 +136,7 @@ async function start(client) {
 const PINNED = ["today", "plist"];
 const GROUPS = [
   { name: "Chart", keys: ["labs", "crit", "notes", "exam", "watch", "ai", "calc"] },
-  { name: "Heart & lung", keys: ["acls", "acs", "chf", "af", "ild", "pleural"] },
+  { name: "Heart & lung", keys: ["acls", "acs", "chf", "as", "af", "ild", "pleural"] },
   { name: "Kidney", keys: ["aki", "lytes", "hypona", "acidbase", "ktx"] },
   { name: "Neuro", keys: ["neuro", "stroke", "seizure", "dementia", "pd", "ae"] },
   { name: "GI & endo", keys: ["liver", "ibd", "dm", "edr"] },
