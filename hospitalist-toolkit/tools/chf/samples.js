@@ -25,7 +25,7 @@
           series(now, "3016-3", "TSH", "mU/L", [[70, 2.1]]), vs(now, [[24, 84, 108, 64, 93], [2, 88, 104, 62, 94]])),
         medreqs: [req("furosemide 40 mg IV BID"), req("apixaban 5 mg PO BID"), req("bisoprolol 2.5 mg PO daily"), req("amlodipine 5 mg PO daily"), req("naproxen 250 mg PO BID PRN")],
         admins: [adm(now, "furosemide 40 mg IV", 22), adm(now, "furosemide 40 mg IV", 10)] }) },
-    { label: "B: 64 M, ischemic HFrEF (EF 25%), day 4, down 7 kg, NT-proBNP falling: ready for oral?", sit: { ef: "low", dry: 89, homePO: 40, cong: [], ready: true },
+    { label: "B: 64 M, ischemic HFrEF (EF 25%), day 4, down 7 kg, NT-proBNP falling: ready for oral?", sit: { ef: "low", dry: 89, homePO: 40, cong: [], ready: true, isch: { canEx: "yes", revasc: "yes", rwma: true } },
       build: (now) => ({ patient: pt(64, "male"),
         conditions: [cond("Heart failure with reduced ejection fraction", "I50.22"), cond("Coronary artery disease, prior MI", "I25.2"), cond("Type 2 diabetes", "E11.9"), cond("Hypertension", "I10")],
         obs: [].concat(wts(now, [[96, 96.2], [72, 94.1], [48, 92.0], [24, 90.3], [2, 89.4]]), [ht(now, 180)],
@@ -47,5 +47,14 @@
         conditions: [cond("COPD with acute exacerbation", "J44.1"), cond("Obesity", "E66.9"), cond("Hypertension", "I10"), cond("Obstructive sleep apnea", "G47.33")],
         obs: [].concat(wts(now, [[6, 98]]), [ht(now, 165)], series(now, "33762-6", "NT-proBNP", "ng/L", [[6, 640]]), series(now, "2160-0", "Creatinine", "umol/L", [[6, 78]]),
           series(now, "2823-3", "Potassium", "mmol/L", [[6, 4.2]]), series(now, "33914-3", "eGFR", "mL/min/1.73m2", [[6, 64]]), vs(now, [[6, 96, 148, 82, 88]])),
-        medreqs: [req("prednisone 40 mg PO daily"), req("salbutamol 2.5 mg neb q4h"), req("ipratropium 500 mcg neb q6h"), req("amlodipine 10 mg PO daily")], admins: [] }) }];
+        medreqs: [req("prednisone 40 mg PO daily"), req("salbutamol 2.5 mg neb q4h"), req("ipratropium 500 mcg neb q6h"), req("amlodipine 10 mg PO daily")], admins: [] }) },
+    { label: "E: 58 F, new HFrEF (EF 30%), LBBB, diabetes, smoker, exertional chest tightness, knee arthritis: ischemia work-up?", sit: { ef: "low", dry: 70, homePO: 0, cong: [], ready: true, isch: { angina: true, canEx: "no", revasc: "yes", rf: ["dm", "smoke", "lipid"], ecg: ["lbbb"] } },
+      build: (now) => ({ patient: pt(58, "female"),
+        conditions: [cond("Heart failure with reduced ejection fraction, new", "I50.21"), cond("Left bundle branch block", "I44.7"), cond("Type 2 diabetes", "E11.9"), cond("Tobacco use", "F17.210"), cond("Hyperlipidemia", "E78.5"), cond("Osteoarthritis of both knees", "M17.0")],
+        obs: [].concat(wts(now, [[72, 75.8], [48, 74.1], [24, 72.9], [2, 72.0]]), [ht(now, 163)],
+          series(now, "33762-6", "NT-proBNP", "ng/L", [[74, 5200], [4, 2600]]), series(now, "2160-0", "Creatinine", "umol/L", [[74, 96], [4, 101]]),
+          series(now, "2823-3", "Potassium", "mmol/L", [[4, 4.4]]), series(now, "2951-2", "Sodium", "mmol/L", [[4, 138]]), series(now, "19123-9", "Magnesium", "mmol/L", [[4, 0.84]]),
+          series(now, "33914-3", "eGFR", "mL/min/1.73m2", [[4, 56]]), series(now, "89579-7", "Troponin I hs", "ng/L", [[74, 31], [68, 33]]), series(now, "4548-4", "Hemoglobin A1c", "%", [[70, 8.1]]),
+          vs(now, [[24, 82, 124, 72, 96], [2, 78, 120, 70, 97]])),
+        medreqs: [req("furosemide 40 mg PO daily"), req("metformin 1000 mg PO BID"), req("atorvastatin 40 mg PO daily"), req("bisoprolol 1.25 mg PO daily")], admins: [] }) }];
 })();

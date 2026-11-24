@@ -72,7 +72,7 @@
 <body>
   <header>
     <h1>Heart failure admission: diagnosis, diuretics, cause and discharge</h1>
-    <div class="sub">NT-proBNP by age, diuretic start and response, weight target, IV to oral switch, GDMT by EF, causes (including cardiac amyloidosis), tests, follow-up and a patient handout. Read-only.</div>
+    <div class="sub">NT-proBNP by age, diuretic start and response, weight target, IV to oral switch, GDMT by EF, causes (including cardiac amyloidosis), tests, ischemia work-up and when to refer to cardiology, follow-up and a patient handout. Read-only.</div>
   </header>
   <main>
     <div class="banner"><b>Decision-support draft. It orders nothing.</b> Cut-offs, doses and rules were written by Claude from ICON-RELOADED (NT-proBNP), the ESC 2021/2023 and CCS/CHFS 2021 heart failure guidelines and the CCS/CHFS cardiac amyloidosis statement, and have <b>not been verified</b>: check against Island Health pharmacy and the HF clinic before real use. Tests and drugs are found by code and <b>name</b>, so something not shown may still be in the chart. Your entries stay in this page. Use made-up or Cerner sandbox patients until Island Health approves real data.</div>
@@ -118,6 +118,10 @@
     <details class="card" open><summary><span>Long-term treatment (GDMT) by ejection fraction</span></summary><div class="body scroll" id="gdmt"></div></details>
     <details class="card" open><summary><span>Cause: differential diagnosis and cardiac amyloidosis</span><span class="muted" id="amysum"></span></summary><div class="body plan" id="ddx"></div></details>
     <details class="card" open><summary><span>Investigations</span></summary><div class="body" id="tests"></div></details>
+    <details class="card" open><summary><span>Ischemia: should we look for coronary disease?</span><span class="muted" id="iasum"></span></summary><div class="body plan">
+      <div id="ia-inputs"></div><div id="ia-out"></div></div></details>
+    <details class="card" open><summary><span>Ischemia tests: treadmill, SPECT, stress echo, CMR, CT or angiogram</span></summary><div class="body plan scroll" id="ia-tests"></div></details>
+    <details class="card" open><summary><span>When to refer to cardiology</span></summary><div class="body plan" id="ia-refer"></div></details>
     <details class="card" open><summary><span>Chart alerts</span><span class="muted" id="alertsum"></span></summary><div class="body" id="alerts"></div></details>
     <details class="card" open><summary><span>Discharge and follow-up</span></summary><div class="body plan" id="fu"></div></details>
     <details class="card" open><summary><span>Patient handout: managing heart failure at home</span></summary><div class="body">
@@ -134,22 +138,24 @@
       <div class="row"><button id="h-print" class="primary">Open printable handout</button><span class="muted">Plain language, kg and lb, with a 2-week weight log. Nothing about the patient is filled in except what you type here.</span></div>
       <div class="handout" id="handout"></div></div></details>
     <details class="card"><summary><span>Note draft</span></summary><div class="body"><textarea id="note"></textarea><div class="row"><button id="copy" class="primary">Copy</button><span class="muted">Edit before pasting. Nothing is saved.</span></div></div></details>
-    <div class="src">Sources: Januzzi JL et al. ICON-RELOADED, JACC 2018 (NT-proBNP age cut-offs 450/900/1800, rule-out 300); 2021 ESC HF guideline and 2023 focused update (natriuresis-guided diuretics: urine Na 50-70 mmol/L at 2 h, urine output 100-150 mL/h); CCS/CHFS 2021 HF guidelines; CCS/CHFS 2020 cardiac amyloidosis position statement; DOSE, ADVOR, CLOROTIC, STRONG-HF, AFFIRM-AHF, IRONMAN, EMPEROR-Preserved, DELIVER, SODIUM-HF.</div>
+    <div class="src">Sources: Januzzi JL et al. ICON-RELOADED, JACC 2018 (NT-proBNP age cut-offs 450/900/1800, rule-out 300); 2021 ESC HF guideline and 2023 focused update (natriuresis-guided diuretics: urine Na 50-70 mmol/L at 2 h, urine output 100-150 mL/h); CCS/CHFS 2021 HF guidelines; CCS/CHFS 2020 cardiac amyloidosis position statement; DOSE, ADVOR, CLOROTIC, STRONG-HF, AFFIRM-AHF, IRONMAN, EMPEROR-Preserved, DELIVER, SODIUM-HF. Ischemia: 2024 ESC chronic coronary syndromes guideline; 2021 AHA/ACC chest pain guideline; 2022 AHA/ACC/HFSA HF guideline; STICH/STICHES (Velazquez, NEJM 2016); REVIVED-BCIS2 (Perera, NEJM 2022).</div>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
   <script src="../../pdf-overlay.js?v=20261120p"></script>
   <script src="rules.js?v=20261121a"></script>
-  <script src="chart.js?v=20261121a"></script>
-  <script src="samples.js?v=20261121a"></script>
+  <script src="chart.js?v=20261124a"></script>
+  <script src="samples.js?v=20261124a"></script>
   <script src="handout.js?v=20261121a"></script>
-  <script src="app.js?v=20261121a"></script>
+  <script src="ischemia.js?v=20261124a"></script>
+  <script src="app.js?v=20261124a"></script>
   <script src="../../subtabs.js?v=20261121f"></script>
   <script>SubTabs.mount({ store: "chf", top: ["Chart alerts", "#tiles"], dotSel: ".alert.urgent, .tile.t3, .plan .urgent", tabs: [
       {"key": "assess", "label": "Assess", "match": ["Patient and situation", "Plan now", "is it heart failure", "Weight, NT-proBNP"]},
       {"key": "diur", "label": "Diuretics & IV→PO", "match": ["Diuretics:", "Switching IV to oral"]},
       {"key": "gdmt", "label": "GDMT", "match": ["Long-term treatment"]},
       {"key": "cause", "label": "Cause & tests", "match": ["Cause:", "Investigations"]},
+      {"key": "isch", "label": "Ischemia & cardiology", "match": ["Ischemia", "When to refer to cardiology"]},
       {"key": "dc", "label": "Discharge & handout", "match": ["Discharge and follow-up", "Patient handout"]},
       {"key": "note", "label": "Note draft", "match": ["Note draft"]}] });</script>
 </body>

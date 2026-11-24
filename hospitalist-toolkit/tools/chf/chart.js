@@ -39,7 +39,8 @@
     ironiv: /ferric derisomaltose|monoferric|iron sucrose|venofer|ferric carboxymaltose|ferinject/i, kcl: /potassium chloride|\bkcl\b|k-?dur|slow-?k/i,
     nsaid: /ibuprofen|naproxen|diclofenac|ketorolac|celecoxib|meloxicam|indomethacin/i, ndhp: /diltiazem|verapamil/i, tzd: /pioglitazone|rosiglitazone/i,
     dron: /dronedarone/i, ivfluid: /sodium chloride 0\.9|normal saline|ringer|plasma-?lyte/i, steroid: /prednisone|dexamethasone|methylprednisolone|hydrocortisone/i,
-    amlo: /amlodipine|nifedipine|felodipine/i, gaba: /pregabalin|gabapentin/i, o2: /oxygen/i };
+    amlo: /amlodipine|nifedipine|felodipine/i, gaba: /pregabalin|gabapentin/i, o2: /oxygen/i,
+    statin: /atorvastatin|rosuvastatin|simvastatin|pravastatin|lovastatin|pitavastatin/i };
   const PROB = {
     hfref: /reduced ejection|HFrEF|systolic (heart )?failure|I50\.2|I50\.4|dilated cardiomyopathy|I42\.0/i, hfpef: /preserved ejection|HFpEF|diastolic (heart )?failure|I50\.3/i,
     hf: /heart failure|I50|cardiomyopathy|I42/i, af: /atrial fib|flutter|I48/i, cad: /coronary|myocardial infarct|I2[0-5]|CABG|stent/i, htn: /hypertension|I1[0-5]/i,
@@ -47,7 +48,12 @@
     as: /aortic stenosis|I35\.0|I35\.2/i, copd: /copd|J44|emphysema|pulmonary hypertension|I27|sleep apnea|G47\.3/i, thyroid: /thyro|E0[3-5]/i, alcohol: /alcohol|F10/i,
     chemo: /anthracycline|doxorubicin|trastuzumab|chemotherapy|Z92\.21|breast cancer|lymphoma/i, cts: /carpal tunnel|G56\.0/i, spinal: /spinal stenosis|M48\.0/i,
     neuro: /neuropathy|G6[0-3]|orthostatic hypotension|I95\.1/i, mgus: /monoclonal|MGUS|D47\.2|myeloma|C90|amyloid|E85/i, pacer: /pacemaker|Z95\.0|heart block|I44/i,
-    cirrhosis: /cirrho|K74|K70\.3/i, nephrotic: /nephrotic|N04/i, obesity: /obesity|E66/i };
+    cirrhosis: /cirrho|K74|K70\.3/i, nephrotic: /nephrotic|N04/i, obesity: /obesity|E66/i,
+    // ischemia tab
+    angina: /angina|I20/i, lipid: /hyperlipid|dyslipid|hypercholesterol|E78/i, smoke: /tobacco|smok|nicotine|F17|Z72\.0|Z87\.891/i,
+    pad: /peripheral (arter|vascul)|claudication|I70\.2|I73\.9|stroke|cerebral infarct|I63|transient ischemic|G45/i, lbbb: /left bundle|LBBB|I44\.7/i,
+    paced: /pacemaker|Z95\.0|paced rhythm/i, wpw: /wolff|pre-?excitation|I45\.6/i, asthma: /asthma|J45/i,
+    avb: /second degree|third degree|complete heart block|mobitz|I44\.1|I44\.2/i, vt: /ventricular tachy|ventricular fib|cardiac arrest|I47\.2|I49\.0|I46/i };
 
   function obsVal(r) { const q = r.valueQuantity; return q && q.value != null ? { v: +q.value, u: q.unit || q.code || "" } : null; }
   function medText(m) {

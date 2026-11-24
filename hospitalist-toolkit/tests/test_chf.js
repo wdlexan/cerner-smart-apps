@@ -91,5 +91,31 @@ ok("handout dry weight lb", /159 lb/.test(hb)); ok("handout 2 lb / 5 lb", /2 lb\
   ok("pillars: atenolol partial", P(["atenolol 50 mg daily"]).bb.on === "partial");
   ok("gdmt table: metoprolol tartrate no longer counts as beta-blocker", R.gdmt("low", {}, ["metoprolol 25 mg BID"]).find((g) => /Beta-blocker/.test(g.name)).on === false);
 }
+
+// ischemia sub-tab
+const I = require("../tools/chf/ischemia.js");
+eq("lik known CAD high", I.likelihood({ knownCad: true }).level, "high");
+eq("lik angina 64 high", I.likelihood({ angina: true, age: 64, rf: 0 }).level, "high");
+eq("lik 45 no rf low", I.likelihood({ age: 45, rf: 0 }).level, "low");
+eq("lik 58 3 rf no angina intermediate", I.likelihood({ age: 58, rf: 3 }).level, "intermediate");
+eq("plan ACS", I.plan({ acs: true, ef: "low" }).route, "acs");
+eq("plan not revasc candidate", I.plan({ revasc: "no", ef: "low", knownCad: true }).route, "none");
+eq("plan EF unknown -> echo", I.plan({ ef: "unknown", age: 70, rf: 2 }).route, "echo");
+eq("plan HFrEF angina -> ICA", I.plan({ ef: "low", angina: true, age: 58, rf: 3, revasc: "yes" }).route, "ica");
+eq("plan HFrEF intermediate -> noninv", I.plan({ ef: "low", age: 58, rf: 2, revasc: "yes" }).route, "noninv");
+eq("plan HFpEF no clues -> none", I.plan({ ef: "pres", age: 82, rf: 1 }).route, "none");
+eq("plan HFrEF other cause -> optional", I.plan({ ef: "low", age: 46, rf: 0, otherCause: true }).route, "optional");
+let T = I.tests({ ef: "low", canEx: "no", ecg: { lbbb: true }, age: 58, rf: 2 });
+eq("treadmill avoid: can't exercise + LBBB", T.find((t) => t.key === "ett").status, "avoid");
+eq("exercise SPECT avoid with LBBB", T.find((t) => t.key === "exspect").status, "avoid");
+T = I.tests({ ef: "pres", canEx: "yes", ecg: {}, age: 55, rf: 1 });
+eq("treadmill ok: HFpEF, exercises, normal ECG", T.find((t) => t.key === "ett").status, "ok");
+eq("best = CCTA low-intermediate", I.best("noninv", { ef: "pres", canEx: "yes", ecg: {}, age: 55, rf: 1 }, T), "ccta");
+T = I.tests({ ef: "low", canEx: "no", ecg: { lbbb: true }, af: true, age: 72, rf: 2, egfr: 40 });
+eq("best with LBBB, AF, can't exercise", I.best("noninv", { ef: "low", canEx: "no", ecg: { lbbb: true }, af: true, age: 72, rf: 2, otherCause: true }, T), "pspect");
+eq("CCTA avoid eGFR 25", I.tests({ egfr: 25, ecg: {} }).find((t) => t.key === "ccta").status, "avoid");
+eq("treadmill avoid while congested", I.tests({ decompensated: true, canEx: "yes", ecg: {} }).find((t) => t.key === "ett").status, "avoid");
+ok("refer: ACS in 'now'", I.refer({ acs: true }, { route: "acs" })[0].items[0][1] === true);
+ok("note line", /Ischemia as cause: likelihood of CAD high/.test(I.noteLine({ ef: "low", angina: true, age: 64, rf: 2, revasc: "yes" })));
 console.log(fail ? fail + " FAILED" : "all passed");
 process.exit(fail ? 1 : 0);

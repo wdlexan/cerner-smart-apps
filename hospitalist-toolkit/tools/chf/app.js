@@ -74,7 +74,7 @@ function draw() {
   $("plan").innerHTML = (A.length ? `<div class="urgent"><h3>Now</h3>${ul(A)}</div>` : "") + ul(P.length ? P : ["Nothing urgent flagged. Review the sections below."]) +
     `<div class="muted">Treat the precipitant too: ${R.PRECIP.join(" · ")}</div>`;
 
-  drawNT(nt, ntc, c, s); drawTrend(); drawDiu(x, ivDaily, resp, dry, rate, toGo, days, crc, home); drawPO(x, ivDaily, home, dry); drawGDMT(ef, s, c); drawDDX(ef, s, c); drawTests(c); drawAlerts(ef, s, c); drawFU(); drawHandout(dry, ivDaily);
+  drawNT(nt, ntc, c, s); drawTrend(); drawDiu(x, ivDaily, resp, dry, rate, toGo, days, crc, home); drawPO(x, ivDaily, home, dry); drawGDMT(ef, s, c); drawDDX(ef, s, c); drawTests(c); if (window.CHFIsch) CHFIsch.draw({ f, s, c, ef, shock }); drawAlerts(ef, s, c); drawFU(); drawHandout(dry, ivDaily);
   $("note").value = noteText(x, nt, ntc, ivDaily, resp, dry, days, crc);
 }
 
@@ -213,6 +213,7 @@ function noteText(x, nt, ntc, ivDaily, resp, dry, days, crc) {
     L.push("- Iron studies; echo if none recent.");
   } else L.push("- GDMT: start/titrate per EF before discharge; iron studies; echo if none recent.");
   L.push("- Look for precipitant and cause" + (document.querySelectorAll(".amy:checked").length >= 3 ? "; amyloid red flags: free light chains, SPEP/UPEP with IFE, then PYP scan." : "."));
+  const il = window.CHFIsch ? CHFIsch.note() : ""; if (il) L.push("- " + il);
   L.push("- Discharge: oral diuretic observed 24-48 h, dry weight documented, HF handout, follow-up within 7 days, labs in 1 week, HF clinic referral.");
   return L.join("\n");
 }
@@ -227,6 +228,7 @@ function load(raw, note, errors, preset) {
   document.querySelectorAll(".cong").forEach((b) => (b.checked = (p.cong || []).includes(b.value)));
   $("cool").checked = false; $("shock").checked = false; $("eating").checked = !!p.ready;
   if (p.flags) state.flags = Object.assign({}, p.flags);
+  if (window.CHFIsch) CHFIsch.prefill(f, p);
   const loopTxt = f && f.loop.orders[0] ? f.meds.find((m) => C.loopDose(m.text)) : null;
   $("h-diur").value = ""; $("h-flex").checked = false; $("h-flexdose").value = ""; $("h-fluid").checked = !!(f && f.l.na && f.l.na[f.l.na.length - 1].v < 130);
   $("ptsum").textContent = f ? [f.sex, f.age != null ? f.age + " y" : "", f.kg ? r1(f.kg) + " kg" : "", f.bmi ? "BMI " + f.bmi : ""].filter(Boolean).join(", ") : "";
