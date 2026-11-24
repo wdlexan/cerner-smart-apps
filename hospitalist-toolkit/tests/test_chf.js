@@ -117,5 +117,20 @@ eq("CCTA avoid eGFR 25", I.tests({ egfr: 25, ecg: {} }).find((t) => t.key === "c
 eq("treadmill avoid while congested", I.tests({ decompensated: true, canEx: "yes", ecg: {} }).find((t) => t.key === "ett").status, "avoid");
 ok("refer: ACS in 'now'", I.refer({ acs: true }, { route: "acs" })[0].items[0][1] === true);
 ok("note line", /Ischemia as cause: likelihood of CAD high/.test(I.noteLine({ ef: "low", angina: true, age: 64, rf: 2, revasc: "yes" })));
+
+// echo sub-tab
+const EC = require("../tools/chf/echo.js");
+let EF_ = EC.parse(EC.SAMPLE);
+eq("echo EF range mid", EF_.ef.v, 32.5); eq("echo TAPSE", EF_.tapse, 15); eq("echo RVSP", EF_.rvsp, 52); eq("echo AVA", EF_.ava, 1.2); eq("echo mean gradient", EF_.avMG, 24);
+eq("echo MR moderate-severe", EF_.mr, "moderate to severe"); eq("echo AR none", EF_.ar, "none"); eq("echo LAVI", EF_.lavi, 46); eq("echo diastolic grade", EF_.dd, 2);
+ok("echo RWMA found", EF_.rwma && /inferior/.test(EF_.rwma[0]));
+eq("echo EF category", EC.efCat(EF_).key, "low"); eq("echo AS moderate", EC.asGrade(EF_).word, "moderate");
+let E2 = EC.parse("Normal LV size. Severe concentric LVH, IVSd 16 mm, LVPWd 15 mm. LVEF 60%. Apical sparing pattern of GLS -11%. Biatrial enlargement. Small pericardial effusion. Severe aortic stenosis: AVA 0.8 cm2, mean gradient 32 mmHg, peak velocity 3.6 m/s. No regional wall motion abnormalities.");
+eq("echo2 IVS mm->cm", E2.ivs, 1.6); eq("echo2 AS severe", EC.asGrade(E2).word, "severe"); ok("echo2 low-flow", EC.asGrade(E2).lowFlow); ok("echo2 no RWMA", !E2.rwma && E2.noRwma);
+ok("echo2 amyloid message", EC.summarize(E2).M.some((m) => /amyloid/i.test(m[1]))); ok("echo2 AS urgent", EC.summarize(E2).M.some((m) => m[0] === "urgent" && /aortic stenosis/i.test(m[1])));
+let E3 = EC.parse("Severely reduced left ventricular systolic function. Large pericardial effusion with right atrial collapse. Apical LV thrombus seen.");
+eq("echo3 qualitative EF", EC.efCat(E3).key, "low"); ok("echo3 tamponade", E3.tamponade); ok("echo3 thrombus", !!E3.thrombus);
+let E4 = EC.parse("No pericardial effusion. No LV thrombus. LVEF 55-60%. Mild mitral regurgitation.");
+ok("echo4 negatives", !E4.effusion && !E4.thrombus && E4.mr === "mild");
 console.log(fail ? fail + " FAILED" : "all passed");
 process.exit(fail ? 1 : 0);
