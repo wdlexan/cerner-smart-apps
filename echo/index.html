@@ -30,7 +30,7 @@
 *,*::before,*::after{box-sizing:inherit}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 "Segoe UI Variable","Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif}
-header.top{padding:14px 18px 0;background:var(--card);border-bottom:1px solid var(--line)}
+header.top{position:sticky;top:0;z-index:20;padding:8px 18px 0;background:var(--card);border-bottom:1px solid var(--line)}
 .titlerow{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px}
 h1{font-size:1.35rem;margin:0;font-weight:650;letter-spacing:-.01em}
 .pt{color:var(--muted);font-size:.9rem}
