@@ -161,7 +161,8 @@ tr.rowR td.pl{box-shadow:inset 4px 0 0 var(--red)} tr.rowA td.pl{box-shadow:inse
     <div class="actions">
       <label class="small muted">Sex (LV size limits)<select id="sex"><option value="">Not set</option><option value="male">Male</option><option value="female">Female</option></select></label>
       <button id="btnCompare" class="primary">Extract and compare</button>
-      <button id="btnSample">Load made-up sample</button>
+      <label class="small muted">Made-up sample<select id="sampleSel"></select></label>
+      <button id="btnSample">Load sample</button>
       <button id="btnClear">Clear</button>
     </div>
   </div></details>
@@ -545,7 +546,7 @@ const FLAGS = {
     const L = x.sex === 'female' ? 5.2 : 5.8; const o = [];
     if (nw(p, c, v => v > L)) o.push(A(`Newly dilated (>${L} cm)`));
     else if (both(p, c) && c - p >= 0.5) o.push(A(`Larger by ${fmt(c - p)} cm`));
-    else if (both(p, c) && c - p <= -0.5) o.push(G('Smaller: reverse remodelling'));
+    else if (both(p, c) && c - p <= -0.5 && p > L) o.push(G('Smaller: reverse remodelling'));
     else if (isN(c) && c > L) o.push(I(`Dilated (>${L} cm)`));
     return mk(o);
   },
@@ -553,7 +554,7 @@ const FLAGS = {
     const L = x.sex === 'female' ? 61 : 74; const o = [];
     if (nw(p, c, v => v > L)) o.push(A(`Newly above ${L}`));
     else if (both(p, c) && c - p >= 10) o.push(A(`Up ${fmt(c - p, 0)}`));
-    else if (both(p, c) && c - p <= -10) o.push(G('Smaller: reverse remodelling'));
+    else if (both(p, c) && c - p <= -10 && p > L) o.push(G('Smaller: reverse remodelling'));
     else if (isN(c) && c > L) o.push(I(`Above ${L}`));
     return mk(o);
   },
@@ -763,6 +764,112 @@ Moderate mitral regurgitation. Mild tricuspid regurgitation. No aortic regurgita
 Moderate aortic stenosis. Aortic valve peak velocity 3.7 m/s. Aortic valve mean gradient 30 mmHg. Aortic valve area 1.0 cm2.
 Aortic root 3.8 cm. IVC 2.3 cm with <50% inspiratory collapse. Estimated RAP 15 mmHg.
 Small pericardial effusion without tamponade physiology.`;
+
+const SAMPLES = [
+  { label: 'New AF, EF fall, AS progressing (2024 vs 2026)', prior: SAMPLE_PRIOR, current: SAMPLE_CURRENT },
+  { label: 'Recovered EF, new vegetation, aorta growing', prior: `TRANSTHORACIC ECHOCARDIOGRAM REPORT (made-up test patient)
+Study date: 2025-06-03
+Indication: decompensated heart failure. Rhythm: atrial fibrillation with rapid ventricular response, HR 112 bpm. Study performed without contrast. Image quality: limited by body habitus.
+Left ventricle is moderately dilated. LVIDd 6.3 cm. LVEDV index 92 mL/m2. IVSd 0.9 cm. LVPWd 0.9 cm.
+Severely reduced LV systolic function. LVEF 25-30% by biplane. GLS -9%. Global hypokinesis.
+Diastolic function indeterminate due to atrial fibrillation. Average E/e' 18. LA volume index 52 mL/m2.
+RV systolic function is mildly reduced. TAPSE 16 mm.
+Peak TR velocity 3.2 m/s. Estimated RVSP 48 mmHg.
+Moderate to severe mitral regurgitation, functional. Mild tricuspid regurgitation. No aortic regurgitation.
+Ascending aorta 4.2 cm. IVC 2.4 cm with <50% inspiratory collapse. Estimated RAP 15 mmHg.
+Trivial pericardial effusion. No LV thrombus.`, current: `TRANSTHORACIC ECHOCARDIOGRAM REPORT (made-up test patient)
+Study date: 2026-11-18
+Indication: fever, Staphylococcus aureus bacteremia. Rhythm: sinus rhythm, HR 68 bpm. No contrast used. Image quality: good.
+Left ventricle is mildly dilated. LVIDd 5.6 cm. LVEDV index 70 mL/m2. IVSd 0.9 cm. LVPWd 0.9 cm.
+Mildly reduced LV systolic function. LVEF 45% by biplane. GLS -15%. No regional wall motion abnormalities.
+Grade I diastolic dysfunction. Average E/e' 11. LA volume index 40 mL/m2.
+RV systolic function is normal. TAPSE 20 mm.
+Peak TR velocity 2.6 m/s. Estimated RVSP 32 mmHg.
+Mild mitral regurgitation. Mobile 0.9 cm echodensity on the atrial side of the anterior mitral leaflet, consistent with vegetation. Trace tricuspid regurgitation. No aortic regurgitation.
+Ascending aorta 4.6 cm. IVC 1.7 cm with >50% inspiratory collapse. Estimated RAP 3 mmHg.
+No pericardial effusion. No intracardiac thrombus.` },
+  { label: 'New pericardial effusion', prior: `TRANSTHORACIC ECHOCARDIOGRAM REPORT (made-up test patient)
+Study date: 2025-09-10
+Indication: preoperative assessment. Rhythm: sinus rhythm, HR 74 bpm. Image quality: good.
+Left ventricle is normal in size. LVIDd 4.6 cm. IVSd 1.0 cm. LVPWd 0.9 cm.
+Normal LV systolic function. LVEF 60%. No regional wall motion abnormalities.
+Normal diastolic function. Average E/e' 8. LA volume index 26 mL/m2.
+RV systolic function is normal. TAPSE 22 mm. Peak TR velocity 2.3 m/s. Estimated RVSP 26 mmHg.
+Trace mitral regurgitation. Trace tricuspid regurgitation.
+IVC 1.5 cm with >50% inspiratory collapse. Estimated RAP 3 mmHg.
+No pericardial effusion.`, current: `TRANSTHORACIC ECHOCARDIOGRAM REPORT (made-up test patient)
+Study date: 2026-11-22
+Indication: dyspnea, known metastatic lung cancer. Rhythm: sinus tachycardia, HR 118 bpm. Image quality: good.
+Left ventricle is normal in size. LVIDd 4.4 cm. IVSd 1.0 cm. LVPWd 0.9 cm.
+Normal LV systolic function. LVEF 65%, hyperdynamic. No regional wall motion abnormalities.
+Average E/e' 9. LA volume index 25 mL/m2.
+RV systolic function is normal. TAPSE 19 mm. Peak TR velocity 2.4 m/s. Estimated RVSP 33 mmHg.
+Trace mitral regurgitation. Mild tricuspid regurgitation.
+IVC 2.4 cm with <50% inspiratory collapse. Estimated RAP 15 mmHg.
+Large circumferential pericardial effusion measuring up to 2.3 cm, with right atrial collapse and early diastolic right ventricular collapse. Respiratory variation in mitral inflow of 35%. Findings concerning for tamponade physiology.` },
+  { label: 'Aortic stenosis now severe', prior: `TRANSTHORACIC ECHOCARDIOGRAM REPORT (made-up test patient)
+Study date: 2024-10-02
+Indication: murmur follow-up. Rhythm: sinus rhythm, HR 66 bpm. Image quality: good.
+Left ventricle is normal in size. LVIDd 4.8 cm. IVSd 1.2 cm. LVPWd 1.1 cm. Mild concentric LV hypertrophy.
+Normal LV systolic function. LVEF 60%.
+Grade I diastolic dysfunction. Average E/e' 11. LA volume index 30 mL/m2.
+Moderate aortic stenosis. Aortic valve peak velocity 3.1 m/s. Aortic valve mean gradient 23 mmHg. Aortic valve area 1.3 cm2. Dimensionless index 0.33.
+No aortic regurgitation. Mild mitral regurgitation.
+TAPSE 21 mm. Peak TR velocity 2.5 m/s. Estimated RVSP 30 mmHg.
+Aortic root 3.5 cm. No pericardial effusion.`, current: `TRANSTHORACIC ECHOCARDIOGRAM REPORT (made-up test patient)
+Study date: 2026-11-15
+Indication: exertional dyspnea and presyncope. Rhythm: sinus rhythm, HR 70 bpm. Image quality: good.
+Left ventricle is normal in size. LVIDd 4.7 cm. IVSd 1.4 cm. LVPWd 1.3 cm. Moderate concentric LV hypertrophy.
+Normal LV systolic function. LVEF 58%.
+Grade II diastolic dysfunction. Average E/e' 16. LA volume index 41 mL/m2.
+Severe aortic stenosis. Aortic valve peak velocity 4.4 m/s. Aortic valve mean gradient 49 mmHg. Aortic valve area 0.8 cm2. Dimensionless index 0.22.
+Mild aortic regurgitation. Mild mitral regurgitation.
+TAPSE 20 mm. Peak TR velocity 2.9 m/s. Estimated RVSP 38 mmHg.
+Aortic root 3.6 cm. No pericardial effusion.` },
+  { label: 'RV strain: possible PE', prior: `TRANSTHORACIC ECHOCARDIOGRAM REPORT (made-up test patient)
+Study date: 2025-03-18
+Indication: palpitations. Rhythm: sinus rhythm, HR 78 bpm. Image quality: good.
+Left ventricle is normal in size. LVIDd 4.5 cm. Normal LV systolic function. LVEF 60%.
+Normal diastolic function. Average E/e' 7.
+Right ventricle is normal in size. RV systolic function is normal. TAPSE 23 mm.
+Peak TR velocity 2.2 m/s. Estimated RVSP 24 mmHg. Trace tricuspid regurgitation.
+IVC 1.4 cm with >50% inspiratory collapse. Estimated RAP 3 mmHg. No pericardial effusion.`, current: `TRANSTHORACIC ECHOCARDIOGRAM REPORT (made-up test patient)
+Study date: 2026-11-23
+Indication: acute dyspnea and hypoxemia after hip surgery. Rhythm: sinus tachycardia, HR 116 bpm. Image quality: limited, supine portable study.
+Left ventricle is small and underfilled. LVIDd 3.9 cm. Normal LV systolic function. LVEF 65%. Flattened interventricular septum (D-shaped LV).
+Average E/e' 8.
+Right ventricle is moderately dilated. RV systolic function is moderately reduced with apical sparing (McConnell sign). TAPSE 13 mm.
+Peak TR velocity 3.6 m/s. Estimated RVSP 60 mmHg. Moderate tricuspid regurgitation.
+IVC 2.3 cm with <50% inspiratory collapse. Estimated RAP 15 mmHg. No pericardial effusion.` },
+  { label: 'Thick walls: think amyloid', prior: `TRANSTHORACIC ECHOCARDIOGRAM REPORT (made-up test patient)
+Study date: 2024-05-21
+Indication: hypertension. Rhythm: sinus rhythm, HR 70 bpm. Image quality: good.
+Left ventricle is normal in size. LVIDd 4.6 cm. IVSd 1.1 cm. LVPWd 1.1 cm. LV mass index 98 g/m2.
+Normal LV systolic function. LVEF 60%. GLS -19%.
+Grade I diastolic dysfunction. Average E/e' 12. LA volume index 36 mL/m2.
+RV systolic function is normal. TAPSE 20 mm. Peak TR velocity 2.6 m/s. Estimated RVSP 32 mmHg.
+Mild mitral regurgitation. No pericardial effusion.`, current: `TRANSTHORACIC ECHOCARDIOGRAM REPORT (made-up test patient)
+Study date: 2026-11-19
+Indication: HF with preserved EF, low-voltage ECG, bilateral carpal tunnel. Rhythm: sinus rhythm, HR 82 bpm. Image quality: good.
+Left ventricle is normal in size. LVIDd 4.3 cm. IVSd 1.6 cm. LVPWd 1.5 cm. Severe concentric LV hypertrophy with granular sparkling myocardium. LV mass index 142 g/m2.
+Normal LV systolic function. LVEF 55%. GLS -12% with relative apical sparing.
+Grade III diastolic dysfunction (restrictive filling). Average E/e' 19. LA volume index 51 mL/m2.
+RV wall thickened. RV systolic function is mildly reduced. TAPSE 16 mm. Peak TR velocity 3.0 m/s. Estimated RVSP 44 mmHg.
+Mild mitral regurgitation. Small pericardial effusion.` },
+  { label: 'Cardio-oncology: GLS fall on trastuzumab', prior: `TRANSTHORACIC ECHOCARDIOGRAM REPORT (made-up test patient)
+Study date: 2026-05-12
+Indication: baseline before trastuzumab for HER2-positive breast cancer. Rhythm: sinus rhythm, HR 72 bpm. Image quality: good.
+Left ventricle is normal in size. LVIDd 4.5 cm. LVEDV index 55 mL/m2.
+Normal LV systolic function. LVEF 63% by 3D. GLS -21%.
+Normal diastolic function. Average E/e' 7. LA volume index 24 mL/m2.
+TAPSE 22 mm. Estimated RVSP 25 mmHg. No pericardial effusion.`, current: `TRANSTHORACIC ECHOCARDIOGRAM REPORT (made-up test patient)
+Study date: 2026-11-17
+Indication: surveillance on trastuzumab, cycle 9. Rhythm: sinus rhythm, HR 84 bpm. Image quality: good.
+Left ventricle is normal in size. LVIDd 4.8 cm. LVEDV index 63 mL/m2.
+Low-normal LV systolic function. LVEF 52% by 3D. GLS -16%.
+Normal diastolic function. Average E/e' 9. LA volume index 27 mL/m2.
+TAPSE 21 mm. Estimated RVSP 27 mmHg. No pericardial effusion.` },
+];
 </script>
 
 <!-- ================= UI ================= -->
@@ -991,7 +1098,16 @@ $('#btnCopyConsult').addEventListener('click', () => copyText($('#consult').valu
 
 // ---- controls ----
 $('#btnCompare').addEventListener('click', runExtract);
-$('#btnSample').addEventListener('click', () => { $('#txt-prior').value = SAMPLE_PRIOR; $('#txt-current').value = SAMPLE_CURRENT; runExtract(); });
+$('#sampleSel').innerHTML = SAMPLES.map((s, i) => `<option value="${i}">${esc(s.label)}</option>`).join('');
+$('#btnSample').addEventListener('click', () => {
+  const s = SAMPLES[+$('#sampleSel').value] || SAMPLES[0];
+  for (const k of ['prior', 'current']) {
+    ['type', 'rhythm', 'quality', 'contrast'].forEach(f => { $(`#${f}-${k}`).value = ''; });
+    $('#hr-' + k).value = ''; $('#date-' + k).value = '';
+  }
+  $('#txt-prior').value = s.prior; $('#txt-current').value = s.current;
+  runExtract();
+});
 $('#btnClear').addEventListener('click', () => {
   for (const k of ['prior', 'current']) {
     $('#txt-' + k).value = ''; $('#date-' + k).value = ''; $('#hr-' + k).value = '';
