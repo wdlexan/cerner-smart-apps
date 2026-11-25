@@ -123,6 +123,8 @@ tr.rowR td.pl{box-shadow:inset 4px 0 0 var(--red)} tr.rowA td.pl{box-shadow:inse
 <main>
 <!-- ================= COMPARE ================= -->
 <section id="tab-compare" class="panel">
+  <details open class="sec"><summary><h2>Study conditions</h2></summary><div class="secbody"><div id="condOut2" class="muted small">Conditions are checked after you compare.</div></div></details>
+
   <details open class="sec"><summary><h2>Load the two reports</h2></summary><div class="secbody">
     <div id="fhirRow" class="fhirrow" hidden>
       <label class="small muted">Echo reports in chart<br><select id="fhirList"></select></label>
@@ -815,6 +817,7 @@ function renderConds() {
   $('#condOut').innerHTML = interval + (w.length ? w.map(x => `<div class="box ${x.lvl}">${esc(x.txt)}</div>`).join('')
     : '<div class="box G">No condition differences detected. Different readers or labs can still account for small changes.</div>');
   $('#condOut').classList.remove('muted', 'small');
+  $('#condOut2').innerHTML = $('#condOut').innerHTML; $('#condOut2').className = '';
 }
 
 function cellHTML(p, k, val) {
@@ -995,6 +998,7 @@ $('#btnClear').addEventListener('click', () => {
   }
   S.ran = false; S.noteDirty = false; $('#note').value = ''; $('#noteMsg').textContent = '';
   $('#condOut').className = 'muted small'; $('#condOut').textContent = 'Conditions are checked after you compare.';
+  $('#condOut2').className = 'muted small'; $('#condOut2').textContent = 'Conditions are checked after you compare.';
   $('#interp').className = 'muted small'; $('#interp').textContent = 'Nothing to interpret yet. Compare two reports on the Compare tab first.'; $('#meansBadge').innerHTML = ''; $('#condBadge').innerHTML = ''; showTab('compare');
   renderTable(); buildConsult();
 });
