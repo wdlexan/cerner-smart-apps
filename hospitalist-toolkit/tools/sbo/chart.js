@@ -42,7 +42,8 @@
     sbo: /small bowel obstruction|intestinal obstruction|K56|bowel obstruction|ileus/i, bypass: /gastric bypass|roux|bariatric|Z98\.84/i,
     af: /atrial fib|I48/i, parkinson: /parkinson|G20/i, diabetes: /diabetes|E1[0-4]/i, ckd: /chronic kidney|N18/i, hf: /heart failure|I50/i,
     dementia: /dementia|F0[0-3]|G30/i, priorSurgery: /appendectomy|appendicectomy|colectomy|hemicolectomy|hysterectomy|caesarean|cesarean|c-section|laparotomy|bowel resection|small bowel resection|whipple|cholecystectomy|gastrectomy|ileostomy|colostomy|anterior resection|Z90\.4|Z98\.890|adhesion|K66\.0/i,
-    transplant: /transplant|Z94/i, epilepsy: /epilep|seizure|G40/i };
+    transplant: /transplant|Z94/i, biliaryProc: /ercp|sphincterotomy|biliary stent|hepaticojejunostomy|choledochoduodenostomy|choledochojejunostomy|whipple|pancreaticoduodenectomy/i, epilepsy: /epilep|seizure|G40/i };
+  const BILIARY = /ercp|sphincterotomy|biliary stent|hepaticojejunostomy|choledocho(duodeno|jejuno)stomy|whipple|pancreaticoduodenectomy/i;
   const SURG = /appendectomy|appendicectomy|colectomy|hemicolectomy|hysterectomy|caesarean|cesarean|c-section|laparotomy|laparoscop|bowel resection|resection of (small|large) (bowel|intestine)|whipple|pancreaticoduodenectomy|cholecystectomy|gastrectomy|ileostomy|colostomy|anterior resection|hernia repair|herniorrhaphy|adhesiolysis|oophorectomy|salpingo|gastric bypass|sleeve gastrectomy|nephrectomy|cystectomy|prostatectomy|aortic aneurysm repair/i;
   const IMG = /abdo|abdomen|pelvis|ct a\/?p|kub|small bowel|enterograph|gastrografin|contrast follow|bowel|chest x|cxr|xr chest/i;
 
@@ -98,7 +99,7 @@
     });
     (raw.procedures || []).forEach((pr) => {
       if (/entered-in-error|not-done/.test(pr.status || "")) return;
-      const nm = label(pr.code); if (SURG.test(nm)) f.surgeries.push({ name: nm, t: tOf(pr), src: "procedures" });
+      const nm = label(pr.code); if (BILIARY.test(nm)) f.prob.biliaryProc = (f.prob.biliaryProc || []).concat(nm); if (SURG.test(nm)) f.surgeries.push({ name: nm, t: tOf(pr), src: "procedures" });
     });
     if (f.surgeries.length) f.prob.priorSurgery = (f.prob.priorSurgery || []).concat(f.surgeries.map((s) => s.name));
     f.recentSurgery = f.surgeries.some((s) => s.t && now - s.t <= 30 * DAY);

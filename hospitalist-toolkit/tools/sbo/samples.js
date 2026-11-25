@@ -66,5 +66,11 @@
       build: (now) => ({ patient: pt(78, "male"), encounter: enc(now, 3), conditions: [cond("Polymyalgia rheumatica", "M35.3"), cond("Chronic obstructive pulmonary disease", "J44.9"), cond("Status post open right hemicolectomy", "Z90.49", true)],
         obs: [].concat(vs(now, { hr: 124, sbp: 86, t: 37.4, rr: 26, spo2: 92, wt: 74 }), labs(now, 2, { wbc: 3.1, lac: 5.2, hco3: 16, ph: 7.24, cr: 166, crBase: 90, urea: 18, crp: 180, k: 4.9, inr: 2.8 })),
         reports: [rep(now, "CT abdomen pelvis non-contrast", "Dilated small bowel loops to 4.5 cm with a transition point in the right abdomen near the ileocolic anastomosis. Moderate pneumoperitoneum and free fluid, consistent with perforation. Pneumatosis of the dilated loops. IV contrast not given due to AKI.", 1)],
-        medreqs: [req("prednisone 15 mg PO daily"), req("tiotropium 18 mcg inhaled daily"), req("warfarin 4 mg PO daily")] }) }];
+        medreqs: [req("prednisone 15 mg PO daily"), req("tiotropium 18 mcg inhaled daily"), req("warfarin 4 mg PO daily")] }) },
+    { label: "H: 81 F no previous abdominal surgery, intermittent vomiting for 4 days, pneumobilia on CT with SBO (Rigler triad): gallstone ileus",
+      sit: { colicky: true, vomiting: true, distension: true, hernia: "none", cause: "other", dry: true },
+      build: (now) => ({ patient: pt(81, "female"), encounter: enc(now, 10), conditions: [cond("Type 2 diabetes mellitus", "E11.9"), cond("Biliary colic", "K80.20"), cond("Hypertension", "I10")],
+        obs: [].concat(vs(now, { hr: 104, sbp: 118, wt: 60 }), labs(now, 6, { wbc: 11.6, lac: 1.8, crp: 46, cr: 118, crBase: 76, urea: 14, k: 3.3, hco3: 31, alt: 40 })),
+        reports: [rep(now, "CT abdomen pelvis with IV contrast", "Pneumobilia. Contracted gallbladder closely applied to the duodenum with a probable cholecystoduodenal fistula. Dilated small bowel loops to 3.6 cm with a transition point in the distal ileum. Normal bowel wall enhancement. No free air.", 8)],
+        medreqs: [req("metformin 500 mg PO BID"), req("gliclazide MR 60 mg PO daily"), req("amlodipine 5 mg PO daily"), req("dimenhydrinate 25 mg IV q4h PRN")] }) }];
 })();

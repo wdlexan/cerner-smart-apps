@@ -21,6 +21,12 @@ ok("contrast in colon", ids("Contrast is seen in the colon and rectum.").has("co
 eq("cecum diameter", R.imaging("Dilated colon, cecum measures 12.5 cm.").cecum, 12.5);
 ok("two transition points alone is not closed loop", !ids("Multiple transition points from implants.").has("closedLoop"));
 
+ok("pneumobilia alone flagged", ids("Pneumobilia. Dilated small bowel with transition point.").has("pneumobilia"));
+ok("air in the biliary tree flagged", ids("Air in the biliary tree.").has("pneumobilia"));
+ok("no pneumobilia ignored", !ids("No pneumobilia.").has("pneumobilia"));
+eq("pneumobilia + SBO ranks gallstone ileus first", R.likelyCauses({ pneumobilia: true }).find((c) => c.id === "gallstone").score, 3);
+eq("pneumobilia after ERCP ranks lower", R.likelyCauses({ pneumobilia: true, biliaryProc: true }).find((c) => c.id === "gallstone").score, 1);
+
 // red flags and perforation risk
 eq("peritonitis -> surgery now", R.pathway({ peritonitis: true, ct: new Set(["sbo"]) }).act, "surgeryNow");
 eq("free air -> perforated", R.perforation({ ct: new Set(["freeAir"]) }).level, "perforated");
@@ -58,7 +64,7 @@ const fl = R.fluids({ weight: 70, ngOut: 1000 });
 eq("maintenance 70 kg", fl.maint, 1750); eq("total", fl.total, 2750); eq("hourly", fl.hourly, 115);
 
 // made-up patients end to end
-const want = ["nom", "surgeryNow", "surgeryNow", "mbo", "crohn", "surgeryToday", "surgeryNow"];
+const want = ["nom", "surgeryNow", "surgeryNow", "mbo", "crohn", "surgeryToday", "surgeryNow", "surgeryToday"];
 const now = Date.now();
 window.SBO_SAMPLES.forEach((p, i) => {
   const f = C.parse(p.build(now), { now }), s = p.sit, L = (src, k) => { const a = f[src][k]; return a && a.length ? a[a.length - 1].v : null; };
@@ -68,12 +74,13 @@ window.SBO_SAMPLES.forEach((p, i) => {
     hco3: L("l", "hco3"), ph: L("l", "ph"), k: L("l", "k"), cr: L("l", "cr"), cecum, nomHours: s.nomHours, colicky: s.colicky, continuous: s.continuous, obstipation: s.obstipation,
     peritonitis: s.peritonitis, guarding: s.guarding, hernia: s.hernia || "none", priorSurgery: !!f.prob.priorSurgery, carcinomatosis: !!f.prob.carcinomatosis || ct.has("carcinomatosis"),
     crohn: !!f.prob.crohn, cancer: !!f.prob.cancer, steroid: f.cls.steroid.length > 0, cause: s.cause, wsccGiven: !!s.wsccGiven, wsccHours: s.wsccHours,
-    wsccColon: ct.has("contrastColon") ? "yes" : ct.has("noContrastColon") ? "no" : "" };
+    biliaryProc: !!f.prob.biliaryProc, wsccColon: ct.has("contrastColon") ? "yes" : ct.has("noContrastColon") ? "no" : "" };
   if (o.crohn && !o.cause) o.cause = "crohn";
-  eq("sample " + "ABCDEFG"[i] + " pathway", R.pathway(o).act, want[i]);
+  eq("sample " + "ABCDEFGH"[i] + " pathway", R.pathway(o).act, want[i]);
   if (i === 0) { ok("A: prior surgery from procedures", !!f.prob.priorSurgery); ok("A: NG 24 h summed", f.ng24 === 1350); ok("A: WSCC offered", R.wscc(o).status === "offer"); ok("A: crBase", f.crBase === 72); }
   if (i === 3) ok("D: metoclopramide flagged", R.medFlags(f.medTexts).some((m) => m.id === "prokinetic"));
   if (i === 5) ok("F: levodopa + SGLT2 flagged", ["levodopa", "sglt2", "anticholinergic"].every((id) => R.medFlags(f.medTexts).some((m) => m.id === id)));
+  if (i === 7) { ok("H: pneumobilia found", ct.has("pneumobilia")); eq("H: gallstone ileus pathway label", /Gallstone ileus/.test(R.pathway(o).label), true); }
   if (i === 6) { eq("G: perforated", R.perforation(o).level, "perforated"); ok("G: steroid masked flag", R.redFlags(o).some((x) => x.id === "masked")); }
 });
 

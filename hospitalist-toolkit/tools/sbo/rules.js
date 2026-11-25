@@ -28,6 +28,7 @@
     ["mass", /mass|tumou?r|neoplas|malignan|carcinoma|lead point/, "Mass / tumour", "action"],
     ["carcinomatosis", /carcinomatosis|peritoneal (implants|metasta|nodul|deposit)|omental cak/, "Peritoneal carcinomatosis", "action"],
     ["gallstone", /gallstone ileus|pneumobilia.*(stone|calculus)|ectopic (gallstone|calculus)|rigler/, "Gallstone ileus (pneumobilia + ectopic stone)", "action"],
+    ["pneumobilia", /pneumobilia|aerobilia|(air|gas) (with)?in the (biliary tree|bile ducts?|gallbladder)|biliary (air|gas)/, "Pneumobilia: with SBO think gallstone ileus (look for an ectopic stone; benign after sphincterotomy, biliary stent or biliary-enteric anastomosis)", "action"],
     ["transition", /transition (point|zone)|point of transition|abrupt (change in )?calib/, "Transition point (mechanical obstruction)", "info"],
     ["highGrade", /high[- ]grade|complete (small bowel )?obstruction|decompressed (distal|colon)|collapsed (distal|colon)/, "High-grade / complete obstruction", "action"],
     ["partial", /partial|low[- ]grade|incomplete obstruction|contrast (passes|passing|reaches|seen) (into|in|to) the colon/, "Partial / low-grade obstruction", "info"],
@@ -194,6 +195,12 @@
       "Inflammatory vs fibrotic stricture: CT/MR enterography features (wall enhancement, comb sign) and CRP. Abscess: drain + antibiotics before steroids.",
       "Inflammatory: IV steroids (e.g. methylprednisolone 40-60 mg/day) with GI. Fibrotic: endoscopic balloon dilation (short stricture) or surgery.",
       "See the IBD tab."] };
+    const ct0 = o.ct || new Set();
+    if (k.id === "sbo" && (ct0.has("gallstone") || (ct0.has("pneumobilia") && !o.biliaryProc))) return { act: "surgeryToday", tone: "t2", label: "Gallstone ileus likely: general surgery today", why: [ct0.has("gallstone") ? "Pneumobilia + ectopic gallstone (Rigler triad)" : "Pneumobilia with SBO and no previous biliary procedure"], steps: [
+      "Confirm with radiology: ectopic stone (often terminal ileum / ileocecal valve), cholecystoduodenal fistula, any second stone.",
+      "NPO, NG, IV fluids, correct K/Mg. Non-operative care rarely clears it; no water-soluble contrast challenge as a substitute for surgery.",
+      "Surgery: enterolithotomy (fistula repair and cholecystectomy usually later or not at all in frail patients). Stone in the duodenum with gastric outlet obstruction (Bouveret): endoscopy or surgery.",
+      "Older, often frail patients: goals of care and anesthesia risk discussed early."] };
     if (o.virgin) steps.push("No previous abdominal surgery and no hernia: adhesions are unlikely, so a cause must be found (cancer, hernia missed on exam, Crohn, internal hernia, gallstone, bezoar). Surgery should see early; many go to OR or diagnostic laparoscopy.");
     if (o.recentSurgery) steps.push("Within 30 days of abdominal surgery: early postoperative SBO vs ileus vs leak/collection. Managed by the operating team; non-operative care often longer.");
     const nh = o.nomHours;
@@ -265,7 +272,7 @@
     { id: "crohn", name: "Crohn disease stricture", freq: "Common in younger patients with IBD", clue: "Known Crohn disease, previous ileocecal resection, CRP up.", img: "Thickened, enhancing terminal ileum, comb sign; abscess or fistula.", tx: "Inflammatory: steroids. Fibrotic: dilation or surgery. Abscess: drain first. GI + surgery." },
     { id: "volvulus", name: "Small bowel volvulus / midgut volvulus", freq: "Uncommon", clue: "Sudden severe pain, malrotation, adhesion band.", img: "Whirl sign, closed loop.", tx: "Surgery now." },
     { id: "intuss", name: "Intussusception (adult)", freq: "1-5% of adult SBO", clue: "Intermittent symptoms. In adults usually has a lead point (tumour in about two thirds).", img: "Target / bowel-within-bowel sign; look for the mass. Short transient non-obstructing ones are often incidental.", tx: "Obstructing adult intussusception with a lead point: surgery (resection)." },
-    { id: "gallstone", name: "Gallstone ileus", freq: "Rare; elderly women", clue: "Older woman, previous biliary symptoms, intermittent ('tumbling') obstruction.", img: "Rigler triad: pneumobilia, SBO, ectopic gallstone (often at the ileocecal valve).", tx: "Enterolithotomy (surgery); fistula repair usually later or never." },
+    { id: "gallstone", name: "Gallstone ileus", freq: "Rare; elderly women", clue: "Older woman, previous biliary symptoms, intermittent ('tumbling') obstruction. Pneumobilia with SBO and no previous ERCP, sphincterotomy, stent or biliary-enteric anastomosis is gallstone ileus until proven otherwise.", img: "Rigler triad: pneumobilia, SBO, ectopic gallstone (often at the ileocecal valve). All three on plain X-ray in a minority; CT shows them in most. Stone in the duodenum with gastric outlet obstruction = Bouveret syndrome.", tx: "Enterolithotomy (surgery); fistula repair usually later or never. Check for a second stone. Bouveret: endoscopic retrieval/lithotripsy or surgery." },
     { id: "bezoar", name: "Bezoar / foreign body", freq: "Rare", clue: "Previous gastric surgery, poor dentition, high-fibre or psyllium, sevelamer, cholestyramine, persimmon; capsule endoscopy.", img: "Mottled intraluminal mass at the transition point.", tx: "Some pass; often surgery or endoscopy." },
     { id: "radiation", name: "Radiation enteritis / stricture", freq: "After pelvic or abdominal radiation", clue: "Cervical, prostate, rectal radiation, often years later.", img: "Pelvic small bowel loops with wall thickening, tethering.", tx: "Usually non-operative first; surgery is difficult (high leak rate)." },
     { id: "hematoma", name: "Intramural hematoma", freq: "Rare", clue: "Warfarin with high INR, hemophilia, trauma.", img: "Long-segment hyperdense wall thickening.", tx: "Reverse anticoagulation; non-operative usually." },
@@ -304,6 +311,7 @@
     if (x.whirl) bump("volvulus", 3, "whirl sign");
     if (x.intussCT) bump("intuss", 3, "intussusception on CT");
     if (x.gallCT) bump("gallstone", 4, "pneumobilia + ectopic stone");
+    else if (x.pneumobilia) bump("gallstone", x.biliaryProc ? 1 : 3, x.biliaryProc ? "pneumobilia (but previous ERCP/sphincterotomy/stent can explain it)" : "pneumobilia with SBO: look for an ectopic gallstone");
     if (x.bezoarRisk) bump("bezoar", 1, "bezoar-forming drug");
     if (x.anticoag && x.inrHigh) bump("hematoma", 2, "anticoagulant with high INR");
     if (!x.priorSurgery && !(x.hernia && x.hernia !== "none")) bump("hernia", 1, "no previous surgery: check hernia sites");

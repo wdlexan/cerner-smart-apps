@@ -45,12 +45,13 @@ function facts() {
     wsccGiven: val("w-given") === "yes", wsccHours: num("w-hours"), wsccColon: val("w-colon") || (ct.has("contrastColon") ? "yes" : ct.has("noContrastColon") ? "no" : ""), aspiration: chk("w-asp"), contrastAllergy: chk("w-allergy") };
   if (!o.cause && o.crohn) o.cause = "crohn";
   if (!o.cause && o.carcinomatosis) o.cause = "malignant";
+  o.biliaryProc = !!(f && f.prob.biliaryProc);
   o.virgin = !o.priorSurgery && (o.hernia === "none") && !o.crohn && !o.cancer;
   const meds = f ? f.medTexts : [];
   const crBase = f && f.crBase;
   return { f, o, scans, meds, crBase, flags: R.redFlags(o), kind: R.kind(o), perf: R.perforation(o), w: R.wscc(o), path: R.pathway(o), mf: R.medFlags(meds),
     likely: R.likelyCauses({ priorSurgery: o.priorSurgery, hernia: o.hernia === "notchecked" ? "none" : o.hernia, herniaCT: ct.has("hernia"), bypass: o.bypass, cancer: o.cancer, carcinomatosis: o.carcinomatosis, mass: ct.has("mass"),
-      crohn: o.crohn, radiation: o.radiation, whirl: ct.has("whirl"), intussCT: ct.has("intuss"), gallCT: ct.has("gallstone"), bezoarRisk: !!(f && f.cls.bezoar.length), anticoag: !!(f && f.cls.anticoag.length), inrHigh: !!(f && C.latest(f.l.inr) && C.latest(f.l.inr).v > 3) }),
+      crohn: o.crohn, radiation: o.radiation, whirl: ct.has("whirl"), intussCT: ct.has("intuss"), gallCT: ct.has("gallstone"), pneumobilia: ct.has("pneumobilia"), biliaryProc: !!(f && f.prob.biliaryProc), bezoarRisk: !!(f && f.cls.bezoar.length), anticoag: !!(f && f.cls.anticoag.length), inrHigh: !!(f && C.latest(f.l.inr) && C.latest(f.l.inr).v > 3) }),
     fl: R.fluids({ weight: o.weight, ngOut: o.ngOut, k: o.k, dry: o.dry, alkalosis: o.hco3 != null && o.hco3 > 29, npoDays: o.npoDays }) };
 }
 
@@ -58,6 +59,7 @@ function facts() {
 function alertsOf(x) {
   const a = x.flags.map((g) => ({ lvl: g.lvl, b: g.t, t: g.why }));
   x.mf.filter((m) => m.lvl === "urgent").forEach((m) => a.push({ lvl: "urgent", b: m.t + ": " + m.drugs.join(", "), t: m.why }));
+  if (x.o.ct.has("pneumobilia") && !x.o.ct.has("gallstone")) a.push({ lvl: "action", b: "Pneumobilia on imaging", t: (x.f && x.f.prob.biliaryProc ? "Previous biliary procedure on file (" + esc(x.f.prob.biliaryProc[0]) + ") may explain it, but " : "") + "with SBO this is gallstone ileus until proven otherwise (Rigler triad: pneumobilia, SBO, ectopic gallstone). Ask radiology to look for the stone, often at the ileocecal valve; check for a cholecystoduodenal fistula. Surgery (enterolithotomy)." });
   if (x.o.hernia === "notchecked") a.push({ lvl: "action", b: "Hernia sites not checked", t: "Examine inguinal, femoral, umbilical and incisional sites: an incarcerated hernia changes the plan to surgery." });
   if (x.o.virgin && x.kind.id === "sbo") a.push({ lvl: "action", b: "No previous surgery and no hernia", t: "Adhesions unlikely: look for a cause (cancer, internal hernia, Crohn, gallstone, bezoar). Surgery to see early." });
   const ngOld = x.f && x.f.ng.length ? x.f.ng[x.f.ng.length - 1] : null;
