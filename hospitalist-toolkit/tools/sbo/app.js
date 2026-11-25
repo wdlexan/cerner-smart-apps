@@ -29,12 +29,14 @@ $("symptoms").innerHTML = `<table><tr><th>Feature</th><th>What it tells you</th>
 function facts() {
   const f = state.f;
   const reps = (f ? f.reports : []).slice();
-  if (val("pasted").trim()) reps.push({ t: Date.now(), name: "Pasted report", text: val("pasted").trim(), pasted: true });
+  (state.pasted || []).forEach((r) => reps.push(r));
+  const draft = pasteDraft(); if (draft) reps.push(draft);
   const scans = reps.map((r) => ({ ...r, scan: R.imaging(r.name + ". " + r.text) }));
   const ct = new Set(); let cecum = null;
   // later reports override earlier contrast-colon reads
+  scans.sort((a, b) => (a.t || 0) - (b.t || 0));
   scans.forEach((r) => { r.scan.ids.forEach((id) => { if (id === "contrastColon") ct.delete("noContrastColon"); if (id === "noContrastColon") ct.delete("contrastColon"); ct.add(id); }); if (r.scan.cecum) cecum = r.scan.cecum; });
-  const ctDone = scans.some((r) => /\bct\b|computed|enterograph/i.test(r.name)) || reps.some((r) => r.pasted);
+  const ctDone = scans.some((r) => /\bct\b|computed|enterograph/i.test(r.name));
   const o = { age: f ? f.age : null, sex: f ? f.sex : "", ct, ctDone,
     hr: num("n-hr"), sbp: num("n-sbp"), temp: num("n-temp"), lactate: num("n-lactate"), wbc: num("n-wbc"), crp: num("n-crp"), hco3: num("n-hco3"), ph: num("n-ph"), k: num("n-k"), cr: num("n-cr"),
     weight: num("n-weight"), cecum: num("n-cecum") ?? cecum, nomHours: num("n-nom"), ngOut: num("n-ng"), npoDays: num("n-npo"),
@@ -77,7 +79,7 @@ function draw() {
   // tiles
   const lac = o.lactate;
   $("tiles").innerHTML = tile("Picture", esc(x.kind.label.split(":")[0]), esc(x.kind.id === "sbo" ? (o.ct.has("highGrade") ? "high-grade / complete" : o.ct.has("partial") ? "partial" : "") : ""), x.kind.id === "unclear" ? "t1" : "")
-    + tile("Ischemia / perforation", esc(x.perf.label), esc(x.perf.why.slice(0, 3).join(", ")), x.perf.tone)
+    + tile("Ischemia / perf", esc(x.perf.label), esc(x.perf.why.slice(0, 3).join(", ")), x.perf.tone)
     + tile("Lactate", lac != null ? lac : "?", lac == null ? "not found: order" : lac >= 4 ? "high" : lac > 2 ? "raised" : "normal", lac == null ? "t2" : lac >= 4 ? "t3" : lac > 2 ? "t2" : "t0")
     + tile("WBC / CRP", `${o.wbc ?? "?"} / ${o.crp ?? "?"}`, "", (o.wbc > 12 || o.crp >= 75) ? "t2" : "")
     + tile("K / creatinine", `${o.k ?? "?"} / ${o.cr ?? "?"}`, x.crBase ? "baseline Cr " + x.crBase : "", (o.k != null && o.k < 3.5) || (o.cr && x.crBase && o.cr >= x.crBase * 1.5) ? "t2" : "")
@@ -126,7 +128,7 @@ function drawImaging(x) {
     <tr><td><b>Water-soluble contrast follow-up X-ray</b></td><td>8-24 h after Gastrografin: contrast in the colon predicts resolution (sensitivity about 92%, specificity about 93%).</td></tr>
     <tr><td><b>MR or CT enterography</b></td><td>Crohn disease, low-grade recurrent obstruction, radiation enteritis: not for the acute decision.</td></tr></table>`;
   const sc = x.scans.slice().reverse();
-  $("reports").innerHTML = sc.length ? sc.map((r) => `<div class="rep"><div class="ttl">${esc(r.name)} <span class="muted">${r.pasted ? "pasted" : ago(r.t)}${r.pending ? " · preliminary" : ""}</span></div><div>${esc(r.text) || '<span class="muted">No report text (impression) in the chart.</span>'}</div>
+  $("reports").innerHTML = sc.length ? sc.map((r) => `<div class="rep"><div class="ttl">${esc(r.name)} <span class="muted">${r.pasted ? "pasted" + (r.draft ? " (not added yet)" : "") + ", " + ago(r.t) : ago(r.t)}${r.pending ? " · preliminary" : ""}</span></div><div>${esc(r.text) || '<span class="muted">No report text (impression) in the chart.</span>'}</div>
     ${r.scan.finds.length ? `<div class="row">${r.scan.finds.map((g) => `<span class="chip ${g.lvl === "urgent" ? "c-bad" : g.lvl === "action" ? "c-miss" : "c-have"}">${esc(g.label)}</span>`).join(" ")}${r.scan.cecum ? ` <span class="chip c-miss">cecum ${r.scan.cecum} cm</span>` : ""}</div>` : ""}</div>`).join("")
     : '<div class="muted">No abdominal imaging reports found. CT abdomen/pelvis with IV contrast is the test of choice.</div>';
   $("imgsum").textContent = sc.length ? `${sc.length} report(s)` : "none found";
@@ -188,6 +190,29 @@ function handoutHTML() {
 }
 function drawHandout() { $("handout").innerHTML = handoutHTML(); }
 
+/* ---------- pasted reports ---------- */
+state.pasted = [];
+function pasteDraft() {
+  const text = val("p-text").trim(); if (!text) return null;
+  const h = num("p-ago");
+  return { t: Date.now() - (h != null && h > 0 ? h : 0) * HR, name: val("p-type"), text, pasted: true, draft: true };
+}
+const chips = (finds, cecum) => finds.map((g) => `<span class="chip ${g.lvl === "urgent" ? "c-bad" : g.lvl === "action" ? "c-miss" : "c-have"}">${esc(g.label)}</span>`).join(" ") + (cecum ? ` <span class="chip c-miss">cecum ${cecum} cm</span>` : "");
+function drawPreview() {
+  const d = pasteDraft();
+  if (!d) { $("p-preview").innerHTML = ""; return; }
+  const sc = R.imaging(d.name + ". " + d.text);
+  $("p-preview").innerHTML = sc.finds.length ? "<b>Found:</b> " + chips(sc.finds, sc.cecum) : '<span class="muted">No SBO findings recognised yet: read it yourself and tick the boxes below.</span>';
+}
+function drawPasted() {
+  $("p-list").innerHTML = state.pasted.map((r, i) => { const sc = R.imaging(r.name + ". " + r.text);
+    return `<div class="rep"><div class="ttl">${esc(r.name)} <span class="muted">${ago(r.t)}</span> <button data-rm="${i}">Remove</button></div><div>${esc(r.text)}</div><div class="row">${chips(sc.finds, sc.cecum)}</div></div>`; }).join("");
+  $("pastesum").textContent = state.pasted.length ? state.pasted.length + " added" : "";
+  $("p-list").querySelectorAll("[data-rm]").forEach((b) => (b.onclick = () => { state.pasted.splice(+b.dataset.rm, 1); drawPasted(); draw(); }));
+}
+$("p-add").onclick = () => { const d = pasteDraft(); if (!d) return; delete d.draft; state.pasted.push(d); $("p-text").value = ""; $("p-ago").value = ""; drawPreview(); drawPasted(); draw(); };
+$("p-clear").onclick = () => { $("p-text").value = ""; drawPreview(); draw(); };
+
 /* ---------- note ---------- */
 function noteBuild(full) {
   const x = state.x; if (!x) return null;
@@ -201,7 +226,7 @@ function noteBuild(full) {
   const vit = [o.hr != null ? "HR " + o.hr : "", o.sbp != null ? "SBP " + o.sbp : "", o.temp != null ? "T " + o.temp : ""].filter(Boolean).join(", ");
   const labs = [o.lactate != null ? "lactate " + o.lactate : "", o.wbc != null ? "WBC " + o.wbc : "", o.crp != null ? "CRP " + o.crp : "", o.k != null ? "K " + o.k : "", o.hco3 != null ? "HCO3 " + o.hco3 : "", o.cr != null ? "Cr " + o.cr + (x.crBase ? " (baseline " + x.crBase + ")" : "") : ""].filter(Boolean).join(", ");
   if (vit) summary.push("Vitals: " + vit + "."); if (labs) summary.push("Labs: " + labs + ".");
-  const img = x.scans.length ? x.scans.slice(full ? 0 : -1).map((r) => `${r.name}${r.pasted ? "" : " (" + ago(r.t) + ")"}: ${r.text}`) : ["No abdominal imaging found."];
+  const img = x.scans.length ? x.scans.slice(full ? 0 : -1).map((r) => `${r.name} (${r.pasted ? "pasted, " : ""}${ago(r.t)}): ${r.text}`) : ["No abdominal imaging found."];
   const risk = [`${x.perf.label}${x.perf.why.length ? ": " + x.perf.why.join(", ") : ""}.`].concat(x.flags.filter((g) => g.lvl !== "info").map((g) => g.t));
   const plan = [x.path.label + "."].concat(full ? x.path.steps : x.path.steps.slice(0, 4));
   if (o.wsccGiven) plan.push(`Water-soluble contrast given ${o.wsccHours ?? "?"} h ago: ${x.w.label}.`);
@@ -227,7 +252,7 @@ function autoFill(preset) {
   $("n-cecum").value = ""; $("n-nom").value = p.nomHours ?? (f && f.admitT ? Math.round((Date.now() - f.admitT) / HR) : "");
   $("n-ng").value = f && f.ng24 != null ? f.ng24 : ""; $("n-npo").value = p.npoDays ?? "";
   $("w-given").value = p.wsccGiven ? "yes" : ""; $("w-hours").value = p.wsccHours ?? ""; $("w-colon").value = ""; $("w-asp").checked = false; $("w-allergy").checked = false;
-  $("pasted").value = "";
+  state.pasted = []; $("p-text").value = ""; $("p-ago").value = ""; drawPasted();
   $("h-kind").value = p.cause === "malignant" ? "mbo" : "nonop"; $("h-fu").value = ""; $("h-phone").value = "";
   if (p.cause && $("causepick").querySelector(`option[value="${p.cause}"]`)) $("causepick").value = p.cause;
 }
@@ -240,7 +265,7 @@ function load(raw, note, errors, preset) {
   draw();
 }
 document.addEventListener("change", (e) => { const t = e.target; if (t.id === "testsel") return; if (t.id === "causepick") return drawCause(); if (/^h-/.test(t.id)) return drawHandout(); if (t.closest("#note")) return; if (t.matches("input, select, textarea")) draw(); });
-document.addEventListener("input", (e) => { const t = e.target; if (t.closest("#note")) return; if (/^h-/.test(t.id)) return drawHandout(); if (t.matches("input[type=number]")) { t.classList.add("typed"); draw(); } if (t.id === "pasted") draw(); });
+document.addEventListener("input", (e) => { const t = e.target; if (t.closest("#note")) return; if (/^h-/.test(t.id)) return drawHandout(); if (t.matches("input[type=number]")) { t.classList.add("typed"); draw(); } if (t.id === "p-text") { drawPreview(); draw(); } });
 $("h-print").onclick = () => { const w = window.open("", "_blank"); if (!w) return; w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Bowel obstruction: patient information</title><style>body{font:16px/1.5 system-ui,sans-serif;max-width:720px;margin:24px auto;padding:0 16px}h3{margin:16px 0 4px}</style></head><body>${handoutHTML()}</body></html>`); w.document.close(); w.focus(); };
 $("clear").onclick = () => { $("testsel").value = ""; load(null, "Open from Cerner to read the chart, or pick a made-up patient:"); };
 const SAMPLES = window.SBO_SAMPLES || [];

@@ -24,10 +24,11 @@
     .row { display:flex; flex-wrap:wrap; gap:10px 16px; align-items:center; margin:8px 0; }
     .inl { display:inline-flex; gap:6px; align-items:center; }
     .muted { color:var(--muted); } .err { color:var(--r-ink); }
-    .tiles { display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:10px; }
-    .tile { border-radius:10px; padding:10px 14px; border:1px solid var(--line); background:var(--card); }
-    .tile .k { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; }
-    .tile .big { font-size:21px; font-weight:700; margin:2px 0; } .tile .s { font-size:12.5px; }
+    .tiles { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:6px; align-items:start; }
+    .tile { border-radius:8px; padding:5px 10px; border:1px solid var(--line); background:var(--card); }
+    .tile .k { font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; }
+    .tile .big { font-size:14px; font-weight:700; margin:1px 0; line-height:1.25; }
+    .tile .s { font-size:11px; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
     .t0 { background:var(--g-bg); color:var(--g-ink); } .t1 { background:var(--b-bg); color:var(--b-ink); } .t2 { background:var(--a-bg); color:var(--a-ink); } .t3 { background:var(--r-bg); color:var(--r-ink); }
     .t0 .k, .t1 .k, .t2 .k, .t3 .k { color:inherit; opacity:.8; }
     .alert { border-left:4px solid; border-radius:6px; padding:8px 12px; margin:6px 0; } .alert b { margin-right:6px; }
@@ -60,6 +61,28 @@
     <div class="tiles" id="tiles"></div>
     <details class="card" open><summary><span>Chart alerts</span><span class="muted" id="alertsum"></span></summary><div class="body" id="alerts"></div></details>
 
+    <details class="card inputs" open id="pastecard">
+      <summary><span>Paste CT / X-ray report</span><span class="muted" id="pastesum"></span></summary>
+      <div class="body">
+        <div class="muted">Paste the report text from PowerChart (outside hospital CT, preliminary read, or anything the chart reader missed). It is read here only; nothing is saved or sent.</div>
+        <div class="row">
+          <label class="inl">Study <select id="p-type">
+            <option value="CT abdomen/pelvis with IV contrast">CT abdomen/pelvis with IV contrast</option>
+            <option value="CT abdomen/pelvis non-contrast">CT abdomen/pelvis non-contrast</option>
+            <option value="CT angiogram abdomen">CT angiogram abdomen</option>
+            <option value="CT/MR enterography">CT/MR enterography</option>
+            <option value="XR abdomen">XR abdomen (supine/upright)</option>
+            <option value="XR abdomen (water-soluble contrast follow-up)">XR abdomen: water-soluble contrast follow-up</option>
+            <option value="XR chest upright">XR chest upright (free air)</option>
+            <option value="Ultrasound abdomen / POCUS">Ultrasound abdomen / POCUS</option></select></label>
+          <label class="inl">Done <input type="number" id="p-ago" min="0" placeholder="0"> hours ago</label>
+        </div>
+        <textarea id="p-text" rows="7" style="width:100%" placeholder="Paste the findings and impression here…"></textarea>
+        <div id="p-preview" class="row"></div>
+        <div class="row"><button id="p-add" class="primary">Add report</button><button id="p-clear">Clear box</button><span class="muted">Findings above update as you paste; "Add report" keeps it in the list so you can paste another (e.g. the 24 h contrast X-ray).</span></div>
+        <div id="p-list"></div>
+      </div>
+    </details>
     <details class="card inputs" open>
       <summary><span>Patient and situation</span><span class="muted" id="ptsum"></span></summary>
       <div class="body">
@@ -109,7 +132,7 @@
     <details class="card" open><summary><span>Imaging: which test, and why</span></summary><div class="body scroll" id="imgwhich"></div></details>
     <details class="card inputs" open><summary><span>Imaging reports</span><span class="muted" id="imgsum"></span></summary><div class="body">
       <div id="reports"></div>
-      <div class="row"><textarea id="pasted" rows="3" style="width:100%" placeholder="Paste a CT or X-ray report here if the chart reader did not find it (outside imaging, preliminary read)…"></textarea></div></div></details>
+      <div class="muted">To add a report the chart reader did not find, use "Paste CT / X-ray report" on the Assess tab.</div></div></details>
 
     <details class="card" open><summary><span>Perforation and ischemia risk</span><span class="muted" id="perfsum"></span></summary><div class="body" id="perf"></div></details>
     <details class="card" open><summary><span>Perforation / ischemia: labs and imaging needed</span><span class="muted" id="perfneedsum"></span></summary><div class="body scroll" id="perfneed"></div></details>
@@ -171,10 +194,10 @@
   <script src="../hospitalist-toolkit/tools/sbo/rules.js?v=20261125c"></script>
   <script src="../hospitalist-toolkit/tools/sbo/chart.js?v=20261125c"></script>
   <script src="../hospitalist-toolkit/tools/sbo/samples.js?v=20261125c"></script>
-  <script src="../hospitalist-toolkit/tools/sbo/app.js?v=20261125c"></script>
+  <script src="../hospitalist-toolkit/tools/sbo/app.js?v=20261125e"></script>
   <script src="../hospitalist-toolkit/subtabs.js?v=20261121f"></script>
   <script>SubTabs.mount({ store: "sbo", top: ["#tiles", "Chart alerts"], dotSel: ".alert.urgent, .tile.t3, .verdict.t3", tabs: [
-      {"key": "assess", "label": "Assess", "match": ["Patient and situation", "Plan now"]},
+      {"key": "assess", "label": "Assess", "match": ["Paste CT", "Patient and situation", "Plan now"]},
       {"key": "sx", "label": "Symptoms & mimics", "match": ["Symptoms and signs", "Is it really SBO"]},
       {"key": "causes", "label": "Causes", "match": ["Likely causes", "All causes"]},
       {"key": "tests", "label": "Labs & imaging", "match": ["Labs to order", "Imaging: which test", "Imaging reports"]},
