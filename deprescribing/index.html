@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deprescribing</title>
+<style>
+  :root{--ink:#1f2933;--muted:#5f6c7b;--line:#dde3ea;--bg:#f5f7fa;--card:#fff;--accent:#0b6bcb;--accent-soft:#e3eefc;--th:#eef1f4;
+        --red:#9b1c1c;--red-soft:#fde8e8;--amber:#8a5200;--amber-soft:#fff1d6;--green:#1d6b3a;--green-soft:#e4f4ea}
+  @media (prefers-color-scheme: dark){:root{--ink:#e8edf2;--muted:#9aa7b5;--line:#2b333d;--bg:#111418;--card:#1a1f26;--accent:#6aa9ff;--accent-soft:#14325c;--th:#222a33;
+        --red:#ffb3b3;--red-soft:#4a1d1d;--amber:#ffd38a;--amber-soft:#4a3511;--green:#9be0b1;--green-soft:#16361f}}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--bg);font-size:14.5px;line-height:1.45}
+  header{background:var(--accent);color:#fff;padding:10px 16px;display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline}
+  header h1{font-size:17px;margin:0;font-weight:600}
+  header .pt{font-size:13.5px;opacity:.95}
+  nav{display:flex;flex-wrap:wrap;gap:2px;background:var(--card);border-bottom:1px solid var(--line);padding:0 8px;position:sticky;top:0;z-index:5}
+  nav button{border:0;background:none;padding:10px 11px;font-size:13.5px;cursor:pointer;color:var(--muted);border-bottom:3px solid transparent}
+  nav button.on{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+  main{max-width:1150px;margin:0 auto;padding:14px 16px 60px}
+  section.tab{display:none} section.tab.on{display:block}
+  h2{font-size:17px;margin:6px 0 10px} h3{font-size:15px;margin:14px 0 6px} h4{font-size:14px;margin:12px 0 4px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:0 0 12px}
+  .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px}
+  details{background:var(--card);border:1px solid var(--line);border-radius:8px;margin:0 0 8px;padding:0 12px}
+  details>summary{cursor:pointer;padding:9px 0;font-weight:600;list-style-position:inside}
+  details[open]>summary{border-bottom:1px solid var(--line);margin-bottom:8px}
+  details>*:last-child{margin-bottom:10px}
+  .tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 8px}
+  ul{margin:4px 0 8px;padding-left:20px} li{margin:2px 0}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;margin:4px 0 8px}
+  th,td{border:1px solid var(--line);padding:5px 7px;text-align:left;vertical-align:top}
+  th{background:var(--th)}
+  .flag{border-radius:6px;padding:7px 10px;margin:5px 0;border-left:4px solid}
+  .flag.red{background:var(--red-soft);border-color:var(--red)}
+  .flag.amber{background:var(--amber-soft);border-color:#d4a72c}
+  .flag.green{background:var(--green-soft);border-color:var(--green)}
+  .flag.info{background:var(--accent-soft);border-color:var(--accent)}
+  .flag .src{font-size:12px;color:var(--muted);margin-top:2px}
+  .flag a{margin-left:4px}
+  .muted{color:var(--muted);font-size:13px}
+  .pill{display:inline-block;border-radius:10px;padding:1px 8px;font-size:12px;background:var(--th);margin:0 4px 4px 0}
+  .pill.red{background:var(--red-soft);color:var(--red)} .pill.amber{background:var(--amber-soft);color:var(--amber)} .pill.info{background:var(--accent-soft);color:var(--accent)} .pill.green{background:var(--green-soft);color:var(--green)}
+  .cnt{display:inline-block;min-width:20px;text-align:center;border-radius:10px;padding:0 6px;font-size:12px;margin-left:4px;font-weight:700}
+  .cnt.red{background:var(--red);color:#fff} .cnt.amber{background:#d4a72c;color:#fff} .cnt.info{background:var(--th);color:var(--muted)}
+  .btn{background:var(--accent);color:#fff;border:0;border-radius:6px;padding:7px 12px;cursor:pointer;font-size:13.5px}
+  .btn.ghost{background:var(--card);color:var(--accent);border:1px solid var(--accent)}
+  .btn.small{padding:4px 9px;font-size:12.5px}
+  select,input,textarea{background:var(--card);color:var(--ink)}
+  select,input[type=number],input[type=text],input:not([type]){font-size:13.5px;padding:4px 6px;border:1px solid var(--line);border-radius:5px}
+  textarea{width:100%;min-height:400px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;padding:8px;border:1px solid var(--line);border-radius:6px}
+  .calc{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin:4px 0 6px}
+  .calc input[type=number]{width:80px}
+  .stats{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 10px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 12px;min-width:120px}
+  .stat b{display:block;font-size:22px;color:var(--accent)} .stat span{font-size:12.5px;color:var(--muted)}
+  .stat.red b{color:var(--red)} .stat.amber b{color:var(--amber)}
+  tr.flagged td:first-child{border-left:4px solid #d4a72c} tr.redrow td:first-child{border-left:4px solid var(--red)}
+  td select{max-width:190px}
+  .score{font-size:26px;font-weight:700;color:var(--accent)}
+  @media print{nav,header,.noprint,#cw-btn,#cw-panel,.tpol-top{display:none!important} body{background:#fff;color:#000}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Deprescribing</h1>
+  <span class="pt">Whole-list review: Beers 2023, STOPP/START v3, STOPPFall, STOPPFrail, anticholinergic burden, kidney doses, no-indication check. Read-only.</span>
+</header>
+<div id="banner" class="flag amber" style="margin:10px 16px 0"><b>Decision support only. It orders nothing.</b> Criteria are paraphrased and were written by Claude from general knowledge (Beers 2023 from the supplied paper; STOPP/START v3, STOPPFall, STOPPFrail v2, ACB scale, ThinkCascades from memory) and have <b>not been verified</b>. Drugs are matched by name and problems by words: check anything that looks wrong in PowerChart. Use made-up or sandbox patients until Island Health approves real data.</div>
+<div id="actNowCard" class="card" style="margin:10px 16px 0" hidden><b style="color:var(--red)">Act now</b><div id="actNow"></div></div>
+<nav id="nav">
+  <button data-t="review" class="on">Review</button>
+  <button data-t="meds">Medications</button>
+  <button data-t="achb">Anticholinergic</button>
+  <button data-t="kidney">Kidney</button>
+  <button data-t="falls">Falls</button>
+  <button data-t="howto">How to stop</button>
+  <button data-t="note">Note</button>
+</nav>
+<main>
+
+<!-- ================= REVIEW ================= -->
+<section class="tab on" id="tab-review">
+  <div class="card">
+    <div id="pstatus" class="muted">Open from Cerner to read the chart, or pick a made-up patient:</div>
+    <div style="margin-top:6px"><select id="testsel"><option value="">Made-up patient…</option></select> <span id="ptLine" class="muted"></span></div>
+    <div id="errs" style="color:var(--red);font-size:12.5px"></div>
+  </div>
+  <div class="tools noprint"><button class="btn ghost small" data-expand="tab-review">Expand all</button><button class="btn ghost small" data-collapse="tab-review">Collapse all</button></div>
+  <details open data-k="r-factors"><summary>Patient factors (change these – the flags update)</summary>
+    <div class="calc">
+      <label>Clinical Frailty Scale <select id="fCfs"><option value="">–</option><option value="1">1 Very fit</option><option value="2">2 Fit</option><option value="3">3 Managing well</option><option value="4">4 Living with very mild frailty</option><option value="5">5 Mild frailty</option><option value="6">6 Moderate frailty</option><option value="7">7 Severe frailty</option><option value="8">8 Very severe frailty</option><option value="9">9 Terminally ill</option></select></label>
+      <label>Goals / life expectancy <select id="fGoals"><option value="">Not set</option><option value="active">Active treatment</option><option value="limited">Limited life expectancy (about &lt;1–2 years)</option><option value="palliative">Palliative / comfort</option></select></label>
+      <label><input type="checkbox" id="fFalls"> Fell before or during this admission</label>
+    </div>
+    <div id="factorLine" class="muted"></div>
+    <p class="muted">CFS ≥7 or limited/palliative goals turn on the STOPPFrail checks. Weight and creatinine can be changed on the Kidney tab.</p>
+  </details>
+  <div id="stats" class="stats"></div>
+  <div class="tools noprint">
+    <label>Show <select id="rShow"><option value="all">All flags</option><option value="ra">Red and amber only</option><option value="red">Red only</option></select></label>
+    <label>Group by <select id="rGroup"><option value="type">Type of problem</option><option value="med">Medication</option></select></label>
+  </div>
+  <div id="groups"><span class="muted">No patient loaded.</span></div>
+  <p class="muted">Rules are a prompt, not a decision. Each flag shows which criterion fired and the data that triggered it. Where Beers 2023 repeats a flag, it is added as a source rather than a second line.</p>
+</section>
+
+<!-- ================= MEDICATIONS ================= -->
+<section class="tab" id="tab-meds">
+  <h2>Medication list</h2>
+  <div class="tools noprint">
+    <label>Show <select id="mShow"><option value="all">All medications</option><option value="flag">Flagged only</option><option value="noind">No indication found</option><option value="frid">Fall-risk drugs</option><option value="achb">Anticholinergic</option><option value="renal">Kidney dose flags</option><option value="undecided">No decision yet</option></select></label>
+    <button class="btn ghost small" id="mAllCont">Mark unflagged as "Continue"</button>
+    <span class="muted">Decisions go into the Note tab.</span>
+  </div>
+  <div id="medTable"><span class="muted">No patient loaded.</span></div>
+</section>
+
+<!-- ================= ANTICHOLINERGIC ================= -->
+<section class="tab" id="tab-achb">
+  <h2>Anticholinergic burden (ACB scale)</h2>
+  <div id="achbBody"><span class="muted">No patient loaded.</span></div>
+  <details data-k="a-about"><summary>About the ACB score</summary>
+    <ul><li>Each drug scores 1 (possible), 2 or 3 (definite anticholinergic effect). Add them up.</li>
+      <li>A total of <b>3 or more</b> is linked to more cognitive impairment, delirium, falls and higher mortality (each extra point adds risk).</li>
+      <li>Other scales (Drug Burden Index, ARS, Beers Table 7) rank some drugs differently; this tab uses the ACB 2012 update. Transcribed from memory: UNVERIFIED.</li></ul></details>
+</section>
+
+<!-- ================= KIDNEY ================= -->
+<section class="tab" id="tab-kidney">
+  <h2>Kidney function and doses</h2>
+  <div class="card">
+    <div class="calc">
+      <label>Age <input type="number" id="kAge"></label>
+      <label>Sex <select id="kSex"><option value="female">Female</option><option value="male">Male</option></select></label>
+      <label>Weight (kg) <input type="number" id="kWt" step="0.1"></label>
+      <label>Creatinine (µmol/L) <input type="number" id="kCr"></label>
+      <button class="btn ghost small" id="kReset">Reset to chart</button>
+    </div>
+    <div id="kOut"></div>
+    <p class="muted">Cockcroft-Gault CrCl with actual body weight (DOAC labels use this). In obesity or very low weight, discuss with pharmacy. eGFR comes from the lab.</p>
+  </div>
+  <div id="kFlags"></div>
+  <details data-k="k-table" open><summary>Medications on this list that need a kidney check</summary><div id="kTable"></div></details>
+</section>
+
+<!-- ================= FALLS ================= -->
+<section class="tab" id="tab-falls">
+  <h2>Falls: fall-risk-increasing drugs (STOPPFall)</h2>
+  <div class="card">
+    <div class="calc">
+      <label><input type="checkbox" id="fFalls2"> Fell before or during this admission</label>
+      <label>Lying SBP <input type="number" id="oLie"></label>
+      <label>Standing SBP (1–3 min) <input type="number" id="oStand"></label>
+      <span id="oOut" class="muted"></span>
+    </div>
+    <p class="muted">A drop of ≥20 systolic (or ≥10 diastolic) is orthostatic hypotension.</p>
+  </div>
+  <div id="fallsBody"><span class="muted">No patient loaded.</span></div>
+  <details data-k="f-about"><summary>STOPPFall drug classes</summary>
+    <p>Sedative hypnotics (benzodiazepines, Z-drugs), antipsychotics, opioids, antidepressants, antiepileptics, diuretics, alpha-blockers (for BP and for the prostate), centrally acting antihypertensives, vasodilators (nitrates), sedating antihistamines, and anticholinergic bladder drugs. Also consider insulin/sulfonylureas (hypoglycemia) and anything causing low BP.</p>
+    <p class="muted">STOPPFall (Seppala et al., Age Ageing 2021). Paraphrased from memory: UNVERIFIED. The hip fracture pathway tab covers post-fall work-up.</p></details>
+</section>
+
+<!-- ================= HOW TO STOP ================= -->
+<section class="tab" id="tab-howto">
+  <h2>How to stop</h2>
+  <div class="tools noprint">
+    <label>Drug group <select id="hSel"><option value="">This patient's drugs</option></select></label>
+    <button class="btn ghost small" data-expand="tab-howto">Expand all</button><button class="btn ghost small" data-collapse="tab-howto">Collapse all</button>
+  </div>
+  <div class="flag info">Typical taper starting points only. The <a href="https://deprescribing.org/resources/deprescribing-guidelines-algorithms/" target="_blank" rel="noopener">deprescribing.org algorithms</a> (PPI, benzodiazepines, antipsychotics, antihyperglycemics, cholinesterase inhibitors/memantine) and <a href="https://medstopper.com/" target="_blank" rel="noopener">MedStopper</a> are the sources of truth; they also have patient handouts.</div>
+  <div id="howBody"></div>
+</section>
+
+<!-- ================= NOTE ================= -->
+<section class="tab" id="tab-note">
+  <h2>Note: medication review section</h2>
+  <div class="card noprint">
+    <div class="calc">
+      <label>Discussed with <select id="nWho"><option value="">–</option><option>patient</option><option>patient and family</option><option>substitute decision-maker</option><option>family</option><option>ward pharmacist</option><option>patient and ward pharmacist</option></select></label>
+      <label><input type="checkbox" id="nFlags" checked> Include flags not yet decided</label>
+    </div>
+    <div class="calc"><label style="flex:1">My decision / plan: <input id="noteDecision" style="width:80%" placeholder="e.g. Taper zopiclone over 4 weeks; pharmacy to send taper to community pharmacy"></label></div>
+    <button class="btn ghost" id="noteRebuild">Rebuild</button> <button class="btn" id="noteCopy">Copy</button>
+  </div>
+  <textarea id="noteText"></textarea>
+  <p class="muted">Editable. Built from the decisions on the Medications tab and the flags. Paste into the PowerChart note (medication reconciliation section).</p>
+</section>
+
+</main>
+<script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script><script src="../hospitalist-toolkit/pdf-overlay.js?v=20261120p"></script>
+<script src="../hospitalist-toolkit/tools/meds/beers-data.js?v=20261124a"></script>
+<script src="../hospitalist-toolkit/tools/deprx/rules.js?v=20261124a"></script>
+<script src="../hospitalist-toolkit/tools/deprx/chart.js?v=20261124a"></script>
+<script src="../hospitalist-toolkit/tools/deprx/content.js?v=20261124a"></script>
+<script src="../hospitalist-toolkit/tools/deprx/samples.js?v=20261124a"></script>
+<script src="../hospitalist-toolkit/tools/deprx/app.js?v=20261124a"></script>
+<script src="../hospitalist-toolkit/tabpolish.js?v=20261121a"></script>
+<script>TabPolish.mount({ nav: "#nav", panel: (k) => "#tab-" + k, move: ["#banner", "#actNowCard"], redSel: ".flag.red" });</script>
+<script src="../hospitalist-toolkit/consult-widget.js?v=20261124a"></script>
+</body>
+</html>

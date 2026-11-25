@@ -95,3 +95,14 @@ Toolkit tab "ACLS (code & peri-arrest)" (hospitalist-toolkit/tools/acls/, key ac
 - Code status: problem list, observations and document titles searched for code status / MOST / DNR wording (MOST designation shown); arrest-risk screen (12 h vitals, K, Mg, QTc, lactate, pH, troponin, sedatives) with a prompt to have the goals-of-care talk; talking-about-CPR prompts.
 - Code note draft from the event log and chart, family update script, team debrief checklist. Consult button defaults to ICU.
 - Six made-up patients (?demo=1..6). UNVERIFIED draft from the 2025 AHA guidelines. Tests: node hospitalist-toolkit/tests/test_acls.js
+
+## 26. Deprescribing (whole-list medication review)
+
+Toolkit tab "Deprescribing" (hospitalist-toolkit/tools/deprx/, key deprx, open with #deprx; Safety menu) and standalone app deprescribing/ (launch.html, index.html loading the toolkit's scripts).
+- Chart: active meds (PRN marked, brand names incl. Canadian brands mapped to generics), age, sex, weight, creatinine, eGFR, K, Na, Mg, Ca, HbA1c, TSH, INR, platelets, QTc, lowest SBP and HR (72 h), problem list (falls/fractures, dementia, delirium, AF, CAD, CKD etc.).
+- Rules (rules.js), each flag showing the criterion and the data that fired it, grouped by type: labs/ECG/vitals, bleeding and kidney injury, kidney dose (Cockcroft-Gault CrCl; apixaban 2-of-3 check, DOACs, metformin, gabapentinoids, MRAs, digoxin, glyburide, opioids, etc.), falls (STOPPFall), sedation/delirium, anticholinergic load, prescribing cascades (ThinkCascades-type), duplicates/interactions, no indication found, limited life expectancy (STOPPFrail, on when CFS ≥7 or goals set), possibly missing (START: laxative with opioid, bone protection after fragility/hip fracture, anticoagulant in AF). Beers 2023 (from tools/meds/beers-data.js) is merged in as an extra source where it repeats a flag.
+- Anticholinergic tab: ACB score per drug, total, lower-burden swaps. Kidney tab: editable weight/creatinine, recalculates. Falls tab: fell checkbox, lying/standing BP. How to stop tab: 26 taper guides (dropdown; this patient's groups open), links to deprescribing.org algorithms and MedStopper.
+- Medications tab: per-drug decision dropdown (continue / indication confirmed / reduce / taper / stop / hold / switch …) with a dose/taper box; Note tab builds a med-review section from the decisions plus undecided red/amber flags. Consult button defaults to Geriatrics.
+- Five made-up patients: ?demo=1..5 (hip fracture after a fall, CKD diabetes, dementia with limited life expectancy, AF + CAD triple therapy, clean list).
+- Section headings collapsible, open/closed remembered (localStorage "deprx-open"); decisions kept per patient for the browser session.
+- UNVERIFIED draft: STOPP/START v3, STOPPFall, STOPPFrail v2, ACB scale and taper guides were written from general knowledge, not transcribed from the papers. Verify before clinical use. Tests: node hospitalist-toolkit/tests/test_deprx.js
