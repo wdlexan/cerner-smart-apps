@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Small bowel obstruction</title>
+  <style>
+    :root { --bg:#f5f7fa; --card:#fff; --ink:#1f2933; --muted:#5f6c7b; --accent:#0b6bcb; --line:#dde3ea;
+            --r-bg:#fde8e8; --r-ink:#9b1c1c; --a-bg:#fff1d6; --a-ink:#8a5200; --b-bg:#e3eefc; --b-ink:#0b4a99; --g-bg:#e4f4ea; --g-ink:#1d6b3a; --warn-bg:#fff4e5; --warn-line:#f0c27b; }
+    @media (prefers-color-scheme: dark) { :root { --bg:#111418; --card:#1a1f26; --ink:#e8edf2; --muted:#9aa7b5; --accent:#6aa9ff; --line:#2b333d;
+            --r-bg:#4a1d1d; --r-ink:#ffb3b3; --a-bg:#4a3511; --a-ink:#ffd38a; --b-bg:#14325c; --b-ink:#a9cdff; --g-bg:#16361f; --g-ink:#9be0b1; --warn-bg:#3a2e15; --warn-line:#6b5420; } }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); }
+    header { padding:14px 20px; border-bottom:1px solid var(--line); background:var(--card); }
+    header h1 { margin:0; font-size:19px; } header .sub { font-size:13px; color:var(--muted); margin-top:2px; }
+    main { max-width:1000px; margin:16px auto 40px; padding:0 16px; display:grid; gap:14px; }
+    .banner { background:var(--warn-bg); border:1px solid var(--warn-line); border-radius:8px; padding:10px 14px; font-size:13px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:10px; font-size:13.5px; }
+    .card > summary { padding:10px 16px; font-weight:700; font-size:15px; cursor:pointer; display:flex; justify-content:space-between; gap:10px; }
+    .card > .body { padding:0 16px 14px; }
+    select, input, button, textarea { font:inherit; font-size:13px; padding:5px 8px; border:1px solid var(--line); border-radius:6px; background:var(--card); color:var(--ink); }
+    button { cursor:pointer; } button.primary { border-color:var(--accent); color:var(--accent); }
+    input[type=number] { width:78px; } input.typed { border-color:var(--accent); font-weight:600; }
+    .row { display:flex; flex-wrap:wrap; gap:10px 16px; align-items:center; margin:8px 0; }
+    .inl { display:inline-flex; gap:6px; align-items:center; }
+    .muted { color:var(--muted); } .err { color:var(--r-ink); }
+    .tiles { display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:10px; }
+    .tile { border-radius:10px; padding:10px 14px; border:1px solid var(--line); background:var(--card); }
+    .tile .k { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; }
+    .tile .big { font-size:21px; font-weight:700; margin:2px 0; } .tile .s { font-size:12.5px; }
+    .t0 { background:var(--g-bg); color:var(--g-ink); } .t1 { background:var(--b-bg); color:var(--b-ink); } .t2 { background:var(--a-bg); color:var(--a-ink); } .t3 { background:var(--r-bg); color:var(--r-ink); }
+    .t0 .k, .t1 .k, .t2 .k, .t3 .k { color:inherit; opacity:.8; }
+    .alert { border-left:4px solid; border-radius:6px; padding:8px 12px; margin:6px 0; } .alert b { margin-right:6px; }
+    .alert.urgent { background:var(--r-bg); color:var(--r-ink); } .alert.action { background:var(--a-bg); color:var(--a-ink); } .alert.info { background:var(--b-bg); color:var(--b-ink); }
+    table { border-collapse:collapse; width:100%; font-size:13px; }
+    th, td { border-bottom:1px solid var(--line); padding:5px 8px; text-align:left; vertical-align:top; }
+    th { color:var(--muted); font-weight:600; } td.num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+    td.hi { color:var(--r-ink); font-weight:600; } .scroll { overflow-x:auto; }
+    .plan h3 { font-size:14px; margin:12px 0 4px; } .plan ul, .plan ol { margin:4px 0 8px 18px; padding:0; } .plan li { margin:3px 0; }
+    .verdict { border-radius:10px; padding:10px 14px; margin:8px 0; } .verdict .big { font-size:17px; font-weight:700; }
+    .chip { display:inline-block; padding:1px 8px; border-radius:10px; font-size:12px; font-weight:600; }
+    .c-have { background:var(--g-bg); color:var(--g-ink); } .c-miss { background:var(--a-bg); color:var(--a-ink); } .c-bad { background:var(--r-bg); color:var(--r-ink); }
+    .inputs fieldset { border:1px solid var(--line); border-radius:8px; padding:6px 12px 8px; margin:6px 0; } .inputs legend { font-weight:600; font-size:13px; padding:0 4px; }
+    .auto { font-size:11px; color:var(--accent); margin-left:3px; }
+    .dd { border:1px solid var(--line); border-radius:8px; padding:6px 10px; margin:6px 0; } .dd > summary { cursor:pointer; font-weight:600; } .ddb { margin-top:6px; }
+    .rep { border:1px solid var(--line); border-radius:8px; padding:8px 12px; margin:6px 0; } .rep .ttl { font-weight:600; }
+    .handout { border:1px dashed var(--line); border-radius:8px; padding:10px 14px; background:var(--card); max-height:440px; overflow:auto; }
+    .src { font-size:12px; color:var(--muted); margin-top:8px; }
+    @media print { .noprint { display:none; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Small bowel obstruction: symptoms, causes, labs and imaging, perforation / ischemia risk, treatment</h1>
+    <div class="sub">Reads vitals, labs, CT and X-ray reports, medications, problem list and past surgery. Flags ischemia, closed loop and perforation, picks the pathway (surgery now, non-operative care with a water-soluble contrast challenge, LBO, ileus, malignant obstruction), reviews medications while NPO, works out fluids, and drafts the note. Read-only.</div>
+  </header>
+  <main>
+    <div class="banner"><b>Decision-support draft. It orders nothing.</b> Rules were written by Claude from the 2017 WSES Bologna guideline for adhesive SBO, the ACR Appropriateness Criteria for suspected SBO and the water-soluble contrast meta-analyses, and have <b>not been verified</b>. Every SBO should have general surgery involved; check doses and local antibiotic guidance. CT findings are read from report <b>text</b> (negated phrases skipped): read the report yourself. Use made-up or Cerner sandbox patients until Island Health approves real data.</div>
+
+    <div class="tiles" id="tiles"></div>
+    <details class="card" open><summary><span>Chart alerts</span><span class="muted" id="alertsum"></span></summary><div class="body" id="alerts"></div></details>
+
+    <details class="card inputs" open>
+      <summary><span>Patient and situation</span><span class="muted" id="ptsum"></span></summary>
+      <div class="body">
+        <div id="pstatus" class="muted">Open from Cerner to read the chart, or pick a made-up patient:</div>
+        <div class="row"><select id="testsel"><option value="">Made-up patient…</option></select><button id="clear" hidden>Clear</button></div>
+        <div id="errs" class="err" style="font-size:12.5px"></div>
+        <fieldset><legend>Symptoms</legend><div class="row">
+          <label class="inl"><input type="checkbox" id="colicky"> Colicky pain</label>
+          <label class="inl"><input type="checkbox" id="continuous"> Constant pain / out of proportion</label>
+          <label class="inl"><input type="checkbox" id="vomiting"> Vomiting</label>
+          <label class="inl"><input type="checkbox" id="feculent"> Feculent vomit</label>
+          <label class="inl"><input type="checkbox" id="distension"> Distension</label>
+          <label class="inl"><input type="checkbox" id="obstipation"> No flatus or stool</label></div></fieldset>
+        <fieldset><legend>Exam</legend><div class="row">
+          <label class="inl"><input type="checkbox" id="peritonitis"> Peritonitis (rigid, rebound, percussion tender)</label>
+          <label class="inl"><input type="checkbox" id="guarding"> Guarding / localized tenderness</label>
+          <label class="inl">Hernia <select id="hernia"><option value="none">None found (all sites incl. femoral checked)</option><option value="reducible">Reducible</option><option value="irreducible">Irreducible, not tender</option><option value="tender">Irreducible and tender</option><option value="notchecked">Not checked yet</option></select></label>
+          <label class="inl"><input type="checkbox" id="dry"> Looks volume-depleted</label></div></fieldset>
+        <fieldset><legend>History <span class="auto">filled from problem list, procedures and medications</span></legend><div class="row">
+          <label class="inl"><input type="checkbox" id="priorSurgery"> Previous abdominal / pelvic surgery</label>
+          <label class="inl"><input type="checkbox" id="recentSurgery"> Abdominal surgery in last 30 days</label>
+          <label class="inl"><input type="checkbox" id="bypass"> Gastric bypass</label>
+          <label class="inl"><input type="checkbox" id="cancer"> Cancer</label>
+          <label class="inl"><input type="checkbox" id="carcinomatosis"> Carcinomatosis</label>
+          <label class="inl"><input type="checkbox" id="crohn"> Crohn disease</label>
+          <label class="inl"><input type="checkbox" id="radiation"> Abdominal/pelvic radiation</label>
+          <label class="inl"><input type="checkbox" id="steroid"> On steroids / immunosuppressed</label></div>
+          <div class="row"><label class="inl">Working cause <select id="cause"><option value="">Not decided</option><option value="adhesions">Adhesions</option><option value="hernia">Hernia</option><option value="malignant">Cancer / carcinomatosis</option><option value="crohn">Crohn stricture</option><option value="unknown">Unknown</option><option value="other">Other</option></select></label>
+            <span class="muted" id="surgList"></span></div></fieldset>
+        <fieldset><legend>Numbers <span class="auto">latest from the chart; type to override</span></legend><div class="row">
+          <label class="inl">HR <input type="number" id="n-hr"></label><label class="inl">SBP <input type="number" id="n-sbp"></label><label class="inl">Temp <input type="number" step="0.1" id="n-temp"> °C</label>
+          <label class="inl">Lactate <input type="number" step="0.1" id="n-lactate"> mmol/L</label><label class="inl">WBC <input type="number" step="0.1" id="n-wbc"></label><label class="inl">CRP <input type="number" id="n-crp"> mg/L</label></div>
+          <div class="row"><label class="inl">HCO3 <input type="number" id="n-hco3"></label><label class="inl">pH <input type="number" step="0.01" id="n-ph"></label><label class="inl">K <input type="number" step="0.1" id="n-k"></label>
+          <label class="inl">Creatinine <input type="number" id="n-cr"> µmol/L</label><label class="inl">Weight <input type="number" step="0.1" id="n-weight"> kg</label><label class="inl">Cecum <input type="number" step="0.1" id="n-cecum"> cm</label></div>
+          <div class="row"><label class="inl">Hours since non-operative care started <input type="number" id="n-nom"></label><label class="inl">NG output last 24 h <input type="number" id="n-ng"> mL</label><label class="inl">Days NPO <input type="number" id="n-npo"></label></div></fieldset>
+      </div>
+    </details>
+    <details class="card" open><summary><span>Plan now</span><span class="muted" id="plansum"></span></summary><div class="body plan" id="plan"></div></details>
+
+    <details class="card" open><summary><span>Symptoms and signs</span></summary><div class="body" id="symptoms"></div></details>
+    <details class="card" open><summary><span>Is it really SBO? Mimics</span><span class="muted" id="kindsum"></span></summary><div class="body" id="mimics"></div></details>
+
+    <details class="card" open><summary><span>Likely causes for this patient</span></summary><div class="body" id="likely"></div></details>
+    <details class="card inputs" open><summary><span>All causes</span></summary><div class="body"><div class="row"><label class="inl">Cause <select id="causepick"></select></label></div><div id="causeout"></div></div></details>
+
+    <details class="card" open><summary><span>Labs to order</span><span class="muted" id="labsum"></span></summary><div class="body scroll" id="labs"></div></details>
+    <details class="card" open><summary><span>Imaging: which test, and why</span></summary><div class="body scroll" id="imgwhich"></div></details>
+    <details class="card inputs" open><summary><span>Imaging reports</span><span class="muted" id="imgsum"></span></summary><div class="body">
+      <div id="reports"></div>
+      <div class="row"><textarea id="pasted" rows="3" style="width:100%" placeholder="Paste a CT or X-ray report here if the chart reader did not find it (outside imaging, preliminary read)…"></textarea></div></div></details>
+
+    <details class="card" open><summary><span>Perforation and ischemia risk</span><span class="muted" id="perfsum"></span></summary><div class="body" id="perf"></div></details>
+    <details class="card" open><summary><span>Perforation / ischemia: labs and imaging needed</span><span class="muted" id="perfneedsum"></span></summary><div class="body scroll" id="perfneed"></div></details>
+    <details class="card" open><summary><span>CT signs of ischemia and closed loop</span></summary><div class="body plan">
+      <h3>High-specificity signs: surgery now</h3><ul><li>Reduced or absent bowel wall enhancement (best single sign; needs IV contrast).</li><li>Pneumatosis intestinalis, portal or mesenteric venous gas (late, infarcted bowel).</li><li>Closed loop: U- or C-shaped dilated loop with two adjacent transition points, radial mesenteric vessels, beak sign.</li><li>Whirl sign: twisted mesentery (volvulus, internal hernia).</li><li>Hyperdense bowel wall on non-contrast CT (intramural hemorrhage).</li><li>Free air or extraluminal contrast: perforation.</li></ul>
+      <h3>Supporting signs: needs surgery to look today</h3><ul><li>Mesenteric edema or haziness, engorged mesenteric vessels.</li><li>Free fluid (more than a trace) between loops.</li><li>Bowel wall thickening over 3 mm, target sign.</li><li>Incarcerated hernia with fat stranding in the sac.</li></ul>
+      <h3>Signs that favour non-operative care</h3><ul><li>Small bowel feces sign, partial (low-grade) obstruction, contrast or gas reaching the colon.</li></ul>
+      <div class="src">CT sensitivity for ischemia is about 80-85%: a reassuring CT does not override peritonitis or a worsening patient.</div></div></details>
+
+    <details class="card" open><summary><span>Non-operative management</span></summary><div class="body plan" id="nom"></div></details>
+    <details class="card inputs" open><summary><span>Water-soluble contrast challenge (Gastrografin)</span><span class="muted" id="wsccsum"></span></summary><div class="body">
+      <div class="row">
+        <label class="inl">Given <select id="w-given"><option value="">No</option><option value="yes">Yes</option></select></label>
+        <label class="inl">Hours since given <input type="number" id="w-hours"></label>
+        <label class="inl">In colon on X-ray <select id="w-colon"><option value="">Not read yet</option><option value="yes">Yes</option><option value="no">No</option></select></label>
+        <label class="inl"><input type="checkbox" id="w-asp"> High aspiration risk, no NG</label>
+        <label class="inl"><input type="checkbox" id="w-allergy"> Severe iodinated contrast reaction before</label>
+      </div><div id="wscc"></div></div></details>
+    <details class="card" open><summary><span>When to operate</span></summary><div class="body plan">
+      <h3>Surgery now (no trial of non-operative care)</h3><ul><li>Peritonitis, sepsis or shock attributed to the bowel.</li><li>CT signs of ischemia, closed loop, volvulus or perforation.</li><li>Incarcerated / strangulated hernia.</li><li>Lactate rising despite fluids, or worsening pain/tenderness on serial exams.</li></ul>
+      <h3>Surgery soon</h3><ul><li>No contrast in the colon 24 h after the water-soluble contrast challenge.</li><li>No resolution after 72 h of non-operative care (WSES), or recurrence on refeeding.</li><li>No previous surgery and no hernia ("virgin abdomen"): a cause needs to be found; low threshold for laparoscopy.</li></ul>
+      <h3>Usually non-operative first</h3><ul><li>Adhesive SBO without red flags (about 70-80% settle).</li><li>Early postoperative SBO (first 30 days), radiation enteritis, Crohn inflammatory stricture, diffuse carcinomatosis: with the surgeon's plan.</li></ul></div></details>
+    <details class="card inputs" open><summary><span>Fluids and electrolytes while NPO</span></summary><div class="body plan" id="fluids"></div></details>
+    <details class="card" open><summary><span>Medications while obstructed</span><span class="muted" id="medsum"></span></summary><div class="body" id="meds"></div></details>
+    <details class="card" open><summary><span>Large bowel obstruction, volvulus and pseudo-obstruction</span></summary><div class="body plan">
+      <ul><li><b>LBO:</b> cancer (about 60%), volvulus, diverticular stricture. CT with IV contrast; competent ileocecal valve = closed loop, high perforation risk. Surgery vs stent by surgery/GI; no water-soluble contrast challenge.</li>
+      <li><b>Sigmoid volvulus:</b> coffee-bean sign; flexible sigmoidoscopy detorsion + rectal tube if no ischemia, then resection this admission (recurrence about 60%). <b>Cecal volvulus:</b> surgery.</li>
+      <li><b>Ogilvie:</b> treat causes (K, Mg, opioids, anticholinergics, infection), NG + rectal tube, mobilize. Cecum 12 cm or more or no better in 24-48 h: neostigmine 2 mg IV over 3-5 min on a monitor with atropine ready, or colonoscopic decompression.</li>
+      <li><b>Perforation risk:</b> cecum 12 cm or more (LaPlace), duration over 6 days, tenderness over the cecum.</li></ul></div></details>
+    <details class="card" open><summary><span>Malignant bowel obstruction</span></summary><div class="body plan">
+      <ul><li>Surgery helps selected patients: single site, good performance status, no ascites, no diffuse carcinomatosis, prognosis of months. Stent for colonic or gastroduodenal single-level obstruction.</li>
+      <li>Medical: octreotide 100-200 mcg SC q8h (or 300-600 mcg/24 h infusion), dexamethasone 8 mg daily for 5 days (stop if no response), hyoscine butylbromide 20 mg SC q4-6h PRN for colic, haloperidol 0.5-1 mg SC q8h or ondansetron for nausea. Metoclopramide only if partial (no colic); stop if colic worsens.</li>
+      <li>Venting gastrostomy for persistent vomiting instead of a long-term NG. TPN only if prognosis is longer than about 2-3 months and performance status is reasonable.</li>
+      <li>Palliative care involved early; goals of care and place of care. See the Peritoneal carcinomatosis tab.</li></ul></div></details>
+
+    <details class="card" open><summary><span>Daily monitoring</span></summary><div class="body plan">
+      <ul><li>Abdominal exam every 4-6 h for the first 24-48 h (same examiner if possible): new peritonism or constant pain → surgery now.</li>
+      <li>Vitals q4h; HR and temperature trend. Strict intake/output, NG output each shift, urine output (catheter if unstable).</li>
+      <li>Lytes, creatinine, Mg, PO4 daily (more often while replacing K); lactate and CRP if the picture is changing.</li>
+      <li>Flatus / stool, distension, NG output volume and colour (bilious vs feculent).</li>
+      <li>NG removal: output under about 500 mL/24 h, not bilious, passing flatus: clamp 4-6 h; if no nausea and residual under about 200 mL, remove and start clear fluids.</li>
+      <li>VTE prophylaxis, mobilize, incentive spirometry, oral care; delirium watch in older patients.</li></ul></div></details>
+    <details class="card" open><summary><span>Diet and discharge</span></summary><div class="body plan" id="dc"></div></details>
+    <details class="card inputs" open><summary><span>Patient handout</span></summary><div class="body">
+      <div class="row">
+        <label class="inl">Handout <select id="h-kind"><option value="nonop">Settled without surgery</option><option value="surgery">After surgery</option><option value="mbo">Malignant obstruction (comfort plan)</option></select></label>
+        <label class="inl">Follow-up <input id="h-fu" size="30" placeholder="e.g. general surgery clinic in 4-6 weeks"></label>
+        <label class="inl">Phone <input id="h-phone" size="14"></label>
+        <button id="h-print" class="primary">Open printable handout</button>
+      </div>
+      <div class="handout" id="handout"></div></div></details>
+
+    <details class="card" open><summary><span>Note draft</span></summary><div class="body" id="note"></div></details>
+    <div class="src">Sources: ten Broek RPG et al. Bologna guidelines for diagnosis and management of adhesive small bowel obstruction (ASBO): 2017 update of the WSES evidence-based guidelines, World J Emerg Surg 2018;13:24; ACR Appropriateness Criteria: Suspected Small-Bowel Obstruction, 2019; Ceresoli M et al. Water-soluble contrast agent in adhesive SBO: meta-analysis, Am J Surg 2016; Branco BC et al. Br J Surg 2010; Schwenter F et al. Clinicoradiological score for strangulated SBO, Br J Surg 2010; Millet I et al. CT signs of ischemia, Radiology 2017; Pisano M et al. WSES 2017 obstructive left colon carcinoma; Vogel JD et al. ASCRS colonic volvulus and acute colonic pseudo-obstruction guideline 2016; Madariaga A et al. MASCC MBO guidance 2022; NICE CG174 IV fluid therapy in adults.</div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+  <script src="../../notedraft.js?v=20261125a"></script>
+  <script src="rules.js?v=20261125a"></script>
+  <script src="chart.js?v=20261125a"></script>
+  <script src="samples.js?v=20261125a"></script>
+  <script src="app.js?v=20261125a"></script>
+  <script src="../../subtabs.js?v=20261121f"></script>
+  <script>SubTabs.mount({ store: "sbo", top: ["#tiles", "Chart alerts"], dotSel: ".alert.urgent, .tile.t3, .verdict.t3", tabs: [
+      {"key": "assess", "label": "Assess", "match": ["Patient and situation", "Plan now"]},
+      {"key": "sx", "label": "Symptoms & mimics", "match": ["Symptoms and signs", "Is it really SBO"]},
+      {"key": "causes", "label": "Causes", "match": ["Likely causes", "All causes"]},
+      {"key": "tests", "label": "Labs & imaging", "match": ["Labs to order", "Imaging: which test", "Imaging reports"]},
+      {"key": "perf", "label": "Perforation & ischemia", "match": ["Perforation and ischemia risk", "Perforation / ischemia: labs", "CT signs of ischemia"]},
+      {"key": "tx", "label": "Treatment", "match": ["Non-operative management", "Water-soluble contrast", "When to operate", "Fluids and electrolytes", "Medications while obstructed"]},
+      {"key": "other", "label": "LBO & malignant", "match": ["Large bowel obstruction", "Malignant bowel obstruction"]},
+      {"key": "dc", "label": "Monitoring & discharge", "match": ["Daily monitoring", "Diet and discharge", "Patient handout"]},
+      {"key": "note", "label": "Note draft", "match": ["Note draft"]}] });</script>
+</body>
+</html>
