@@ -192,6 +192,7 @@ tr.rowR td.pl{box-shadow:inset 4px 0 0 var(--red)} tr.rowA td.pl{box-shadow:inse
     <p class="muted small">Values are pulled from free text by pattern matching. Check each one against its source sentence and correct it in place; grades are compared as categories. The reading cardiologist’s report is authoritative.</p>
   </div></details>
 
+  <details open class="sec"><summary><h2>What the changes may mean</h2></summary><div class="secbody"><div id="interp2" class="muted small">Nothing to interpret yet.</div></div></details>
 </section>
 
 <!-- ================= WHAT IT MEANS ================= -->
@@ -922,6 +923,7 @@ function renderInterp() {
   $('#interp').classList.remove('muted', 'small');
   $('#interp').innerHTML = list.length ? list.map(x => `<div class="box ${x.lvl}"><b>${esc(x.title)}</b>${esc(x.text)}</div>`).join('')
     : '<div class="box">No changes that cross the flag thresholds. Small differences may still matter clinically.</div>';
+  $('#interp2').innerHTML = $('#interp').innerHTML; $('#interp2').className = '';
 }
 
 // ---- note ----
@@ -999,7 +1001,7 @@ $('#btnClear').addEventListener('click', () => {
   S.ran = false; S.noteDirty = false; $('#note').value = ''; $('#noteMsg').textContent = '';
   $('#condOut').className = 'muted small'; $('#condOut').textContent = 'Conditions are checked after you compare.';
   $('#condOut2').className = 'muted small'; $('#condOut2').textContent = 'Conditions are checked after you compare.';
-  $('#interp').className = 'muted small'; $('#interp').textContent = 'Nothing to interpret yet. Compare two reports on the Compare tab first.'; $('#meansBadge').innerHTML = ''; $('#condBadge').innerHTML = ''; showTab('compare');
+  $('#interp').className = 'muted small'; $('#interp').textContent = 'Nothing to interpret yet. Compare two reports on the Compare tab first.'; $('#meansBadge').innerHTML = ''; $('#interp2').className = 'muted small'; $('#interp2').textContent = 'Nothing to interpret yet.'; $('#condBadge').innerHTML = ''; showTab('compare');
   renderTable(); buildConsult();
 });
 $('#filter').addEventListener('change', renderTable);
