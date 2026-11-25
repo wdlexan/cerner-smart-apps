@@ -69,7 +69,14 @@ button.primary{background:var(--accent);color:var(--accent-ink);border-color:var
 .tablewrap{overflow-x:auto}
 table{border-collapse:collapse;width:100%;min-width:640px}
 th,td{text-align:left;vertical-align:middle;padding:3px 6px;border-bottom:1px solid var(--line)}
-#cmp{font-size:13.5px}
+#cmp{font-size:13px}
+#cmp td{padding:1px 6px;line-height:1.2}
+#cmp tr.grp td{padding:3px 8px}
+#cmp td.pl{padding-left:1in;min-width:calc(120px + 1in)}
+#cmp td input.val,#cmp td select.val{height:23px;padding-top:0;padding-bottom:0;font-size:.85rem}
+#cmp .flag{padding:0 6px;font-size:.75rem}
+#cmp .rng,#cmp .src{margin-top:0;line-height:1.15}
+@media (max-width:700px){#cmp td.pl{padding-left:.35in;min-width:calc(110px + .35in)}}
 tr.grp{cursor:pointer;user-select:none}
 tr.grp:hover td{filter:brightness(1.08)}
 tr.grp td::before{content:"";display:inline-block;width:6px;height:6px;margin:0 9px 2px 2px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:transform .15s}
