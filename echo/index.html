@@ -111,7 +111,9 @@ tr.rowR td.pl{box-shadow:inset 4px 0 0 var(--red)} tr.rowA td.pl{box-shadow:inse
   <div class="titlerow"><h1>Echo compare</h1><span id="ptBanner" class="pt"></span></div>
   <div id="modeLine" class="mode">Paste mode: not connected to the chart</div>
   <nav class="subtabs" role="tablist">
-    <button class="subtab" role="tab" data-tab="compare" aria-selected="true">Compare</button>
+    <button class="subtab" role="tab" data-tab="compare" aria-selected="true">Load reports</button>
+    <button class="subtab" role="tab" data-tab="side" aria-selected="false">Side by side<span id="sideBadge"></span></button>
+    <button class="subtab" role="tab" data-tab="conds" aria-selected="false">Study conditions<span id="condBadge"></span></button>
     <button class="subtab" role="tab" data-tab="means" aria-selected="false">What it means<span id="meansBadge"></span></button>
     <button class="subtab" role="tab" data-tab="note" aria-selected="false">Note &amp; consult</button>
     <button class="subtab" role="tab" data-tab="ref" aria-selected="false">Reference</button>
@@ -161,9 +163,15 @@ tr.rowR td.pl{box-shadow:inset 4px 0 0 var(--red)} tr.rowA td.pl{box-shadow:inse
       <button id="btnClear">Clear</button>
     </div>
   </div></details>
+</section>
 
+<!-- ================= STUDY CONDITIONS ================= -->
+<section id="tab-conds" class="panel" hidden>
   <details open class="sec"><summary><h2>Study conditions</h2></summary><div class="secbody"><div id="condOut" class="muted small">Conditions are checked after you compare.</div></div></details>
+</section>
 
+<!-- ================= SIDE BY SIDE ================= -->
+<section id="tab-side" class="panel" hidden>
   <details open class="sec"><summary><h2>Side by side</h2></summary><div class="secbody">
     <div class="tools">
       <label class="small muted">Show<select id="filter">
@@ -763,10 +771,11 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&am
 const S = { prior: { vals: {} }, current: { vals: {} }, noteDirty: false, ran: false, shut: new Set() };
 
 // sub-tabs
-$$('.subtab').forEach(b => b.addEventListener('click', () => {
-  $$('.subtab').forEach(x => x.setAttribute('aria-selected', String(x === b)));
-  $$('.panel').forEach(p => { p.hidden = p.id !== 'tab-' + b.dataset.tab; });
-}));
+function showTab(t) {
+  $$('.subtab').forEach(x => x.setAttribute('aria-selected', String(x.dataset.tab === t)));
+  $$('.panel').forEach(p => { p.hidden = p.id !== 'tab-' + t; });
+}
+$$('.subtab').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
 
 function cond(k) {
   return { type: $('#type-' + k).value, rhythm: $('#rhythm-' + k).value, hr: parseInt($('#hr-' + k).value, 10) || null,
@@ -794,12 +803,14 @@ function runExtract() {
   }
   S.noteDirty = false; S.ran = true;
   renderAll();
+  showTab('side');
 }
 function renderAll() { renderConds(); renderTable(); renderInterp(); refreshNote(); buildConsult(); }
 
 function renderConds() {
   if (!S.ran) return;
   const w = condWarnings(cond('prior'), cond('current')); const c = ctx();
+  $('#condBadge').innerHTML = w.length ? `<span class="flag A" title="Comparability warnings">${w.length}</span>` : '';
   const interval = c.years ? `<p class="small">Interval between studies: ${c.years.toFixed(1)} years.</p>` : '<p class="small muted">Add both study dates to get the interval and AS progression rate.</p>';
   $('#condOut').innerHTML = interval + (w.length ? w.map(x => `<div class="box ${x.lvl}">${esc(x.txt)}</div>`).join('')
     : '<div class="box G">No condition differences detected. Different readers or labs can still account for small changes.</div>');
@@ -861,6 +872,8 @@ function groupCounts() {
     if (amb) parts.push(`${amb} amber`);
     g.querySelector('.cnt').innerHTML = parts.join(', ');
   });
+  const tr = $$('#cmp tbody tr.rowR').length, ta = $$('#cmp tbody tr.rowA').length;
+  $('#sideBadge').innerHTML = (tr ? `<span class="flag R" title="Red changes">${tr}</span>` : '') + (ta ? `<span class="flag A" title="Amber changes">${ta}</span>` : '');
 }
 function updateRow(id) {
   const tr = $(`#cmp tbody tr[data-id="${id}"]`); if (!tr) return;
@@ -982,7 +995,7 @@ $('#btnClear').addEventListener('click', () => {
   }
   S.ran = false; S.noteDirty = false; $('#note').value = ''; $('#noteMsg').textContent = '';
   $('#condOut').className = 'muted small'; $('#condOut').textContent = 'Conditions are checked after you compare.';
-  $('#interp').className = 'muted small'; $('#interp').textContent = 'Nothing to interpret yet. Compare two reports on the Compare tab first.'; $('#meansBadge').innerHTML = '';
+  $('#interp').className = 'muted small'; $('#interp').textContent = 'Nothing to interpret yet. Compare two reports on the Compare tab first.'; $('#meansBadge').innerHTML = ''; $('#condBadge').innerHTML = ''; showTab('compare');
   renderTable(); buildConsult();
 });
 $('#filter').addEventListener('change', renderTable);
