@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Echo Compare · Hospitalist Toolkit</title>
+<script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.4/build/fhir-client.min.js"></script>
+<style>
+:root{
+  --bg:#f3f6f8; --card:#ffffff; --ink:#16324f; --muted:#5a6b7d; --line:#d5dde5; --input:#ffffff;
+  --accent:#00838f; --accent-ink:#ffffff; --chip:#e8eef3;
+  --red:#b3261e; --red-bg:#fbe7e5; --amber:#8a5a00; --amber-bg:#fdf1d3; --green:#22703f; --green-bg:#e2f3e8;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1720; --card:#16212c; --ink:#e3ebf3; --muted:#93a4b6; --line:#2a3846; --input:#0f1720;
+    --accent:#4dc4cf; --accent-ink:#06222a; --chip:#1f2d3a;
+    --red:#ff8f87; --red-bg:#3a1a18; --amber:#ffd27a; --amber-bg:#3a2e12; --green:#82dba0; --green-bg:#132d1d;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1720; --card:#16212c; --ink:#e3ebf3; --muted:#93a4b6; --line:#2a3846; --input:#0f1720;
+  --accent:#4dc4cf; --accent-ink:#06222a; --chip:#1f2d3a;
+  --red:#ff8f87; --red-bg:#3a1a18; --amber:#ffd27a; --amber-bg:#3a2e12; --green:#82dba0; --green-bg:#132d1d;
+  color-scheme:dark;
+}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 "Segoe UI Variable","Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif}
+header.top{padding:14px 18px 0;background:var(--card);border-bottom:1px solid var(--line)}
+.titlerow{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px}
+h1{font-size:1.35rem;margin:0;font-weight:650;letter-spacing:-.01em}
+.pt{color:var(--muted);font-size:.9rem}
+.mode{font-size:.82rem;color:var(--muted);margin:2px 0 8px}
+.subtabs{display:flex;gap:2px;overflow-x:auto}
+.subtab{appearance:none;border:0;background:none;color:var(--muted);font:inherit;font-weight:600;padding:9px 14px;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap}
+.subtab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.subtab:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+main{max-width:1180px;margin:0 auto;padding:14px 14px 40px}
+details.sec{background:var(--card);border:1px solid var(--line);border-radius:10px;margin:0 0 12px}
+details.sec>summary{list-style:none;cursor:pointer;padding:11px 14px;display:flex;align-items:center;gap:8px}
+details.sec>summary::-webkit-details-marker{display:none}
+details.sec>summary::before{content:"";width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(-45deg);transition:transform .15s}
+details.sec[open]>summary::before{transform:rotate(45deg)}
+details.sec>summary h2{font-size:1rem;margin:0;font-weight:650}
+.secbody{padding:0 14px 14px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:760px){.two{grid-template-columns:1fr}}
+.study h3{margin:0 0 6px;font-size:.95rem}
+.study[data-study="current"] h3{color:var(--accent)}
+textarea{width:100%;font:13px/1.4 inherit;font-family:inherit;color:var(--ink);background:var(--input);border:1px solid var(--line);border-radius:8px;padding:8px;resize:vertical}
+.study textarea{min-height:170px}
+.conds{display:flex;flex-wrap:wrap;gap:8px 12px;margin-top:8px;font-size:.85rem;color:var(--muted)}
+.conds label,.actions label,.tools label,.grid label{display:flex;flex-direction:column;gap:2px}
+input,select{font:inherit;font-size:.88rem;color:var(--ink);background:var(--input);border:1px solid var(--line);border-radius:6px;padding:4px 6px}
+input.hr{width:4.5em}
+button{font:inherit;font-size:.9rem;font-weight:600;color:var(--ink);background:var(--chip);border:1px solid var(--line);border-radius:7px;padding:7px 12px;cursor:pointer}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.actions{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;margin-top:12px}
+.tools{display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px;margin-bottom:8px}
+.tools label.chk{flex-direction:row;align-items:center;gap:6px}
+.fhirrow{display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px;margin-bottom:12px;padding:10px;border:1px dashed var(--line);border-radius:8px}
+.fhirrow select{max-width:420px}
+.muted{color:var(--muted)} .small{font-size:.82rem}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:640px}
+th,td{text-align:left;vertical-align:top;padding:7px 8px;border-bottom:1px solid var(--line)}
+th{font-size:.8rem;color:var(--muted);font-weight:600}
+tr.grp td{background:var(--chip);font-weight:650;font-size:.82rem;padding:5px 8px}
+td.pl{font-weight:600;min-width:150px}
+.u{font-weight:400;color:var(--muted);font-size:.8rem}
+td input.val{width:6.5em}
+td select.val{max-width:11em}
+.rng{font-size:.75rem;color:var(--muted)}
+.src{font-size:.75rem;color:var(--muted);margin-top:3px;max-width:30ch}
+td.d{font-variant-numeric:tabular-nums;white-space:nowrap}
+.flag{display:inline-block;font-size:.8rem;font-weight:600;padding:2px 7px;border-radius:5px;line-height:1.35}
+.flag.R{color:var(--red);background:var(--red-bg)} .flag.A{color:var(--amber);background:var(--amber-bg)}
+.flag.G{color:var(--green);background:var(--green-bg)} .flag.I{color:var(--muted);background:none;padding-left:0;font-weight:400}
+tr.rowR td.pl{box-shadow:inset 4px 0 0 var(--red)} tr.rowA td.pl{box-shadow:inset 4px 0 0 var(--amber)} tr.rowG td.pl{box-shadow:inset 4px 0 0 var(--green)}
+.box{border-left:4px solid var(--line);padding:8px 12px;margin:0 0 8px;border-radius:0 8px 8px 0;background:var(--chip)}
+.box.R{border-left-color:var(--red);background:var(--red-bg)} .box.A{border-left-color:var(--amber);background:var(--amber-bg)} .box.G{border-left-color:var(--green);background:var(--green-bg)}
+.box b{display:block;margin-bottom:2px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px 12px;margin-bottom:10px;font-size:.85rem;color:var(--muted)}
+.ref table{min-width:520px;font-size:.88rem}
+.ref ul{margin:0;padding-left:1.2em}
+.ref li{margin-bottom:4px}
+.empty{padding:6px 0}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="titlerow"><h1>Echo compare</h1><span id="ptBanner" class="pt"></span></div>
+  <div id="modeLine" class="mode">Paste mode: not connected to the chart</div>
+  <nav class="subtabs" role="tablist">
+    <button class="subtab" role="tab" data-tab="compare" aria-selected="true">Compare</button>
+    <button class="subtab" role="tab" data-tab="note" aria-selected="false">Note &amp; consult</button>
+    <button class="subtab" role="tab" data-tab="ref" aria-selected="false">Reference</button>
+  </nav>
+</header>
+
+<main>
+<!-- ================= COMPARE ================= -->
+<section id="tab-compare" class="panel">
+  <details open class="sec"><summary><h2>Load the two reports</h2></summary><div class="secbody">
+    <div id="fhirRow" class="fhirrow" hidden>
+      <label class="small muted">Echo reports in chart<br><select id="fhirList"></select></label>
+      <button data-load="prior">Load as prior</button>
+      <button data-load="current">Load as current</button>
+      <span id="fhirStatus" class="small muted"></span>
+    </div>
+    <div class="two">
+      <div class="study" data-study="prior">
+        <h3>Prior echo</h3>
+        <textarea id="txt-prior" placeholder="Paste the prior echo report text"></textarea>
+        <div class="conds">
+          <label>Date<input type="date" id="date-prior"></label>
+          <label>Type<select id="type-prior"><option value="">Not stated</option><option>TTE</option><option>TEE</option><option>POCUS</option></select></label>
+          <label>Rhythm<select id="rhythm-prior"><option value="">Not stated</option><option>Sinus</option><option>AF</option><option>Flutter</option><option>Paced</option><option>Other</option></select></label>
+          <label>HR<input id="hr-prior" class="hr" inputmode="numeric"></label>
+          <label>Image quality<select id="quality-prior"><option value="">Not stated</option><option>Good</option><option>Limited</option></select></label>
+          <label>Contrast<select id="contrast-prior"><option value="">Not stated</option><option>Yes</option><option>No</option></select></label>
+        </div>
+      </div>
+      <div class="study" data-study="current">
+        <h3>Current echo</h3>
+        <textarea id="txt-current" placeholder="Paste the current echo report text"></textarea>
+        <div class="conds">
+          <label>Date<input type="date" id="date-current"></label>
+          <label>Type<select id="type-current"><option value="">Not stated</option><option>TTE</option><option>TEE</option><option>POCUS</option></select></label>
+          <label>Rhythm<select id="rhythm-current"><option value="">Not stated</option><option>Sinus</option><option>AF</option><option>Flutter</option><option>Paced</option><option>Other</option></select></label>
+          <label>HR<input id="hr-current" class="hr" inputmode="numeric"></label>
+          <label>Image quality<select id="quality-current"><option value="">Not stated</option><option>Good</option><option>Limited</option></select></label>
+          <label>Contrast<select id="contrast-current"><option value="">Not stated</option><option>Yes</option><option>No</option></select></label>
+        </div>
+      </div>
+    </div>
+    <div class="actions">
+      <label class="small muted">Sex (LV size limits)<select id="sex"><option value="">Not set</option><option value="male">Male</option><option value="female">Female</option></select></label>
+      <button id="btnCompare" class="primary">Extract and compare</button>
+      <button id="btnSample">Load made-up sample</button>
+      <button id="btnClear">Clear</button>
+    </div>
+  </div></details>
+
+  <details open class="sec"><summary><h2>Study conditions</h2></summary><div class="secbody"><div id="condOut" class="muted small">Conditions are checked after you compare.</div></div></details>
+
+  <details open class="sec"><summary><h2>Side by side</h2></summary><div class="secbody">
+    <div class="tools">
+      <label class="small muted">Show<select id="filter">
+        <option value="all">Parameters found in either report</option>
+        <option value="flag">Flagged changes only</option>
+        <option value="every">Every parameter, including blanks</option>
+      </select></label>
+      <label class="chk small"><input type="checkbox" id="showSrc"> Show source sentences</label>
+    </div>
+    <div class="tablewrap"><table id="cmp">
+      <thead><tr><th>Parameter</th><th id="thPrior">Prior</th><th id="thCurrent">Current</th><th>Change</th><th>Flag</th></tr></thead>
+      <tbody><tr><td colspan="5" class="muted empty">Paste both reports, then select Extract and compare.</td></tr></tbody>
+    </table></div>
+    <p class="muted small">Values are pulled from free text by pattern matching. Check each one against its source sentence and correct it in place; grades are compared as categories. The reading cardiologist’s report is authoritative.</p>
+  </div></details>
+
+  <details open class="sec"><summary><h2>What the changes may mean</h2></summary><div class="secbody"><div id="interp" class="muted small">Nothing to interpret yet.</div></div></details>
+</section>
+
+<!-- ================= NOTE & CONSULT ================= -->
+<section id="tab-note" class="panel" hidden>
+  <details open class="sec"><summary><h2>Note draft</h2></summary><div class="secbody">
+    <textarea id="note" rows="13" placeholder="Run a comparison first; the draft appears here and can be edited."></textarea>
+    <div class="actions">
+      <button id="btnRegen">Rebuild from comparison</button>
+      <button id="btnCopyNote" class="primary">Copy note</button>
+      <span id="noteMsg" class="small muted"></span>
+    </div>
+  </div></details>
+
+  <details open class="sec"><summary><h2>Consult message</h2></summary><div class="secbody">
+    <div class="grid">
+      <label>Send to<select id="cSpec">
+        <option>Cardiology</option><option>Heart Function Clinic</option><option>Cardio-oncology</option>
+        <option>Cardiac surgery</option><option>Echo lab (reading cardiologist)</option>
+      </select></label>
+      <label>Dr.<input id="cDr" placeholder="Surname"></label>
+      <label>Patient name<input id="cName"></label>
+      <label>Age<input id="cAge" inputmode="numeric"></label>
+      <label>MRN<input id="cMrn"></label>
+      <label>Ask about<select id="cQ">
+        <option value="whether this change is real and what you would recommend next">Is the change real / next steps</option>
+        <option value="an ischemia workup">Ischemia workup</option>
+        <option value="HF management and GDMT">HF management and GDMT</option>
+        <option value="AS severity and TAVI candidacy">AS severity / TAVI candidacy</option>
+        <option value="management of the pericardial effusion">Pericardial effusion</option>
+        <option value="cardiotoxicity and whether therapy can continue">Cardiotoxicity</option>
+      </select></label>
+    </div>
+    <label class="small muted" style="display:block;margin-bottom:8px">Brief history<input id="cHx" style="width:100%" placeholder="e.g. admitted with pneumonia, new AF, rising NT-proBNP"></label>
+    <textarea id="consult" rows="6"></textarea>
+    <div class="actions">
+      <button id="btnCopyConsult" class="primary">Copy message</button>
+      <span id="wc" class="small muted"></span>
+    </div>
+  </div></details>
+</section>
+
+<!-- ================= REFERENCE ================= -->
+<section id="tab-ref" class="panel ref" hidden>
+  <details open class="sec"><summary><h2>Thresholds this tab uses</h2></summary><div class="secbody tablewrap">
+    <table>
+      <thead><tr><th>Parameter</th><th>Abnormal</th><th>Change flagged</th></tr></thead>
+      <tbody>
+        <tr><td>LVEF</td><td>≤40% HFrEF; 41–49% HFmrEF; ≥50% preserved</td><td>Fall or rise ≥10 points; ≤40% → &gt;40% with ≥10 rise = HFimpEF</td></tr>
+        <tr><td>GLS (absolute)</td><td>&lt;16%</td><td>Relative fall &gt;15% (cardio-oncology threshold)</td></tr>
+        <tr><td>LVIDd</td><td>&gt;5.8 cm men, &gt;5.2 cm women</td><td>Newly dilated, or ±0.5 cm</td></tr>
+        <tr><td>LVEDV index</td><td>&gt;74 mL/m² men, &gt;61 women</td><td>Newly above limit, or +10</td></tr>
+        <tr><td>IVSd / LVPWd</td><td>≥1.2 cm (amyloid screening cut-off)</td><td>Newly ≥1.2, or +0.2 cm</td></tr>
+        <tr><td>LV mass index</td><td>&gt;115 g/m² men, &gt;95 women</td><td>Newly above limit</td></tr>
+        <tr><td>LA volume index</td><td>&gt;34 mL/m²</td><td>Newly above, or +10</td></tr>
+        <tr><td>E/e′ average</td><td>&gt;14</td><td>Newly above</td></tr>
+        <tr><td>TR velocity</td><td>&gt;2.8 m/s</td><td>Newly above, or +0.4</td></tr>
+        <tr><td>RVSP</td><td>&gt;35 mmHg</td><td>Rise ≥10 mmHg</td></tr>
+        <tr><td>TAPSE</td><td>&lt;17 mm</td><td>Newly below, or −4 mm</td></tr>
+        <tr><td>IVC / RAP</td><td>IVC &gt;2.1 cm; RAP 15</td><td>Newly above</td></tr>
+        <tr><td>Aortic root / ascending aorta</td><td>≥4.5 cm flagged for follow-up</td><td>Growth ≥0.3 cm</td></tr>
+        <tr><td>Valve grades</td><td>—</td><td>1 full grade worse (e.g. mild → moderate) amber; ≥2 grades or newly severe red; trace ↔ mild is ignored</td></tr>
+      </tbody>
+    </table>
+  </div></details>
+
+  <details class="sec"><summary><h2>Aortic stenosis grading (ACC/AHA 2020)</h2></summary><div class="secbody tablewrap">
+    <table>
+      <thead><tr><th></th><th>Mild</th><th>Moderate</th><th>Severe</th></tr></thead>
+      <tbody>
+        <tr><td>Peak velocity</td><td>2.0–2.9 m/s</td><td>3.0–3.9 m/s</td><td>≥4.0 m/s (≥5 very severe)</td></tr>
+        <tr><td>Mean gradient</td><td>&lt;20 mmHg</td><td>20–39 mmHg</td><td>≥40 mmHg</td></tr>
+        <tr><td>Valve area</td><td>&gt;1.5 cm²</td><td>1.0–1.5 cm²</td><td>≤1.0 cm²</td></tr>
+        <tr><td>Dimensionless index</td><td></td><td></td><td>&lt;0.25</td></tr>
+      </tbody>
+    </table>
+    <p class="small muted">Rapid progression: peak velocity rising ≥0.3 m/s per year. AVA ≤1.0 cm² with mean gradient &lt;40 mmHg is discordant: low-flow low-gradient AS (reduced EF: dobutamine echo; preserved EF: check stroke volume index, CT calcium score) or measurement error.</p>
+  </div></details>
+
+  <details class="sec"><summary><h2>When a change may not be real</h2></summary><div class="secbody">
+    <ul>
+      <li>EF has inter-reader variability of about 5–10 points; a change under 10 points is often noise.</li>
+      <li>AF or other irregular rhythms make EF and Doppler values beat-dependent; tachycardia lowers EF and distorts diastolic indices.</li>
+      <li>Loading conditions (volume overload, dehydration, sepsis, high BP) change filling indices, RVSP and IVC.</li>
+      <li>Contrast in one study only: volumes are larger and EF more accurate with contrast, so the two are not directly comparable.</li>
+      <li>Limited windows, a different lab or reader, and TTE vs TEE all reduce comparability.</li>
+      <li>Severity words differ between readers; a one-word shift (trace ↔ mild) is rarely meaningful.</li>
+    </ul>
+  </div></details>
+</section>
+</main>
+
+<!-- ================= LOGIC (no DOM) ================= -->
+<script id="logic">
+'use strict';
+const isN = x => typeof x === 'number' && !isNaN(x);
+const round = v => Math.round(v * 100) / 100;
+function fmt(v, dp = 1) { if (!isN(v)) return ''; const f = Math.pow(10, dp); return String(Math.round(v * f) / f); }
+
+function sentences(t) {
+  return String(t || '').replace(/\r/g, '').split(/\n+|(?<=[.;])\s+/).map(s => s.trim()).filter(Boolean);
+}
+function clauses(s) {
+  return s.split(/[,;]|\band\b|\bwith\b|\bbut\b|\bwhile\b/i).map(x => x.trim()).filter(Boolean);
+}
+
+// ---- unit converters ----
+const CM = (v, u) => (u === 'mm' || v > 15) ? v / 10 : v;
+const MM = (v, u) => (u === 'cm' || v < 6) ? v * 10 : v;
+const MS = (v, u) => (u === 'cm/s' || v > 10) ? v / 100 : v;
+
+function numFind(text, regs, conv, exclude) {
+  for (const s of sentences(text)) {
+    if (exclude && exclude.test(s)) continue;
+    for (const re of regs) {
+      const m = re.exec(s);
+      if (!m) continue;
+      const g = m.groups || {};
+      const a = parseFloat(g.a);
+      if (isNaN(a)) continue;
+      const b = g.b != null ? parseFloat(g.b) : NaN;
+      const u = (g.u || '').toLowerCase();
+      let v = !isNaN(b) ? (a + b) / 2 : a;
+      let range = !isNaN(b) ? [a, b] : null;
+      if (conv) { v = conv(v, u); if (range) range = range.map(x => conv(x, u)); }
+      if (v == null || isNaN(v)) continue;
+      return { v: round(v), src: s, range: range ? range.map(x => fmt(x, 2)).join('–') : null };
+    }
+  }
+  return null;
+}
+
+// ---- category scales (higher = worse) ----
+const SEV_OPTS = [[0, 'none / normal'], [1, 'trace / low-normal'], [2, 'mild'], [3, 'mild–moderate'], [4, 'moderate'], [5, 'moderate–severe'], [6, 'severe']];
+const EFF_OPTS = [[0, 'none'], [1, 'trivial'], [2, 'small'], [3, 'moderate'], [4, 'large']];
+const DIA_OPTS = [[0, 'normal'], [1, 'grade I'], [2, 'grade II'], [3, 'grade III']];
+const PRES_OPTS = [[0, 'none'], [1, 'present']];
+
+const SEV = [
+  { re: /\bmoderate(?:ly)?\s*(?:-|–|to)\s*sever(?:e|ely)\b/gi, v: 5 },
+  { re: /\bmild(?:ly)?\s*(?:-|–|to)\s*moderate(?:ly)?\b/gi, v: 3 },
+  { re: /\bsevere(?:ly)?\b/gi, v: 6 },
+  { re: /\bmoderate(?:ly)?\b/gi, v: 4 },
+  { re: /\bmild(?:ly)?\b/gi, v: 2 },
+  { re: /\b(?:trace|trivial|minimal|physiologic(?:al)?|insignificant)\b/gi, v: 1 },
+  { re: /\bno significant\b/gi, v: 1 },
+  { re: /\blow[- ]normal\b/gi, v: 1 },
+  { re: /\bnormal\b/gi, v: 0 },
+  { re: /\b(?:no|none|absent)\b/gi, v: 0 },
+];
+const EFF = [
+  { re: /\blarge\b/gi, v: 4 }, { re: /\bmoderate\b/gi, v: 3 }, { re: /\bsmall\b/gi, v: 2 },
+  { re: /\b(?:trivial|trace|minimal)\b/gi, v: 1 }, { re: /\b(?:no|none)\b/gi, v: 0 },
+];
+const DIA = [
+  { re: /grade\s*(?:III|3)\b|restrictive/gi, v: 3 },
+  { re: /grade\s*(?:II|2)\b|pseudo-?normal/gi, v: 2 },
+  { re: /grade\s*(?:I|1)\b|impaired relaxation|abnormal relaxation/gi, v: 1 },
+  { re: /\bnormal\b/gi, v: 0 },
+];
+
+function gradeFind(text, keys, scale) {
+  for (const s of sentences(text)) {
+    for (const c of clauses(s)) {
+      if (!keys.some(r => r.test(c))) continue;
+      const hits = [];
+      for (const sc of scale) {
+        sc.re.lastIndex = 0; let m;
+        while ((m = sc.re.exec(c))) hits.push({ s: m.index, e: m.index + m[0].length, v: sc.v });
+      }
+      const kept = hits.filter(h => !hits.some(o => o !== h && o.s <= h.s && o.e >= h.e && (o.e - o.s) > (h.e - h.s)));
+      if (!kept.length) continue;
+      kept.sort((x, y) => x.s - y.s);
+      return { v: kept[0].v, src: s };
+    }
+  }
+  return null;
+}
+
+const NEG = /\b(?:no|without|negative for|absence of|not (?:seen|visualized|visualised|identified)|no evidence of)\b/i;
+function presence(text, key) {
+  let neg = null; const pos = [];
+  for (const s of sentences(text)) {
+    for (const c of clauses(s)) {
+      if (!key.test(c)) continue;
+      if (NEG.test(c)) { neg = neg || s; } else if (!pos.includes(s)) pos.push(s);
+    }
+  }
+  if (pos.length) return { v: 1, src: pos.join(' ') };
+  if (neg) return { v: 0, src: neg };
+  return null;
+}
+
+// ---- parameter catalogue ----
+const PARAMS = [
+  { id: 'lvef', label: 'LVEF', unit: '%', group: 'LV systolic', kind: 'num', dp: 0,
+    find: t => numFind(t, [/(?:\bLVEF\b|\bLV\s*EF\b|left ventricular ejection fraction|ejection fraction|\bEF\b)[^0-9%]{0,40}?(?<a>\d{1,2}(?:\.\d)?)\s*(?:%|percent)?(?:\s*(?:-|–|to)\s*(?<b>\d{1,2}(?:\.\d)?)\s*%)?/i], v => (v >= 5 && v <= 90) ? v : null) },
+  { id: 'lvfx', label: 'LV systolic function', group: 'LV systolic', kind: 'grade', opts: SEV_OPTS,
+    find: t => gradeFind(t, [/(?:\bLV\b|left ventricular)\s+(?:global\s+)?(?:systolic\s+)?function/i, /\bLV systolic\b/i], SEV) },
+  { id: 'gls', label: 'GLS (absolute value)', unit: '%', group: 'LV systolic', kind: 'num',
+    find: t => numFind(t, [/(?:\bGLS\b|global longitudinal strain)[^0-9]{0,30}?(?<a>\d{1,2}(?:\.\d+)?)\s*%/i]) },
+  { id: 'rwma', label: 'Regional wall motion', group: 'LV systolic', kind: 'presence', opts: PRES_OPTS,
+    find: t => presence(t, /hypokines|akines|dyskines|aneurysm|regional wall motion abnormalit|\bRWMA/i) },
+
+  { id: 'lvsize', label: 'LV size', group: 'LV structure', kind: 'grade', opts: SEV_OPTS,
+    find: t => gradeFind(t, [/\b(?:LV|left ventric(?:le|ular))\b[^,.;]{0,30}\b(?:size|dilat\w*|enlarg\w*)/i, /\b(?:dilated|enlarged) (?:LV|left ventricle)\b/i], SEV) },
+  { id: 'lvidd', label: 'LVIDd', unit: 'cm', group: 'LV structure', kind: 'num',
+    find: t => numFind(t, [/(?:\bLVIDd\b|\bLVEDD\b|\bLVID\s*\(?d\)?|\bLV (?:end[- ]?)?diastolic (?:dimension|diameter)|left ventricular (?:end[- ]?)?diastolic (?:dimension|diameter))[^0-9]{0,25}(?<a>\d+(?:\.\d+)?)\s*(?<u>cm|mm)?/i], CM) },
+  { id: 'lvedvi', label: 'LVEDV index', unit: 'mL/m²', group: 'LV structure', kind: 'num', dp: 0,
+    find: t => numFind(t, [/(?:\bLVEDVi\b|LVEDV\s*index|LV end[- ]diastolic volume index(?:ed)?)[^0-9]{0,25}(?<a>\d+(?:\.\d+)?)/i]) },
+  { id: 'ivsd', label: 'IVSd', unit: 'cm', group: 'LV structure', kind: 'num',
+    find: t => numFind(t, [/(?:\bIVSd\b|\bIVS\b|interventricular septum|septal (?:wall )?thickness)[^0-9]{0,25}(?<a>\d+(?:\.\d+)?)\s*(?<u>cm|mm)?/i], CM) },
+  { id: 'lvpwd', label: 'LVPWd', unit: 'cm', group: 'LV structure', kind: 'num',
+    find: t => numFind(t, [/(?:\bLVPWd\b|\bLVPW\b|\bPWd\b|posterior wall thickness|posterior wall)[^0-9]{0,25}(?<a>\d+(?:\.\d+)?)\s*(?<u>cm|mm)?/i], CM) },
+  { id: 'lvmi', label: 'LV mass index', unit: 'g/m²', group: 'LV structure', kind: 'num', dp: 0,
+    find: t => numFind(t, [/(?:LV mass index|\bLVMI\b|LV mass\/BSA|left ventricular mass index)[^0-9]{0,25}(?<a>\d+(?:\.\d+)?)/i]) },
+  { id: 'lvh', label: 'LV hypertrophy', group: 'LV structure', kind: 'grade', opts: SEV_OPTS,
+    find: t => gradeFind(t, [/\bLVH\b/, /left ventricular hypertrophy|LV hypertrophy/i], SEV) },
+
+  { id: 'diast', label: 'Diastolic function', group: 'Filling pressures', kind: 'grade', opts: DIA_OPTS,
+    find: t => gradeFind(t, [/diastolic (?:function|dysfunction|filling)/i], DIA) },
+  { id: 'ee', label: 'E/e′ average', unit: '', group: 'Filling pressures', kind: 'num',
+    find: t => numFind(t, [/\bE\s*\/\s*e\s*(?:prime|[’'′])\s*(?:ratio)?\s*(?:\(?(?:average|avg|mean|septal|lateral)\)?)?\s*(?:ratio)?\s*(?:=|:|is|of|was)?\s*(?<a>\d+(?:\.\d+)?)/i]) },
+  { id: 'lavi', label: 'LA volume index', unit: 'mL/m²', group: 'Filling pressures', kind: 'num', dp: 0,
+    find: t => numFind(t, [/(?:\bLAVI\b|\bLA\s*vol(?:ume)?\s*(?:index(?:ed)?|\/BSA)|left atrial volume index(?:ed)?)[^0-9]{0,25}(?<a>\d+(?:\.\d+)?)/i]) },
+
+  { id: 'rvsize', label: 'RV size', group: 'RV and pulmonary pressure', kind: 'grade', opts: SEV_OPTS,
+    find: t => gradeFind(t, [/\b(?:RV|right ventric(?:le|ular))\b[^,.;]{0,30}\b(?:size|dilat\w*|enlarg\w*)/i], SEV) },
+  { id: 'rvfx', label: 'RV systolic function', group: 'RV and pulmonary pressure', kind: 'grade', opts: SEV_OPTS,
+    find: t => gradeFind(t, [/(?:\bRV\b|right ventricular)\s+(?:global\s+)?(?:systolic\s+)?function/i], SEV) },
+  { id: 'tapse', label: 'TAPSE', unit: 'mm', group: 'RV and pulmonary pressure', kind: 'num', dp: 0,
+    find: t => numFind(t, [/\bTAPSE\b[^0-9]{0,20}(?<a>\d+(?:\.\d+)?)\s*(?<u>cm|mm)?/i], MM) },
+  { id: 'trv', label: 'TR peak velocity', unit: 'm/s', group: 'RV and pulmonary pressure', kind: 'num',
+    find: t => numFind(t, [/(?:\bTR\s*(?:V\s*max|peak (?:jet )?velocity|(?:jet )?velocity)|tricuspid regurgita(?:nt|tion) (?:jet )?(?:peak )?(?:velocity|V\s*max)|peak TR (?:jet )?velocity)[^0-9]{0,20}(?<a>\d+(?:\.\d+)?)\s*(?<u>m\/s|cm\/s)?/i], MS) },
+  { id: 'rvsp', label: 'RVSP', unit: 'mmHg', group: 'RV and pulmonary pressure', kind: 'num', dp: 0,
+    find: t => numFind(t, [/(?:\bRVSP\b|\bPASP\b|\bsPAP\b|right ventricular systolic pressure|pulmonary artery systolic pressure|\bPA (?:systolic )?pressure)[^0-9]{0,40}(?<a>\d{2,3})(?:\s*(?:-|–|to)\s*(?<b>\d{2,3}))?/i]) },
+  { id: 'ivc', label: 'IVC diameter', unit: 'cm', group: 'RV and pulmonary pressure', kind: 'num',
+    find: t => numFind(t, [/(?:\bIVC\b|inferior vena cava)[^0-9]{0,30}(?<a>\d+(?:\.\d+)?)\s*(?<u>cm|mm)\b/i], CM) },
+  { id: 'rap', label: 'RA pressure estimate', unit: 'mmHg', group: 'RV and pulmonary pressure', kind: 'num', dp: 0,
+    find: t => numFind(t, [/(?:\bRAP\b|right atrial pressure|\bRA pressure)[^0-9]{0,30}(?<a>\d{1,2})(?:\s*(?:-|–|to)\s*(?<b>\d{1,2}))?/i]) },
+
+  { id: 'as', label: 'Aortic stenosis', group: 'Valves', kind: 'grade', opts: SEV_OPTS,
+    find: t => gradeFind(t, [/aortic (?:valve )?stenosis/i, /\bAS\b/], SEV) },
+  { id: 'avvmax', label: 'AV peak velocity', unit: 'm/s', group: 'Valves', kind: 'num',
+    find: t => numFind(t, [/(?:\bAV\s*(?:V\s*max|peak velocity)|aortic (?:valve )?(?:peak )?(?:jet )?velocity|peak aortic (?:jet )?velocity|aortic V\s*max|\bV\s*max)[^0-9]{0,20}(?<a>\d+(?:\.\d+)?)\s*(?<u>m\/s|cm\/s)?/i], MS, /\bTR\b|tricuspid|mitral|\bMV\b|pulmon/i) },
+  { id: 'avmg', label: 'AV mean gradient', unit: 'mmHg', group: 'Valves', kind: 'num', dp: 0,
+    find: t => numFind(t, [/(?:\bAV\s*mean (?:gradient|PG)|aortic (?:valve )?mean (?:pressure )?gradient|mean (?:aortic |AV |transaortic |transvalvular )?(?:pressure )?gradient|\bMPG\b|mean PG)[^0-9]{0,20}(?<a>\d+(?:\.\d+)?)/i], null, /mitral|\bMV\b|tricuspid|pulmon/i) },
+  { id: 'ava', label: 'Aortic valve area', unit: 'cm²', group: 'Valves', kind: 'num', dp: 2,
+    find: t => numFind(t, [/(?:\bAVA\b(?!\s*(?:i\b|index))|aortic valve area(?!\s*index))[^0-9]{0,30}(?<a>\d+(?:\.\d+)?)/i], v => v <= 6 ? v : null) },
+  { id: 'di', label: 'Dimensionless index', unit: '', group: 'Valves', kind: 'num', dp: 2,
+    find: t => numFind(t, [/(?:dimensionless (?:index|velocity index)|\bDVI\b|\bDI\b|velocity ratio)[^0-9]{0,20}(?<a>0?\.\d+)/i]) },
+  { id: 'ar', label: 'Aortic regurgitation', group: 'Valves', kind: 'grade', opts: SEV_OPTS,
+    find: t => gradeFind(t, [/aortic (?:valve )?(?:regurgitation|insufficiency)/i, /\bAR\b/, /\bAI\b/], SEV) },
+  { id: 'mr', label: 'Mitral regurgitation', group: 'Valves', kind: 'grade', opts: SEV_OPTS,
+    find: t => gradeFind(t, [/mitral (?:valve )?(?:regurgitation|insufficiency)/i, /\bMR\b/], SEV) },
+  { id: 'tr', label: 'Tricuspid regurgitation', group: 'Valves', kind: 'grade', opts: SEV_OPTS,
+    find: t => gradeFind(t, [/tricuspid (?:valve )?(?:regurgitation|insufficiency)/i, /\bTR\b(?!\s*(?:V\b|Vmax|vel|jet|peak|gradient|max))/], SEV) },
+  { id: 'veg', label: 'Vegetation', group: 'Valves', kind: 'presence', opts: PRES_OPTS,
+    find: t => presence(t, /vegetation/i) },
+
+  { id: 'eff', label: 'Pericardial effusion', group: 'Other', kind: 'grade', opts: EFF_OPTS,
+    find: t => gradeFind(t, [/pericardial effusion/i], EFF) },
+  { id: 'thromb', label: 'Intracardiac thrombus', group: 'Other', kind: 'presence', opts: PRES_OPTS,
+    find: t => presence(t, /\bthromb\w*|\bclot\b/i) },
+  { id: 'aoroot', label: 'Aortic root', unit: 'cm', group: 'Other', kind: 'num',
+    find: t => numFind(t, [/(?:aortic root|sinus(?:es)? of valsalva|\bSOV\b)[^0-9]{0,30}(?<a>\d+(?:\.\d+)?)\s*(?<u>cm|mm)?/i], CM) },
+  { id: 'ascao', label: 'Ascending aorta', unit: 'cm', group: 'Other', kind: 'num',
+    find: t => numFind(t, [/(?:ascending aorta|\basc(?:ending)?\.?\s*ao(?:rta)?\b)[^0-9]{0,30}(?<a>\d+(?:\.\d+)?)\s*(?<u>cm|mm)?/i], CM) },
+];
+const PMAP = Object.fromEntries(PARAMS.map(p => [p.id, p]));
+
+function toISO(str) {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+  const d = new Date(str.replace(/-/g, ' '));
+  if (isNaN(d)) return '';
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+function detectConditions(t) {
+  const c = {};
+  if (/transesophageal|transoesophageal|\bTEE\b|\bTOE\b/i.test(t)) c.type = 'TEE';
+  else if (/point[- ]of[- ]care|\bPOCUS\b/i.test(t)) c.type = 'POCUS';
+  else if (/transthoracic|\bTTE\b/i.test(t)) c.type = 'TTE';
+  if (/atrial fibrillation|\bA-?fib\b|\bAF\b/i.test(t)) c.rhythm = 'AF';
+  else if (/atrial flutter/i.test(t)) c.rhythm = 'Flutter';
+  else if (/\bpaced\b|paced rhythm/i.test(t)) c.rhythm = 'Paced';
+  else if (/sinus (?:rhythm|tachycardia|bradycardia)|\bNSR\b/i.test(t)) c.rhythm = 'Sinus';
+  const hr = t.match(/(?:\bHR\b|heart rate)\D{0,12}(\d{2,3})/i); if (hr) c.hr = hr[1];
+  if (/without (?:echo )?contrast|no contrast|non-?contrast/i.test(t)) c.contrast = 'No';
+  else if (/definity|optison|lumason|sonovue|contrast (?:was )?(?:used|given|administered)|with (?:echo |ultrasound )?contrast|contrast[- ]enhanced/i.test(t)) c.contrast = 'Yes';
+  if (/technically (?:difficult|limited)|suboptimal|poor (?:acoustic |echo )?windows?|limited (?:study|views|windows|image quality)|image quality[:\s]+(?:is |was )?(?:poor|limited|suboptimal)|poor image quality/i.test(t)) c.quality = 'Limited';
+  else if (/image quality[:\s]+(?:is |was )?(?:good|adequate|fair)|(?:good|adequate) (?:image )?quality/i.test(t)) c.quality = 'Good';
+  const d = t.match(/(?:study date|exam date|date of (?:study|exam|service|procedure)|\bdate)\s*[:\-]?\s*(\d{4}-\d{2}-\d{2}|[A-Z][a-z]{2,8}\.? \d{1,2},? \d{4}|\d{1,2}[- ][A-Z][a-z]{2,8}[- ]\d{4})/i);
+  if (d) c.date = toISO(d[1]);
+  return c;
+}
+function extractAll(text) {
+  const vals = {};
+  for (const p of PARAMS) { try { const r = p.find(text); if (r) vals[p.id] = r; } catch (e) { /* skip */ } }
+  return { vals, cond: detectConditions(text || '') };
+}
+
+// ---- flags ----
+const RANK = { R: 3, A: 2, G: 1, I: 0 };
+const R = t => ['R', t], A = t => ['A', t], G = t => ['G', t], I = t => ['I', t];
+const both = (p, c) => isN(p) && isN(c);
+const nw = (p, c, test) => isN(c) && test(c) && isN(p) && !test(p);
+function mk(list) {
+  list = list.filter(Boolean); if (!list.length) return null;
+  const top = list.reduce((a, b) => RANK[b[0]] > RANK[a[0]] ? b : a);
+  return { lvl: top[0], txt: list.map(x => x[1]).join('; ') };
+}
+function thick(p, c) {
+  const o = [];
+  if (nw(p, c, v => v >= 1.2)) o.push(A('Newly ≥1.2 cm'));
+  else if (both(p, c) && c - p >= 0.2) o.push(A(`Thicker by ${fmt(c - p)} cm`));
+  else if (isN(c) && c >= 1.2) o.push(I('≥1.2 cm'));
+  return mk(o);
+}
+function aorta(p, c, x) {
+  const o = [];
+  if (both(p, c) && c - p >= 0.3) { const r = x.years ? (c - p) / x.years : null; o.push(A(`Grew ${fmt(c - p)} cm${r ? ` (${fmt(r, 2)} cm/yr)` : ''}`)); }
+  if (isN(c) && c >= 4.5) o.push(A('≥4.5 cm'));
+  return mk(o);
+}
+const FLAGS = {
+  lvef(p, c) {
+    if (!isN(c)) return null;
+    const o = []; const cls = c <= 40 ? 'HFrEF range' : c < 50 ? 'HFmrEF range' : 'preserved';
+    if (isN(p)) {
+      const d = round(c - p);
+      if (d <= -10) o.push(R(`Fell ${fmt(-d)} points`));
+      else if (d >= 10 && p <= 40 && c > 40) o.push(G('HFimpEF: continue GDMT'));
+      else if (d >= 10) o.push(G(`Improved ${fmt(d)} points`));
+      else if (Math.abs(d) >= 5) o.push(I(`${d > 0 ? '+' : ''}${fmt(d)} points, may be reader variability`));
+    }
+    o.push(c <= 40 ? A(cls) : I(cls));
+    return mk(o);
+  },
+  gls(p, c) {
+    const o = [];
+    if (both(p, c) && p > 0) { const rel = (c - p) / p; if (rel <= -0.15) o.push(R(`Relative fall ${Math.round(-rel * 100)}%`)); }
+    if (isN(c) && c < 16) o.push(A('Below 16%'));
+    return mk(o);
+  },
+  lvidd(p, c, x) {
+    const L = x.sex === 'female' ? 5.2 : 5.8; const o = [];
+    if (nw(p, c, v => v > L)) o.push(A(`Newly dilated (>${L} cm)`));
+    else if (both(p, c) && c - p >= 0.5) o.push(A(`Larger by ${fmt(c - p)} cm`));
+    else if (both(p, c) && c - p <= -0.5) o.push(G('Smaller: reverse remodelling'));
+    else if (isN(c) && c > L) o.push(I(`Dilated (>${L} cm)`));
+    return mk(o);
+  },
+  lvedvi(p, c, x) {
+    const L = x.sex === 'female' ? 61 : 74; const o = [];
+    if (nw(p, c, v => v > L)) o.push(A(`Newly above ${L}`));
+    else if (both(p, c) && c - p >= 10) o.push(A(`Up ${fmt(c - p, 0)}`));
+    else if (both(p, c) && c - p <= -10) o.push(G('Smaller: reverse remodelling'));
+    else if (isN(c) && c > L) o.push(I(`Above ${L}`));
+    return mk(o);
+  },
+  ivsd: thick, lvpwd: thick,
+  lvmi(p, c, x) {
+    const L = x.sex === 'female' ? 95 : 115;
+    if (nw(p, c, v => v > L)) return mk([A(`Newly above ${L} g/m²`)]);
+    if (isN(c) && c > L) return mk([I(`Above ${L} g/m²`)]);
+    return null;
+  },
+  lavi(p, c) {
+    if (nw(p, c, v => v > 34)) return mk([A('Newly enlarged (>34)')]);
+    if (both(p, c) && c - p >= 10) return mk([A(`Up ${fmt(c - p, 0)}`)]);
+    if (isN(c) && c > 34) return mk([I('Enlarged (>34)')]);
+    return null;
+  },
+  ee(p, c) {
+    if (nw(p, c, v => v > 14)) return mk([A('Newly >14: raised filling pressure')]);
+    if (isN(c) && c > 14) return mk([I('>14')]);
+    return null;
+  },
+  tapse(p, c) {
+    if (nw(p, c, v => v < 17)) return mk([R('Newly <17 mm: RV dysfunction')]);
+    if (both(p, c) && c - p <= -4) return mk([A(`Down ${fmt(p - c, 0)} mm`)]);
+    if (both(p, c) && c - p >= 4) return mk([G(`Up ${fmt(c - p, 0)} mm`)]);
+    if (isN(c) && c < 17) return mk([I('<17 mm')]);
+    return null;
+  },
+  trv(p, c) {
+    if (nw(p, c, v => v > 2.8)) return mk([A('Newly >2.8 m/s')]);
+    if (both(p, c) && c - p >= 0.4) return mk([A(`Up ${fmt(c - p)} m/s`)]);
+    if (isN(c) && c > 2.8) return mk([I('>2.8 m/s')]);
+    return null;
+  },
+  rvsp(p, c) {
+    if (both(p, c) && c - p >= 10) return mk([R(`Rose ${fmt(c - p, 0)} mmHg`)]);
+    if (nw(p, c, v => v > 35)) return mk([A('Newly >35 mmHg')]);
+    if (both(p, c) && c - p <= -10) return mk([G(`Fell ${fmt(p - c, 0)} mmHg`)]);
+    if (isN(c) && c > 35) return mk([I('>35 mmHg')]);
+    return null;
+  },
+  ivc(p, c) {
+    if (nw(p, c, v => v > 2.1)) return mk([A('Newly dilated (>2.1 cm)')]);
+    if (isN(c) && c > 2.1) return mk([I('Dilated')]);
+    return null;
+  },
+  rap(p, c) {
+    if (nw(p, c, v => v >= 15)) return mk([A('Now high (15)')]);
+    if (isN(c) && c >= 15) return mk([I('High')]);
+    return null;
+  },
+  avvmax(p, c, x) {
+    if (!isN(c)) return null; const o = [];
+    if (nw(p, c, v => v >= 5)) o.push(R('Very severe range (≥5 m/s)'));
+    else if (nw(p, c, v => v >= 4)) o.push(R('Reached severe range (≥4 m/s)'));
+    if (both(p, c) && x.years) { const r = (c - p) / x.years; if (r >= 0.3) o.push(R(`Rapid progression ${fmt(r, 2)} m/s/yr`)); }
+    if (!o.length && both(p, c) && c - p >= 0.3) o.push(A(`Up ${fmt(c - p)} m/s`));
+    if (!o.some(x => /severe range/.test(x[1])))
+      o.push(I(c >= 4 ? 'severe range' : c >= 3 ? 'moderate range' : c >= 2.6 ? 'mild range' : 'below AS range'));
+    return mk(o);
+  },
+  avmg(p, c) {
+    if (!isN(c)) return null; const o = [];
+    if (nw(p, c, v => v >= 40)) o.push(R('Reached severe range (≥40)'));
+    else if (both(p, c) && c - p >= 10) o.push(A(`Up ${fmt(c - p, 0)} mmHg`));
+    if (!o.some(x => /severe range/.test(x[1])))
+      o.push(I(c >= 40 ? 'severe range' : c >= 20 ? 'moderate range' : 'mild range'));
+    return mk(o);
+  },
+  ava(p, c) {
+    if (!isN(c)) return null; const o = [];
+    if (nw(p, c, v => v <= 1.0)) o.push(R('Reached severe range (≤1.0)'));
+    else if (both(p, c) && p - c >= 0.2) o.push(A(`Down ${fmt(p - c, 2)} cm²`));
+    if (!o.some(x => /severe range/.test(x[1])))
+      o.push(I(c <= 1.0 ? 'severe range' : c <= 1.5 ? 'moderate range' : 'mild range'));
+    return mk(o);
+  },
+  di(p, c) {
+    if (nw(p, c, v => v < 0.25)) return mk([R('Newly <0.25')]);
+    if (isN(c) && c < 0.25) return mk([I('<0.25')]);
+    return null;
+  },
+  aoroot: aorta, ascao: aorta,
+};
+function gradeFlag(p, pv, cv) {
+  if (!isN(cv)) return null;
+  const label = (p.opts.find(o => o[0] === cv) || [, ''])[1];
+  if (!isN(pv)) return mk([I(label)]);
+  const d = cv - pv; const o = [];
+  if (p.id === 'eff') {
+    if (pv === 0 && cv >= 1) o.push((cv >= 3 ? R : A)('New effusion'));
+    else if (d >= 1) o.push((cv >= 3 ? R : A)('Larger'));
+    else if (d <= -1) o.push(G('Smaller'));
+  } else if (p.id === 'diast') {
+    if (d >= 1) o.push(A(`Worse (${label})`)); else if (d <= -1) o.push(G('Better'));
+  } else {
+    if (cv === 6 && pv < 6) o.push(R('Now severe'));
+    else if (d >= 4) o.push(R(`Worse by ${Math.floor(d / 2)} grades`));
+    else if (d >= 2) o.push(A('Worse by 1 grade'));
+    else if (d === 1) o.push(I('Slightly worse, often reader variability'));
+    else if (d <= -2) o.push(G('Improved'));
+  }
+  if (!o.length) o.push(I(d === 0 ? 'Unchanged' : label));
+  return mk(o);
+}
+function presFlag(pv, cv) {
+  if (!isN(cv)) return isN(pv) && pv === 1 ? { lvl: 'I', txt: 'Not mentioned now' } : null;
+  if (cv === 1 && pv === 0) return { lvl: 'R', txt: 'New' };
+  if (cv === 1 && pv === 1) return { lvl: 'A', txt: 'On both: compare descriptions' };
+  if (cv === 1) return { lvl: 'A', txt: 'Present, no prior to compare' };
+  if (cv === 0 && pv === 1) return { lvl: 'G', txt: 'No longer reported' };
+  return { lvl: 'I', txt: 'None' };
+}
+function flagFor(p, pv, cv, ctx) {
+  if (p.kind === 'num') return FLAGS[p.id] ? FLAGS[p.id](pv, cv, ctx) : null;
+  if (p.kind === 'grade') return gradeFlag(p, pv, cv);
+  return presFlag(pv, cv);
+}
+
+// ---- study-condition warnings ----
+function condWarnings(cp, cc) {
+  const w = [];
+  if (cp.type && cc.type && cp.type !== cc.type) w.push({ lvl: 'A', txt: `${cp.type} vs ${cc.type}: different modalities, not a like-for-like comparison.`, short: `${cp.type} vs ${cc.type}` });
+  const irr = r => r === 'AF' || r === 'Flutter';
+  const irrList = [['prior', cp], ['current', cc]].filter(([, c]) => irr(c.rhythm)).map(([k]) => k);
+  if (irrList.length) w.push({ lvl: 'A', txt: `${irrList.join(' and ')} study in AF/flutter: EF and Doppler values vary beat to beat and may be averaged over few beats.`, short: `${irrList.join('/')} study in AF/flutter` });
+  else if (cp.rhythm && cc.rhythm && cp.rhythm !== cc.rhythm) w.push({ lvl: 'A', txt: `Rhythm differs (${cp.rhythm} vs ${cc.rhythm}).`, short: 'rhythm differs' });
+  const tachy = [['prior', cp], ['current', cc]].filter(([, c]) => c.hr > 100).map(([k, c]) => `${k} HR ${c.hr}`);
+  if (tachy.length) w.push({ lvl: 'A', txt: `Tachycardia (${tachy.join(', ')}): EF may be underestimated and diastolic indices distorted. Consider repeating once the rate is controlled.`, short: tachy.join(', ') });
+  const lim = [['prior', cp], ['current', cc]].filter(([, c]) => c.quality === 'Limited').map(([k]) => k);
+  if (lim.length) w.push({ lvl: 'A', txt: `Limited image quality (${lim.join(' and ')} study): measurements are less reliable.`, short: `limited images (${lim.join('/')})` });
+  if ((cp.contrast === 'Yes') !== (cc.contrast === 'Yes') && (cp.contrast === 'Yes' || cc.contrast === 'Yes')) {
+    const which = cp.contrast === 'Yes' ? 'prior' : 'current';
+    w.push({ lvl: 'A', txt: `Contrast used in the ${which} study only: volumes and EF are not directly comparable.`, short: `contrast in ${which} only` });
+  }
+  return w;
+}
+
+// ---- interpretation ----
+function interpret(P, C, ctx) {
+  const v = (m, id) => m[id] ? m[id].v : undefined;
+  const F = {}; for (const p of PARAMS) F[p.id] = flagFor(p, v(P, p.id), v(C, p.id), ctx);
+  const lv = id => F[id] ? F[id].lvl : '';
+  const gD = id => both(v(P, id), v(C, id)) ? v(C, id) - v(P, id) : 0;
+  const out = [];
+  const efP = v(P, 'lvef'), efC = v(C, 'lvef');
+  const efFall = lv('lvef') === 'R';
+  const lvfxWorse = gD('lvfx') >= 2;
+  const newRW = v(C, 'rwma') === 1 && v(P, 'rwma') === 0;
+  if (efFall || lvfxWorse || newRW) {
+    out.push({ lvl: 'R', title: newRW ? 'New regional wall motion abnormality' + (efFall || lvfxWorse ? ' and fall in LV function' : '') : 'Fall in LV systolic function',
+      text: `Check the study conditions before accepting it as real. If real, consider ischemia (ECG, troponin trend; a regional pattern favours CAD), tachycardia-mediated cardiomyopathy${ctx.hrC > 100 ? ` (HR ${ctx.hrC} at the time of the study)` : ''}, myocarditis, stress (Takotsubo) cardiomyopathy, cardiotoxic therapy (anthracyclines, trastuzumab, checkpoint inhibitors), alcohol, GDMT non-adherence, and new valve disease. The CHF tab has the ischemia workup.` });
+  }
+  if (both(efP, efC) && efP <= 40 && efC > 40 && efC - efP >= 10) {
+    out.push({ lvl: 'G', title: 'HF with improved EF (HFimpEF)', text: 'Continue GDMT; stopping it after recovery is associated with relapse (TRED-HF). Keep HF clinic follow-up and a repeat echo.' });
+  } else if (isN(efC) && efC <= 40) {
+    out.push({ lvl: 'A', title: 'HFrEF range', text: 'Check the four GDMT pillars (ARNI/ACEi/ARB, evidence-based beta-blocker, MRA, SGLT2 inhibitor) in the CHF tab. ICD/CRT is considered if EF stays ≤35% after about 3 months of optimized therapy.' });
+  }
+  if (lv('gls') === 'R') out.push({ lvl: 'A', title: 'GLS relative fall >15%', text: 'In a patient on cardiotoxic cancer therapy this meets the threshold for cancer-therapy-related cardiac dysfunction even with a preserved EF; involve oncology or cardio-oncology before the next dose.' });
+  const thickC = Math.max(v(C, 'ivsd') || 0, v(C, 'lvpwd') || 0) >= 1.2 || (v(C, 'lvh') || 0) >= 4;
+  if (thickC) out.push({ lvl: 'A', title: 'Increased wall thickness', text: 'Usually hypertension or AS. Consider cardiac amyloidosis with HFpEF, low or discordant QRS voltage for the wall thickness, AS in an older patient, bilateral carpal tunnel, lumbar stenosis, biceps tendon rupture, neuropathy, or a persistently mildly raised troponin. Screen with SPEP and immunofixation, serum free light chains and urine immunofixation; if no monoclonal protein, a PYP/DPD scan.' });
+  if (['lavi', 'ee', 'trv'].some(id => lv(id) === 'A')) out.push({ lvl: 'I', title: 'Higher filling pressures', text: 'New E/e′ >14, LAVI >34 mL/m² or TR velocity >2.8 m/s suggest raised LV filling pressure. This supports congestion if the clinical picture fits; correlate with weight, JVP and NT-proBNP.' });
+  const rvBad = lv('rvsp') === 'R' || lv('tapse') === 'R' || gD('rvfx') >= 2 || gD('rvsize') >= 2;
+  if (rvBad) out.push({ lvl: 'R', title: 'RV strain or higher pulmonary pressure', text: 'If acute, consider PE (CTPA, or V/Q scan if contrast is contraindicated), especially with tachycardia, hypoxemia or RV dilation. If gradual: left-sided heart disease (most common), chronic lung disease or hypoxemia, OSA, CTEPH. Persistent RVSP >35–40 mmHg without a left-sided cause warrants outpatient PH workup.' });
+  const asWorse = ['avvmax', 'avmg', 'ava'].some(id => lv(id) === 'R' || lv(id) === 'A') || gD('as') >= 2;
+  if (asWorse) out.push({ lvl: ['avvmax', 'avmg', 'ava'].some(id => lv(id) === 'R') ? 'R' : 'A', title: 'Aortic stenosis progression', text: 'Reassess severity and TAVI/SAVR candidacy in the AS tab. Severe AS with symptoms (exertional dyspnea, angina, syncope, HF) goes to the Heart Team. Peak velocity rising ≥0.3 m/s per year predicts earlier events.' });
+  const avaC = v(C, 'ava'), mgC = v(C, 'avmg');
+  if (isN(avaC) && avaC <= 1.0 && isN(mgC) && mgC < 40) {
+    out.push({ lvl: 'A', title: 'Discordant AS grading', text: `AVA ≤1.0 cm² but mean gradient <40 mmHg. ${isN(efC) && efC < 50 ? 'With reduced EF this may be classic low-flow, low-gradient AS: dobutamine stress echo.' : 'With preserved EF consider paradoxical low-flow AS (stroke volume index <35 mL/m²) or measurement error: CT aortic valve calcium score.'} Cardiology to adjudicate.` });
+  }
+  if (gD('mr') >= 2) out.push({ lvl: 'A', title: 'Mitral regurgitation worse', text: `Primary (leaflet) or secondary (LV or annular dilation)?${newRW || efFall ? ' With a new wall motion abnormality or EF fall, consider ischemic papillary muscle dysfunction.' : ''} Secondary MR often improves with GDMT and decongestion.` });
+  if (gD('tr') >= 2) out.push({ lvl: 'I', title: 'Tricuspid regurgitation worse', text: 'Usually secondary: volume overload, RV dilation, higher pulmonary pressures, or a device lead.' });
+  if (gD('ar') >= 2) out.push({ lvl: 'A', title: 'Aortic regurgitation worse', text: 'Check the aortic root and ascending aorta, and endocarditis if febrile. Acute severe AR is a surgical emergency.' });
+  const effC = v(C, 'eff'), effP = v(P, 'eff');
+  if (isN(effC) && effC >= 1 && (!isN(effP) || effC > effP)) out.push({ lvl: effC >= 3 ? 'R' : 'A', title: isN(effP) && effP > 0 ? 'Larger pericardial effusion' : 'Pericardial effusion', text: 'Correlate with tamponade findings: hypotension, tachycardia, raised JVP, pulsus paradoxus >10 mmHg, RA/RV diastolic collapse or a plethoric IVC on the report. Moderate or large, or any hemodynamic compromise: same-day cardiology. Look for a cause (uremia, malignancy, post-MI or pericarditis, hypothyroidism, anticoagulation).' });
+  if (v(C, 'veg') === 1) out.push({ lvl: 'R', title: 'Vegetation reported', text: 'Blood cultures ×3 before antibiotics, Duke criteria, ID consult, and TEE if not already done (see the “Echo needed?” card in the Antibiotics tab).' });
+  if (v(C, 'thromb') === 1) out.push({ lvl: 'R', title: 'Intracardiac thrombus reported', text: 'Discuss anticoagulation against bleeding risk. LV thrombus usually sits with apical akinesis or aneurysm.' });
+  if (lv('aoroot') === 'A' || lv('ascao') === 'A') out.push({ lvl: 'A', title: 'Aortic dilation or growth', text: 'Confirm with CT or MRI; echo can under- or over-measure. Control BP. Surgical thresholds are generally about 5.5 cm, lower with a bicuspid valve, connective tissue disease, family history of dissection, or rapid growth (≥0.5 cm/yr, or ≥0.3 cm/yr in two consecutive years): cardiology or cardiac surgery input.' });
+  if (lv('lvidd') === 'A' || lv('lvedvi') === 'A' || gD('lvsize') >= 2) out.push({ lvl: 'A', title: 'LV dilation (adverse remodelling)', text: 'Optimize GDMT and look for a regurgitant valve or ongoing volume overload.' });
+  if (lv('lvidd') === 'G' || lv('lvedvi') === 'G') out.push({ lvl: 'G', title: 'Reverse remodelling', text: 'Smaller LV suggests response to therapy; continue GDMT.' });
+  if (lv('ivc') === 'A' || lv('rap') === 'A') out.push({ lvl: 'I', title: 'Higher RA pressure estimate', text: 'Supports venous congestion if clinically consistent.' });
+  return out;
+}
+
+// ---- sample (made-up) reports ----
+const SAMPLE_PRIOR = `TRANSTHORACIC ECHOCARDIOGRAM REPORT (made-up test patient)
+Study date: 2024-03-12
+Indication: dyspnea. Rhythm: sinus rhythm, HR 72 bpm. Image quality: good.
+Left ventricle is normal in size. LVIDd 5.0 cm. IVSd 1.1 cm. LVPWd 1.0 cm.
+Normal LV systolic function. Left ventricular ejection fraction is 55-60% by biplane Simpson's. No regional wall motion abnormalities.
+Grade I diastolic dysfunction. Average E/e' 10. LA volume index 32 mL/m2.
+Right ventricle is normal in size. RV systolic function is normal. TAPSE 21 mm.
+Peak TR velocity 2.5 m/s. Estimated RVSP 30 mmHg.
+Mild mitral regurgitation. Trace tricuspid regurgitation. No aortic regurgitation.
+Mild aortic stenosis. Aortic valve peak velocity 2.8 m/s. Aortic valve mean gradient 18 mmHg. Aortic valve area 1.4 cm2.
+Aortic root 3.6 cm. IVC 1.6 cm with >50% inspiratory collapse. Estimated RAP 3 mmHg.
+No pericardial effusion. No intracardiac thrombus.`;
+const SAMPLE_CURRENT = `TRANSTHORACIC ECHOCARDIOGRAM REPORT (made-up test patient)
+Study date: 2026-11-20
+Indication: new dyspnea, elevated troponin. Rhythm: atrial fibrillation, HR 108 bpm. Technically difficult study; Definity contrast used for endocardial definition.
+Left ventricle is mildly dilated. LVIDd 5.7 cm. IVSd 1.2 cm. LVPWd 1.1 cm.
+Moderately reduced LV systolic function. LVEF 35% by contrast biplane. There is hypokinesis of the inferior and inferolateral walls. No LV thrombus.
+Diastolic function cannot be assessed due to atrial fibrillation. Average E/e' 16. LA volume index 48 mL/m2.
+Right ventricle is mildly dilated. RV systolic function is mildly reduced. TAPSE 15 mm.
+Peak TR velocity 3.1 m/s. Estimated RVSP 45 mmHg.
+Moderate mitral regurgitation. Mild tricuspid regurgitation. No aortic regurgitation.
+Moderate aortic stenosis. Aortic valve peak velocity 3.7 m/s. Aortic valve mean gradient 30 mmHg. Aortic valve area 1.0 cm2.
+Aortic root 3.8 cm. IVC 2.3 cm with <50% inspiratory collapse. Estimated RAP 15 mmHg.
+Small pericardial effusion without tamponade physiology.`;
+</script>
+
+<!-- ================= UI ================= -->
+<script id="ui">
+'use strict';
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const S = { prior: { vals: {} }, current: { vals: {} }, noteDirty: false, ran: false };
+
+// sub-tabs
+$$('.subtab').forEach(b => b.addEventListener('click', () => {
+  $$('.subtab').forEach(x => x.setAttribute('aria-selected', String(x === b)));
+  $$('.panel').forEach(p => { p.hidden = p.id !== 'tab-' + b.dataset.tab; });
+}));
+
+function cond(k) {
+  return { type: $('#type-' + k).value, rhythm: $('#rhythm-' + k).value, hr: parseInt($('#hr-' + k).value, 10) || null,
+    quality: $('#quality-' + k).value, contrast: $('#contrast-' + k).value, date: $('#date-' + k).value };
+}
+function ctx() {
+  const dp = $('#date-prior').value, dc = $('#date-current').value; let years = null;
+  if (dp && dc) { years = (new Date(dc) - new Date(dp)) / (365.25 * 864e5); if (!(years > 0.08)) years = null; }
+  return { sex: $('#sex').value, years, hrC: parseInt($('#hr-current').value, 10) || null };
+}
+function unitStr(p) { return !p.unit ? '' : p.unit === '%' ? '%' : ' ' + p.unit; }
+function valueText(p, val) {
+  if (!val || !isN(val.v)) return 'n/a';
+  if (p.kind === 'num') return (val.range || fmt(val.v, p.dp == null ? 1 : p.dp)) + unitStr(p);
+  return (p.opts.find(o => o[0] === val.v) || [, '?'])[1];
+}
+
+function runExtract() {
+  for (const k of ['prior', 'current']) {
+    const r = extractAll($('#txt-' + k).value);
+    S[k].vals = r.vals;
+    for (const f of ['type', 'rhythm', 'quality', 'contrast']) if (r.cond[f]) $(`#${f}-${k}`).value = r.cond[f];
+    if (r.cond.hr) $('#hr-' + k).value = r.cond.hr;
+    if (r.cond.date) $('#date-' + k).value = r.cond.date;
+  }
+  S.noteDirty = false; S.ran = true;
+  renderAll();
+}
+function renderAll() { renderConds(); renderTable(); renderInterp(); refreshNote(); buildConsult(); }
+
+function renderConds() {
+  if (!S.ran) return;
+  const w = condWarnings(cond('prior'), cond('current')); const c = ctx();
+  const interval = c.years ? `<p class="small">Interval between studies: ${c.years.toFixed(1)} years.</p>` : '<p class="small muted">Add both study dates to get the interval and AS progression rate.</p>';
+  $('#condOut').innerHTML = interval + (w.length ? w.map(x => `<div class="box ${x.lvl}">${esc(x.txt)}</div>`).join('')
+    : '<div class="box G">No condition differences detected. Different readers or labs can still account for small changes.</div>');
+  $('#condOut').classList.remove('muted', 'small');
+}
+
+function cellHTML(p, k, val) {
+  const showSrc = $('#showSrc').checked;
+  let ctl;
+  if (p.kind === 'num') {
+    ctl = `<input class="val" data-k="${k}" data-id="${p.id}" inputmode="decimal" aria-label="${esc(p.label)} ${k}" value="${val && isN(val.v) ? fmt(val.v, p.dp == null ? 2 : p.dp) : ''}">`;
+    if (val && val.range) ctl += `<div class="rng">reported ${esc(val.range)}</div>`;
+  } else {
+    ctl = `<select class="val" data-k="${k}" data-id="${p.id}" aria-label="${esc(p.label)} ${k}"><option value="">not stated</option>${p.opts.map(o => `<option value="${o[0]}"${val && val.v === o[0] ? ' selected' : ''}>${esc(o[1])}</option>`).join('')}</select>`;
+  }
+  const src = val && val.src ? `<div class="src" ${showSrc ? '' : 'hidden'} title="${esc(val.src)}">${val.edited ? 'edited · ' : ''}“${esc(val.src.length > 140 ? val.src.slice(0, 140) + '…' : val.src)}”</div>` : '';
+  return ctl + src;
+}
+function deltaHTML(p, a, b) {
+  if (!both(a, b)) return '';
+  const d = round(b - a);
+  if (p.kind === 'num') return d === 0 ? '=' : (d > 0 ? '+' : '−') + fmt(Math.abs(d), p.dp == null ? 1 : p.dp);
+  if (p.kind === 'presence') return a === 0 && b === 1 ? 'new' : a === 1 && b === 0 ? 'gone' : '=';
+  return d === 0 ? '=' : (d > 0 ? '↑ worse' : '↓ better');
+}
+function flagHTML(f) { return f ? `<span class="flag ${f.lvl}">${esc(f.txt)}</span>` : ''; }
+
+function renderTable() {
+  const tb = $('#cmp tbody'); const f = $('#filter').value; const c = ctx();
+  $('#thPrior').textContent = 'Prior' + ($('#date-prior').value ? ' ' + $('#date-prior').value : '');
+  $('#thCurrent').textContent = 'Current' + ($('#date-current').value ? ' ' + $('#date-current').value : '');
+  let html = ''; let lastGroup = null;
+  for (const p of PARAMS) {
+    const a = S.prior.vals[p.id], b = S.current.vals[p.id];
+    const fl = flagFor(p, a && a.v, b && b.v, c);
+    if (f === 'all' && !a && !b) continue;
+    if (f === 'flag' && !(fl && fl.lvl !== 'I') && p.id !== 'lvef') continue;
+    if (p.group !== lastGroup) { html += `<tr class="grp"><td colspan="5">${esc(p.group)}</td></tr>`; lastGroup = p.group; }
+    html += `<tr data-id="${p.id}" class="${fl && fl.lvl !== 'I' ? 'row' + fl.lvl : ''}"><td class="pl">${esc(p.label)}${p.unit ? ` <span class="u">${esc(p.unit)}</span>` : ''}</td><td>${cellHTML(p, 'prior', a)}</td><td>${cellHTML(p, 'current', b)}</td><td class="d">${deltaHTML(p, a && a.v, b && b.v)}</td><td class="fl">${flagHTML(fl)}</td></tr>`;
+  }
+  tb.innerHTML = html || `<tr><td colspan="5" class="muted empty">${S.ran ? 'No values found. Check that the pasted text is the report itself, or choose “Every parameter” and enter values by hand.' : 'Paste both reports, then select Extract and compare.'}</td></tr>`;
+}
+function updateRow(id) {
+  const tr = $(`#cmp tbody tr[data-id="${id}"]`); if (!tr) return;
+  const p = PMAP[id]; const a = S.prior.vals[id], b = S.current.vals[id];
+  const fl = flagFor(p, a && a.v, b && b.v, ctx());
+  tr.querySelector('.d').innerHTML = deltaHTML(p, a && a.v, b && b.v);
+  tr.querySelector('.fl').innerHTML = flagHTML(fl);
+  tr.className = fl && fl.lvl !== 'I' ? 'row' + fl.lvl : '';
+}
+function onValueEdit(e) {
+  const el = e.target; if (!el.dataset || !el.dataset.id) return;
+  const k = el.dataset.k, id = el.dataset.id; const raw = el.value.trim();
+  if (raw === '') { delete S[k].vals[id]; }
+  else {
+    const v = parseFloat(raw); if (isNaN(v)) return;
+    const old = S[k].vals[id] || {};
+    S[k].vals[id] = { v, src: old.src, edited: true, range: null };
+    const rng = el.parentElement.querySelector('.rng'); if (rng) rng.remove();
+  }
+  updateRow(id); renderInterp(); refreshNote(); buildConsult();
+}
+$('#cmp tbody').addEventListener('input', onValueEdit);
+$('#cmp tbody').addEventListener('change', onValueEdit);
+
+function renderInterp() {
+  if (!S.ran) return;
+  const list = interpret(S.prior.vals, S.current.vals, ctx());
+  $('#interp').classList.remove('muted', 'small');
+  $('#interp').innerHTML = list.length ? list.map(x => `<div class="box ${x.lvl}"><b>${esc(x.title)}</b>${esc(x.text)}</div>`).join('')
+    : '<div class="box">No changes that cross the flag thresholds. Small differences may still matter clinically.</div>';
+}
+
+// ---- note ----
+function buildNote() {
+  const c = ctx(); const cp = cond('prior'), cc = cond('current');
+  const desc = cd => `${cd.type || 'echo'}${cd.date ? ' ' + cd.date : ''}`;
+  const lines = [`Echo comparison: ${desc(cc)} vs prior ${desc(cp)}${c.years ? ` (interval ${c.years.toFixed(1)} y)` : ''}.`];
+  const ch = [];
+  for (const p of PARAMS) {
+    const a = S.prior.vals[p.id], b = S.current.vals[p.id];
+    if (!a && !b) continue;
+    const fl = flagFor(p, a && a.v, b && b.v, c);
+    const flagged = fl && fl.lvl !== 'I';
+    if (p.id !== 'lvef' && !flagged) continue;
+    let line = `- ${p.label}: ${valueText(p, a)} → ${valueText(p, b)}`;
+    if (flagged) line += ` (${fl.txt})`;
+    if (p.kind === 'presence' && b && b.v === 1 && b.src) line += `: ${b.src.length > 160 ? b.src.slice(0, 160) + '…' : b.src}`;
+    ch.push(line);
+  }
+  lines.push(ch.length > 1 || (ch.length && /\(/.test(ch[0])) ? 'Changes:' : 'No flagged changes.');
+  lines.push(...ch);
+  const w = condWarnings(cp, cc).map(x => x.short);
+  if (w.length) lines.push(`Study conditions: ${w.join('; ')}; interpret changes with caution.`);
+  lines.push('', 'Assessment/plan: ');
+  return lines.join('\n');
+}
+function refreshNote() { if (S.ran && !S.noteDirty) $('#note').value = buildNote(); }
+$('#note').addEventListener('input', () => { S.noteDirty = true; $('#noteMsg').textContent = 'Edited: comparison changes will not overwrite it until you rebuild.'; });
+$('#btnRegen').addEventListener('click', () => { S.noteDirty = false; $('#noteMsg').textContent = ''; refreshNote(); });
+
+// ---- consult ----
+function topChanges(n) {
+  const c = ctx(); const items = [];
+  for (const p of PARAMS) {
+    const a = S.prior.vals[p.id], b = S.current.vals[p.id];
+    const fl = flagFor(p, a && a.v, b && b.v, c);
+    if (!fl || (fl.lvl !== 'R' && fl.lvl !== 'A')) continue;
+    items.push({ r: RANK[fl.lvl], t: p.kind === 'presence' ? `${fl.txt.toLowerCase()} ${p.label.toLowerCase()}` : `${p.label} ${valueText(p, a)} → ${valueText(p, b)}` });
+  }
+  items.sort((x, y) => y.r - x.r);
+  return items.slice(0, n).map(x => x.t);
+}
+function buildConsult() {
+  const dr = $('#cDr').value.trim() || '___';
+  const nm = $('#cName').value.trim(), age = $('#cAge').value.trim(), mrn = $('#cMrn').value.trim();
+  const pt = [nm || '[name]', age ? `${age}` : '[age]', mrn ? `MRN ${mrn}` : '[MRN]'].join(', ');
+  const hx = $('#cHx').value.trim();
+  const tc = topChanges(3);
+  const dc = $('#date-current').value, dp = $('#date-prior').value;
+  const echo = tc.length ? ` New echo${dc ? ' ' + dc : ''} vs ${dp || 'prior'}: ${tc.join('; ')}.` : '';
+  const txt = `Hello Dr. ${dr}, This is Wayne, hospitalist. I have ${pt}${hx ? ', ' + hx : ''}.${echo} I would value your advice on ${$('#cQ').value}. Your help is much appreciated. Thanks, Wayne`;
+  $('#consult').value = txt;
+  $('#wc').textContent = `${txt.split(/\s+/).filter(Boolean).length} words`;
+}
+['#cSpec', '#cDr', '#cName', '#cAge', '#cMrn', '#cHx', '#cQ'].forEach(s => $(s).addEventListener('input', buildConsult));
+$('#consult').addEventListener('input', () => { $('#wc').textContent = `${$('#consult').value.split(/\s+/).filter(Boolean).length} words`; });
+
+async function copyText(t, msgEl) {
+  try { await navigator.clipboard.writeText(t); }
+  catch (e) { const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
+  if (msgEl) { msgEl.textContent = 'Copied'; setTimeout(() => { msgEl.textContent = ''; }, 1800); }
+}
+$('#btnCopyNote').addEventListener('click', () => copyText($('#note').value, $('#noteMsg')));
+$('#btnCopyConsult').addEventListener('click', () => copyText($('#consult').value, $('#wc')));
+
+// ---- controls ----
+$('#btnCompare').addEventListener('click', runExtract);
+$('#btnSample').addEventListener('click', () => { $('#txt-prior').value = SAMPLE_PRIOR; $('#txt-current').value = SAMPLE_CURRENT; runExtract(); });
+$('#btnClear').addEventListener('click', () => {
+  for (const k of ['prior', 'current']) {
+    $('#txt-' + k).value = ''; $('#date-' + k).value = ''; $('#hr-' + k).value = '';
+    ['type', 'rhythm', 'quality', 'contrast'].forEach(f => { $(`#${f}-${k}`).value = ''; });
+    S[k].vals = {};
+  }
+  S.ran = false; S.noteDirty = false; $('#note').value = ''; $('#noteMsg').textContent = '';
+  $('#condOut').className = 'muted small'; $('#condOut').textContent = 'Conditions are checked after you compare.';
+  $('#interp').className = 'muted small'; $('#interp').textContent = 'Nothing to interpret yet.';
+  renderTable(); buildConsult();
+});
+$('#filter').addEventListener('change', renderTable);
+$('#showSrc').addEventListener('change', () => $$('#cmp .src').forEach(e => { e.hidden = !$('#showSrc').checked; }));
+['prior', 'current'].forEach(k => ['type', 'rhythm', 'quality', 'contrast', 'hr', 'date'].forEach(f =>
+  $(`#${f}-${k}`).addEventListener('input', () => { if (S.ran) renderAll(); })));
+$('#sex').addEventListener('change', () => { if (S.ran) renderAll(); });
+
+// ---- optional FHIR (works when opened inside the launched toolkit) ----
+let client = null; let echoDocs = [];
+function htmlToText(s, ct) {
+  if (/rtf/i.test(ct || '') || /^\{\\rtf/.test(s)) s = s.replace(/\\par[d]?/g, '\n').replace(/\\[a-z]+-?\d* ?/gi, '').replace(/[{}]/g, '');
+  if (/html|xml/i.test(ct || '') || /<\/?(?:p|div|br|table|html|span)\b/i.test(s)) {
+    const d = new DOMParser().parseFromString(s.replace(/<br\s*\/?>/gi, '\n').replace(/<\/(p|div|tr|li|h\d)>/gi, '\n'), 'text/html');
+    s = d.body.textContent;
+  }
+  return s.replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+function b64Text(b64, ct) { const bin = atob(b64); const bytes = Uint8Array.from(bin, ch => ch.charCodeAt(0)); return htmlToText(new TextDecoder().decode(bytes), ct); }
+async function attachmentText(att) {
+  if (att.data) return b64Text(att.data, att.contentType);
+  if (!att.url) return '';
+  if (/pdf/i.test(att.contentType || '')) throw new Error('This report is a PDF. Open it in PowerChart and paste the text.');
+  const r = await client.request({ url: att.url, headers: { Accept: att.contentType || 'text/plain' } });
+  if (r && typeof r === 'object' && r.data) return b64Text(r.data, r.contentType || att.contentType);
+  return htmlToText(String(r), att.contentType);
+}
+async function initFhir() {
+  if (!window.FHIR) return;
+  try { client = await Promise.race([FHIR.oauth2.ready(), new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 5000))]); }
+  catch (e) { client = null; return; }
+  $('#modeLine').textContent = 'Connected to the chart: pick echo reports below or paste text.';
+  try {
+    const pt = await client.patient.read();
+    const n = (pt.name || [])[0] || {};
+    const name = n.text || [(n.given || []).join(' '), n.family].filter(Boolean).join(' ');
+    let age = '';
+    if (pt.birthDate) { const b = new Date(pt.birthDate), t = new Date(); age = t.getFullYear() - b.getFullYear() - ((t.getMonth() < b.getMonth() || (t.getMonth() === b.getMonth() && t.getDate() < b.getDate())) ? 1 : 0); }
+    const mrnId = (pt.identifier || []).find(i => /MRN|medical record/i.test((i.type && i.type.text) || '') || ((i.type && i.type.coding) || []).some(c => c.code === 'MR'));
+    const mrn = mrnId ? mrnId.value : '';
+    $('#ptBanner').textContent = [name, age !== '' ? age + ' y' : '', mrn ? 'MRN ' + mrn : ''].filter(Boolean).join(', ');
+    $('#cName').value = name; $('#cAge').value = age; $('#cMrn').value = mrn;
+    if (pt.gender === 'male' || pt.gender === 'female') $('#sex').value = pt.gender;
+    buildConsult();
+  } catch (e) { /* patient read optional */ }
+  $('#fhirRow').hidden = false; $('#fhirStatus').textContent = 'Searching for echo reports…';
+  const pid = client.patient.id; const isEcho = s => /echo|\bTTE\b|\bTEE\b|transthoracic|transesophageal/i.test(s || '');
+  const found = [];
+  try {
+    const drs = await client.request(`DiagnosticReport?patient=${pid}&_count=100`, { pageLimit: 3, flat: true });
+    for (const r of drs || []) {
+      const label = (r.code && (r.code.text || ((r.code.coding || [])[0] || {}).display)) || '';
+      if (!isEcho(label) || !(r.presentedForm || []).length) continue;
+      found.push({ label, date: (r.effectiveDateTime || r.issued || '').slice(0, 10), atts: r.presentedForm });
+    }
+  } catch (e) { /* ignore */ }
+  try {
+    const docs = await client.request(`DocumentReference?patient=${pid}&_count=100`, { pageLimit: 3, flat: true });
+    for (const d of docs || []) {
+      const label = (d.type && (d.type.text || ((d.type.coding || [])[0] || {}).display)) || d.description || '';
+      if (!isEcho(label + ' ' + (d.description || ''))) continue;
+      found.push({ label: d.description || label, date: (d.date || (d.context && d.context.period && d.context.period.start) || '').slice(0, 10), atts: (d.content || []).map(c => c.attachment).filter(Boolean) });
+    }
+  } catch (e) { /* ignore */ }
+  echoDocs = found.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  $('#fhirList').innerHTML = echoDocs.length ? echoDocs.map((d, i) => `<option value="${i}">${esc(d.date || 'no date')}: ${esc(d.label)}</option>`).join('') : '<option value="">No echo reports found</option>';
+  $('#fhirStatus').textContent = echoDocs.length ? `${echoDocs.length} found. Newest first.` : 'Paste reports instead.';
+}
+$$('[data-load]').forEach(b => b.addEventListener('click', async () => {
+  const d = echoDocs[$('#fhirList').value]; if (!d) return;
+  const k = b.dataset.load; $('#fhirStatus').textContent = 'Loading…';
+  try {
+    const att = d.atts.find(a => /text\/plain/i.test(a.contentType || '')) || d.atts.find(a => /html|rtf|xml/i.test(a.contentType || '')) || d.atts[0];
+    $('#txt-' + k).value = await attachmentText(att);
+    if (d.date) $('#date-' + k).value = d.date;
+    $('#fhirStatus').textContent = `Loaded into ${k}.`;
+  } catch (e) { $('#fhirStatus').textContent = e.message || 'Could not load this report. Paste it instead.'; }
+}));
+
+renderTable(); buildConsult(); initFhir();
+</script>
+</body>
+</html>
