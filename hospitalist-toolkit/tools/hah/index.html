@@ -11,24 +11,27 @@
     header { background:var(--accent); color:#fff; padding:12px 20px; }
     header h1 { margin:0; font-size:18px; }
     #patient { font-size:13px; opacity:.9; margin-top:2px; }
-    main { max-width:1100px; margin:16px auto; padding:0 16px; display:grid; gap:16px; }
-    .card { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:16px; }
+    main { max-width:1100px; margin:10px auto; padding:0 12px; display:grid; gap:10px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:10px 12px; }
     .card h2 { margin:0 0 10px; font-size:15px; }
     .note { font-size:12px; color:var(--muted); font-weight:normal; }
     .banner { border-radius:8px; padding:14px 18px; color:#fff; font-size:14px; margin-bottom:16px; }
     .banner b { display:block; font-size:18px; margin-bottom:4px; }
     .banner.yes { background:var(--ok); } .banner.no { background:var(--bad); } .banner.thin { background:#8a6d00; }
     table.chk { width:100%; border-collapse:collapse; font-size:13px; }
-    .chk th, .chk td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
-    .chk th { color:var(--muted); font-weight:600; } .chk .c { text-align:center; width:56px; }
+    .chk th, .chk td { text-align:left; padding:2px 6px; line-height:1.3; border-bottom:1px solid var(--line); vertical-align:top; }
+    .chk th { color:var(--muted); font-weight:600; } .chk .c { text-align:center; width:48px; }
+    .chk input[type=radio] { margin:1px 0; width:14px; height:14px; vertical-align:middle; }
+    .chk tr.sec td { padding:3px 6px; }
+    .evmore summary { cursor:pointer; font-size:11.5px; color:var(--accent); } .evmore { margin:0; }
     .chk tr.sec td { background:#eef4fb; font-weight:700; }
     .chk tr.ok td:first-child { border-left:4px solid var(--ok); }
     .chk tr.concern td:first-child { border-left:4px solid var(--bad); } .chk tr.concern { background:#fff6f6; }
     .chk tr.unknown td:first-child { border-left:4px solid #c9ced6; }
     .chk tr.info td:first-child { border-left:4px solid var(--accent); }
-    .tag { display:inline-block; font-size:10.5px; border-radius:9px; padding:1px 7px; margin:3px 4px 0 0; }
+    .tag { display:inline-block; font-size:10px; border-radius:9px; padding:0 6px; margin:0 3px 0 0; vertical-align:1px; }
     .tag.hard { background:#fde8e8; color:#9b1c1c; } .tag.ask { background:#e3eefc; color:#0b4a99; }
-    .ev { font-size:12px; color:#3e4c59; margin:3px 0; } .ev i { color:var(--muted); font-style:normal; }
+    .ev { font-size:12px; color:#3e4c59; margin:1px 0; line-height:1.3; } .ev i { color:var(--muted); font-style:normal; }
     mark { background:#fff1a8; }
     .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:10px 14px; }
     .grid label { font-size:12px; color:var(--muted); display:flex; flex-direction:column; gap:3px; }
@@ -43,7 +46,8 @@
     .warn { background:#fff4e5; border:1px solid #f0c27b; border-radius:6px; padding:8px 12px; font-size:13px; }
     .err { color:var(--bad); }
     pre { white-space:pre-wrap; font-size:12.5px; max-height:420px; overflow:auto; background:#fbfcfd; border:1px solid var(--line); border-radius:6px; padding:10px; }
-    ul { margin:6px 0 10px 18px; padding:0; font-size:14px; }
+    ul { margin:4px 0 8px 18px; padding:0; font-size:13.5px; line-height:1.35; }
+    #banner .card ul { columns:2 300px; column-gap:28px; } #banner .card li { break-inside:avoid; }
     @media print { .toolbar, button, input[type=radio] { display:none !important; } }
   </style>
 </head>

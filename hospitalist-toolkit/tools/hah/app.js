@@ -356,10 +356,13 @@ function render() {
 function rowHtml(it) {
   const k = it.row.key, a = state.answers[k];
   const tags = (it.row.hard ? '<span class="tag hard">exclusion if unfavourable</span>' : "") + (/ask/i.test(it.row.how) ? '<span class="tag ask">ask patient / family</span>' : "");
-  const evid = (it.note ? `<div class="note">${esc(it.note)}</div>` : "") +
-    it.evidence.map((e) => `<div class="ev"><i>${esc(e.label)}</i> <a href="#" onclick="viewNote(${e.note},${e.at},${e.len});return false">view</a><br>${e.snip}</div>`).join("") ||
+  // compact: first piece of evidence shown, the rest behind "+N more"
+  const evOne = (e) => `<div class="ev"><i>${esc(e.label)}</i> <a href="#" onclick="viewNote(${e.note},${e.at},${e.len});return false">view</a> · ${e.snip}</div>`;
+  const more = it.evidence.slice(1);
+  const evid = (it.note ? `<span class="note">${esc(it.note)}</span>` : "") +
+    (it.evidence.length ? evOne(it.evidence[0]) + (more.length ? `<details class="evmore"><summary>+${more.length} more</summary>${more.map(evOne).join("")}</details>` : "") : "") ||
     (it.note ? "" : '<span class="note">nothing found</span>');
-  return `<tr data-row="${esc(k)}"><td><b>${esc(it.row.item)}</b><br>${tags}</td>` +
+  return `<tr data-row="${esc(k)}"><td><b>${esc(it.row.item)}</b> ${tags}</td>` +
     ["Yes", "No", "Unknown"].map((v) => `<td class="c"><input type="radio" name="a_${esc(k)}" data-k="${esc(k)}" value="${v}" ${a === v ? "checked" : ""}></td>`).join("") +
     `<td>${evid}</td></tr>`;
 }

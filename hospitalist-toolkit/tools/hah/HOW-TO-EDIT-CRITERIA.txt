@@ -6,6 +6,8 @@ Make a backup copy first. Relaunch, and check "Criteria used" at the bottom for 
 hah-criteria.csv  - one row per checklist item (the referral form items plus extras)
   Key                 internal name - do not change existing keys (they link to the boxes on the PDF).
                       New rows: use any new key; they appear on screen and in "Additional information", not as PDF boxes.
+  (26 Nov 2026: 19 years or over, safe home environment, phone and fridge rows removed at the user's request;
+   their boxes on the referral PDF are left blank. Add a row back with the same key to restore one.)
   Section             Demographics / Other considerations / Clinical characteristics / Extra (not on form)
   Form item           text shown on screen
   Favourable answer   Yes, No or Info (Info = shown, never counts for or against)

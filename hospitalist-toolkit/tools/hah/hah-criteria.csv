@@ -1,8 +1,4 @@
 ﻿Key,Section,Form item,Favourable answer,Hard stop,How assessed,Words meaning YES,Words meaning NO,Ignore when nearby,Reference
-age19,Demographics,19 years old or over,Yes,Y,Auto (date of birth),,,,Form 9-90886 V.2
-safeHome,Demographics,Safe home environment,Yes,N,Ask + chart,safe home; home is safe,unsafe home; unsafe living; no fixed address; NFA; homeless; unhoused; shelter; hoarding; unsafe for discharge,,Form 9-90886 V.2
-phone,Demographics,Phone in the home,Yes,N,Ask,has a phone; phone at home; cell phone,no phone; does not have a phone,,Form 9-90886 V.2
-fridge,Demographics,Fridge in the home,Yes,N,Ask,fridge; refrigerator,no fridge; no refrigerator,,Form 9-90886 V.2
 catchment,Demographics,Lives less than 25 minute drive from RJH or VGH or CDH,Yes,Y,"Auto (postal code, catchment.csv)",,,,Form 9-90886 V.2
 caregiver,Demographics,Caregiver in the home,Yes,N,Ask + chart,lives with wife; lives with husband; lives with spouse; lives with partner; lives with daughter; lives with son; lives with family; lives with *; caregiver at home; caregiver in the home; wife at home; husband at home,lives alone; no caregiver; no family support; no supports,,Form 9-90886 V.2
 homeSupports,Other considerations,Active home supports,Info,N,Chart,home support*; home care; home health; community health worker; CHW; homemaker; meals on wheels; home nursing,no home support*; no supports,,Form 9-90886 V.2
