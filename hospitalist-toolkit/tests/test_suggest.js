@@ -39,6 +39,9 @@ ok("drowsy on hydromorphone -> opioid safety", (r[0] || {}).key === "opioid", to
 ok("nothing typed -> nothing", R.ask("").length === 0);
 ok("gibberish -> nothing", R.ask("zzqx blorp").length === 0);
 
+r = R.ask("VBG pH 7.19 pCO2 24 HCO3 10, beta-hydroxybutyrate 5.4, anion gap 22, glucose 28.4");
+ok("DKA numbers -> acid-base and diabetes on top", ["acidbase", "dm"].every((k) => top(r, 2).includes(k)), top(r));
+
 // ---- negation in ER notes ----
 r = R.ask("Denies chest pain. No fever. Presents with vomiting and distension, small bowel obstruction on CT.");
 ok("denied chest pain not counted", !keys(r).includes("acs"), keys(r));

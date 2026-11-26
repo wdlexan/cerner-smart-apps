@@ -43,6 +43,12 @@
     L("calpro", "fecal calprotectin|faecal calprotectin|calprotectin", null, "Fecal calprotectin", "ug/g"),
     L("pct", "procalcitonin", "33959-8", "Procalcitonin", "ug/L"),
     L("lactate", "lactate|lactic acid", "2524-7", "Lactate", "mmol/L"),
+    // blood gas and ketones (VBG/ABG lines such as "VBG: pH 7.19 | pCO2 24 mmHg | HCO3 10 mmol/L"); min/max reject numbers that cannot be this test (e.g. "Ph: 250-…" phone)
+    L("ph", "\\bph\\b", "11558-4", "pH (blood gas)", "", { min: 6.5, max: 8 }),
+    L("pco2", "\\bp[av]?\\s?co2\\b|partial pressure of (?:carbon dioxide|co2)", "2019-8", "pCO2", "mm[Hg]", { min: 5, max: 200 }),
+    L("po2", "\\bp[av]?\\s?o2\\b(?!\\s*sat)|partial pressure of oxygen", "2703-7", "pO2", "mm[Hg]", { min: 10, max: 700 }),
+    L("bhb", "beta.?hydroxybutyrate|β.?hydroxybutyrate|\\bb.?ohb\\b|\\bbhb\\b|serum ketones|blood ketones", "53060-9", "Beta-hydroxybutyrate", "mmol/L", { min: 0, max: 30 }),
+    L("ag", "anion gap", "33037-3", "Anion gap", "mmol/L", { min: -10, max: 80 }),
     L("prolactin", "prolactin", "2842-3", "Prolactin", "ug/L"),
     L("ethanol", "ethanol|blood alcohol|serum alcohol", "5643-2", "Ethanol", "mmol/L"),
     L("ammonia", "ammonia", "16362-6", "Ammonia", "umol/L"),
@@ -226,9 +232,15 @@
     return out;
   }
 
+  // "Urea / Creatinine: 14.8 mmol/L / 142 µmol/L" -> "Urea: 14.8 mmol/L | Creatinine: 142 µmol/L" (the first value used to be read as the creatinine)
+  const PAIR = /^(\s*)([A-Za-z][A-Za-z .-]{0,30}?)\s*\/\s*([A-Za-z][A-Za-z .-]{0,30}?)\s*:\s*([<>]?\d[\d.,]*)\s*([^\s\/|]*(?:\/[A-Za-zµ]+)?)\s*\/\s*([<>]?\d[\d.,]*)(.*)$/;
+  const splitPair = (ln) => ln.replace(PAIR, (m, sp, a, b, v1, u1, v2, rest) => `${sp}${a}: ${v1} ${u1} | ${b}: ${v2}${rest}`);
+  // a value said to be a baseline or an old value ("baseline Cr 78", "previous creatinine 90") is not today's result
+  const OLDVAL = /\b(?:baseline|usual|previous|prior|prev\.?|old|from)\s*$/i;
   function labItems(lines, docT, fileName) {
     const out = []; let sectionT = null;
-    lines.forEach((ln, li) => {
+    lines.forEach((ln0, li) => {
+      const ln = splitPair(ln0);
       if (URINE.test(ln)) return; // urinalysis / urine chemistry: never read as blood values
       if (DATE_HINT.test(ln)) { const d = findDate(ln); if (d && !/\d+(?:\.\d+)?\s*(?:-|–)\s*\d/.test(ln.replace(/\b\d{4}-\d{1,2}-\d{1,2}\b|\b\d{1,2}-\d{1,2}-\d{2,4}\b/g, ""))) sectionT = d; }
       const hits = [];
@@ -239,10 +251,11 @@
         if (h.i > 45 && k === 0 && !/[:\t]|\s{2}/.test(ln.slice(Math.max(0, h.i - 3), h.i))) { /* name deep inside a sentence: keep only with a clear separator */ }
         const nextI = k + 1 < kept.length ? kept[k + 1].i : ln.length, rest = ln.slice(h.e, nextI);
         const def = h.def; let value = null, unit = "", cmp = "", text = null, tail = "";
+        if (OLDVAL.test(ln.slice(Math.max(0, h.i - 20), h.i))) return;
         if (def.text) { const m = (def.vals || TEXTVAL).exec(rest); if (!m) return; text = m[1].replace(/^neg$/i, "Negative").replace(/^pos$/i, "Positive"); text = text[0].toUpperCase() + text.slice(1).toLowerCase(); tail = rest.slice(m[0].length); }
         else {
           const m = NUM.exec(rest); if (!m) return;
-          const n = num(m[1]); if (isNaN(n.v)) return; value = n.v; cmp = n.cmp; tail = rest.slice(m[0].length).replace(/^(\S+)\s+\/\s*(?=[A-Za-zµ])/, "$1/");
+          const n = num(m[1]); if (isNaN(n.v)) return; if ((def.min != null && n.v < def.min) || (def.max != null && n.v > def.max)) return; value = n.v; cmp = n.cmp; tail = rest.slice(m[0].length).replace(/^(\S+)\s+\/\s*(?=[A-Za-zµ])/, "$1/");
           if (/^\/\s*(?:hpf|lpf|hp|field)/i.test(tail)) return; // cells per high-power field: urine microscopy
           const um = UNIT.exec(tail); if (um) { unit = um[1].replace(/^x\s?10\s?\^?3\s?\/\s?[µu]L$/i, "x10^9/L").replace(/^x\s?10\s?\^?6\s?\/\s?[µu]L$/i, "x10^12/L"); tail = tail.slice(um[0].length); }
           if (!unit && def.unit && !/^\s*(?:\(|\[)?\s*\d/.test(tail.slice(0, 2)) ) unit = ""; // unit not stated: leave blank, flagged below

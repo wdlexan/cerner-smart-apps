@@ -30,6 +30,17 @@ INR 1.1`;
   const it = X.fromText(t, { fileName: "short.pdf" }).items, v = (k) => (it.find((i) => i.key === k) || {}).value;
   ok("short table: sodium is 139, not the troponin value", v("na") === 139, it.map((i) => i.key + "=" + i.value));
   ok("short table: K 3.0, Mg 0.55, Cr 96, Hgb 142", v("k") === 3 && v("mg") === 0.55 && v("creat") === 96 && v("hgb") === 142, it.map((i) => i.key + "=" + i.value)); }
+// blood gas on one line, combined "Urea / Creatinine" names, and a baseline value in brackets (made-up DKA admission labs)
+{ const t = ["Bicarbonate: 11 mmol/L", "Anion Gap: 22 mmol/L", "Urea / Creatinine: 14.8 mmol/L / 142 µmol/L (baseline Cr 78 µmol/L)", "Blood Gas & Ketones:",
+    "VBG: pH 7.19 | pCO2 24 mmHg | HCO3 10 mmol/L", "Beta-Hydroxybutyrate: 5.4 mmol/L", "Ph: 250-555-0100"].join("\n");
+  const it = X.fromText(t, { fileName: "dka.pdf" }).items.filter((i) => i.kind === "lab"), all = (k) => it.filter((i) => i.key === k).map((i) => i.value);
+  ok("VBG pH 7.19", all("ph").join() === "7.19", it.map((i) => i.key + "=" + i.value));
+  ok("VBG pCO2 24", all("pco2").join() === "24", all("pco2"));
+  ok("beta-hydroxybutyrate 5.4", all("bhb").join() === "5.4", all("bhb"));
+  ok("anion gap 22", all("ag").join() === "22", all("ag"));
+  ok("Urea / Creatinine: urea 14.8, creatinine 142", all("bun").join() === "14.8" && all("creat").join() === "142", { bun: all("bun"), creat: all("creat") });
+  ok("baseline Cr 78 not saved as a current creatinine", !all("creat").includes(78), all("creat"));
+  ok("phone number after Ph: is not a pH", all("ph").length === 1, all("ph")); }
 let r = X.fromText(labReport, { fileName: "outside_labs.pdf" });
 const by = (k) => r.items.filter((i) => i.key === k);
 ok("doc date from Collected line", r.docT && X.iso(r.docT) === "2026-10-12", r.docT);
