@@ -44,6 +44,9 @@
   #sgbox .why span { background:#f1f4f8; border-radius:5px; padding:1px 7px; font-size:12px; color:#33414e; }
   #sgbox .ft { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:10px 16px; flex-wrap:wrap; }
   #sgbox .empty { color:#6b7785; padding:8px 0 0; }
+  #sgbox .jump { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+  #sgbox .jump a { font-size:13px; font-weight:600; background:#e8f0fe; color:#174ea6; border-radius:6px; padding:3px 9px; text-decoration:none; }
+  #sgbox .jump a::before { content:"↳ "; } #sgbox .jump a:hover { background:#d2e3fc; text-decoration:none; }
   html.pocket #sgwrap { padding:calc(env(safe-area-inset-top) + 8px) 6px 80px; }
   html.pocket #sgq { font-size:16px; }`;
 
@@ -111,7 +114,7 @@
       const [c, word] = lvl(x.score);
       return `<li><a data-k="${x.key}" href="#${x.key}">${esc(labelOf(x.key))}</a><span class="lvl ${c}">${word}</span>
         <div class="hint">${esc(x.hint)}</div>
-        <div class="why">${x.reasons.map((r) => `<span>${esc(r.text)}</span>`).join("")}</div></li>`;
+        <div class="why">${x.reasons.map((r) => `<span>${esc(r.text)}</span>`).join("")}</div><div class="jump" data-jk="${x.key}"></div></li>`;
     }).join("") + (limit && list.length > limit ? `<div class="muted">${list.length - limit} more: choose “all” above.</div>` : "");
     el.querySelectorAll("a[data-k]").forEach((a) => (a.onclick = (e) => { e.preventDefault(); go(a.dataset.k); }));
     return list;
@@ -120,7 +123,85 @@
   function runAsk() {
     const q = $("sgq").value;
     if (!q.trim()) { $("sgaskres").innerHTML = ""; return []; }
-    return render($("sgaskres"), R.ask(q), "No tool matched those words. Try the clinical problem (e.g. “low sodium”, “cellulitis”, “chest tube”), or use Find a tool in the header.");
+    const list = render($("sgaskres"), R.ask(q), "No tool matched those words. Try the clinical problem (e.g. “low sodium”, “cellulitis”, “chest tube”), or use Find a tool in the header.");
+    addSectionLinks($("sgaskres"), list.slice(0, 3), q);
+    return list;
+  }
+
+  // ---- links straight to a heading inside a tab ----
+  // Each tool's page is read once (same site, no patient data) for its section headings; the words you typed are matched against
+  // the heading (strongest), a section's data-find words, and the section's fixed text. Rare words in that tool count most.
+  const STOP = new Set("the and for with what which when how does do did can should would this that from into about after before have has had not are was were his her she him they them their there then than too very just also only any all some more most less patient pt chart tab tool help need want".split(" "));
+  const stem = (w) => (w.length > 5 ? w.slice(0, 5) : w);
+  const words = (t) => Array.from(new Set(String(t || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").split(" ").filter((w) => w.length >= 3 && !STOP.has(w)).map(stem)));
+  const toks = (t) => String(t || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").split(" ").filter(Boolean);
+  const has = (tokList, st) => tokList.some((x) => x.startsWith(st));
+  const sectionCache = {};
+  function loadSections(key) {
+    if (sectionCache[key]) return sectionCache[key];
+    const t = tools().find((x) => x.key === key); if (!t) return Promise.resolve([]);
+    return (sectionCache[key] = fetch(t.path, { cache: "force-cache" }).then((r) => (r.ok ? r.text() : "")).then((html) => parseSections(new DOMParser().parseFromString(html, "text/html")))
+      .then((out) => { if (!out.length) delete sectionCache[key]; return out.length ? out : liveSections(key); }).catch(() => liveSections(key)));
+  }
+  function parseSections(d) {
+    const out = [];
+    d.querySelectorAll("details").forEach((det) => {
+      const sm = det.querySelector(":scope > summary"); if (!sm) return;
+      const head = ((sm.querySelector("span") || sm).textContent || "").replace(/\s+/g, " ").trim(); if (!head || head.length > 90 || out.some((o) => o.head === head)) return;
+      const body = det.cloneNode(true); body.querySelectorAll("summary, script, style").forEach((n) => n.remove());
+      out.push({ head, h: toks(head), f: toks(det.getAttribute("data-find")), b: toks(body.textContent).slice(0, 400) });
+    });
+    return out;
+  }
+  // tabs that build their headings while loading: read them from the tab if it is already open
+  function liveSections(key) {
+    const f = document.querySelector(`#frames iframe[data-k="${key}"]`);
+    try { return f && f.contentDocument && f.contentDocument.readyState === "complete" ? parseSections(f.contentDocument) : []; } catch (e) { return []; }
+  }
+  async function addSectionLinks(el, list, q) {
+    const qs = words(q); if (!qs.length || qs.length > 25) return; // a pasted whole note is too broad for section links
+    for (const x of list) {
+      const secs = await loadSections(x.key); if (!secs.length) continue;
+      // a word found in few headings of this tool (e.g. "bubbling") counts far more than one found in many ("chest", "tube")
+      const idf = (st) => Math.pow(Math.log(1 + secs.length / (1 + secs.filter((s) => has(s.h, st)).length)), 2);
+      const scored = secs.map((s) => ({ s, score: qs.reduce((a, st) => a + (has(s.h, st) ? 3 : has(s.f, st) ? 2 : has(s.b, st) ? 0.6 : 0) * idf(st), 0) }))
+        .filter((z) => z.score > 0.9).sort((a, b) => b.score - a.score).slice(0, 3);
+      const slot = el.querySelector(`.jump[data-jk="${x.key}"]`); if (!slot || !scored.length) continue;
+      slot.innerHTML = scored.map((z) => `<a href="#" data-h="${esc(z.s.head)}" title="Open ${esc(labelOf(x.key))} at this heading">${esc(z.s.head)}</a>`).join("");
+      slot.querySelectorAll("a").forEach((a) => (a.onclick = (e) => { e.preventDefault(); goSection(x.key, a.dataset.h, q); }));
+    }
+  }
+  // Open the tab, wait for its page, then open and scroll to the heading (switching the tool's own sub-tab), and pick the matching
+  // choice in a pull-down inside that section when the typed words point to one (e.g. "bubbling" -> Problem: Bubbling (air leak)).
+  async function goSection(key, head, q) {
+    go(key);
+    const secs = await loadSections(key);
+    // words in 3 or more headings of this tool ("chest", "tube" in the pleural tab) are too general to pick a choice from a pull-down
+    const generic = (st) => secs.filter((s) => has(s.h, st)).length >= 3;
+    const qs = words(q).filter((st) => !generic(st)), hw = toks(head), t0 = Date.now();
+    const tick = () => {
+      const f = document.querySelector(`#frames iframe[data-k="${key}"]`); let d = null;
+      try { d = f && f.contentDocument; } catch (e) { return; }
+      const target = d && Array.from(d.querySelectorAll("details > summary")).find((sm) => ((sm.querySelector("span") || sm).textContent || "").replace(/\s+/g, " ").trim() === head);
+      // wait until the tool page has fully loaded (its pull-downs filled and its sub-tabs built), then a moment more
+      if (!target || d.readyState !== "complete") { if (Date.now() - t0 < 10000) setTimeout(tick, 150); return; }
+      if (!f.__sgSettled) { f.__sgSettled = true; setTimeout(tick, 250); return; }
+      const det = target.parentElement;
+      for (let p = det; p; p = p.parentElement && p.parentElement.closest("details")) p.open = true;
+      // a pull-down in this section whose choice shares a word you typed that the heading does not
+      const extra = qs.filter((st) => !has(hw, st));
+      if (extra.length) det.querySelectorAll("select").forEach((sel) => {
+        let best = null, bs = 0;
+        let ties = 0;
+        Array.from(sel.options).forEach((o) => { if (!o.value) return; const ot = toks(o.textContent), sc = extra.filter((st) => has(ot, st)).length; if (sc > bs) { bs = sc; best = o; ties = 0; } else if (sc && sc === bs) ties++; });
+        // only when one choice clearly fits
+        if (best && !ties) { sel.value = best.value; sel.dispatchEvent(new Event("change", { bubbles: true })); sel.dispatchEvent(new Event("input", { bubbles: true })); }
+      });
+      det.scrollIntoView({ block: "start" }); // the toolkit's sub-tabs switch to the tab holding it
+      const was = det.style.outline; det.style.outline = "3px solid #f4b400"; det.style.outlineOffset = "2px";
+      setTimeout(() => { det.style.outline = was; }, 2500);
+    };
+    setTimeout(tick, 100);
   }
 
   function renderChart() {
