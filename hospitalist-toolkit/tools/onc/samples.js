@@ -61,7 +61,7 @@
           lab(now, "777-3", "Platelets", 22, "10*9/L", 3), lab(now, "3255-7", "Fibrinogen", 1.2, "g/L", 3), lab(now, "6301-6", "INR", 1.7, "", 3), lab(now, "3084-1", "Uric acid", 610, "umol/L", 3),
           lab(now, "2777-1", "Phosphate", 1.62, "mmol/L", 3), lab(now, "2823-3", "Potassium", 5.9, "mmol/L", 3), lab(now, "2532-0", "LDH", 1450, "U/L", 3), lab(now, "2160-0", "Creatinine", 92, "umol/L", 30), lab(now, "2160-0", "Creatinine", 131, "umol/L", 3), temp(now, 37.9, 2)],
         medreqs: [req(now, "hydroxyurea 2000 mg PO BID", 6), req(now, "allopurinol 300 mg PO daily", 6), req(now, "sodium chloride 0.9% 150 mL/h IV", 6), req(now, "metformin 500 mg PO BID", 9000)] }) },
-    { label: "H: 48 F, APL day 6 of ATRA + arsenic: fever 38.4, creatinine rising, CXR infiltrates/effusions, ondansetron (differentiation syndrome, QTc, low fibrinogen)",
+    { label: "H: 48 F, APL day 6 of ATRA + arsenic: fever 38.4, creatinine rising, CXR infiltrates/effusions, ondansetron (differentiation syndrome (retinoic acid syndrome), QTc, low fibrinogen)",
       build: (now) => ({ patient: pt(48, "female", "TEST, Hotel (made-up)"),
         conditions: [cond("Acute promyelocytic leukemia", "C92.40"), cond("Disseminated intravascular coagulation", "D65")],
         obs: [temp(now, 38.4, 4), lab(now, "6690-2", "WBC", 18.5, "10*9/L", 5), lab(now, "751-8", "Neutrophils absolute", 2.1, "10*9/L", 5), lab(now, "777-3", "Platelets", 41, "10*9/L", 5),

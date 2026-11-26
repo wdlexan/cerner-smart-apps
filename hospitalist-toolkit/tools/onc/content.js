@@ -283,7 +283,7 @@
       <div class="flag red"><b>Why APL is a medical emergency</b><ul style="margin:4px 0 0 18px;padding:0">
         <li><b>Severe bleeding and clotting:</b> APL frequently causes disseminated intravascular coagulation (DIC) and low platelets, leading to dangerous bleeding (including in the brain or lungs) alongside abnormal blood clots. ${ref(1, "https://www.youtube.com/watch?v=FDUNpXuUoKM&t=191", "Video (YouTube)")} ${ref(2, "https://myhealth.alberta.ca/Health/pages/conditions.aspx?hwid=tn10219&", "MyHealth Alberta")}</li>
         <li><b>Rapid early risk:</b> without prompt recognition, supportive blood transfusions and targeted therapy, early death can occur quickly after presentation. Doctors often start treatment immediately on strong suspicion rather than waiting for all test results. ${ref(1, "https://jamanetwork.com/journals/jama/article-abstract/201358", "JAMA")} ${ref(2, "https://www.acep.org/criticalcare/newsroom/newsroom-articles/january-2025/acutepromleuk", "ACEP Critical Care")}</li>
-        <li><b>Treatment-related emergencies:</b> early treatment with differentiating agents (ATRA, arsenic trioxide) can trigger <b>differentiation syndrome</b>, a serious reaction that needs close monitoring and prompt care. ${ref(1, "https://johnshopkinshealthcare.staywellsolutionsonline.com/HealthyKidsTeens/34,BAMLT11", "Johns Hopkins (StayWell)")}</li></ul></div>
+        <li><b>Treatment-related emergencies:</b> early treatment with differentiating agents (ATRA, arsenic trioxide) can trigger <b>differentiation syndrome (retinoic acid syndrome)</b>, a serious reaction that needs close monitoring and prompt care. ${ref(1, "https://johnshopkinshealthcare.staywellsolutionsonline.com/HealthyKidsTeens/34,BAMLT11", "Johns Hopkins (StayWell)")}</li></ul></div>
       <h4>Recognize it</h4>
       <ul><li>New leukemia (or pancytopenia) with <b>bruising, bleeding gums, nosebleeds, heavy periods or blood in urine</b>; headache or new neuro signs = intracranial bleed until proven otherwise.</li>
         <li>Labs: <b>low fibrinogen</b>, high INR, very high D-dimer, low platelets; WBC is often <b>low</b> (WBC &gt;10 = high risk).</li>
@@ -292,7 +292,7 @@
       <ul><li><b>Start ATRA (tretinoin)</b> right away and call hematology now.</li>
         <li>Support: platelets &gt;30–50 ×10⁹/L, fibrinogen &gt;1.5 g/L (cryoprecipitate), FFP for high INR; coagulation tests every 6–8 h at first.</li>
         <li>No LP, central line or invasive procedure until the coagulopathy is corrected; CT head for any headache or neuro change.</li>
-        <li>Watch for differentiation syndrome (fever, breathlessness, low O2, infiltrates, effusions, weight gain, low BP, AKI) and QTc on arsenic (ECG; K ≥4, Mg ≥0.9). ${go("emerg", "Emergencies: APL and DIC, Differentiation syndrome")}</li></ul>
+        <li>Watch for differentiation syndrome (retinoic acid syndrome; fever, breathlessness, low O2, infiltrates, effusions, weight gain, low BP, AKI) and QTc on arsenic (ECG; K ≥4, Mg ≥0.9). ${go("emerg", "Emergencies: APL and DIC, Differentiation syndrome (retinoic acid syndrome)")}</li></ul>
       <p class="muted">Outlook: &gt;90% are cured if the first 2 weeks are survived; most early deaths are from bleeding.</p>` },
     { t: "Treatment for cure", open: false, h: `
       <table><tr><th>Type</th><th>Usual approach</th></tr>
@@ -314,7 +314,7 @@
         <tr><td><b>Leukostasis</b></td><td>WBC &gt;100 (AML; ALL &gt;400): hypoxia, confusion, headache, vision change, priapism</td><td>Hydroxyurea, urgent hematology, avoid RBC transfusion unless needed (viscosity), TLS prevention. ${go("emerg", "Emergencies")}</td></tr>
         <tr><td><b>DIC / bleeding</b></td><td>APL, monocytic AML: low fibrinogen, high INR, low platelets</td><td>Keep platelets &gt;30–50, fibrinogen &gt;1.5 g/L (cryo), FFP for INR; no LP or central line until corrected</td></tr>
         <tr><td><b>Tumour lysis</b></td><td>High WBC, high LDH, ALL, venetoclax ramp-up</td><td>${go("emerg", "Emergencies")}: fluids, allopurinol or rasburicase (G6PD)</td></tr>
-        <tr><td><b>Differentiation syndrome</b></td><td>ATRA, arsenic, IDH inhibitors, gilteritinib: fever, hypoxia, infiltrates, effusions, weight gain, AKI</td><td>Dexamethasone 10 mg IV q12h; hold drug if severe; hematology</td></tr>
+        <tr><td><b>Differentiation syndrome (retinoic acid syndrome)</b></td><td>ATRA, arsenic, IDH inhibitors, gilteritinib: fever, hypoxia, infiltrates, effusions, weight gain, AKI</td><td>Dexamethasone 10 mg IV q12h; hold drug if severe; hematology</td></tr>
         <tr><td>Spurious lab results</td><td>Very high WBC</td><td>Low PaO2 on ABG (cells use the oxygen – trust pulse oximetry) and high K (pseudohyperkalemia – repeat on heparin/whole blood)</td></tr>
         <tr><td>CLL infections and autoimmunity</td><td>Low IgG, recurrent infections; AIHA, ITP</td><td>IVIG if recurrent serious infection with low IgG; DAT; steroids for AIHA/ITP</td></tr>
         <tr><td>Richter transformation</td><td>CLL with a fast-growing node, B symptoms, high LDH</td><td>PET-CT and biopsy</td></tr>
@@ -329,7 +329,7 @@
     { t: "When to call hematology urgently", open: false, h: `<ul>
       <li>Blasts on the film or a new unexplained high WBC with cytopenias: same day.</li>
       <li><b>Suspected APL</b> (blasts/promyelocytes + DIC or low fibrinogen): now – ATRA is started before confirmation.</li>
-      <li>WBC &gt;100 or leukostasis symptoms, DIC, febrile neutropenia, differentiation syndrome, TLS.</li>
+      <li>WBC &gt;100 or leukostasis symptoms, DIC, febrile neutropenia, differentiation syndrome (retinoic acid syndrome), TLS.</li>
       <li>Blinatumomab or CAR-T side effects; before stopping a TKI, BTK inhibitor or venetoclax.</li></ul>` },
     { t: "Prognosis (rough) and goals of care", open: false, h: `
       <table><tr><th>Setting</th><th>Rough outlook</th></tr>
@@ -812,8 +812,8 @@
         <li>Support: platelets &gt;30–50 ×10⁹/L, <b>fibrinogen &gt;1.5 g/L</b> (cryoprecipitate), FFP for high INR; check coagulation every 6–8 h at first.</li>
         <li>No LP, central line or invasive procedure until the coagulopathy is corrected. Avoid tranexamic acid and heparin unless hematology advises.</li>
         <li>CT head for any headache or neuro change (intracranial bleeding).</li>
-        <li>Watch for <b>differentiation syndrome</b> (below) and QTc on arsenic (ECG; K ≥4, Mg ≥0.9).</li></ul>` },
-    { key: "diffs", t: "Differentiation syndrome", open: false, h: `
+        <li>Watch for <b>differentiation syndrome (retinoic acid syndrome)</b> (below) and QTc on arsenic (ECG; K ≥4, Mg ≥0.9).</li></ul>` },
+    { key: "diffs", t: "Differentiation syndrome (retinoic acid syndrome)", open: false, h: `
       <ul><li>After ATRA, arsenic trioxide, IDH inhibitors (ivosidenib, enasidenib, olutasidenib), gilteritinib, menin inhibitors – days to weeks after starting.</li>
         <li>Fever, dyspnea, hypoxia, pulmonary infiltrates, pleural/pericardial effusions, weight gain &gt;5 kg, edema, hypotension, AKI. Often mistaken for pneumonia or heart failure.</li>
         <li><b>Dexamethasone 10 mg IV q12h</b> at the first signs (continue until resolved, then taper); diuretics if overloaded; hold the drug if severe; hydroxyurea if WBC rising. Hematology now.</li></ul>` },

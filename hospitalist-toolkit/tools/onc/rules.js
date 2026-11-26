@@ -212,8 +212,8 @@
     const dsDrug = drugs.filter((d) => /ATRA|Arsenic|IDH inhibitor|FLT3/.test(d.name));
     if (dsDrug.length) {
       const signs = [tmax != null && tmax >= 38.0 && `fever ${tmax}`, f.crRise && "rising creatinine", (sites.pneumonitis || sites.pleural || sites.pericard) && "infiltrates/effusion in the chart"].filter(Boolean);
-      out.push(signs.length ? { level: "red", go: "emerg", text: `Possible differentiation syndrome on ${dsDrug.map((d) => d.name.split(" (")[0]).join(", ")} (${signs.join(", ")}): dexamethasone 10 mg IV q12h now, hematology.` }
-        : { level: "info", go: "emerg", text: `${dsDrug.map((d) => d.name.split(" (")[0]).join(", ")}: watch for differentiation syndrome (fever, hypoxia, infiltrates, weight gain, AKI).` });
+      out.push(signs.length ? { level: "red", go: "emerg", text: `Possible differentiation syndrome (retinoic acid syndrome) on ${dsDrug.map((d) => d.name.split(" (")[0]).join(", ")} (${signs.join(", ")}): dexamethasone 10 mg IV q12h now, hematology.` }
+        : { level: "info", go: "emerg", text: `${dsDrug.map((d) => d.name.split(" (")[0]).join(", ")}: watch for differentiation syndrome (retinoic acid syndrome; fever, hypoxia, infiltrates, weight gain, AKI).` });
     }
     if ((leuk || lymph) && ((L.ldh && L.ldh.v >= 500) || (wbc != null && wbc >= 25 && leuk && sub.some((x) => /aml|all/.test(x))) || sub.includes("burkitt")) && !t.lab)
       out.push({ level: "amber", go: "emerg", text: `High tumour lysis risk (${[sub.includes("burkitt") && "Burkitt", L.ldh && L.ldh.v >= 500 && `LDH ${L.ldh.v}`, wbc >= 25 && `WBC ${wbc}`].filter(Boolean).join(", ")}): fluids, allopurinol or rasburicase (check G6PD), TLS labs every 8–12 h.` });
