@@ -1,0 +1,48 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: TESTPATIENT, Raj                 DOB: 1968-07-02     Sex: M
+MRN: TEST68221                     Location: ED Bed 12
+Admitted: 2026-11-24 (Hospitalist Medicine)   Attending: Dr. A. Hospitalist (made-up)
+
+EMERGENCY DEPARTMENT ADMISSION NOTE
+Date of service: 2026-11-24 14:20
+Chief complaint: Red, hot, swollen right leg for 3 days with fever.
+
+HISTORY OF PRESENT ILLNESS
+58-year-old man with type 2 diabetes, 3 days of spreading erythema right shin from a cracked heel.
+Fever 38.9 and rigors at home. Anaphylaxis to penicillin as a child. No crepitus.
+
+PAST MEDICAL HISTORY
+Type 2 diabetes mellitus
+Hypertension
+Obesity
+
+HOME MEDICATIONS
+Metformin 1000 mg PO BID
+Insulin glargine 30 units SC at bedtime
+Ramipril 10 mg PO daily
+
+ALLERGIES: Penicillin (anaphylaxis)
+
+EXAMINATION
+2026-11-24 13:50 BP: 118/70 HR: 108 RR: 20 Temp: 38.7 C SpO2: 97%
+Right leg erythema from ankle to mid-calf, warm, tender. Fissure right heel. No bullae.
+
+ASSESSMENT AND PLAN
+Cellulitis right leg with sepsis. Penicillin allergy: which antibiotic.
+Hyperglycemia. Blood cultures x2. Admit.
+
+LABORATORY RESULTS
+Collected: Nov 24, 2026 12:30
+Test                      Result          Units           Reference          Flag
+
+White Blood Cell Count        17.8        x10^9/L         4.0 - 11.0         H
+Lactate                       3.1         mmol/L          0.5 - 2.0          H
+Glucose                       22.4        mmol/L          3.6 - 7.8          H
+Hemoglobin A1c                9.8         %               4.0 - 6.0          H
+Creatinine                    84          umol/L          60 - 110
+Sodium                        136         mmol/L          135 - 145
+Potassium                     4.2         mmol/L          3.5 - 5.0
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | TESTPATIENT, Raj MRN TEST68221          Page 1

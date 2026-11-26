@@ -22,6 +22,14 @@ Hepatitis B core antibody total  Positive
 Collected: 14/10/2026
 Glucose 11.8 mmol/L
 INR 1.1`;
+// short table (6 rows or fewer) with some rows flagged: each row stays its own result (was merged into one row: troponin 340 read as sodium 340)
+{ const t = "LABORATORY RESULTS\nCollected: Nov 24, 2026 12:30\nTest                      Result          Units           Reference          Flag\n\n" +
+    ["Troponin I hs                 340         ng/L            < 26               H", "Potassium                     3.0         mmol/L          3.5 - 5.0          L",
+     "Magnesium                     0.55        mmol/L          0.70 - 1.00        L", "Creatinine                    96          umol/L          60 - 110",
+     "Hemoglobin                    142         g/L             130 - 170", "Sodium                        139         mmol/L          135 - 145"].join("\n");
+  const it = X.fromText(t, { fileName: "short.pdf" }).items, v = (k) => (it.find((i) => i.key === k) || {}).value;
+  ok("short table: sodium is 139, not the troponin value", v("na") === 139, it.map((i) => i.key + "=" + i.value));
+  ok("short table: K 3.0, Mg 0.55, Cr 96, Hgb 142", v("k") === 3 && v("mg") === 0.55 && v("creat") === 96 && v("hgb") === 142, it.map((i) => i.key + "=" + i.value)); }
 let r = X.fromText(labReport, { fileName: "outside_labs.pdf" });
 const by = (k) => r.items.filter((i) => i.key === k);
 ok("doc date from Collected line", r.docT && X.iso(r.docT) === "2026-10-12", r.docT);

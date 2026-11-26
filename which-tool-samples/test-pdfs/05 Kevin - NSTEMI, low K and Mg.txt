@@ -1,0 +1,46 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: TESTPATIENT, Kevin               DOB: 1955-05-05     Sex: M
+MRN: TEST55505                     Location: ED Bed 1
+Admitted: 2026-11-24 (Hospitalist Medicine)   Attending: Dr. A. Hospitalist (made-up)
+
+EMERGENCY DEPARTMENT ADMISSION NOTE
+Date of service: 2026-11-24 14:20
+Chief complaint: Central chest pressure for 3 hours.
+
+HISTORY OF PRESENT ILLNESS
+71-year-old man with 3 hours of central chest pressure radiating to the left arm, diaphoretic.
+ECG: 1 mm ST depression V4-V6. Pain settled with nitro. Has had diarrhea for 4 days.
+
+PAST MEDICAL HISTORY
+Hypertension
+Dyslipidemia
+Former smoker
+
+HOME MEDICATIONS
+Ramipril 5 mg PO daily
+Rosuvastatin 10 mg PO daily
+
+ALLERGIES: None known
+
+EXAMINATION
+2026-11-24 13:50 BP: 148/90 HR: 84 RR: 16 Temp: 36.7 C SpO2: 98%
+No murmur. Chest clear. No edema.
+
+ASSESSMENT AND PLAN
+NSTEMI. ASA load, start DAPT question, heparin. Cardiology for angiogram.
+Hypokalemia and hypomagnesemia from diarrhea: replace.
+
+LABORATORY RESULTS
+Collected: Nov 24, 2026 12:30
+Test                      Result          Units           Reference          Flag
+
+Troponin I hs                 340         ng/L            < 26               H
+Potassium                     3.0         mmol/L          3.5 - 5.0          L
+Magnesium                     0.55        mmol/L          0.70 - 1.00        L
+Creatinine                    96          umol/L          60 - 110
+Hemoglobin                    142         g/L             130 - 170
+Sodium                        139         mmol/L          135 - 145
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | TESTPATIENT, Kevin MRN TEST55505          Page 1

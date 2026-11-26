@@ -1,0 +1,45 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: TESTPATIENT, Arthur              DOB: 1950-02-08     Sex: M
+MRN: TEST50208                     Location: ED Bed 5
+Admitted: 2026-11-24 (Hospitalist Medicine)   Attending: Dr. A. Hospitalist (made-up)
+
+EMERGENCY DEPARTMENT ADMISSION NOTE
+Date of service: 2026-11-24 14:20
+Chief complaint: Cough, fever and choking on food.
+
+HISTORY OF PRESENT ILLNESS
+76-year-old man with Parkinson disease, 3 days of productive cough and fever.
+Family reports coughing and choking with meals for months, weight loss. Now NPO in ED.
+
+PAST MEDICAL HISTORY
+Parkinson disease
+Dysphagia
+Benign prostatic hyperplasia
+
+HOME MEDICATIONS
+Levodopa/carbidopa 100/25 mg PO QID
+Pramipexole 0.25 mg PO TID
+Tamsulosin 0.4 mg PO daily
+
+ALLERGIES: None known
+
+EXAMINATION
+2026-11-24 13:50 BP: 128/72 HR: 98 RR: 24 Temp: 38.4 C SpO2: 89%
+Rigid, bradykinetic, wet voice. Right basal crackles.
+
+ASSESSMENT AND PLAN
+Aspiration pneumonia right lower lobe. Which antibiotic.
+Parkinson disease: patient is NPO, plan for levodopa (NG). Swallow assessment.
+
+LABORATORY RESULTS
+Collected: Nov 24, 2026 12:30
+Test                      Result          Units           Reference          Flag
+
+White Blood Cell Count        15.1        x10^9/L         4.0 - 11.0         H
+Lactate                       1.6         mmol/L          0.5 - 2.0
+Sodium                        141         mmol/L          135 - 145
+Creatinine                    102         umol/L          60 - 110
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | TESTPATIENT, Arthur MRN TEST50208          Page 1

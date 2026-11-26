@@ -1,0 +1,47 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: TESTPATIENT, Priya               DOB: 1981-09-14     Sex: F
+MRN: TEST81914                     Location: ED Resus 2
+Admitted: 2026-11-24 (Hospitalist Medicine)   Attending: Dr. A. Hospitalist (made-up)
+
+EMERGENCY DEPARTMENT ADMISSION NOTE
+Date of service: 2026-11-24 14:20
+Chief complaint: Vomiting, abdominal pain, very high sugars.
+
+HISTORY OF PRESENT ILLNESS
+45-year-old woman with type 1 diabetes, 2 days of vomiting and abdominal pain after a viral illness.
+Missed insulin doses because she could not eat. Kussmaul breathing.
+
+PAST MEDICAL HISTORY
+Type 1 diabetes mellitus
+Hypothyroidism
+
+HOME MEDICATIONS
+Insulin glargine 18 units SC daily
+Insulin lispro per carb count
+Levothyroxine 75 mcg PO daily
+
+ALLERGIES: None known
+
+EXAMINATION
+2026-11-24 13:50 BP: 102/64 HR: 118 RR: 28 Temp: 37.1 C SpO2: 99%
+Dry mucous membranes. Ketotic breath. Soft abdomen, mild diffuse tenderness.
+
+ASSESSMENT AND PLAN
+Diabetic ketoacidosis. Insulin infusion, fluids, potassium protocol.
+Admit step-down.
+
+LABORATORY RESULTS
+Collected: Nov 24, 2026 12:30
+Test                      Result          Units           Reference          Flag
+
+Glucose                       31.2        mmol/L          3.6 - 7.8          H
+pH Venous                     7.12                        7.32 - 7.42        L
+Bicarbonate                   8           mmol/L          22 - 29            L
+Potassium                     5.9         mmol/L          3.5 - 5.0          H
+Sodium                        131         mmol/L          135 - 145          L
+Creatinine                    118         umol/L          45 - 90            H
+Phosphate                     0.5         mmol/L          0.8 - 1.5          L
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | TESTPATIENT, Priya MRN TEST81914          Page 1

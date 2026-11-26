@@ -1,0 +1,46 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: TESTPATIENT, Doreen              DOB: 1958-06-22     Sex: F
+MRN: TEST58622                     Location: ED Bed 14
+Admitted: 2026-11-24 (Hospitalist Medicine)   Attending: Dr. A. Hospitalist (made-up)
+
+EMERGENCY DEPARTMENT ADMISSION NOTE
+Date of service: 2026-11-24 14:20
+Chief complaint: Fever and confusion 2 days after teclistamab step-up dose.
+
+HISTORY OF PRESENT ILLNESS
+68-year-old woman with relapsed multiple myeloma, received teclistamab step-up dose 2 days ago.
+Fever 39.2, rigors, new word-finding difficulty this morning. Hypotensive in triage.
+
+PAST MEDICAL HISTORY
+Multiple myeloma
+Hypertension
+
+HOME MEDICATIONS
+Teclistamab per hematology protocol
+Acyclovir 400 mg PO BID
+Sulfamethoxazole-trimethoprim DS 1 tab PO three times weekly
+Dexamethasone per protocol
+
+ALLERGIES: None known
+
+EXAMINATION
+2026-11-24 13:50 BP: 88/52 HR: 124 RR: 22 Temp: 39.2 C SpO2: 93%
+Flushed. Expressive word-finding difficulty, ICE score 7. No neck stiffness.
+
+ASSESSMENT AND PLAN
+Cytokine release syndrome grade 2 with possible ICANS after teclistamab. Febrile: cover for sepsis.
+Tocilizumab per protocol. Hematology aware.
+
+LABORATORY RESULTS
+Collected: Nov 24, 2026 12:30
+Test                      Result          Units           Reference          Flag
+
+White Blood Cell Count        2.1         x10^9/L         4.0 - 11.0         L
+Lactate                       2.6         mmol/L          0.5 - 2.0          H
+Ferritin                      4200        ug/L            15 - 200           H
+Creatinine                    110         umol/L          45 - 90            H
+Sodium                        135         mmol/L          135 - 145
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | TESTPATIENT, Doreen MRN TEST58622          Page 1

@@ -15,11 +15,11 @@
     { key: "aki", hint: "AKI: pre-renal / renal / post-renal, GN and AIN work-up, expected recovery, when to call nephrology",
       words: ["aki", "acute kidney", "creatinine", "renal failure", "kidney injury", "oliguri", "anuri", "low urine", "urine output", "hydronephro", "rhabdo", "glomerulonephritis", "interstitial nephritis", "ain\\b", "contrast nephro", "dialysis"] },
     { key: "acidbase", hint: "Acid-base: step-by-step ABG/VBG reading, anion gap, delta ratio, compensation",
-      words: ["acid base", "acidosis", "alkalosis", "anion gap", "abg", "vbg", "blood gas", "bicarb", "hco3", "low ph", "osmolar gap", "dka", "lactic acid"] },
+      words: ["acid base", "acidosis", "alkalosis", "anion gap", "abg", "vbg", "blood gas", "bicarb", "hco3", "low ph", "osmolar gap", "dka", "ketoacidosis", "kussmaul", "lactic acid"] },
     { key: "chf", hint: "Heart failure: NT-proBNP by age, diuretic plan, IV to PO switch, GDMT, amyloid clues, handout",
       words: ["chf", "heart failure", "hfref", "hfpef", "adhf", "fluid overload", "volume overload", "pulmonary edema", "pulmonary oedema", "bnp", "probnp", "diures", "furosemide", "lasix", "leg swelling", "edema", "oedema", "orthopnea", "pnd\\b", "gdmt", "entresto", "low ef", "reduced ef", "cardiomyopath", "amyloid"] },
     { key: "acs", hint: "NSTEMI: who needs DAPT and which, anticoagulation, cath vs medical, type 2 MI",
-      words: ["nstemi", "stemi", "acs\\b", "acute coronary", "chest pain", "troponin", "trop\\b", "type 2 mi", "myocardial infarct", "angina", "dapt", "ticagrelor", "clopidogrel", "stent", "cabg"] },
+      words: ["nstemi", "stemi", "acs\\b", "acute coronary", "chest pain", "chest pressure", "st depression", "troponin", "trop\\b", "type 2 mi", "myocardial infarct", "angina", "dapt", "ticagrelor", "clopidogrel", "stent", "cabg"] },
     { key: "af", hint: "AF in acute illness: rate drugs (metoprolol, diltiazem, digoxin, amiodarone), anticoagulation, when to involve IM/cardiology",
       words: ["atrial fib", "afib", "a fib", "af\\b", "rvr", "rapid ventricular", "atrial flutter", "flutter", "palpitation", "irregular", "chads", "rate control"] },
     { key: "as", hint: "Aortic stenosis: paste the echo, severity, low-flow states, who qualifies for TAVI",
@@ -33,9 +33,9 @@
     { key: "acls", hint: "ACLS: code timer, rhythm algorithms, Hs and Ts, peri-arrest, post-ROSC",
       words: ["code blue", "cardiac arrest", "arrest", "acls", "cpr", "rosc", "pea\\b", "asystole", "vf\\b", "vt\\b", "ventricular tachy", "bradycard", "unstable tachy"] },
     { key: "abxmap", hint: "Antibiotic chooser: click the body site for empiric choices by allergy, MRSA/ESBL risk; reads culture screenshots",
-      words: ["which antibiotic", "what antibiotic", "empiric", "cellulitis", "pneumonia", "cap\\b", "hap\\b", "aspiration", "uti\\b", "urinary tract", "pyelo", "urosepsis", "prostatitis", "cholangitis", "cholecystitis", "diverticulitis", "septic arthritis", "osteomyelitis", "meningitis", "penicillin allergy", "pcn allergy", "mrsa", "esbl", "pseudomonas", "culture", "sensitivit", "susceptib", "c\\.? diff"] },
+      words: ["which antibiotic", "what antibiotic", "empiric", "cellulitis", "pneumonia", "cap\\b", "hap\\b", "aspiration", "uti\\b", "urinary tract", "pyelo", "urosepsis", "prostatitis", "cholangitis", "cholecystitis", "diverticulitis", "septic arthritis", "osteomyelitis", "meningitis", "penicillin allergy", "pcn allergy", "mrsa", "esbl", "pseudomonas", "culture and sensitiv", "c ?& ?s\\b", "sensitivities", "susceptib", "c\\.? diff"] },
     { key: "abx", hint: "Antibiotic stewardship: day count, planned duration, IV to PO switch, renal dosing, echo needed for bacteremia",
-      words: ["antibiotic", "abx\\b", "how long", "duration", "iv to po", "po switch", "step.?down", "stop antibiotic", "bacteremia", "bacteraemia", "blood culture", "s\\.? aureus", "staph aureus", "vancomycin", "pip.?tazo", "tazocin", "ceftriaxone", "meropenem", "cefazolin"] },
+      words: ["antibiotic", "abx\\b", "how long", "duration", "iv to po", "po switch", "step.?down (to )?(oral|po)", "stop antibiotic", "bacteremia", "bacteraemia", "blood culture", "s\\.? aureus", "staph aureus", "vancomycin", "pip.?tazo", "tazocin", "ceftriaxone", "meropenem", "cefazolin"] },
     { key: "inf", hint: "Infections by site: organisms, red flags, imaging, source control, antibiotics, duration, when to call ID",
       words: ["infection", "sepsis", "septic", "source", "necrotizing", "nec fasc", "abscess", "fever", "lactate", "rigor", "dental", "sinusitis", "joint infection"] },
     { key: "fuo", hint: "Fever of unknown origin: staged work-up, HLH and Still's scores, GCA, when to get PET-CT",
@@ -51,7 +51,7 @@
     { key: "ibd", hint: "IBD flowsheet: labs, meds and scopes over time, acute severe UC pathway, medication classes",
       words: ["crohn", "ulcerative colitis", "\\buc\\b", "ibd\\b", "colitis", "asuc", "infliximab", "vedolizumab", "ustekinumab", "adalimumab"] },
     { key: "dm", hint: "Inpatient diabetes: basal-bolus, correction scales, hypo/hyperglycemia, steroids, DKA/HHS",
-      words: ["diabet", "insulin", "glucose", "sugar", "hyperglyc", "hypoglyc", "hypo\\b", "dka", "hhs\\b", "a1c", "basal", "bolus", "sliding scale", "metformin", "sglt2", "steroid.?induced"] },
+      words: ["diabet", "insulin", "glucose", "sugar", "hyperglyc", "hypoglyc", "hypo\\b", "dka", "ketoacidosis", "hhs\\b", "a1c", "bolus insulin", "sliding scale", "basal.?bolus", "basal insulin", "metformin", "sglt2", "steroid.?induced"] },
     { key: "stroke", hint: "Stroke follow-up: secondary prevention, imaging and echo/holter checklist, swallow, rehab",
       words: ["stroke", "cva\\b", "tia\\b", "nihss", "hemipar", "facial droop", "aphasia", "dysarthri", "infarct on ct", "carotid"] },
     { key: "neuro", hint: "Neuro (non-stroke): GBS, myasthenia, cord compression, cauda equina, subdural, vertigo, can't-miss list",
@@ -101,19 +101,19 @@
     { key: "dcclinic", hint: "South Island Discharge Clinic: who qualifies for rapid follow-up after discharge",
       words: ["discharge clinic", "rapid follow", "close follow", "sidc", "early follow"] },
     { key: "consult", hint: "Consult summary: builds the message to the specialist, ready to send",
-      words: ["consult", "who to call", "which specialist", "refer", "call cardiology", "call nephro", "call gi", "specialist"] },
+      words: ["consult (cardio|nephro|gi|neuro|id|ortho|surg|hem|onc|psych|resp)", "should i consult", "who (do i|to) call", "which specialist", "referral to", "call (cardiology|nephrology|gi|neurology|id)"] },
     { key: "forms", hint: "Forms: referral and requisition PDFs filled from the chart (BC Cancer, Pulse, GI, HFC, UMAC, neuro clinics)",
       words: ["forms?\\b", "requisition", "referral form", "bc cancer", "pulse", "heart function clinic", "umac", "headache clinic", "first seizure clinic", "form 4\\.1"] },
     { key: "dx", hint: "Diagnosis check: not improving, can't-miss bundles, does the data fit, unexplained results, imaging review",
-      words: ["not improving", "not getting better", "missed", "differential", "what else could", "unexplained", "doesn.?t fit", "second look", "cognitive bias", "diagnosis"] },
+      words: ["not improving", "not getting better", "missed diagnos", "what am i missing", "missing something", "differential", "what else could", "unexplained", "doesn.?t fit", "second look", "cognitive bias", "diagnosis"] },
     { key: "watch", hint: "Watch-ahead: what may happen next, contingency plan, rough prognosis",
       words: ["what to watch", "deteriorat", "contingency", "prognosis", "what could go wrong", "early warning"] },
     { key: "cw", hint: "Choosing Wisely: catheter, ASB, sedatives, repeat labs, telemetry, PPI",
       words: ["choosing wisely", "catheter", "foley", "asymptomatic bacteriuria", "telemetry", "daily labs", "ppi\\b", "low value"] },
     { key: "calc", hint: "Calculators: CHA2DS2-VASc, HAS-BLED, HEART, CURB-65, Wells, frailty, delirium risk",
-      words: ["calculat", "score", "chads", "has.?bled", "heart score", "curb", "wells", "frailty", "egfr"] },
+      words: ["calculat", "chads", "cha2ds2", "has.?bled", "heart score", "curb.?65", "wells (score|criteria)", "frailty (score|scale)", "egfr calc"] },
     { key: "exam", hint: "Physical exam: click findings, get a note paragraph",
-      words: ["physical exam", "exam template", "examination"] },
+      words: ["physical exam(ination)? (template|note)", "exam template", "document (the|my) exam"] },
     { key: "labs", hint: "Labs: results by date range and panel, new in last 24 h",
       words: ["lab result", "blood work", "lab trend"] }
   ];
@@ -124,8 +124,13 @@
   // A word preceded in the same sentence by "no", "denies", "negative for", "without", "not", "ruled out" does not count.
   const NEG = /\b(no|denies|denied|negative for|without|not|nil|ruled out|r\/o'?d|resolved)\b[^.;\n]{0,25}$/i;
   const LABWORD = /^(trop|lactat|lactic|glucose|sugar|sodium|potassium|creatinine|bnp|probnp|nt|bicarb|hco3|ferritin|bilirubin|calcium|magnesium|phosph|a1c|ck|inr|ph)/i;
+  // Lines that are lab-table rows ("Potassium      3.0   mmol/L   3.5 - 5.0   L"), table headers or "Collected:" lines are dropped before
+  // looking for words: the values are read as labs, and the test names alone ("Sodium", "Reference") would give false hits.
+  const TABLE_ROW = /^\s*[A-Za-z][A-Za-z0-9 ().,%\/+&-]{1,45}?\s{2,}[<>≤≥]?\s*-?\d[\d.,]*(\s|$)/;
+  const TABLE_HDR = /^\s*(test|component|analyte)s?\s{2,}(result|value)/i;
+  const cleanText = (t) => String(t || "").split(/\r?\n/).filter((ln) => !TABLE_ROW.test(ln) && !TABLE_HDR.test(ln) && !/^\s*(collected|reported|received)\s*:/i.test(ln)).join("\n");
   function topicHits(text) {
-    const s = String(text || ""), out = {};
+    const s = cleanText(text), out = {};
     if (!s.trim()) return out;
     RX.forEach((t) => t.rx.forEach((rx) => {
       rx.lastIndex = 0; let m;

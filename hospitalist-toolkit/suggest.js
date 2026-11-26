@@ -166,13 +166,15 @@
     if (state.loading) return;
     if (window.TK_POCKET) { state.chart = []; state.chartStatus = ""; renderChart(); return; }
     state.loading = true; state.errors = []; state.chartStatus = "Reading problem list, labs, medications and recent notes…"; renderChart();
-    const c = state.client, pid = c.patient.id, since7 = iso(Date.now() - 7 * 864e5), since3 = iso(Date.now() - 3 * 864e5);
+    const c = state.client, pid = c.patient.id;
+    // A patient made from an imported PDF (Import PDF > Open as a separate patient) is read whatever the dates in the PDF
+    const pdfOnly = /^pdfpt-/.test(String(pid)), since7 = pdfOnly ? "" : `&date=ge${iso(Date.now() - 7 * 864e5)}`, since3 = pdfOnly ? "" : `&date=ge${iso(Date.now() - 3 * 864e5)}`;
     const [pt, conds, obs, meds, docs] = await Promise.all([
       c.patient.read().catch(() => null),
       get(`Condition?patient=${pid}&clinical-status=active&_count=100`, 2),
-      get(`Observation?patient=${pid}&category=laboratory&date=ge${since7}&_count=100`, 4),
+      get(`Observation?patient=${pid}&category=laboratory${since7}&_count=100`, 4),
       get(`MedicationRequest?patient=${pid}&status=active&_count=100`, 2),
-      get(`DocumentReference?patient=${pid}&date=ge${since3}&_count=30`, 1)
+      get(`DocumentReference?patient=${pid}${since3}&_count=30`, 1)
     ]);
     const conditions = Array.from(new Set(conds.filter((x) => !/refuted|entered-in-error/.test(JSON.stringify(x.verificationStatus || ""))).map((x) => ccText(x.code)).filter(Boolean)));
     const medNames = Array.from(new Set(meds.map((m) => ccText(m.medicationCodeableConcept) || (m.medicationReference && m.medicationReference.display) || "").filter(Boolean)));
@@ -186,7 +188,7 @@
     for (const d of pick) { try { const t = await noteText(d); if (t) { text += "\n" + t; read++; } } catch (e) { /* skip that note */ } }
     state.chart = R.suggest({ labs: R.labsFromObs(obs), conditions, meds: medNames, age, text, textLabel: "Recent note mentions" });
     state.loading = false;
-    state.chartStatus = `Read ${conditions.length} problems, ${obs.length} lab results (7 days), ${medNames.length} active meds, ${read} recent note${read === 1 ? "" : "s"}.` +
+    state.chartStatus = `Read ${conditions.length} problems, ${obs.length} lab results${pdfOnly ? "" : " (7 days)"}, ${medNames.length} active meds, ${read} recent note${read === 1 ? "" : "s"}.` +
       (state.errors.length ? ` Could not read: ${state.errors.join("; ")}.` : "");
     renderChart();
     return state.chart;

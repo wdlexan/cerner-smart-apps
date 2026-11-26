@@ -360,5 +360,45 @@ window.SAMPLE_PDFS = [
   "folder": "Stroke",
   "label": "03 Nora - ESUS with PFO",
   "file": "Stroke/03 Nora - ESUS with PFO.pdf"
+ },
+ {
+  "folder": "Which tool (mixed admissions)",
+  "label": "01 Edith - heart failure, AKI, low sodium",
+  "file": "Which tool (mixed admissions)/01 Edith - heart failure, AKI, low sodium.pdf"
+ },
+ {
+  "folder": "Which tool (mixed admissions)",
+  "label": "02 Raj - cellulitis, penicillin allergy, high sugar",
+  "file": "Which tool (mixed admissions)/02 Raj - cellulitis, penicillin allergy, high sugar.pdf"
+ },
+ {
+  "folder": "Which tool (mixed admissions)",
+  "label": "03 Marjorie - hip fracture, 14 meds, confused",
+  "file": "Which tool (mixed admissions)/03 Marjorie - hip fracture, 14 meds, confused.pdf"
+ },
+ {
+  "folder": "Which tool (mixed admissions)",
+  "label": "04 Leonard - cirrhosis, ascites, rising creatinine",
+  "file": "Which tool (mixed admissions)/04 Leonard - cirrhosis, ascites, rising creatinine.pdf"
+ },
+ {
+  "folder": "Which tool (mixed admissions)",
+  "label": "05 Kevin - NSTEMI, low K and Mg",
+  "file": "Which tool (mixed admissions)/05 Kevin - NSTEMI, low K and Mg.pdf"
+ },
+ {
+  "folder": "Which tool (mixed admissions)",
+  "label": "06 Priya - DKA",
+  "file": "Which tool (mixed admissions)/06 Priya - DKA.pdf"
+ },
+ {
+  "folder": "Which tool (mixed admissions)",
+  "label": "07 Arthur - Parkinson, aspiration pneumonia",
+  "file": "Which tool (mixed admissions)/07 Arthur - Parkinson, aspiration pneumonia.pdf"
+ },
+ {
+  "folder": "Which tool (mixed admissions)",
+  "label": "08 Doreen - myeloma on teclistamab, fever",
+  "file": "Which tool (mixed admissions)/08 Doreen - myeloma on teclistamab, fever.pdf"
  }
 ];

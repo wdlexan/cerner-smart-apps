@@ -1,0 +1,63 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: TESTPATIENT, Marjorie            DOB: 1947-11-30     Sex: F
+MRN: TEST47330                     Location: ED Bed 3
+Admitted: 2026-11-24 (Hospitalist Medicine)   Attending: Dr. A. Hospitalist (made-up)
+
+EMERGENCY DEPARTMENT ADMISSION NOTE
+Date of service: 2026-11-24 14:20
+Chief complaint: Fall at home, unable to weight bear, right hip pain.
+
+HISTORY OF PRESENT ILLNESS
+79-year-old woman, mechanical fall from standing at night going to the bathroom.
+Shortened externally rotated right leg. X-ray: right intertrochanteric hip fracture.
+Daughter reports she has been more confused for 2 days. Takes many medications including zopiclone.
+
+PAST MEDICAL HISTORY
+Mild dementia
+Atrial fibrillation
+Hypertension
+Depression
+Osteoporosis
+Overactive bladder
+
+HOME MEDICATIONS
+Apixaban 5 mg PO BID
+Metoprolol 50 mg PO BID
+Amlodipine 10 mg PO daily
+Hydrochlorothiazide 12.5 mg PO daily
+Citalopram 20 mg PO daily
+Zopiclone 7.5 mg PO at bedtime
+Oxybutynin 5 mg PO BID
+Donepezil 10 mg PO daily
+Pantoprazole 40 mg PO daily
+Atorvastatin 40 mg PO daily
+Calcium carbonate 500 mg PO BID
+Vitamin D 1000 units PO daily
+Acetaminophen 1 g PO QID
+Lorazepam 0.5 mg PO prn
+
+ALLERGIES: Sulfa (rash)
+
+EXAMINATION
+2026-11-24 13:50 BP: 156/84 HR: 88 RR: 18 Temp: 36.9 C SpO2: 95%
+Drowsy but rousable, disoriented to date. Right leg shortened and externally rotated.
+
+ASSESSMENT AND PLAN
+Right intertrochanteric hip fracture after fall, for ortho fixation.
+Delirium on mild dementia. Polypharmacy with sedatives and anticholinergics.
+Hyponatremia. On apixaban: last dose this morning.
+
+LABORATORY RESULTS
+Collected: Nov 24, 2026 12:30
+Test                      Result          Units           Reference          Flag
+
+Sodium                        128         mmol/L          135 - 145          L
+Potassium                     3.9         mmol/L          3.5 - 5.0
+Creatinine                    88          umol/L          45 - 90
+Hemoglobin                    104         g/L             120 - 160          L
+Platelets                     210         x10^9/L         150 - 400
+INR                           1.2         ratio           0.8 - 1.2
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | TESTPATIENT, Marjorie MRN TEST47330          Page 1

@@ -1,0 +1,55 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: TESTPATIENT, Leonard             DOB: 1962-01-19     Sex: M
+MRN: TEST62119                     Location: ED Bed 9
+Admitted: 2026-11-24 (Hospitalist Medicine)   Attending: Dr. A. Hospitalist (made-up)
+
+EMERGENCY DEPARTMENT ADMISSION NOTE
+Date of service: 2026-11-24 14:20
+Chief complaint: Increasing abdominal swelling and confusion.
+
+HISTORY OF PRESENT ILLNESS
+64-year-old man with alcohol-related cirrhosis, tense ascites, 3 days of confusion and
+abdominal discomfort. Low urine output. Last drink 2 weeks ago. No hematemesis.
+
+PAST MEDICAL HISTORY
+Alcohol-related cirrhosis
+Ascites
+Esophageal varices
+
+HOME MEDICATIONS
+Spironolactone 100 mg PO daily
+Furosemide 40 mg PO daily
+Lactulose 30 mL PO TID
+Propranolol 20 mg PO BID
+Thiamine 100 mg PO daily
+
+ALLERGIES: None known
+
+EXAMINATION
+2026-11-24 13:50 BP: 96/58 HR: 92 RR: 18 Temp: 37.6 C SpO2: 96%
+Jaundiced. Tense ascites. Asterixis. Mild diffuse abdominal tenderness.
+
+ASSESSMENT AND PLAN
+Decompensated cirrhosis with hepatic encephalopathy. Diagnostic paracentesis for SBP.
+Acute kidney injury: hepatorenal vs pre-renal. Hold diuretics. Albumin. Hypokalemia.
+
+LABORATORY RESULTS
+Collected: Nov 20, 2026 07:10
+Test                      Result          Units           Reference          Flag
+
+Creatinine                    72          umol/L          60 - 110
+
+Collected: Nov 24, 2026 12:30
+Test                      Result          Units           Reference          Flag
+
+Creatinine                    164         umol/L          60 - 110           H
+Total Bilirubin               92          umol/L          0 - 20             H
+INR                           2.1         ratio           0.8 - 1.2          H
+Sodium                        129         mmol/L          135 - 145          L
+Potassium                     2.9         mmol/L          3.5 - 5.0          L
+Albumin                       24          g/L             35 - 50            L
+Platelets                     68          x10^9/L         150 - 400          L
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | TESTPATIENT, Leonard MRN TEST62119          Page 1

@@ -1,0 +1,61 @@
+PATIENT CHART EXTRACT - VICTORIA GENERAL HOSPITAL (TEST)
+MADE-UP TEST PATIENT - NOT A REAL PERSON - FOR SANDBOX TESTING ONLY
+Patient: TESTPATIENT, Edith               DOB: 1944-03-12     Sex: F
+MRN: TEST44012                     Location: ED Bed 7
+Admitted: 2026-11-24 (Hospitalist Medicine)   Attending: Dr. A. Hospitalist (made-up)
+
+EMERGENCY DEPARTMENT ADMISSION NOTE
+Date of service: 2026-11-24 14:20
+Chief complaint: Shortness of breath and leg swelling for 5 days.
+
+HISTORY OF PRESENT ILLNESS
+82-year-old woman with known heart failure (EF 30%) and atrial fibrillation, 5 days of
+increasing dyspnea, orthopnea and leg edema. Gained 4 kg. Recently started on hydrochlorothiazide
+by her family doctor. Denies chest pain. No fever. Using hydromorphone for knee pain.
+
+PAST MEDICAL HISTORY
+Heart failure with reduced ejection fraction
+Atrial fibrillation
+Chronic kidney disease stage 3
+Osteoarthritis knees
+
+HOME MEDICATIONS
+Furosemide 40 mg PO daily
+Hydrochlorothiazide 25 mg PO daily
+Apixaban 2.5 mg PO BID
+Metoprolol 25 mg PO BID
+Spironolactone 25 mg PO daily
+Hydromorphone 1 mg PO q4h prn
+Atorvastatin 20 mg PO daily
+
+ALLERGIES: None known
+
+EXAMINATION
+2026-11-24 13:50 BP: 104/62 HR: 112 RR: 24 Temp: 36.8 C SpO2: 90%
+JVP 8 cm above sternal angle. Bibasal crackles. 3+ pitting edema to knees. Irregularly irregular.
+
+ASSESSMENT AND PLAN
+Acute decompensated heart failure with bilateral pleural effusions on CXR.
+Acute kidney injury on CKD. Hyponatremia, likely thiazide. Hyperkalemia.
+AF with rapid rate. Hold HCTZ and spironolactone. IV furosemide. Admit hospitalist.
+
+LABORATORY RESULTS
+Collected: Nov 20, 2026 07:10
+Test                      Result          Units           Reference          Flag
+
+Creatinine                    92          umol/L          45 - 90            H
+Sodium                        134         mmol/L          135 - 145          L
+
+Collected: Nov 24, 2026 12:30
+Test                      Result          Units           Reference          Flag
+
+Sodium                        124         mmol/L          135 - 145          L
+Potassium                     6.1         mmol/L          3.5 - 5.0          H
+Creatinine                    168         umol/L          45 - 90            H
+NT-proBNP                     8400        ng/L            < 450              H
+Troponin I hs                 21          ng/L            < 26
+Hemoglobin                    112         g/L             120 - 160          L
+Glucose                       6.4         mmol/L          3.6 - 7.8
+
+
+MADE-UP TEST PATIENT - NOT A REAL PERSON | TESTPATIENT, Edith MRN TEST44012          Page 1

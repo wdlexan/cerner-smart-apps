@@ -445,7 +445,10 @@
       // a table header row ("Test  Result  Units  Reference  Flag") or a "Label: text" line is its own row, not part of a wrapped row
       const hw = grp[0].trim().split(/\s+/), header = hw.length >= 3 && hw.every((w) => /^(?:test|tests|result|results|value|units?|reference|ref\.?|range|normal|interval|flag|flags|name|component|analyte|collected|date|time|status|comment|low|high)$/i.test(w));
       const labelLine = cl.some((cs) => cs.length && /^[A-Za-z][A-Za-z /]{2,30}:\s*\S/.test(cs[0].text));
-      if (grp.length >= 2 && grp.length <= 6 && cols.length >= 2 && !same && !prose && !form && !header && !labelLine) {
+      // two or more lines that are each a whole result row on their own ("Potassium  3.0  mmol/L  3.5 - 5.0  L") are a short table, not one
+      // wrapped row: merging them put the first value under the last test's name (troponin 340 read as "Sodium 340")
+      const fullRows = cl.filter((cs) => cs.length >= 2 && /[A-Za-z]{2}/.test(cs[0].text) && /^[<>≤≥]?\s*-?\d/.test(cs[1].text)).length;
+      if (grp.length >= 2 && grp.length <= 6 && cols.length >= 2 && !same && !prose && !form && !header && !labelLine && fullRows < 2) {
         const merged = cols.map(() => "");
         cl.forEach((cs) => cs.forEach((c) => { const k = colOf(c); merged[k] = merged[k] ? merged[k] + (/-$/.test(merged[k]) ? "" : " ") + c.text : c.text; }));
         res.push(pad(cols.map((s, k) => ({ start: s, text: merged[k] })).filter((c) => c.text)), ""); return;
