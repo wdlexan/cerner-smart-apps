@@ -287,4 +287,17 @@ Doing well on treatment. Sodium 131 mmol/L today. Continue the current plan and 
   ok("PowerChart med rows: all 10 read", m.length === 10, m.map((i) => i.text));
   ok("PowerChart med rows: two-word name kept", m.some((i) => i.label === "acetylsalicylic acid"), m.map((i) => i.label));
   ok("PowerChart med rows: brand and route kept in text", m.some((i) => i.text === "ondansetron (Zofran inj) 8 mg, IV, DAILY"), m.map((i) => i.text)); }
+// PowerChart problem list (mixed-case heading, status sub-headings, unknown problems kept as written)
+{ const t = ["Problem List/Past Medical History", "Ongoing", "Advanced MS, followed by Dr. Atwell Pope", "Dementia", "Depression", "Left frontal lobe injury from birth",
+    "Level, consciousness altered", "Nephrolithiasis; bilateral staghorn calculi - not felt to be a good surgical candidate",
+    "Recurrent UTIs in the context of suprapubic catheter for neurogenic bladder, followed by Dr. Hoag", "Seizure disorder", "Suprapubic catheter", "UTI", "Chronic back pain", "Historical", "No problems recorded",
+    "Medications", "folic acid 1 mg, oral, DAILY", "potassium chloride 20 mEq, oral, BID"].join("\n");
+  const r = X.fromText(t, { fileName: "Pasted screenshot.png" }), dx = r.items.filter((i) => i.kind === "condition").map((i) => i.label);
+  ok("problem list: mixed-case heading read", ["Multiple sclerosis", "Dementia", "Depression", "Brain injury", "Altered level of consciousness", "Nephrolithiasis", "Neurogenic bladder", "Suprapubic catheter", "Epilepsy", "Urinary tract infection"].every((n) => dx.includes(n)), dx);
+  ok("problem list: unknown problem kept as written", dx.includes("Chronic back pain"), dx);
+  ok("problem list: status words not problems", !dx.some((d) => /^(Ongoing|Historical|No problems recorded)$/.test(d)), dx);
+  ok("problem list: section ends at Medications", !dx.some((d) => /folic|potassium/i.test(d)), dx);
+  const labs = r.items.filter((i) => i.kind === "lab").map((i) => i.label);
+  ok("med doses not read as labs (folic acid, KCl)", !labs.length, labs);
+  ok("potassium chloride kept as a med", r.items.some((i) => i.kind === "med" && /potassium chloride/i.test(i.label)), r.items.filter((i) => i.kind === "med").map((i) => i.label)); }
 console.log(`\n${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);

@@ -236,6 +236,7 @@
   const PAIR = /^(\s*)([A-Za-z][A-Za-z .-]{0,30}?)\s*\/\s*([A-Za-z][A-Za-z .-]{0,30}?)\s*:\s*([<>]?\d[\d.,]*)\s*([^\s\/|]*(?:\/[A-Za-zµ]+)?)\s*\/\s*([<>]?\d[\d.,]*)(.*)$/;
   const splitPair = (ln) => ln.replace(PAIR, (m, sp, a, b, v1, u1, v2, rest) => `${sp}${a}: ${v1} ${u1} | ${b}: ${v2}${rest}`);
   // a value said to be a baseline or an old value ("baseline Cr 78", "previous creatinine 90") is not today's result
+  const MED_DOSE_AFTER = /^[\s:=]*\d+(?:[.,]\d+)?\s?(?:mg|mcg|µg|ug|g|units?|iu|mEq|meq|mmol|tabs?|tablets?|caps?|capsules?)\b(?!\s*\/)/i;
   const OLDVAL = /\b(?:baseline|usual|previous|prior|prev\.?|old|from)\s*$/i;
   function labItems(lines, docT, fileName) {
     const out = []; let sectionT = null;
@@ -252,6 +253,7 @@
         const nextI = k + 1 < kept.length ? kept[k + 1].i : ln.length, rest = ln.slice(h.e, nextI);
         const def = h.def; let value = null, unit = "", cmp = "", text = null, tail = "";
         if (OLDVAL.test(ln.slice(Math.max(0, h.i - 20), h.i))) return;
+        if (MED_DOSE_AFTER.test(rest) || PC_ROW.test(ln)) return; // a medication dose (folic acid 1 mg, KCl 20 mEq, B12 1000 mcg), not a lab result
         if (def.text) { const m = (def.vals || TEXTVAL).exec(rest); if (!m) return; text = m[1].replace(/^neg$/i, "Negative").replace(/^pos$/i, "Positive"); text = text[0].toUpperCase() + text.slice(1).toLowerCase(); tail = rest.slice(m[0].length); }
         else {
           const m = NUM.exec(rest); if (!m) return;
@@ -304,7 +306,7 @@
       const pc = PC_ROW.exec(ln);
       if (pc && PC_ROUTE.test(pc[5])) {
         const name = pc[1].replace(/[,\s]+$/, "").trim();
-        if (name && !NOT_MED.test(name.split(/\s/)[0])) {
+        if (name && !NOT_MED.test(name)) { // whole name: "potassium chloride" is a drug, "potassium" alone is a lab label
           out.push({ kind: "med", key: "med", label: name, dose: pc[3] + " " + pc[4], text: ln.replace(/\s+/g, " ").trim(), t: (findDate(ln) || docT || {}).t || null, line: ln.trim().slice(0, 200), li });
           return;
         }
@@ -381,7 +383,11 @@
     ["Bowel obstruction", /bowel obstruction|intestinal obstruction|\bsbo\b/i, "K56.69"], ["Gastric outlet obstruction", /gastric outlet obstruction/i, "K31.1"],
     ["Ascites", /ascites/i, "R18.8"], ["Liver metastases", /(?:liver|hepatic) metasta/i, "C78.7"],
     ["Cancer (as stated)", /\bcarcinoma\b|\blymphoma\b|\bleukemia\b/i, "C80.1"],
-    ["Status epilepticus", /status epilepticus/i, "G40.901"], ["Epilepsy", /epilep(?:sy|tic)/i, "G40.909"], ["Seizure", /\bseizures?\b|convulsions?/i, "R56.9"],
+    ["Status epilepticus", /status epilepticus/i, "G40.901"], ["Epilepsy", /epilep(?:sy|tic)|seizure disorder/i, "G40.909"], ["Seizure", /\bseizures?\b(?! disorder)|convulsions?/i, "R56.9"],
+    ["Multiple sclerosis", /multiple sclerosis|\bMS\b(?! ?contin)(?!.*mitral)/, "G35"], ["Depression", /(?<!respiratory |\bST |ST-segment |segment )\bdepression\b|major depressive|\bMDD\b/i, "F32.A"],
+    ["Nephrolithiasis", /nephrolithiasis|urolithiasis|kidney stones?|renal (?:calculi|calculus|stones?)|staghorn/i, "N20.0"], ["Neurogenic bladder", /neurogenic bladder/i, "N31.9"],
+    ["Suprapubic catheter", /suprapubic (?:catheter|tube)|cystostomy/i, "Z93.59"], ["Altered level of consciousness", /altered (?:level of )?consciousness|consciousness,? altered|decreased level of consciousness|altered mental status/i, "R41.82"],
+    ["Brain injury", /brain injury|(?:frontal|temporal|parietal|occipital) lobe injury|\bTBI\b|cerebral palsy|hypoxic.ischemic/i, "S06.9"],
     ["Alcohol use disorder", /alcohol use disorder|alcohol dependence|alcoholism/i, "F10.20"],
     ["Cellulitis", /cellulitis|erysipelas/i, "L03.90"], ["Necrotizing fasciitis", /necroti[sz]ing fasciitis|necroti[sz]ing soft tissue/i, "M72.6"], ["Diverticulitis", /diverticulitis/i, "K57.92"],
     ["Meningitis", /meningitis/i, "G03.9"], ["Encephalitis", /encephalitis/i, "G04.90"], ["Septic arthritis", /septic arthritis|prosthetic joint infection/i, "M00.9"],
@@ -396,17 +402,31 @@
   ];
   const DX_CTX = /diagnos|problem|\bdx\b|history of|\bpmh\b|\bhx\b|assessment|impression|comorbid/i, NEG = /\bno (?:history|evidence|signs?)\b|\bno (?:[a-z]+ ){0,2}(?:obstruction|metasta\w*|ascites|carcinomatosis)\b|denies|negative for|rule out|\br\/o\b|family history|\bfhx\b|without|differential|\bddx\b|\bvs\.?\s|versus|\?|possible|query|to exclude|precautions?/i;
   const DX_SECTION = /past medical|medical history|\bpmh\b|problem list|active problems|diagnos[ie]s|assessment|impression|comorbidit/i;
+  // a mixed-case section title on its own line, e.g. "Problem List/Past Medical History" (PowerChart), "Past Medical History:"
+  const OTHER_SECTION = /^\s*(?:home |current |discharge |inpatient )?(?:medications?|meds|allerg\w*|social history|family history|review of systems|ros|physical exam\w*|exam(?:ination)?|vitals?|vital signs|labs?|laboratory|investigations|imaging|plan|hpi|history of present illness|chief complaint|reason for (?:admission|referral)|procedures?|immunizations?|surgical history|past surgical history)\b[^a-z]{0,3}\s*:?\s*$/i;
+  const DX_TITLE = (ln) => { const t = ln.trim(); return t.length <= 60 && !/\d/.test(t) && DX_SECTION.test(t) && /^[A-Za-z][A-Za-z /&,()-]*:?$/.test(t); };
+  const STATUS_ONLY = /^\s*(?:ongoing|historical|resolved|active|inactive|chronic|current|past|comments?|none|nil|n\/a|no (?:known )?problems?(?: recorded)?|no (?:significant )?(?:past )?medical history|problem list|past medical history)\s*:?\s*$/i;
+  const LIST_SECTION = /problem list|past medical|medical history|\bpmh\b|active problems|comorbidit/i; // list-style sections: every line is a problem
   function conditionItems(lines, docT) {
-    const out = [], seen = new Set(); let inDx = false;
+    const out = [], seen = new Set(); let inDx = false, bySection = false;
     lines.forEach((ln, li) => {
-      if (isHeading(ln)) { inDx = DX_SECTION.test(ln); return; }
+      if (isHeading(ln)) { inDx = DX_SECTION.test(ln); bySection = LIST_SECTION.test(ln); return; }
+      if (DX_TITLE(ln)) { inDx = true; bySection = LIST_SECTION.test(ln); return; }
+      if (OTHER_SECTION.test(ln) && ln.trim().length <= 45) { inDx = false; bySection = false; return; }
       const before = ((lines[li - 1] || "").split(/[.;:]\s/).pop() || "");
       if (!inDx && !DX_CTX.test(ln) && !DX_CTX.test(before)) return;
+      let hit = false;
       ln.split(/[.;]\s/).forEach((cl, k) => {
         if (k === 0 && NEG.test(before)) return;
         if (NEG.test(cl)) return;
-        CONDITIONS.forEach(([name, re, icd]) => { if (re.test(cl) && !seen.has(name)) { seen.add(name); out.push({ kind: "condition", key: "dx", label: name, icd, t: (findDate(ln) || docT || {}).t || null, line: ln.trim().slice(0, 200), li }); } });
+        CONDITIONS.forEach(([name, re, icd]) => { if (re.test(cl)) { hit = true; if (!seen.has(name)) { seen.add(name); out.push({ kind: "condition", key: "dx", label: name, icd, t: (findDate(ln) || docT || {}).t || null, line: ln.trim().slice(0, 200), li }); } } });
       });
+      // inside a problem-list / past-history section: keep any other line as written, so nothing is lost
+      const txt = ln.replace(/^\s*(?:[-•●▪*]|\d+[.)])\s*/, "").trim();
+      if (!hit && bySection && txt.length >= 3 && txt.length <= 140 && /[A-Za-z]{3}/.test(txt) && !STATUS_ONLY.test(txt) && !NEG.test(txt) && !DOSE.test(txt) && !/^[A-Za-z][\w ]{0,30}:\s/.test(txt) && (txt.match(/[.!]\s+[A-Z]/g) || []).length < 2) {
+        const key = "free:" + txt.toLowerCase();
+        if (!seen.has(key)) { seen.add(key); out.push({ kind: "condition", key: "dx", label: txt, icd: "", asWritten: true, t: (findDate(ln) || docT || {}).t || null, line: ln.trim().slice(0, 200), li }); }
+      }
     });
     return out;
   }
@@ -545,7 +565,7 @@
     if (it.kind === "med") return { resourceType: "MedicationRequest", id, status: it.held ? "on-hold" : "active", intent: "order", subject: base.subject, meta: base.meta, authoredOn: when, medicationCodeableConcept: { text: it.text } }; // the text already holds dose and directions
     if (it.kind === "procedure") return { resourceType: "Procedure", id, status: "completed", subject: base.subject, meta: base.meta, code: { text: it.label }, performedDateTime: when, note: [{ text: it.text }] };
     if (it.kind === "report") return { resourceType: "DiagnosticReport", id, status: "final", subject: base.subject, meta: base.meta, category: [{ coding: [{ code: "imaging" }] }], code: { text: it.label }, effectiveDateTime: when, issued: when, conclusion: it.text };
-    if (it.kind === "condition") return { resourceType: "Condition", id, subject: base.subject, meta: base.meta, category: [{ coding: [{ system: "http://terminology.hl7.org/CodeSystem/condition-category", code: "problem-list-item" }] }], clinicalStatus: { coding: [{ system: "http://terminology.hl7.org/CodeSystem/condition-clinical", code: "active" }] }, code: { coding: [{ system: "http://hl7.org/fhir/sid/icd-10", code: it.icd, display: it.label }], text: it.label }, recordedDate: when };
+    if (it.kind === "condition") return { resourceType: "Condition", id, subject: base.subject, meta: base.meta, category: [{ coding: [{ system: "http://terminology.hl7.org/CodeSystem/condition-category", code: "problem-list-item" }] }], clinicalStatus: { coding: [{ system: "http://terminology.hl7.org/CodeSystem/condition-clinical", code: "active" }] }, code: it.icd ? { coding: [{ system: "http://hl7.org/fhir/sid/icd-10", code: it.icd, display: it.label }], text: it.label } : { text: it.label }, recordedDate: when };
     return null;
   }
   function docResource(text, ctx, docT) {
