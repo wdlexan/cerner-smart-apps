@@ -4,7 +4,7 @@
    A tab is only loaded the first time you open it, and stays loaded when you switch away. */
 
 // To add a tool: put its files in tools/<folder>/ and add a line here.
-const TOOL_V = "20261126a"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
+const TOOL_V = "20261126b"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
 const TOOLS = [
   { key: "today", label: "Today (what changed)", tags: "what changed daily trends vitals overnight summary", path: "tools/today/index.html" },
   { key: "plist", label: "Patient list (screenshot)", tags: "patient list screenshot excel spreadsheet rounding list census floor ward ocr", path: "tools/plist/index.html" },
@@ -14,6 +14,7 @@ const TOOLS = [
   { key: "exam",  label: "Physical exam", tags: "physical exam template normal",        path: "tools/exam/index.html", keepHeader: true }, // its header holds the template picker and All normal
   { key: "deprx", label: "Deprescribing", tags: "deprescribing deprescribe polypharmacy medication review stopp start stoppfall stoppfrail beers anticholinergic burden acb falls frid renal dose kidney crcl no indication cascade taper stop medstopper ppi benzodiazepine zopiclone antipsychotic", path: "tools/deprx/index.html" },
   { key: "meds",  label: "Meds review (Beers)", tags: "medications beers criteria elderly geriatric polypharmacy deprescribing",  path: "tools/meds/index.html" },
+  { key: "ddi",   label: "Drug interactions (QT, serotonin, seizure)", tags: "drug interactions ddi interaction qt qtc prolongation torsades tdp tisdale serotonin syndrome serotonergic hunter linezolid maoi ssri snri tramadol seizure threshold lowers seizure risk bupropion carbapenem valproate cefepime methadone citalopram ondansetron haloperidol", path: "tools/ddi/index.html" },
   { key: "g6pd",  label: "G6PD check", tags: "g6pd hemolysis drug safety rasburicase primaquine dapsone",           path: "tools/g6pd/index.html" },
   { key: "risk",  label: "Risk screen", tags: "risk screen pressure injury ulcer nutrition sleep dysphagia falls",          path: "tools/risk/index.html" },
   { key: "wound", label: "Wound care", tags: "wound care dressing dressings pressure injury ulcer bedsore decubitus sacral heel stage braden npwt vac negative pressure foam hydrocolloid alginate hydrofibre aquacel hydrogel silver iodine honey skin tear diabetic foot venous arterial dehiscence fungating iad incontinence dermatitis nswoc photo picture image review ai", path: "tools/wound/index.html" },
@@ -147,7 +148,7 @@ const GROUPS = [
   { name: "GI & endo", keys: ["liver", "sbo", "ibd", "dm", "edr"] },
   { name: "Infection", keys: ["abx", "abxmap", "hahabx", "inf", "fuo", "asplenia"] },
   { name: "Onc & heme", keys: ["onc", "tox", "bsab", "pc", "g6pd", "sero"] },
-  { name: "Safety", keys: ["deprx", "meds", "opioid", "pain", "risk", "wound", "cw", "dx"] },
+  { name: "Safety", keys: ["ddi", "deprx", "meds", "opioid", "pain", "risk", "wound", "cw", "dx"] },
   { name: "Admit & discharge", keys: ["ed", "hah", "hip", "consult", "mobility", "discharge", "dcclinic", "forms"] }];
 const short = (label) => label.replace(/\s*\(.*?\)\s*/g, " ").trim();
 function buildNav() {

@@ -74,6 +74,8 @@
       words: ["opioid", "narcotic", "naloxone", "narcan", "over.?sedat", "drowsy", "resp(iratory)? depress", "morphine", "hydromorphone", "dilaudid", "oxycodone", "fentanyl", "methadone"] },
     { key: "pain", hint: "Pain: options by pain type (opioids, gabapentinoids, antidepressants, adjuncts), conversions",
       words: ["pain", "analges", "neuropathic", "pregabalin", "gabapentin", "duloxetine", "chronic pain", "breakthrough pain", "opioid conversion", "equianalgesic"] },
+    { key: "ddi", hint: "Drug interactions: QT prolongation, serotonin syndrome and seizure-threshold risk on the current meds",
+      words: ["interaction", "ddi", "qtc?\\b", "torsade", "serotonin", "serotonergic", "seizure threshold", "linezolid", "maoi"] },
     { key: "g6pd", hint: "G6PD: check current meds against CPIC risk, signs of hemolysis",
       words: ["g6pd", "hemolys", "haemolys", "rasburicase", "primaquine", "dapsone"] },
     { key: "risk", hint: "Risk screen: pressure injury, nutrition, sleep, dysphagia and falls from the notes",
@@ -311,6 +313,7 @@
     ["tox", /pembrolizumab|nivolumab|ipilimumab|atezolizumab|durvalumab|cemiplimab|osimertinib|trastuzumab deruxtecan|enfortumab|sacituzumab|lenvatinib|cabozantinib|sunitinib|pazopanib/i, "On immunotherapy / targeted cancer drug", 3],
     ["seizure", /levetiracetam|keppra|phenytoin|dilantin|valpro|lacosamide|carbamazepine|lamotrigine|brivaracetam|clobazam|topiramate/i, "On an antiseizure medication", 1],
     ["af", /apixaban|rivaroxaban|edoxaban|dabigatran|warfarin/i, "On an oral anticoagulant", 1],
+    ["ddi", /citalopram|escitalopram|methadone|haloperidol|ondansetron|domperidone|azithromycin|clarithromycin|moxifloxacin|levofloxacin|ciprofloxacin|amiodarone|sotalol|linezolid|tramadol|meperidine|bupropion|clozapine|cefepime|imipenem|phenelzine|tranylcypromine|moclobemide|methylene blue/i, "On a QT / serotonergic / seizure-risk drug", 1],
     ["g6pd", /rasburicase|primaquine|dapsone|methylene blue/i, "Drug with G6PD hemolysis risk", 2],
     ["liver", /lactulose|rifaximin|spironolactone.*furosemide|terlipressin/i, "On a liver-disease medication", 1],
     ["chf", /sacubitril|entresto|dapagliflozin|empagliflozin|eplerenone/i, "On heart-failure therapy", 1]

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Drug interactions – QT · Serotonin · Seizure</title>
+<script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+<style>
+  :root{--bg:#f6f7f9;--card:#fff;--ink:#1d2330;--mute:#5d6676;--line:#dde1e7;--brand:#1f5f8b;
+        --ci:#7a0b2e;--hi:#b42318;--mo:#b54708;--lo:#1f6f43;--info:#475467}
+  *{box-sizing:border-box}
+  body{margin:0;font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+  header{background:var(--brand);color:#fff;padding:10px 16px;display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline}
+  header h1{font-size:17px;margin:0}
+  #ptBanner{font-size:13px;opacity:.95}
+  #status{font-size:12px;opacity:.85;margin-left:auto}
+  nav{display:flex;gap:2px;background:#e8ecf1;padding:6px 10px 0;flex-wrap:wrap;position:sticky;top:0;z-index:5}
+  nav button{border:1px solid var(--line);border-bottom:none;background:#f3f5f8;padding:7px 14px;border-radius:7px 7px 0 0;cursor:pointer;font:inherit;color:var(--mute)}
+  nav button.active{background:var(--card);color:var(--ink);font-weight:600}
+  nav .badge{display:inline-block;min-width:18px;padding:0 5px;border-radius:9px;font-size:11px;color:#fff;margin-left:5px;text-align:center}
+  main{padding:12px 16px 40px;max-width:1100px}
+  .panel{display:none}.panel.active{display:block}
+  details{background:var(--card);border:1px solid var(--line);border-radius:8px;margin:0 0 10px}
+  details>summary{cursor:pointer;padding:9px 12px;font-weight:600;font-size:15px;list-style:none;display:flex;align-items:center;gap:8px}
+  details>summary::before{content:"▸";transition:transform .15s;color:var(--mute)}
+  details[open]>summary::before{transform:rotate(90deg)}
+  details>.body{padding:2px 14px 12px}
+  .find{border-left:5px solid var(--info);background:#fafbfc;border-radius:6px;padding:8px 10px;margin:8px 0}
+  .find h4{margin:0 0 3px;font-size:14px}
+  .find .drugs{font-size:12px;color:var(--mute);margin-bottom:3px}
+  .find p{margin:3px 0}
+  .sev{display:inline-block;font-size:11px;font-weight:700;color:#fff;border-radius:4px;padding:1px 6px;margin-right:6px;vertical-align:1px}
+  .Contraindicated{border-color:var(--ci)}.sev.Contraindicated{background:var(--ci)}
+  .High{border-color:var(--hi)}.sev.High{background:var(--hi)}
+  .Moderate{border-color:var(--mo)}.sev.Moderate{background:var(--mo)}
+  .Low{border-color:var(--lo)}.sev.Low{background:var(--lo)}
+  .catTag{font-size:11px;border:1px solid var(--line);border-radius:4px;padding:0 5px;color:var(--mute);margin-left:4px}
+  table{border-collapse:collapse;width:100%;font-size:13px}
+  th,td{border-bottom:1px solid var(--line);padding:5px 6px;text-align:left;vertical-align:top}
+  th{background:#f3f5f8;font-weight:600}
+  .chip{display:inline-block;font-size:11px;border-radius:10px;padding:0 7px;margin:1px 2px;border:1px solid}
+  .chip.qt{color:#6941c6;border-color:#d9d6fe}.chip.ss{color:#c11574;border-color:#fcceee}.chip.sz{color:#b54708;border-color:#fedf89}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px 14px}
+  label.f{display:flex;flex-direction:column;font-size:12px;color:var(--mute)}
+  label.f input,label.f select{font:inherit;padding:5px 6px;border:1px solid var(--line);border-radius:5px;color:var(--ink)}
+  .src{font-size:11px;color:var(--mute)}
+  label.cb{display:flex;gap:6px;align-items:center;font-size:13px}
+  textarea{width:100%;font:inherit;padding:7px;border:1px solid var(--line);border-radius:6px}
+  button.act{font:inherit;background:var(--brand);color:#fff;border:none;border-radius:6px;padding:6px 12px;cursor:pointer}
+  button.sec{font:inherit;background:#fff;color:var(--brand);border:1px solid var(--brand);border-radius:6px;padding:5px 11px;cursor:pointer}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0}
+  .muted{color:var(--mute)}.small{font-size:12px}
+  .score{font-size:22px;font-weight:700}
+  .ok{color:var(--lo)}.no{color:#98a2b3}
+  .verdict{padding:8px 10px;border-radius:6px;font-weight:600;margin-top:8px}
+  .verdict.pos{background:#fef3f2;color:var(--hi)}.verdict.neg{background:#ecfdf3;color:var(--lo)}
+  .ref h4{margin:10px 0 4px}.ref ul{margin:4px 0;padding-left:20px}
+  .empty{color:var(--lo);padding:6px 0}
+  .disclaimer{font-size:12px;color:var(--mute);margin-top:14px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Drug interactions</h1>
+  <span id="ptBanner">Manual mode</span>
+  <span id="status"></span>
+</header>
+<nav id="tabs">
+  <button data-tab="summary" class="active">Summary<span class="badge" id="b-all"></span></button>
+  <button data-tab="qt">QT<span class="badge" id="b-qt"></span></button>
+  <button data-tab="ss">Serotonin<span class="badge" id="b-ss"></span></button>
+  <button data-tab="sz">Seizure<span class="badge" id="b-sz"></span></button>
+  <button data-tab="meds">Med list</button>
+  <button data-tab="data">Patient data</button>
+</nav>
+<main>
+  <section class="panel active" id="p-summary"></section>
+  <section class="panel" id="p-qt"></section>
+  <section class="panel" id="p-ss"></section>
+  <section class="panel" id="p-sz"></section>
+  <section class="panel" id="p-meds"></section>
+  <section class="panel" id="p-data"></section>
+  <p class="disclaimer">Decision support only. Drug lists are curated (CredibleMeds categories, the ONC high-priority DDI list and product monographs), not exhaustive. Confirm with pharmacy, <a href="https://crediblemeds.org" target="_blank" rel="noopener">CredibleMeds</a> and Lexicomp before changing therapy.</p>
+</main>
+<script src="rules.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
