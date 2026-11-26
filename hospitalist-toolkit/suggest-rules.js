@@ -48,6 +48,8 @@
       words: ["hospital at home", "hah\\b", "virtual ward", "home instead", "admit to home"] },
     { key: "liver", hint: "Cirrhosis: MELD-Na, Child-Pugh, ascites and SBP, HRS plan, encephalopathy, nutrition, VTE prophylaxis",
       words: ["cirrho", "liver", "hepatic", "ascites", "sbp\\b", "spontaneous bacterial", "paracentes", "varice", "meld", "child.?pugh", "encephalopath", "lactulose", "rifaximin", "hepatorenal", "hrs\\b", "jaundice", "bilirubin", "alcohol.?related liver", "terlipressin"] },
+    { key: "cryo", hint: "Cryoneurolysis: focal spasticity after stroke/TBI/SCI/MS, spasticity pain, knee OA, non-operative hip fracture; how to refer to the VGH spasticity clinic",
+      words: ["spastic", "spasticity", "contracture", "clonus", "hemiplegic shoulder", "botulinum", "cryoneurol", "cryoneurot"] },
     { key: "sbo", hint: "Bowel obstruction: imaging and lab red flags for ischemia/perforation, NG and gastrografin, when surgery",
       words: ["sbo\\b", "bowel obstruction", "small bowel", "obstruct", "ileus", "volvulus", "ogilvie", "vomiting and distension", "distension", "closed loop", "gastrografin", "ng tube"] },
     { key: "ibd", hint: "IBD flowsheet: labs, meds and scopes over time, acute severe UC pathway, medication classes",

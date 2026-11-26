@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cryoneurolysis – Hospitalist Toolkit</title>
+<script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+<style>
+  :root{--bg:#f6f8fa;--card:#fff;--ink:#1f2933;--mut:#5f6b7a;--line:#d9e0e7;--acc:#0b6e99;--ok:#1d7a46;--warn:#a15c00;--bad:#b42318;--ice:#e8f4fb}
+  *{box-sizing:border-box}
+  body{margin:0;font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+  header{background:var(--acc);color:#fff;padding:.7rem 1rem}
+  header h1{margin:0;font-size:1.15rem}
+  header .pt{font-size:.9rem;opacity:.9;margin-top:.2rem}
+  nav{display:flex;flex-wrap:wrap;gap:.25rem;padding:.5rem 1rem;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+  nav button{border:1px solid var(--line);background:#fff;padding:.4rem .7rem;border-radius:6px;cursor:pointer;font-size:.88rem}
+  nav button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+  main{padding:1rem;max-width:1050px;margin:auto}
+  .tab{display:none}.tab.on{display:block}
+  details{background:var(--card);border:1px solid var(--line);border-radius:8px;margin:0 0 .7rem}
+  summary{cursor:pointer;padding:.6rem .8rem;font-weight:600;font-size:1rem;list-style:none}
+  summary::before{content:"▸ ";color:var(--acc)}
+  details[open]>summary::before{content:"▾ "}
+  details>div{padding:0 .9rem .8rem}
+  ul{margin:.3rem 0 .3rem 1.1rem;padding:0}li{margin:.15rem 0}
+  table{border-collapse:collapse;width:100%;font-size:.9rem}
+  th,td{border:1px solid var(--line);padding:.35rem .5rem;text-align:left;vertical-align:top}
+  th{background:var(--ice)}
+  .pill{display:inline-block;padding:.05rem .45rem;border-radius:10px;font-size:.78rem;font-weight:600;margin-right:.3rem}
+  .g{background:#e3f4ea;color:var(--ok)}.y{background:#fff3df;color:var(--warn)}.r{background:#fde8e6;color:var(--bad)}.b{background:var(--ice);color:var(--acc)}
+  .mut{color:var(--mut);font-size:.85rem}
+  select,textarea,input{font:inherit;padding:.35rem;border:1px solid var(--line);border-radius:6px}
+  textarea{width:100%;min-height:170px}
+  .btn{background:var(--acc);color:#fff;border:0;padding:.45rem .8rem;border-radius:6px;cursor:pointer}
+  .row{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;margin:.4rem 0}
+  .flag{padding:.45rem .6rem;border-radius:6px;margin:.3rem 0;border-left:4px solid}
+  .flag.g{border-color:var(--ok)}.flag.y{border-color:var(--warn)}.flag.r{border-color:var(--bad)}.flag.b{border-color:var(--acc)}
+  .banner{background:#fff3df;border:1px solid #f0c98a;padding:.5rem .7rem;border-radius:6px;font-size:.86rem;margin-bottom:.8rem}
+  @media print{nav,.btn,.row select{display:none}.tab{display:block}}
+</style>
+</head>
+<body>
+<header>
+  <h1>❄ Cryoneurolysis — who, when, how to get it</h1>
+  <div class="pt" id="ptbar">Loading patient…</div>
+</header>
+<nav id="nav">
+  <button data-t="screen" class="on">Patient screen</button>
+  <button data-t="helps">Where it helps</button>
+  <button data-t="nothelp">Not helpful / avoid</button>
+  <button data-t="time">Timing &amp; # treatments</button>
+  <button data-t="se">Side effects</button>
+  <button data-t="access">How to get it</button>
+  <button data-t="consult">Consult message</button>
+  <button data-t="handout">Patient handout</button>
+  <button data-t="refs">Evidence</button>
+</nav>
+<main>
+<div class="banner">Decision support only. Cryoneurolysis for spasticity is an evolving, mostly case-series/cohort evidence base developed largely at VGH; pain indications (knee OA, TKA) have RCT data. Confirm suitability with the treating physiatry / anesthesia team.</div>
+
+<!-- PATIENT SCREEN -->
+<section class="tab on" id="screen">
+  <details open><summary>Chart screen (auto from FHIR)</summary><div>
+    <div id="screenOut" class="mut">Reading chart…</div>
+  </div></details>
+  <details open><summary>Bedside check — spasticity vs contracture</summary><div>
+    <div class="row"><label>Main problem:</label>
+      <select id="selProb">
+        <option value="">— choose —</option>
+        <option value="spas">Focal spasticity (stroke, TBI, SCI, MS, CP)</option>
+        <option value="spaspain">Spasticity-related pain (e.g. hemiplegic shoulder)</option>
+        <option value="kneeoa">Knee OA pain, not ready / not a candidate for TKA</option>
+        <option value="tka">Planned TKA (pre-op cryo for post-op pain)</option>
+        <option value="hipfx">Hip fracture, non-operative / palliative</option>
+        <option value="genspas">Generalized spasticity</option>
+        <option value="fixed">Fixed contracture (no give)</option>
+        <option value="diffuse">Diffuse / central pain, fibromyalgia</option>
+      </select>
+    </div>
+    <div class="row"><label>Muscle lengthens with lidocaine diagnostic nerve block (DNB) or under exam?</label>
+      <select id="selDNB"><option value="">unknown / not done</option><option value="yes">Yes – reducible</option><option value="no">No – stays fixed</option></select>
+    </div>
+    <div class="row"><label>Botulinum toxin tried?</label>
+      <select id="selBot"><option value="">unknown</option><option value="good">Yes – works but wears off</option><option value="poor">Yes – plateaued / poor response</option><option value="no">No</option></select>
+    </div>
+    <div id="bedsideOut"></div>
+  </div></details>
+</section>
+
+<!-- WHERE IT HELPS -->
+<section class="tab" id="helps">
+  <details open><summary>What it is</summary><div>
+    <p>Ultrasound-guided percutaneous probe freezes a targeted nerve (about −60 to −88 °C) → second-degree axonotmesis / Wallerian degeneration. Epineurium and perineurium stay intact so the nerve regrows. No drug is injected and there is no maximum dose, so many nerves can be treated in one session. The Victoria (VGH) team adapted it from sensory nerves (pain) to motor and mixed nerves for spasticity in 2018.</p>
+  </div></details>
+  <details open><summary>Best-supported uses</summary><div>
+    <table>
+      <tr><th>Indication</th><th>Typical targets</th><th>Evidence</th></tr>
+      <tr><td><b>Focal spasticity</b> after stroke, TBI, SCI, MS, CP — especially when botulinum toxin wears off, has plateaued or is limited by dose</td><td>Musculocutaneous branches (biceps/brachialis), radial branch to brachioradialis, median/ulnar (claw hand), tibial branches to gastrocnemius/soleus (equinovarus, clonus), femoral branch to rectus femoris (stiff-knee gait), obturator (hip adductors), lateral pectoral</td><td><span class="pill y">Cohorts / case series</span>Benefit at 12 mo+</td></tr>
+      <tr><td><b>"Presumed contracture"</b> that is actually reducible spasticity</td><td>Same — chosen after lidocaine DNB shows lengthening</td><td><span class="pill y">Case series</span></td></tr>
+      <tr><td><b>Spasticity-associated pain</b> (hemiplegic shoulder, knee)</td><td>Suprascapular, lateral pectoral, genicular, superficial fibular</td><td><span class="pill y">Cohort; VGH inpatient rehab study</span></td></tr>
+      <tr><td><b>Knee OA pain</b></td><td>Infrapatellar branch of saphenous ± anterior femoral cutaneous; deep genicular nerves</td><td><span class="pill g">Sham-controlled RCT</span>Relief ~90 days</td></tr>
+      <tr><td><b>Before TKA</b> (reduces post-op pain/opioids)</td><td>Superficial genicular nerves</td><td><span class="pill g">RCTs</span>~12 weeks</td></tr>
+      <tr><td><b>Hip fracture, not going to surgery</b> (palliative non-op)</td><td>Pericapsular nerve group (PENG – articular branches of femoral/obturator)</td><td><span class="pill r">Case reports only</span>Ask APS/anesthesia</td></tr>
+      <tr><td>Other pain uses (outside spasticity)</td><td>Intercostal (post-thoracotomy, rib fractures), occipital, post-amputation / neuroma</td><td><span class="pill y">Mixed</span></td></tr>
+    </table>
+  </div></details>
+  <details><summary>Why choose it over botulinum toxin / phenol</summary><div>
+    <ul>
+      <li>Effect is immediate (visible on the table) and lasts longer — usually under one session per year.</li>
+      <li>No toxin dose ceiling, so large or many muscle groups can be treated in one visit.</li>
+      <li>No tachyphylaxis/antibody resistance; no chemical neurolysis fibrosis.</li>
+      <li>Reversible — nerve regrows, unlike surgical neurectomy.</li>
+    </ul>
+  </div></details>
+</section>
+
+<!-- NOT HELPFUL -->
+<section class="tab" id="nothelp">
+  <details open><summary>Where it is unlikely to help</summary><div>
+    <ul>
+      <li><b>True fixed contracture</b> — joint does not lengthen after lidocaine DNB. Needs serial casting / tendon lengthening / orthopedic or plastic surgery instead.</li>
+      <li><b>Generalized or severe multi-segment spasticity</b> — oral agents or intrathecal baclofen fit better.</li>
+      <li><b>Muscles the patient relies on</b> for transfers/standing (e.g. quadriceps "extensor tone" used to stand) — reducing tone may worsen function/falls.</li>
+      <li><b>Central or diffuse pain</b> (central post-stroke pain, fibromyalgia, widespread pain) — no single peripheral nerve to target.</li>
+      <li>Pain that a <b>diagnostic block does not relieve</b> — predicts failure.</li>
+      <li>Acute hip fracture going to surgery — standard fascia iliaca / PENG block with local anesthetic is the routine choice; cryo-PENG pre-op is still in trials.</li>
+      <li>Motor nerve targets in patients who need <b>preserved sensation</b> — mixed nerves carry a higher dysesthesia risk.</li>
+    </ul>
+  </div></details>
+  <details open><summary>Contraindications / cautions</summary><div>
+    <ul>
+      <li><span class="pill r">Avoid</span>Cold urticaria, cryoglobulinemia, paroxysmal cold hemoglobinuria</li>
+      <li><span class="pill r">Avoid</span>Infection or open wound at the site</li>
+      <li><span class="pill y">Caution</span>Bleeding disorder, anticoagulation, low platelets — discuss holding plan with proceduralist</li>
+      <li><span class="pill y">Caution</span>Raynaud phenomenon</li>
+      <li><span class="pill y">Caution</span>Cannot cooperate / lie still — pediatric cases at VGH are done with sedation</li>
+    </ul>
+  </div></details>
+</section>
+
+<!-- TIMING -->
+<section class="tab" id="time">
+  <details open><summary>Choose an indication</summary><div>
+    <div class="row"><select id="selTime">
+      <option value="spas">Focal spasticity</option>
+      <option value="spaspain">Spasticity-related pain</option>
+      <option value="kneeoa">Knee OA</option>
+      <option value="tka">Pre-TKA</option>
+      <option value="hipfx">Non-operative hip fracture (PENG)</option>
+    </select></div>
+    <div id="timeOut"></div>
+  </div></details>
+  <details><summary>Usual pathway (VGH spasticity clinic)</summary><div>
+    <ol>
+      <li>Referral → assessment (physiatry, with plastics/anesthesia).</li>
+      <li>Ultrasound-guided <b>lidocaine diagnostic nerve block(s)</b>: shows which muscles cause the problem, separates spasticity from contracture, confirms no sensory change, and lets the patient preview the result.</li>
+      <li>Cryoneurolysis session (often outpatient, local anesthetic; sedation for children).</li>
+      <li>Physio / stretching / bracing to use the window of reduced tone.</li>
+      <li>Follow-up at ~1, 3, 6 and 12 months; repeat only if tone returns.</li>
+    </ol>
+  </div></details>
+</section>
+
+<!-- SIDE EFFECTS -->
+<section class="tab" id="se">
+  <details open><summary>Side effects</summary><div>
+    <table>
+      <tr><th>Effect</th><th>How common</th><th>Course</th></tr>
+      <tr><td>Procedural pain, cramping/burning, fasciculations</td><td>Expected</td><td>During treatment</td></tr>
+      <tr><td>Bruising, swelling</td><td>Uncommon (2/113 in VGH series)</td><td>Resolves &lt;1 month</td></tr>
+      <tr><td>Local skin infection</td><td>Rare (1/113)</td><td>Resolved &lt;1 month</td></tr>
+      <tr><td>Nerve pain / dysesthesia</td><td>~3% of treated nerves (9/277), mostly mixed motor-sensory nerves</td><td>Most settle by 3 months; 1 numb at 6 months. Treated with oral/topical meds or perineural steroid</td></tr>
+      <tr><td>Numbness in the nerve's skin area</td><td>With sensory/mixed targets</td><td>Weeks–months until regrowth</td></tr>
+      <tr><td>Skin changes (hair loss, hypo/hyperpigmentation, frostbite at entry)</td><td>Superficial targets (knee)</td><td>Usually temporary</td></tr>
+      <tr><td>Weakness of the target muscle</td><td>Intended for spasticity; matters if the muscle was functional</td><td>Watch gait/falls risk</td></tr>
+    </table>
+  </div></details>
+  <details><summary>Hospitalist watch-list after a procedure</summary><div>
+    <ul>
+      <li>New falls risk after lower-limb targets (tibial, femoral, obturator) — PT reassessment, gait aid.</li>
+      <li>Insensate skin after mixed/sensory targets — skin/pressure checks, heel protection.</li>
+      <li>Hematoma if anticoagulated — check site, Hb if expanding.</li>
+      <li>Burning pain in the nerve territory in the weeks after — think post-cryo neuritis; contact the treating team.</li>
+    </ul>
+  </div></details>
+</section>
+
+<!-- ACCESS -->
+<section class="tab" id="access">
+  <details open><summary>Victoria / Island Health</summary><div>
+    <table>
+      <tr><th>Service</th><th>For</th><th>How</th></tr>
+      <tr><td><b>Victoria Peripheral Nerve &amp; Spasticity Clinic</b>, VGH (Dr. Paul Winston, physiatry; Dr. Daniel Vincent, anesthesia; Dr. Mahdis Hashemi, research)</td><td>Spasticity, spasticity pain, presumed contracture, peripheral nerve problems. Adults and children (age 3+, sedation at VGH)</td><td>Physician referral to Dr. Winston, VGH. Number on public study documents: 250-727-4221 — confirm phone/fax with VGH switchboard before sending. Inpatients on the rehab unit may be seen through the inpatient study pathway — ask.</td></tr>
+      <tr><td>Island Health Collaborative Spasticity Program (Queen Alexandra Centre)</td><td>Botulinum toxin, seating, orthotics</td><td>Referral required</td></tr>
+      <tr><td>VGH / RJH Acute Pain Service (anesthesia)</td><td>Inpatient questions: non-operative hip fracture (cryo-PENG), rib fractures</td><td>Page APS — case-by-case, not a routine service</td></tr>
+      <tr><td>Island Health Chronic Pain Program (Victoria 250-519-1836)</td><td>Chronic knee/peripheral nerve pain</td><td>Referral with defined anatomical area; incomplete referrals are not triaged</td></tr>
+      <tr><td>Providence Health Care — St. Paul's (Vancouver)</td><td>Cryoneurolysis pain program (Dr. Michael Jew)</td><td>Referral via PHC</td></tr>
+    </table>
+    <p class="mut">Cost note: the iovera° probe is roughly US$500 per treatment; coverage for pain indications in community clinics varies — ask the patient to check before booking privately.</p>
+  </div></details>
+  <details><summary>What to include in the referral</summary><div>
+    <ul>
+      <li>Diagnosis and date of onset (stroke/TBI/SCI/MS/CP).</li>
+      <li>Specific goal: hygiene of the hand, brace fitting, gait, transfers, pain, seating.</li>
+      <li>Joints/muscles involved; Modified Ashworth if known; whether it lengthens.</li>
+      <li>Previous botulinum toxin (dose, response, duration), oral baclofen/tizanidine.</li>
+      <li>Anticoagulants/antiplatelets, platelets/INR; cold-related disorders.</li>
+    </ul>
+    <p>Referring: Dr. Wayne A Dong, VGH Hospitalist · College ID 21341 · MSP 26301 · 250-819-0168 · wayne.dong@islandhealth.ca</p>
+  </div></details>
+</section>
+
+<!-- CONSULT -->
+<section class="tab" id="consult">
+  <details open><summary>Consult message (≈50 words)</summary><div>
+    <div class="row"><label>To Dr.</label><input id="cDr" value="Winston" size="14">
+      <label>Goal</label><select id="cGoal">
+        <option>focal spasticity limiting function</option>
+        <option>spasticity-related shoulder pain</option>
+        <option>equinovarus / clonus affecting gait</option>
+        <option>clenched hand / hygiene</option>
+        <option>knee OA pain, not a surgical candidate</option>
+        <option>non-operative hip fracture pain (cryo-PENG?)</option>
+      </select></div>
+    <textarea id="cMsg"></textarea>
+    <div class="row"><button class="btn" id="cCopy">Copy</button><span id="cDone" class="mut"></span></div>
+  </div></details>
+</section>
+
+<!-- HANDOUT -->
+<section class="tab" id="handout">
+  <details open><summary>Patient handout — after cryoneurolysis</summary><div>
+    <p><b>What was done:</b> a small probe froze a nerve to calm an overactive muscle or block pain. The nerve slowly regrows over months.</p>
+    <p><b>What to expect:</b> some soreness at the site for a few days; the muscle may feel looser or weaker straight away; skin over the area may feel numb.</p>
+    <p><b>What to watch for:</b></p>
+    <ul>
+      <li>Burning or electric pain, or new numbness, in the treated limb lasting more than a few days — call the clinic.</li>
+      <li>Leg feels weaker or you trip more — use your walker/cane and tell your physio.</li>
+      <li>Numb skin — check it daily for redness or sores, especially heels and hands.</li>
+      <li>Redness, warmth, swelling or pus at the needle site, or fever — see your doctor or clinic within 24 h.</li>
+      <li>If you take a blood thinner: a growing, tense, painful swelling at the site — go to the ER.</li>
+    </ul>
+    <p><b>Call 911</b> if you have sudden weakness of the face/arm/leg on the other side, trouble speaking, chest pain or trouble breathing.</p>
+    <button class="btn" onclick="window.print()">Print</button>
+  </div></details>
+</section>
+
+<!-- REFS -->
+<section class="tab" id="refs">
+  <details open><summary>Key sources</summary><div>
+    <ul>
+      <li>Winston P, Vincent D. Cryoneurolysis as a novel treatment for spasticity, associated pain and presumed contracture. 2024. PMC11457193</li>
+      <li>Winston P et al. Analysis of adverse effects of cryoneurolysis for spasticity. Am J Phys Med Rehabil 2023. PMID 37104641</li>
+      <li>Hashemi M et al. Percutaneous cryoneurolysis in refractory/plateaued upper-limb spasticity. 2025. PMC12435237</li>
+      <li>Winston P et al. Cryoneurotomy as a percutaneous mini-invasive therapy for the spastic limb. Arch Rehabil Res Clin Transl 2019</li>
+      <li>Radnovich R et al. Cryoneurolysis for knee OA: multicentre sham-controlled RCT. Osteoarthritis Cartilage 2017</li>
+      <li>PENG cryoneurolysis for palliative non-operative hip fracture. Can J Anaesth 2025;72:364-8</li>
+      <li>VGH study NCT05674604 — cryoneurolysis for knee/shoulder pain in inpatient neuro rehab</li>
+      <li>BCMJ 2025;67(6):222 — Novel treatment of spasticity: international success through collaborative care</li>
+    </ul>
+  </div></details>
+</section>
+</main>
+<script src="../hospitalist-toolkit/tools/cryo/app.js?v=20261126a"></script>
+<script src="../hospitalist-toolkit/consult-widget.js?v=20261125a"></script>
+</body>
+</html>

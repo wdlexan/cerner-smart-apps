@@ -4,7 +4,7 @@
    A tab is only loaded the first time you open it, and stays loaded when you switch away. */
 
 // To add a tool: put its files in tools/<folder>/ and add a line here.
-const TOOL_V = "20261126h"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
+const TOOL_V = "20261126i"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
 const TOOLS = [
   { key: "today", label: "Today (what changed)", tags: "what changed daily trends vitals overnight summary", path: "tools/today/index.html" },
   { key: "plist", label: "Patient list (screenshot)", tags: "patient list screenshot excel spreadsheet rounding list census floor ward ocr", path: "tools/plist/index.html" },
@@ -40,6 +40,7 @@ const TOOLS = [
   { key: "bsab",  label: "CRS/ICANS (bispecific)", tags: "crs icans bispecific teclistamab myeloma cytokine release", path: "tools/bispecific/index.html" },
   { key: "ibd",   label: "IBD flowsheet (Crohn/UC)", tags: "ibd crohn colitis ulcerative asuc", path: "tools/ibd/index.html" },
   { key: "liver", label: "Liver (cirrhosis)", tags: "liver cirrhosis hepatic encephalopathy ascites meld varices", path: "tools/liver/index.html" },
+  { key: "cryo",  label: "Cryoneurolysis", tags: "cryoneurolysis cryoneurotomy cryoablation cryo iovera freeze nerve spasticity spastic contracture clonus botulinum botox baclofen stroke hemiplegic shoulder pain knee osteoarthritis genicular tka peng hip fracture non-operative palliative winston vincent vgh spasticity clinic diagnostic nerve block", path: "tools/cryo/index.html" },
   { key: "sbo",   label: "Small bowel obstruction (SBO)", tags: "sbo small bowel obstruction bowel obstruction ileus lbo large bowel obstruction volvulus ogilvie pseudo-obstruction adhesions hernia incarcerated strangulated closed loop whirl ischemia perforation free air pneumoperitoneum lactate gastrografin water-soluble contrast ng tube nasogastric npo malignant bowel obstruction octreotide vomiting distension", path: "tools/sbo/index.html" },
   { key: "hypona", label: "Sodium (hypo / hyper)", tags: "hyponatremia hypernatremia sodium low high na siadh diabetes insipidus free water deficit", path: "tools/hypona/index.html" },
   { key: "hip",   label: "Hip fracture", tags: "hip fracture fragility orthopedics ortho",         path: "tools/hip/index.html" },
@@ -144,7 +145,7 @@ const GROUPS = [
   { name: "Chart", keys: ["labs", "crit", "notes", "exam", "watch", "ai", "calc"] },
   { name: "Heart & lung", keys: ["acls", "acs", "chf", "as", "echo", "af", "ild", "pleural"] },
   { name: "Kidney", keys: ["aki", "lytes", "hypona", "acidbase", "ktx"] },
-  { name: "Neuro", keys: ["neuro", "stroke", "seizure", "dementia", "pd", "ae"] },
+  { name: "Neuro", keys: ["neuro", "stroke", "seizure", "dementia", "pd", "ae", "cryo"] },
   { name: "GI & endo", keys: ["liver", "sbo", "ibd", "dm", "edr"] },
   { name: "Infection", keys: ["abx", "abxmap", "hahabx", "inf", "fuo", "asplenia"] },
   { name: "Onc & heme", keys: ["onc", "tox", "bsab", "pc", "g6pd", "sero"] },
