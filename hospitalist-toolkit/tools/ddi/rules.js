@@ -224,7 +224,7 @@
     (input.meds || []).forEach(m => {
       const d = matchDrug(m.text);
       if (d) matched.push({ text: m.text, drug: d, dose: parseDoseMg(m.text), proposed: !!m.proposed });
-      else if (m.text && m.text.trim()) unmatched.push(m.text);
+      else if (m.text && m.text.trim() && unmatched.indexOf(m.text.trim()) < 0) unmatched.push(m.text.trim());
     });
     const meds = uniq(matched);
     const findings = [];

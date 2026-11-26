@@ -293,10 +293,22 @@
   const FREQ_ROUTE = /^\s*(?:IV|PO|SC|SUBCUT|IM|SL|PR)\b/i;
   const MED_HDR = /(?:medications?|meds\b|prescriptions?|rx\b|current medications|discharge medications|home medications)/i;
   const NOT_MED = /^(?:take|dose|total|result|range|normal|weight|height|age|bmi|sodium|potassium|creatinine|glucose|hemoglobin)$/i;
+  // e.g. "metoclopramide (Maxeran) 10 mg, oral, TID", "multivitamin, prenatal 1 tab, oral, DAILY", "ondansetron (Zofran inj) 8 mg, IV, DAILY"
+  const PC_ROW = /^\s*([A-Za-z][A-Za-z0-9\-\/ ,.']{2,60}?)\s*(\([^)]{1,40}\))?\s+(\d+(?:[.,]\d+)?(?:\/\d+(?:[.,]\d+)?)?)\s?(mg|mcg|µg|ug|g|units?|iu|mL|ml|mEq|meq|mmol|tabs?|tablets?|caps?|capsules?|puffs?|drops?|patch(?:es)?|sprays?|supp\w*|applications?|sachets?|packets?|lozenges?)\b\s*,\s*([^\n]{0,90})$/i;
+  const PC_ROUTE = /^(?:oral|po|iv|im|sc|subcut\w*|sl|sublingual|pr|rectal|inh\w*|neb\w*|topical|transdermal|ng|ng tube|g-?tube|gt|j-?tube|ophthalmic|eye|otic|ear|nasal|intranasal|vaginal|buccal|chew|oral chew|iv push|ivpb|iv piggyback|inj\w*)\b/i;
   function medItems(lines, docT) {
     const out = []; let inMeds = false, since = 0;
     lines.forEach((ln, li) => {
       if (/^\s*[A-Za-z ]{3,40}:?\s*$/.test(ln) && ln.trim().length < 40) inMeds = MED_HDR.test(ln); else if (MED_HDR.test(ln) && ln.trim().length < 60) inMeds = true; else if (/^\s*(?:allerg|assessment|plan|impression|diagnos|vitals?|labs?|history|examination)\w*\s*:?/i.test(ln)) inMeds = false;
+      // PowerChart / MAR med-list row: "generic (Brand) dose unit, route, frequency" - the whole line is one order
+      const pc = PC_ROW.exec(ln);
+      if (pc && PC_ROUTE.test(pc[5])) {
+        const name = pc[1].replace(/[,\s]+$/, "").trim();
+        if (name && !NOT_MED.test(name.split(/\s/)[0])) {
+          out.push({ kind: "med", key: "med", label: name, dose: pc[3] + " " + pc[4], text: ln.replace(/\s+/g, " ").trim(), t: (findDate(ln) || docT || {}).t || null, line: ln.trim().slice(0, 200), li });
+          return;
+        }
+      }
       if (!DOSE.test(ln) || !(inMeds || FREQ.test(ln))) return;
       // two drugs on one line ("apixaban 5 mg po bid and metoprolol 25 mg po bid") -> one item each
       ln.split(/\s*(?:;|,|\band\b|\+)\s*(?=[A-Za-z][A-Za-z-]{3,}\s+\d)/i).forEach((seg) => {

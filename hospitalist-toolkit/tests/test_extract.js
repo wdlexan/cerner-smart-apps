@@ -279,4 +279,12 @@ Doing well on treatment. Sodium 131 mmol/L today. Continue the current plan and 
 // pasted text with the line breaks lost: labels run together
 { const d = X.demographics("Patient Name: Arthur PendeltonDate of Birth / Age: April 14, 1948 (78 years old)Sex / Gender: MalePersonal Health Number (PHN): 9000 123 456 (fictitious)Address: 1420 Cedar Hill Cross Road, Apt 304, Victoria, BC V8P 2P1Phone: (250) 555-0194Emergency Contact: Margaret Pendelton (Spouse) – (250) 555-0198Primary Care Provider: Dr. Elena Vance");
   ok("glued labels: name, DOB, sex, PHN, phone, address", d.given === "Arthur" && d.family === "Pendelton" && d.birthDate === "1948-04-14" && d.sex === "male" && d.phn === "9000123456" && d.phone === "250-555-0194" && d.city === "Victoria" && d.postal === "V8P 2P1" && /Apt 304/.test(d.street), d); }
+// PowerChart med list screenshot (OCR): "generic (Brand) dose, route, frequency", doses in tabs
+{ const t = ["acetylsalicylic acid 81 mg, oral, DAILY", "calcium carbonate (Tums) 500 mg, oral chew, BID CC", "dimenhyDRINATE (Gravol) 50 mg, oral, Q6H",
+    "doxylamine-pyridoxine (Diclectin) 1 tab, oral, AT LUNCH", "doxylamine-pyridoxine (Diclectin) 2 tab, oral, QHS", "folic acid 1 mg, oral, DAILY",
+    "metoclopramide (Maxeran) 10 mg, oral, TID", "multivitamin, prenatal 1 tab, oral, DAILY", "ondansetron (Zofran inj) 8 mg, IV, DAILY", "pantoprazole (Panto IV) 40 mg, IV, DAILY"].join("\n");
+  const m = X.fromText(t, { fileName: "Pasted screenshot.png" }).items.filter((i) => i.kind === "med");
+  ok("PowerChart med rows: all 10 read", m.length === 10, m.map((i) => i.text));
+  ok("PowerChart med rows: two-word name kept", m.some((i) => i.label === "acetylsalicylic acid"), m.map((i) => i.label));
+  ok("PowerChart med rows: brand and route kept in text", m.some((i) => i.text === "ondansetron (Zofran inj) 8 mg, IV, DAILY"), m.map((i) => i.text)); }
 console.log(`\n${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);
