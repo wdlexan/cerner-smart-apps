@@ -69,7 +69,7 @@ const TOOLS = [
   { key: "edr",   label: "Eating disorder (ED)", tags: "eating disorder anorexia bulimia refeeding", path: "tools/edr/index.html", keepHeader: true }, // its header holds the Look back control
   { key: "sero",  label: "Autoimmune serology", tags: "autoimmune serology which test to order rheumatology pbc ama celiac myasthenia ana ena dsdna anca pr3 mpo rf ccp rheumatoid factor complement c3 c4 lupus sle vasculitis gpa mpa egpa sjogren scleroderma myositis antiphospholipid aps cryoglobulin anti-gbm", path: "tools/serology/index.html" },
   { key: "ae",    label: "Autoimmune encephalitis", tags: "autoimmune encephalitis nmda", path: "tools/ae/index.html", keepHeader: true }, // its header holds the tool's own tabs
-  { key: "forms", label: "Forms", tags: "forms referral requisition pdf form 4.1 bc cancer pulse gi heart function umac acute neurology neuro clinic first seizure clinic rjh headache migraine complex headache clinic",                path: "tools/forms/index.html" }
+  { key: "forms", label: "Forms", tags: "forms referral requisition pdf form 4.1 bc cancer pulse gi heart function umac acute neurology neuro clinic first seizure clinic rjh headache migraine complex headache clinic edith expected death in the home funeral home hlth 3987 palliative end of life",                path: "tools/forms/index.html" }
 ];
 
 // POCKET MODE (index.html?pocket=1, the iPhone home-screen app; see pocket.js): no Cerner connection, so hide the tabs that only read the chart.

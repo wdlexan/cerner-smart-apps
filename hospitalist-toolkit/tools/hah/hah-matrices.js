@@ -187,13 +187,31 @@
     <details class="mx"><summary>Full matrix and definitions</summary><div class="body"><div id="dmTable"></div>
       <p class="mxnote"><b>EDITH form:</b> Expected Death in the Home form · <b>Natural death:</b> a death attributable to natural causes ·
       <b>Unnatural death:</b> a death due to trauma or foul play · <b>DNR:</b> do not resuscitate using CPR · <b>Full resusc:</b> resuscitate using CPR.</p>
-      <p class="mxnote">For an expected death, completing the EDITH form ahead of time lets the funeral home take the body directly (no morgue, no Medivan).</p></div></details>`;
+      <p class="mxnote">For an expected death, completing the EDITH form ahead of time lets the funeral home take the body directly (no morgue, no Medivan).</p></div></details>
+    <p class="mxnote" style="margin-top:8px"><button type="button" id="edithBtn">Fill the EDITH form (HLTH 3987) →</button> <span class="note">opens it in the Forms tab, filled from the chart</span></p>`;
   }
   function drawDeath() {
     const k = $("dm_col").value, plan = deathPlan(k), ci = DEATH_COLS.findIndex((c) => c.key === k);
     $("dmOut").innerHTML = plan ? `<table class="mxt" style="max-width:560px"><tbody>${plan.map((p) => `<tr><th>${h(p.what)}</th><td class="sel">${h(p.value)}</td></tr>`).join("")}</tbody></table>` : `<p class="mxnote">Choose the type of death to see who to notify, who writes the death certificate and where the body goes.</p>`;
     $("dmTable").innerHTML = `<table class="mxt"><thead><tr><th></th>${DEATH_COLS.map((c, i) => `<th class="${i === ci ? "colsel" : ""}">${h(c.label)}</th>`).join("")}</tr></thead><tbody>` +
       DEATH_ROWS.map(([w, v]) => `<tr><th>${h(w)}</th>${v.map((x, i) => `<td class="${i === ci ? "sel" : ""}">${h(x)}</td>`).join("")}</tr>`).join("") + `</tbody></table>`;
+  }
+
+  // Inside the toolkit: switch to the Forms tab and open the EDITH form there. Standalone: open the Forms tool on it.
+  function openEdith() {
+    try {
+      const P = window.parent;
+      if (P !== window && typeof P.show === "function") {
+        P.show("forms");
+        let n = 0; const t = setInterval(() => { // the Forms tab may still be loading
+          try { const fr = P.document.querySelector('#frames iframe[data-k="forms"]'), w = fr && fr.contentWindow;
+            if (w && typeof w.openForm === "function" && w.document.readyState === "complete") { clearInterval(t); w.openForm("edith"); } } catch (e) {}
+          if (++n > 50) clearInterval(t);
+        }, 100);
+        return;
+      }
+    } catch (e) {}
+    window.open("../forms/index.html?form=edith", "_blank", "noopener");
   }
 
   function copy(t, msgEl) {
@@ -207,6 +225,7 @@
     doc.querySelectorAll("#escRisk select, #escRisk input").forEach((e) => (e.oninput = e.onchange = drawRisk));
     doc.querySelectorAll("#asthma select").forEach((e) => (e.onchange = drawAsthma));
     $("dm_col").onchange = drawDeath;
+    $("edithBtn").onclick = openEdith;
     $("escCopy").onclick = () => copy(riskNote(), $("escMsg"));
     $("asCopy").onclick = () => copy(asthmaNote());
     $("escClear").onclick = () => { doc.querySelectorAll("#escRisk select, #escRisk input").forEach((e) => (e.value = "")); doc.querySelectorAll("#escRisk .chart").forEach((e) => (e.hidden = true)); drawRisk(); };

@@ -25,6 +25,13 @@
         return [phn, v.mrn ? `MRN: ${v.mrn}` : ""].filter(Boolean).join("   ");
     };
 
+    // config.js clinicAddress "1 Hospital Way, Victoria, BC V8Z 6R5" -> [street, city, province, postal]
+    const addrPart = (i) => {
+        const a = String((((window.APP_CONFIG || {}).physician) || {}).clinicAddress || "").split(",").map((x) => x.trim());
+        const pp = /^([A-Z]{2})\s+(.+)$/.exec(a[2] || "") || [];
+        return [a[0], a[1], pp[1] || a[2], pp[2]][i] || "";
+    };
+
     window.FORMS = [
         // =====================================================================
         {
@@ -705,6 +712,81 @@
                         { id: "meds", label: "Current medications", type: "radio", important: true, options: [
                             { value: "attached", label: "Attached", mark: [475.9, 746.6, 485.3, 756.0] },
                             { value: "none", label: "NONE", mark: [537.6, 746.6, 547.0, 756.0] }] }
+                    ]
+                }
+            ]
+        },
+        // =====================================================================
+        {
+            // Fillable PDF (BC Ministry of Health HLTH 3987, 2015/07/30): values go into the PDF's own fields (acro), so it stays editable.
+            // "EDITH" in the Hospital at Home death-in-the-home matrix.
+            id: "edith",
+            title: "EDITH – Notification of Expected Death in the Home",
+            description: "BC HLTH 3987 (2015/07/30). Done ahead of an expected natural death at home so the funeral home can take the body directly (no pronouncement, morgue or Medivan)",
+            category: "End of life",
+            template: "ExpectedDeathHome.pdf",
+            acro: true,
+            filePrefix: "EDITH",
+            fileNameFrom: "patientName",
+            footer: "Sign by hand. The family member authorized to control disposition signs the bottom section (highest on the a–k list). Valid 3 months from the date signed. At death the family notes the time and waits at least 1 hour before calling the funeral home; you or your designate complete the Medical Certificate of Death within 48 hours. Copy 1: Family · Copy 2: Home Health / Community Nursing · Copy 3: Funeral Home.",
+            sections: [
+                {
+                    legend: "Funeral home (family's choice)", fields: [
+                        { id: "fhName", label: "Name of funeral home", type: "text", important: true, span: 4, acro: "Funeral Home Name" },
+                        { id: "fhAddress", label: "Address", type: "text", acro: "Funeral Home Address" },
+                        { id: "fhCity", label: "City", type: "text", span: 1, acro: "Funeral Home City", size: 9 },
+                        { id: "fhProvince", label: "Province", type: "text", span: 1, value: "BC", acro: "Funeral Home Province", size: 9 },
+                        { id: "fhPostal", label: "Postal code", type: "text", span: 1, acro: "Funeral Home Postal Code", size: 9 }
+                    ]
+                },
+                {
+                    legend: "Patient", fields: [
+                        // also printed on "...the expected death at home of:" in the authorization section
+                        { id: "patientName", label: "Patient's name", type: "text", src: "pt.fullName", required: true, acro: ["Patient Name", "Authorized Person"] },
+                        { id: "gender", label: "Gender", type: "radio", src: "pt.sex", span: 1, options: [
+                            { value: "male", label: "M", acro: "Gender", acroValue: "Male" }, { value: "female", label: "F", acro: "Gender", acroValue: "Female" }] },
+                        { id: "dob", label: "Date of birth", type: "date", src: "pt.dob", required: true, span: 1, acroDate: ["Patient DOB Day", "Patient DOB Month", "Patient DOB Year"] },
+                        { id: "phn", label: "Personal health number", type: "text", src: "pt.phn", phn: true, acro: "Patient PHN" },
+                        { id: "address", label: "Address (where the death is expected)", type: "text", src: "pt.street", acro: "Patient Address", hint: "The home where the patient will die, if not their usual address." },
+                        { id: "city", label: "City", type: "text", src: "pt.city", span: 1, acro: "Patient City", size: 9 },
+                        { id: "province", label: "Province", type: "text", src: "pt.province", span: 1, acro: "Patient Province", size: 9 },
+                        { id: "postal", label: "Postal code", type: "text", src: "pt.postal", span: 1, acro: "Patient Postal Code", size: 9 },
+                        { id: "precautions", label: "Precautions, if any", type: "textarea", span: 4, acro: "Precautions", size: 9,
+                          hint: "For the funeral home staff, e.g. infection (MRSA, C. diff, TB), pacemaker / ICD or other implanted device, bariatric transfer." }
+                    ]
+                },
+                {
+                    legend: "Attending medical / nurse practitioner", fields: [
+                        { id: "pracName", label: "Name", type: "fixed", src: "cfg.shortName", span: 2, acro: "Practitioner Name" },
+                        { id: "pracCollege", label: "College ID", type: "fixed", src: "cfg.collegeId", span: 1, acro: "Practitioner College ID" },
+                        { id: "pracPhone", label: "Phone", type: "fixed", src: "cfg.phone", span: 1, acro: "Practitioner Phone" },
+                        { id: "pracAddress", label: "Address", type: "text", value: addrPart(0), acro: "Practitioner Address" },
+                        { id: "pracCity", label: "City", type: "text", value: addrPart(1), span: 1, acro: "Practitioner City", size: 9 },
+                        { id: "pracProvince", label: "Province", type: "text", value: addrPart(2), span: 1, acro: "Practitioner Province", size: 9 },
+                        { id: "pracPostal", label: "Postal code", type: "text", value: addrPart(3), span: 1, acro: "Practitioner Postal Code", size: 9 },
+                        { id: "comments", label: "Comments", type: "textarea", span: 4, acro: "Practitioner Comments", size: 9,
+                          hint: "e.g. diagnosis (natural, expected death), DNR, who to call after hours (community nursing / on-call)." },
+                        { id: "signedDate", label: "Date signed (sign by hand)", type: "date", src: "today", acroDate: ["Practitioner Signed Day", "Practitioner Signed Month", "Practitioner Signed Year"] }
+                    ]
+                },
+                {
+                    legend: "Authorization of disposition (family; can leave blank to handwrite)", fields: [
+                        { id: "authName", label: "Authorized person: printed name", type: "text", acro: "Authorized Person Printed Name" },
+                        { id: "authPhone", label: "Contact phone number", type: "text", span: 1, acro: "Authorized Person Phone" },
+                        { id: "authDate", label: "Date signed", type: "date", span: 1, acro: "Authorized Person Date Signed" },
+                        { id: "relationship", label: "Relationship to deceased (in order of priority, CIFSA s.5(1))", type: "select", span: 4, options: [
+                            { value: "", label: "— leave blank to tick by hand —" },
+                            { value: "a", label: "a) personal representative named in the will", acro: "Relationship to Deceased - Personal Representative" },
+                            { value: "b", label: "b) spouse", acro: "Relationship to Deceased - Spouse" },
+                            { value: "c", label: "c) adult child", acro: "Relationship to Deceased - Adult Child" },
+                            { value: "d", label: "d) adult grandchild", acro: "Relationship to Deceased - Adult Grandchild" },
+                            { value: "e", label: "e) legal guardian (if the deceased is a minor)", acro: "Relationship to Deceased - Legal Guardian" },
+                            { value: "f", label: "f) parent", acro: "Relationship to Deceased - Parent" },
+                            { value: "g", label: "g) adult sibling", acro: "Relationship to Deceased - Adult Sibling" },
+                            { value: "h", label: "h) adult nephew or niece", acro: "Relationship to Deceased - Adult Nephew or Niece" },
+                            { value: "i", label: "i) adult next of kin (Estate Administration Act s.89–90)", acro: "Relationship to Deceased - Adult Next of Kin Under Section 89" },
+                            { value: "j", label: "j) minister (Employment and Assistance Act) or official administrator", acro: "Relationship to Deceased - Administrator under EAA" },
+                            { value: "k", label: "k) adult with a personal or kinship relationship", acro: "Relationship to Deceased - Adult Person with Personal Relationship" }] }
                     ]
                 }
             ]

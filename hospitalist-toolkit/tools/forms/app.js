@@ -353,12 +353,24 @@ async function genericFill(PDFLib, bytes, form, v) {
             // some forms leave a field without its own font setting (/DA): give it plain Helvetica
             try { if (!t.acroField.getDefaultAppearance()) t.acroField.setDefaultAppearance("/Helv 0 Tf 0 g"); } catch (e) {}
             t.setFontSize(f.size || (f.type === "textarea" ? 9 : 10));
-            t.setText(cleanText(String(str)));
+            let txt = cleanText(String(str));
+            // boxes with a character limit (e.g. postal code 6, PHN 10): drop spaces/dashes to fit; else lift the limit and say so
+            const max = t.getMaxLength();
+            if (max && txt.length > max) { const squeezed = txt.replace(/[\s-]/g, "");
+                if (squeezed.length <= max) txt = squeezed; else { t.setMaxLength(undefined); notes.push(`“${f.label}” is longer than its box allows; check it on the PDF.`); } }
+            t.setText(txt);
         } catch (e) { notes.push(`Could not fill “${f.label}” (${e.message}).`); }
     };
     // tick, and redraw the tick as a plain vector check (some forms use a ZapfDingbats tick that not every viewer shows)
     // option.acroValue: the PDF field is a radio group (e.g. Yes/No); select that export value
-    const acroRadio = (name, value) => { try { acro.getRadioGroup(name).select(value); } catch (e) { notes.push(`Could not tick “${name}” (${value}).`); } };
+    // (some forms build the choice as ONE check box with a widget per answer, e.g. HLTH 3987 Gender M/F: set the value and each widget's state by hand)
+    const acroRadio = (name, value) => { try { const fld = acro.getField(name);
+        if (fld instanceof PDFLib.PDFRadioGroup) { fld.select(value); return; }
+        const on = PDFLib.PDFName.of(value), ws = fld.acroField.getWidgets();
+        if (!ws.some((w) => w.getOnValue() === on)) throw new Error("no such choice");
+        fld.acroField.dict.set(PDFLib.PDFName.of("V"), on);
+        ws.forEach((w) => w.setAppearanceState(w.getOnValue() === on ? on : PDFLib.PDFName.of("Off")));
+    } catch (e) { notes.push(`Could not tick “${name}” (${value}).`); } };
     const acroCheck = (name) => { try { const cb = acro.getCheckBox(name); cb.check();
         try { cb.acroField.getWidgets().forEach((w) => { const mk = w.getAppearanceCharacteristics(); if (mk && mk.getBorderColor() && mk.getBorderColor().length) w.getOrCreateBorderStyle().setWidth(1); }); cb.updateAppearances(); } catch (e) {} } catch (e) { notes.push(`Could not tick “${name}”.`); } };
     if (acro) {
@@ -369,10 +381,12 @@ async function genericFill(PDFLib, bytes, form, v) {
                 else if (o && o.value && f.acro) acroText(f.acro, o.pdfText || o.label, f); // select whose choice prints as text
                 continue; }
             if (f.type === "checks") { for (const o of f.options) if ((val || []).includes(o.value) && o.acro) acroCheck(o.acro); continue; }
+            // f.acroDate = [day, month, year] field names: a date split over three boxes (DD / MM / YYYY)
+            if (f.acroDate) { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(val || ""); if (m) [m[3], m[2], m[1]].forEach((x, i) => acroText(f.acroDate[i], x, f)); continue; }
             if (!f.acro) continue;
             let str = f.text ? f.text(v) : val;
             if (f.type === "date" || f.fmt) str = fmtDate(str, f.fmt);
-            if (str) acroText(f.acro, str, f);
+            if (str) [].concat(f.acro).forEach((name) => acroText(name, str, f)); // f.acro can list several fields that print the same value
         }
         try { acro.updateFieldAppearances(font); } catch (e) {}
         return { bytes: await pdf.save(), notes };
@@ -503,6 +517,9 @@ document.addEventListener("DOMContentLoaded", () => {
     renderHome();
     renderBanner();
     renderModeBtn();
+    // index.html?form=edith opens that form directly (links from other tabs)
+    const want = new URLSearchParams(location.search).get("form");
+    if (want && FORMS.some(f => f.id === want)) openForm(want);
 });
 
 function patientLoaded(p) {
