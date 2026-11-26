@@ -9,6 +9,7 @@
     fn: "https://www.bccancer.bc.ca/health-professionals/clinical-resources/cancer-management-manual/supportive-care/febrile-neutropenia" };
   const go = (k, t) => `<a href="#" data-goto="${k}">${t}</a>`;
   const tk = (k, t) => `<a href="#" data-toolkit="${k}">${t}</a>`; // another toolkit tab
+  const ref = (n, url, title) => `<a href="${url}" target="_blank" rel="noopener" title="${title}">[${n}]</a>`; // outside source link
 
   const CANCERS = [
   // =====================================================================================
@@ -267,7 +268,7 @@
     { t: "At a glance: types and intent", open: true, h: `
       <table><tr><th>Type</th><th>Who / clue</th><th>Intent</th></tr>
         <tr><td><b>AML</b></td><td>Median age ~68; cytopenias, blasts, Auer rods, gum hypertrophy (monocytic)</td><td><b>Curative</b> if fit for intensive chemo ± transplant; unfit → disease control (venetoclax + azacitidine)</td></tr>
-        <tr><td><b>APL</b> (AML with PML-RARA)</td><td>Bleeding, DIC, low fibrinogen, often low WBC</td><td><b>Curative</b> (>90%) if the first 2 weeks are survived</td></tr>
+        <tr><td><b>APL</b>: acute promyelocytic leukemia (APML, M3; AML with PML-RARA) – see the APL section below</td><td>Bleeding, DIC, low fibrinogen, often low WBC</td><td><b>Curative</b> (>90%) if the first 2 weeks are survived</td></tr>
         <tr><td><b>ALL</b></td><td>Children and older adults; nodes, mediastinal mass, CNS; ~25–30% of adults Ph+ (BCR-ABL)</td><td><b>Curative</b> intent</td></tr>
         <tr><td><b>CML</b></td><td>High WBC with all stages of granulocytes, basophilia, big spleen; BCR-ABL</td><td>TKI → near-normal life expectancy; some can stop (treatment-free remission)</td></tr>
         <tr><td><b>CLL</b></td><td>Older adults; lymphocytosis, smudge cells, nodes</td><td>Not cured with standard therapy, but long survival; many never need treatment</td></tr></table>
@@ -276,6 +277,23 @@
         <li>Peripheral flow cytometry; bone marrow with cytogenetics and molecular tests (FLT3, NPM1, IDH1/2, TP53, BCR-ABL).</li>
         <li>HLA typing (transplant candidates), echo before anthracycline, HBV/HCV/HIV, CMV, pregnancy test; CT head if neuro signs or severe coagulopathy.</li>
         <li>CLL: flow cytometry of blood is enough; IGHV status and del(17p)/TP53 before treatment.</li></ul>` },
+    { t: "APL: acute promyelocytic leukemia (APML, M3 leukemia)", open: true, h: `
+      <p><b>Acute promyelocytic leukemia</b> (also called <b>APML</b> or <b>M3 leukemia</b>; AML with PML::RARA) is a rare, fast-growing subtype of acute myeloid leukemia (AML). It is treated as an <b>urgent oncologic emergency</b> because of a high risk of life-threatening bleeding and clotting early in the illness.
+        <span class="muted">Read more: ${ref(1, "https://www.acep.org/criticalcare/newsroom/newsroom-articles/january-2025/acutepromleuk", "ACEP Critical Care, Jan 2025")} ${ref(2, "https://my.clevelandclinic.org/health/diseases/acute-promyelocytic-leukemia", "Cleveland Clinic")} ${ref(3, "https://www.bloodcancer.org.nz/assets-prod/downloads/Information-Booklets-SS-Documents/LBCNZ-APL-DIGITAL.pdf", "Leukaemia & Blood Cancer NZ booklet (PDF)")} ${ref(4, "https://myhealth.alberta.ca/Health/pages/conditions.aspx?hwid=tn10219&", "MyHealth Alberta")} ${ref(5, "https://www.mskcc.org/cancer-care/types/leukemias/types/acute-promyelocytic-leukemia-apl", "Memorial Sloan Kettering")}</span></p>
+      <div class="flag red"><b>Why APL is a medical emergency</b><ul style="margin:4px 0 0 18px;padding:0">
+        <li><b>Severe bleeding and clotting:</b> APL frequently causes disseminated intravascular coagulation (DIC) and low platelets, leading to dangerous bleeding (including in the brain or lungs) alongside abnormal blood clots. ${ref(1, "https://www.youtube.com/watch?v=FDUNpXuUoKM&t=191", "Video (YouTube)")} ${ref(2, "https://myhealth.alberta.ca/Health/pages/conditions.aspx?hwid=tn10219&", "MyHealth Alberta")}</li>
+        <li><b>Rapid early risk:</b> without prompt recognition, supportive blood transfusions and targeted therapy, early death can occur quickly after presentation. Doctors often start treatment immediately on strong suspicion rather than waiting for all test results. ${ref(1, "https://jamanetwork.com/journals/jama/article-abstract/201358", "JAMA")} ${ref(2, "https://www.acep.org/criticalcare/newsroom/newsroom-articles/january-2025/acutepromleuk", "ACEP Critical Care")}</li>
+        <li><b>Treatment-related emergencies:</b> early treatment with differentiating agents (ATRA, arsenic trioxide) can trigger <b>differentiation syndrome</b>, a serious reaction that needs close monitoring and prompt care. ${ref(1, "https://johnshopkinshealthcare.staywellsolutionsonline.com/HealthyKidsTeens/34,BAMLT11", "Johns Hopkins (StayWell)")}</li></ul></div>
+      <h4>Recognize it</h4>
+      <ul><li>New leukemia (or pancytopenia) with <b>bruising, bleeding gums, nosebleeds, heavy periods or blood in urine</b>; headache or new neuro signs = intracranial bleed until proven otherwise.</li>
+        <li>Labs: <b>low fibrinogen</b>, high INR, very high D-dimer, low platelets; WBC is often <b>low</b> (WBC &gt;10 = high risk).</li>
+        <li>Blood film: abnormal promyelocytes with heavy granules and <b>Auer rods</b> (bundles = "faggot cells"). Confirm by PML::RARA (FISH or PCR) and marrow, but <b>do not wait</b> for these.</li></ul>
+      <h4>Do now (on suspicion)</h4>
+      <ul><li><b>Start ATRA (tretinoin)</b> right away and call hematology now.</li>
+        <li>Support: platelets &gt;30–50 ×10⁹/L, fibrinogen &gt;1.5 g/L (cryoprecipitate), FFP for high INR; coagulation tests every 6–8 h at first.</li>
+        <li>No LP, central line or invasive procedure until the coagulopathy is corrected; CT head for any headache or neuro change.</li>
+        <li>Watch for differentiation syndrome (fever, breathlessness, low O2, infiltrates, effusions, weight gain, low BP, AKI) and QTc on arsenic (ECG; K ≥4, Mg ≥0.9). ${go("emerg", "Emergencies: APL and DIC, Differentiation syndrome")}</li></ul>
+      <p class="muted">Outlook: &gt;90% are cured if the first 2 weeks are survived; most early deaths are from bleeding.</p>` },
     { t: "Treatment for cure", open: false, h: `
       <table><tr><th>Type</th><th>Usual approach</th></tr>
         <tr><td>AML, fit</td><td><b>"7+3"</b> induction (cytarabine 7 days + daunorubicin or idarubicin 3 days) ± midostaurin or quizartinib (FLT3), ± gemtuzumab (favourable risk). CPX-351 for therapy-related or MDS-related AML. Consolidation: high-dose cytarabine, or <b>allogeneic stem cell transplant</b> for intermediate/adverse risk. Maintenance oral azacitidine in selected patients.</td></tr>
@@ -788,7 +806,7 @@
         <li><b>Now</b>: urgent hematology; <b>hydroxyurea</b> 50–100 mg/kg/day (split doses) until definitive chemo; IV fluids; TLS prevention (rasburicase if high risk); correct DIC.</li>
         <li>Avoid RBC transfusion unless needed (raises viscosity); transfuse platelets as needed (do not raise viscosity much). Leukapheresis only in selected cases (not APL).</li>
         <li>Lab traps: <b>low PaO2</b> on a blood gas from oxygen use by cells (trust the oximeter) and <b>pseudohyperkalemia</b> (repeat K on a heparin/whole blood sample, no pneumatic tube).</li></ul>` },
-    { key: "apl", t: "APL and DIC", open: false, h: `
+    { key: "apl", t: "APL (acute promyelocytic leukemia) and DIC", open: false, h: `
       <div class="flag red"><b>Suspect APL → start ATRA now</b> (tretinoin 45 mg/m²/day PO in 2 doses), before genetic confirmation. Most early APL deaths are from bleeding.</div>
       <ul><li>Clues: new leukemia with bleeding/bruising, low fibrinogen, high INR, high D-dimer, often low WBC; abnormal promyelocytes with Auer rods (faggot cells) on the film.</li>
         <li>Support: platelets &gt;30–50 ×10⁹/L, <b>fibrinogen &gt;1.5 g/L</b> (cryoprecipitate), FFP for high INR; check coagulation every 6–8 h at first.</li>
