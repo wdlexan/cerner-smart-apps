@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Asplenia</title>
+  <style>
+    :root { --bg:#f5f7fa; --card:#fff; --ink:#1f2933; --muted:#5f6c7b; --accent:#0b6bcb; --line:#dde3ea;
+            --r-bg:#fde8e8; --r-ink:#9b1c1c; --a-bg:#fff1d6; --a-ink:#8a5200; --b-bg:#e3eefc; --b-ink:#0b4a99; --g-bg:#e4f4ea; --g-ink:#1d6b3a; --warn-bg:#fff4e5; --warn-line:#f0c27b; }
+    @media (prefers-color-scheme: dark) { :root { --bg:#111418; --card:#1a1f26; --ink:#e8edf2; --muted:#9aa7b5; --accent:#6aa9ff; --line:#2b333d;
+            --r-bg:#4a1d1d; --r-ink:#ffb3b3; --a-bg:#4a3511; --a-ink:#ffd38a; --b-bg:#14325c; --b-ink:#a9cdff; --g-bg:#16361f; --g-ink:#9be0b1; --warn-bg:#3a2e15; --warn-line:#6b5420; } }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); }
+    header { padding:14px 20px; border-bottom:1px solid var(--line); background:var(--card); }
+    header h1 { margin:0; font-size:19px; } header .sub { font-size:13px; color:var(--muted); margin-top:2px; }
+    main { max-width:1000px; margin:16px auto 40px; padding:0 16px; display:grid; gap:14px; }
+    .banner { background:var(--warn-bg); border:1px solid var(--warn-line); border-radius:8px; padding:10px 14px; font-size:13px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:10px; font-size:13.5px; }
+    .card > summary { padding:10px 16px; font-weight:700; font-size:15px; cursor:pointer; display:flex; justify-content:space-between; gap:10px; }
+    .card > .body { padding:0 16px 14px; }
+    select, input, button, textarea { font:inherit; font-size:13px; padding:5px 8px; border:1px solid var(--line); border-radius:6px; background:var(--card); color:var(--ink); }
+    button { cursor:pointer; } button.primary { border-color:var(--accent); color:var(--accent); }
+    input[type=number] { width:78px; } input.typed { border-color:var(--accent); font-weight:600; }
+    .row { display:flex; flex-wrap:wrap; gap:10px 16px; align-items:center; margin:8px 0; }
+    .inl { display:inline-flex; gap:6px; align-items:center; }
+    .muted { color:var(--muted); } .err { color:var(--r-ink); }
+    .tiles { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:6px; align-items:start; }
+    .tile { border-radius:8px; padding:5px 10px; border:1px solid var(--line); background:var(--card); }
+    .tile .k { font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; }
+    .tile .big { font-size:14px; font-weight:700; margin:1px 0; line-height:1.25; }
+    .tile .s { font-size:11px; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .t0 { background:var(--g-bg); color:var(--g-ink); } .t1 { background:var(--b-bg); color:var(--b-ink); } .t2 { background:var(--a-bg); color:var(--a-ink); } .t3 { background:var(--r-bg); color:var(--r-ink); }
+    .t0 .k, .t1 .k, .t2 .k, .t3 .k { color:inherit; opacity:.8; }
+    .alert { border-left:4px solid; border-radius:6px; padding:8px 12px; margin:6px 0; } .alert b { margin-right:6px; }
+    .alert.urgent { background:var(--r-bg); color:var(--r-ink); } .alert.action { background:var(--a-bg); color:var(--a-ink); } .alert.info { background:var(--b-bg); color:var(--b-ink); }
+    table { border-collapse:collapse; width:100%; font-size:13px; }
+    th, td { border-bottom:1px solid var(--line); padding:5px 8px; text-align:left; vertical-align:top; }
+    th { color:var(--muted); font-weight:600; } td.num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+    td.hi { color:var(--r-ink); font-weight:600; } .scroll { overflow-x:auto; }
+    .plan h3 { font-size:14px; margin:12px 0 4px; } .plan ul, .plan ol { margin:4px 0 8px 18px; padding:0; } .plan li { margin:3px 0; }
+    .verdict { border-radius:10px; padding:10px 14px; margin:8px 0; } .verdict .big { font-size:17px; font-weight:700; }
+    .chip { display:inline-block; padding:1px 8px; border-radius:10px; font-size:12px; font-weight:600; }
+    .c-have { background:var(--g-bg); color:var(--g-ink); } .c-miss { background:var(--a-bg); color:var(--a-ink); } .c-bad { background:var(--r-bg); color:var(--r-ink); }
+    .inputs fieldset { border:1px solid var(--line); border-radius:8px; padding:6px 12px 8px; margin:6px 0; } .inputs legend { font-weight:600; font-size:13px; padding:0 4px; }
+    .auto { font-size:11px; color:var(--accent); margin-left:3px; }
+    .dd { border:1px solid var(--line); border-radius:8px; padding:6px 10px; margin:6px 0; } .dd > summary { cursor:pointer; font-weight:600; } .ddb { margin-top:6px; }
+    .rep { border:1px solid var(--line); border-radius:8px; padding:8px 12px; margin:6px 0; } .rep .ttl { font-weight:600; }
+    .handout { border:1px dashed var(--line); border-radius:8px; padding:10px 14px; background:var(--card); max-height:440px; overflow:auto; }
+    .src { font-size:12px; color:var(--muted); margin-top:8px; }
+    @media print { .noprint { display:none; } }
+    .vx td { white-space:normal; } .st-done { color:var(--g-ink); font-weight:700; } .st-due { color:var(--r-ink); font-weight:700; } .st-later { color:var(--b-ink); font-weight:700; } .st-check { color:var(--a-ink); font-weight:700; }
+    .rx td { white-space:normal; } .rx td:first-child { font-weight:600; white-space:nowrap; }
+    textarea.paste { width:100%; min-height:90px; font:12.5px ui-monospace,Consolas,monospace; }
+    .ref td { white-space:normal; vertical-align:top; }
+    .flag { color:var(--r-ink); font-weight:700; } tr.dim td { opacity:.55; }
+    .check { list-style:none; padding-left:4px; } .check li { margin:4px 0; } .check li.have { color:var(--g-ink); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Asplenia and hyposplenia: admitted patient, pneumonia antibiotics, vaccines, precautions</h1>
+    <div class="sub">Finds splenectomy, sickle cell and other causes of hyposplenia in the chart, checks for OPSI, picks pneumonia antibiotics (severity, allergy, kidney function, meningitis, Pseudomonas / MRSA risk), works out which vaccines are due and when the next doses are, decides daily prophylaxis vs a standby antibiotic, lists other precautions (bites, ticks, malaria, thrombosis), and drafts the handout and note. Read-only.</div>
+  </header>
+  <main>
+    <div class="banner"><b>Decision-support draft. It orders nothing.</b> Rules were written by Claude from the Canadian Immunization Guide and NACI 2024 pneumococcal statement, the BCCDC Immunization Manual, ACIP meningococcal recommendations, the British Society for Haematology asplenia guideline, the IDSA/ATS CAP and IDSA meningitis guidelines, and have <b>not been verified</b>: check with ID, pharmacy and public health before real use. Vaccines in Cerner are often incomplete: check the provincial record (CareConnect) and paste it below. Use made-up or Cerner sandbox patients until Island Health approves real data.</div>
+
+    <details class="card inputs" open>
+      <summary><span>Patient and situation</span><span class="muted" id="ptsum"></span></summary>
+      <div class="body">
+        <div id="pstatus" class="muted">Open from Cerner to read the chart, or pick a made-up patient:</div>
+        <div class="row"><select id="testsel"><option value="">Made-up patient…</option></select><button id="clear" hidden>Clear</button></div>
+        <div id="errs" class="err" style="font-size:12.5px"></div>
+        <fieldset><legend>Spleen <span class="auto">blank = from the chart</span></legend>
+          <div class="row">
+            <label class="inl">Status <select id="spleen"><option value="">from chart</option><option value="anatomic">No spleen (splenectomy / congenital)</option><option value="functional">Functional asplenia / hyposplenia</option><option value="possible">Possible hyposplenia</option><option value="none">Spleen works</option></select></label>
+            <label class="inl">Splenectomy <input type="number" id="sDays" style="width:70px"> days ago</label>
+            <label class="inl">Splenectomy planned in <input type="number" id="pDays" style="width:60px"> days</label>
+            <label class="inl">Smear <select id="smear"><option value="">from chart</option><option value="hj">Howell-Jolly bodies</option><option value="none">none seen</option></select></label>
+          </div>
+        </fieldset>
+        <fieldset><legend>Why admitted</legend>
+          <div class="row">
+            <label class="inl"><select id="reason"><option value="pneumonia">Pneumonia</option><option value="sepsis">Sepsis / fever, source unclear</option><option value="other">Other reason (vaccines and precautions only)</option></select></label>
+            <label class="inl">Setting <select id="setting"><option value="ward">Ward</option><option value="icu">ICU / step-down</option></select></label>
+            <label class="inl"><input type="checkbox" id="shock"> Septic shock</label>
+            <label class="inl"><input type="checkbox" id="meningitis"> Meningitis possible</label>
+            <label class="inl"><input type="checkbox" id="purpura"> Purpura / petechiae</label>
+            <label class="inl"><input type="checkbox" id="confusion"> New confusion</label>
+          </div>
+          <div class="row">
+            <label class="inl"><input type="checkbox" id="mrsa"> MRSA risk (prior MRSA, necrotizing, post-flu)</label>
+            <label class="inl"><input type="checkbox" id="pseudo"> Pseudomonas risk (prior Pseudomonas, bronchiectasis, recent IV antibiotics + admission)</label>
+            <label class="inl"><input type="checkbox" id="aspiration"> Aspiration</label>
+            <label class="inl">Influenza <select id="flu"><option value="">from chart</option><option value="pos">positive</option><option value="neg">negative</option><option value="pending">pending (in season)</option></select></label>
+          </div>
+        </fieldset>
+        <fieldset><legend>Allergy, kidney, risks <span class="auto">blank = from the chart</span></legend>
+          <div class="row">
+            <label class="inl">Beta-lactam allergy <select id="allergy"><option value="">from chart</option><option value="none">none</option><option value="low">low risk (old rash, GI upset, family history)</option><option value="immediate">immediate (anaphylaxis, hives, angioedema)</option><option value="scar">severe delayed (SJS/TEN, DRESS)</option></select></label>
+            <label class="inl">CrCl <input type="number" id="crcl"> mL/min</label>
+            <label class="inl">Weight <input type="number" id="wt"> kg</label>
+          </div>
+          <div class="row">
+            <label class="inl"><input type="checkbox" id="priorOPSI"> Previous invasive infection / OPSI</label>
+            <label class="inl"><input type="checkbox" id="immuno"> Immunosuppressed</label>
+            <label class="inl"><input type="checkbox" id="heme"> Hematologic cancer / chemo</label>
+            <label class="inl"><input type="checkbox" id="gvhd"> Allo transplant / GVHD</label>
+            <label class="inl"><input type="checkbox" id="dog"> Dog / cat bite or close pet contact</label>
+            <label class="inl"><input type="checkbox" id="tick"> Tick bite or recent travel</label>
+            <label class="inl"><input type="checkbox" id="travel"> Travel planned (malaria area)</label>
+          </div>
+        </fieldset>
+      </div>
+    </details>
+
+    <div class="tiles" id="tiles"></div>
+    <details class="card" open><summary><span>Chart alerts</span><span class="muted" id="alertsum"></span></summary><div class="body" id="alerts"></div></details>
+    <details class="card" open><summary><span>Plan now</span></summary><div class="body plan" id="plan"></div></details>
+    <details class="card" open><summary><span>Spleen status and cause</span><span class="muted" id="spsum"></span></summary><div class="body" id="sp"></div></details>
+
+    <details class="card" open><summary><span>Is it OPSI? Sepsis check</span><span class="muted" id="opsisum"></span></summary><div class="body" id="opsi"></div></details>
+    <details class="card" open><summary><span>Pneumonia: severity (CURB-65)</span><span class="muted" id="curbsum"></span></summary><div class="body" id="curb"></div></details>
+    <details class="card" open><summary><span>Pneumonia: antibiotic choice</span><span class="muted" id="abxsum"></span></summary><div class="body plan" id="abx"></div></details>
+    <details class="card"><summary><span>Other infections that are worse without a spleen</span></summary><div class="body scroll" id="otherinf"></div></details>
+
+    <details class="card inputs" open><summary><span>Vaccine record</span><span class="muted" id="recsum"></span></summary><div class="body">
+      <div id="recnote" class="muted" style="font-size:12.5px"></div>
+      <div class="scroll" id="rec"></div>
+      <div class="row"><b>Add a dose</b>
+        <select id="addk"><option value="PCV20">PCV20 (Prevnar 20)</option><option value="PCV21 (Capvaxive)">PCV21 (Capvaxive)</option><option value="PCV13">PCV13</option><option value="PPV23 (Pneumovax)">PPV23 (Pneumovax)</option><option value="Menveo (MenACWY)">MenACWY (Menveo / MenQuadfi / Nimenrix)</option><option value="Menjugate (Men-C)">Men-C only (Menjugate / NeisVac)</option><option value="Bexsero (4CMenB)">Bexsero (MenB)</option><option value="Trumenba (MenB-FHbp)">Trumenba (MenB)</option><option value="Hib">Hib</option><option value="Influenza vaccine">Influenza</option><option value="COVID-19 vaccine">COVID-19</option></select>
+        <input type="date" id="addd"><button id="addb">Add</button></div>
+      <div class="row" style="align-items:flex-start"><textarea id="paste" class="paste" placeholder="Or paste the immunization record from CareConnect / ImmsBC / a clinic letter: one vaccine per line with its date, e.g.&#10;Pneumococcal conjugate 20-valent  2024-10-02&#10;Menveo  12 Jan 2021"></textarea></div>
+      <div class="row"><button id="pasteb" class="primary">Read pasted record</button><span class="muted" id="pastemsg"></span></div>
+    </div></details>
+    <details class="card" open><summary><span>Vaccines: what is due, how often</span><span class="muted" id="vxsum"></span></summary><div class="body" id="vx"></div></details>
+    <details class="card"><summary><span>Vaccine schedule for asplenia (reference)</span></summary><div class="body scroll" id="vxref"></div></details>
+
+    <details class="card" open><summary><span>Daily prophylaxis and standby antibiotic</span><span class="muted" id="prsum"></span></summary><div class="body plan" id="pr"></div></details>
+    <details class="card" open><summary><span>Other precautions</span><span class="muted" id="prcsum"></span></summary><div class="body" id="prc"></div></details>
+    <details class="card"><summary><span>Causes of functional hyposplenia (reference)</span></summary><div class="body scroll" id="causes"></div></details>
+
+    <details class="card" open><summary><span>Discharge checklist</span></summary><div class="body" id="dc"></div></details>
+    <details class="card" open><summary><span>Patient handout: living without a working spleen</span></summary><div class="body">
+      <div class="row">
+        <label class="inl">Standby antibiotic <input id="h-abx" size="34" placeholder="filled from the plan"></label>
+        <label class="inl">Next vaccine visit <input id="h-fu" size="28" placeholder="e.g. public health in 8 weeks"></label>
+        <label class="inl">Clinic phone <input id="h-phone" size="14"></label>
+        <button id="h-print" class="primary">Open printable handout</button>
+      </div>
+      <div class="handout" id="handout"></div></div></details>
+    <details class="card" open><summary><span>Note draft</span></summary><div class="body" id="note"></div></details>
+    <div class="src">Sources: Canadian Immunization Guide, Part 3 (Immunization of immunocompromised persons, updated Nov 2024) and Part 4 (meningococcal vaccines, updated March 2025); NACI. Recommendations on the use of pneumococcal vaccines in adults, including Pneu-C-21, Nov 15 2024; BCCDC Communicable Disease Control Manual, Ch. 2 Immunization, Part 4 (PCV20, April 2026); Mbaeyi SA et al. Meningococcal vaccination: ACIP recommendations 2020, MMWR Recomm Rep 2020;69(9); Davies JM et al. Review of guidelines for the prevention and treatment of infection in patients with an absent or dysfunctional spleen, Br J Haematol 2011;155:308-17; Salvadori MI, Price VE. CPS position statement, asplenia/hyposplenia (2019, reaffirmed 2024); Rubin LG, Schaffner W. Care of the asplenic patient, N Engl J Med 2014;371:349-56; Metlay JP et al. ATS/IDSA CAP guideline, Am J Respir Crit Care Med 2019; Tunkel AR et al. IDSA bacterial meningitis guideline, Clin Infect Dis 2004; Di Sabatino A et al. Post-splenectomy and hyposplenic states, Lancet 2011;378:86-97.</div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+  <script src="../hospitalist-toolkit/notedraft.js?v=20261125a"></script>
+  <script src="../hospitalist-toolkit/tools/asplenia/rules.js?v=20261126a"></script>
+  <script src="../hospitalist-toolkit/tools/asplenia/chart.js?v=20261126a"></script>
+  <script src="../hospitalist-toolkit/tools/asplenia/samples.js?v=20261126a"></script>
+  <script src="../hospitalist-toolkit/tools/asplenia/app.js?v=20261126a"></script>
+  <script src="../hospitalist-toolkit/subtabs.js?v=20261121f"></script>
+  <script>SubTabs.mount({ store: "asplenia", top: ["#tiles", "Chart alerts"], dotSel: ".alert.urgent, .tile.t3", tabs: [
+      {"key": "assess", "label": "Assess", "match": ["Patient and situation", "Plan now", "Spleen status"]},
+      {"key": "pna", "label": "Pneumonia & sepsis", "match": ["Is it OPSI", "Pneumonia: severity", "Pneumonia: antibiotic", "Other infections"]},
+      {"key": "vax", "label": "Vaccines", "match": ["Vaccine record", "Vaccines: what is due", "Vaccine schedule"]},
+      {"key": "proph", "label": "Prophylaxis", "match": ["Daily prophylaxis"]},
+      {"key": "prec", "label": "Other precautions", "match": ["Other precautions", "Causes of functional"]},
+      {"key": "dc", "label": "Discharge & handout", "match": ["Discharge checklist", "Patient handout"]},
+      {"key": "note", "label": "Note draft", "match": ["Note draft"]}] });</script>
+<script src="../hospitalist-toolkit/consult-widget.js?v=20261126a"></script>
+</body>
+</html>

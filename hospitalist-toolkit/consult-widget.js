@@ -9,7 +9,7 @@
 
   const SERVICES = ["Infectious diseases", "General surgery", "Internal medicine", "Cardiology", "Nephrology", "Neurology", "Gastroenterology", "Respirology", "Hematology", "Rheumatology", "Medical oncology", "Endocrinology", "Geriatrics", "Palliative care", "Psychiatry", "Orthopedics", "Urology", "Neurosurgery", "Vascular surgery", "Thoracic surgery", "Interventional radiology", "ICU", "Other"];
   // toolkit tab key -> usual service
-  const BY_TAB = { abx: "Infectious diseases", fuo: "Infectious diseases", abxmap: "Infectious diseases", infections: "Infectious diseases", aki: "Nephrology", transplant: "Nephrology", hypona: "Nephrology", lytes: "Nephrology", acidbase: "Nephrology",
+  const BY_TAB = { abx: "Infectious diseases", fuo: "Infectious diseases", asplenia: "Infectious diseases", abxmap: "Infectious diseases", infections: "Infectious diseases", aki: "Nephrology", transplant: "Nephrology", hypona: "Nephrology", lytes: "Nephrology", acidbase: "Nephrology",
     stroke: "Neurology", neuro: "Neurology", seizure: "Neurology", ae: "Neurology", dementia: "Geriatrics", pd: "Neurology", acls: "ICU", acs: "Cardiology", chf: "Cardiology", as: "Cardiology", af: "Cardiology", liver: "Gastroenterology", sbo: "General surgery", ibd: "Gastroenterology",
     pc: "Medical oncology", onc: "Medical oncology", ild: "Respirology", pleural: "Respirology", tox: "Medical oncology", bispecific: "Medical oncology", g6pd: "Hematology", sero: "Rheumatology", hip: "Orthopedics", pain: "Palliative care", diabetes: "Endocrinology", ed: "Psychiatry", edr: "Psychiatry",
     opioid: "Palliative care", hah: "Internal medicine", mobility: "Geriatrics", falls: "Geriatrics", deprx: "Geriatrics" };

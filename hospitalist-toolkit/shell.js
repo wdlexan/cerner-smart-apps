@@ -4,7 +4,7 @@
    A tab is only loaded the first time you open it, and stays loaded when you switch away. */
 
 // To add a tool: put its files in tools/<folder>/ and add a line here.
-const TOOL_V = "20261125d"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
+const TOOL_V = "20261126a"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
 const TOOLS = [
   { key: "today", label: "Today (what changed)", tags: "what changed daily trends vitals overnight summary", path: "tools/today/index.html" },
   { key: "plist", label: "Patient list (screenshot)", tags: "patient list screenshot excel spreadsheet rounding list census floor ward ocr", path: "tools/plist/index.html" },
@@ -23,6 +23,7 @@ const TOOLS = [
   { key: "abxmap", label: "Antibiotic chooser (body map)", tags: "antibiotic chooser body map which antibiotic empiric choice site lung skin bladder kidney prostate colon gallbladder joint brain sinus dental groin sepsis c diff allergy mrsa esbl pseudomonas", path: "tools/abxmap/index.html" },
   { key: "hahabx", label: "HaH antibiotics (home IV)", tags: "hospital at home hah opat home iv antibiotics elastomeric ball continuous infusion cadd pump nurse visits bid tid meropenem ertapenem piperacillin tazobactam cloxacillin cefazolin probenecid penicillin ceftazidime vancomycin", path: "tools/hahabx/index.html" },
   { key: "fuo",   label: "Fever of unknown origin (FUO)", tags: "fuo fever of unknown origin pyrexia prolonged fever unexplained fever nosocomial fever neutropenic fever drug fever hlh hscore still disease yamaguchi gca giant cell arteritis temporal arteritis pet-ct pet ct endocarditis culture negative tb tuberculosis lymphoma ferritin night sweats relative bradycardia", path: "tools/fuo/index.html" },
+  { key: "asplenia", label: "Asplenia (no spleen)", tags: "asplenia asplenic hyposplenia hyposplenism splenectomy no spleen post-splenectomy opsi overwhelming post splenectomy infection sickle cell howell-jolly encapsulated pneumococcal vaccine pcv20 pcv21 prevnar pneumovax ppv23 meningococcal menacwy menveo menquadfi nimenrix menb bexsero trumenba hib vaccine booster prophylaxis penicillin v standby antibiotic pill in pocket capnocytophaga dog bite babesia malaria pneumonia ceftriaxone", path: "tools/asplenia/index.html" },
   { key: "inf",   label: "Infections by site", tags: "infections sepsis pneumonia uti cellulitis source",   path: "tools/infections/index.html" },
   { key: "cw",    label: "Choosing Wisely", tags: "choosing wisely low value tests overuse",      path: "tools/cw/index.html", keepHeader: true }, // its header holds the Look back control
   { key: "dx",    label: "Diagnosis check", tags: "diagnosis check cognitive bias second look missed differential harm",      path: "tools/dx/index.html", keepHeader: true }, // its header holds the Look back control
@@ -144,7 +145,7 @@ const GROUPS = [
   { name: "Kidney", keys: ["aki", "lytes", "hypona", "acidbase", "ktx"] },
   { name: "Neuro", keys: ["neuro", "stroke", "seizure", "dementia", "pd", "ae"] },
   { name: "GI & endo", keys: ["liver", "sbo", "ibd", "dm", "edr"] },
-  { name: "Infection", keys: ["abx", "abxmap", "hahabx", "inf", "fuo"] },
+  { name: "Infection", keys: ["abx", "abxmap", "hahabx", "inf", "fuo", "asplenia"] },
   { name: "Onc & heme", keys: ["onc", "tox", "bsab", "pc", "g6pd", "sero"] },
   { name: "Safety", keys: ["deprx", "meds", "opioid", "pain", "risk", "wound", "cw", "dx"] },
   { name: "Admit & discharge", keys: ["ed", "hah", "hip", "consult", "mobility", "discharge", "dcclinic", "forms"] }];

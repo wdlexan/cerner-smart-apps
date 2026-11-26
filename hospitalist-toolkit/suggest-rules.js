@@ -40,6 +40,8 @@
       words: ["infection", "sepsis", "septic", "source", "necrotizing", "nec fasc", "abscess", "fever", "lactate", "rigor", "dental", "sinusitis", "joint infection"] },
     { key: "fuo", hint: "Fever of unknown origin: staged work-up, HLH and Still's scores, GCA, when to get PET-CT",
       words: ["fuo\\b", "unknown origin", "unexplained fever", "prolonged fever", "persistent fever", "fever not settling", "night sweats", "drug fever", "hlh", "ferritin", "still.?s disease"] },
+    { key: "asplenia", hint: "Asplenia: OPSI check, pneumonia antibiotics without a spleen, vaccines due (PCV20, MenACWY, MenB, Hib), prophylaxis and standby antibiotic",
+      words: ["asplen", "hyposplen", "splenectom", "no spleen", "without a spleen", "post.?splenectomy", "opsi\\b", "howell.?jolly", "sickle cell", "hbss\\b", "z90\\.81", "d73\\.0", "capnocytophaga", "standby antibiotic", "pill in (the )?pocket", "menveo", "bexsero", "trumenba", "menacwy", "menb\\b", "prevnar", "pcv20", "pneumovax"] },
     { key: "hahabx", hint: "Hospital at Home IV antibiotics: TID-or-less options, elastomeric balls, what can go home",
       words: ["hospital at home", "hah\\b", "home iv", "opat", "elastomeric", "go home on iv", "iv at home"] },
     { key: "hah", hint: "Hospital at Home screen: does this admission qualify for HaH",
