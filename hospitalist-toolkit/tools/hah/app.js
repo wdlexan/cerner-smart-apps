@@ -338,9 +338,11 @@ function render() {
   const sections = [...new Set(state.items.map((it) => it.row.section))];
   let html = `<div id="banner"></div>`;
   html += `<section class="card"><h2>Checklist <span class="note">(same items as the Hospital at Home Referral Form; change any answer – the result and the PDF follow)</span></h2>
-    <table class="chk"><thead><tr><th>Item</th><th class="c">Yes</th><th class="c">No</th><th class="c">Unknown</th><th>Found in the chart</th></tr></thead><tbody>` +
-    sections.map((s) => `<tr class="sec"><td colspan="5">${esc(s)}</td></tr>` + state.items.filter((it) => it.row.section === s).map(rowHtml).join("")).join("") +
-    `</tbody></table></section>`;
+    <div class="secbtns"><button type="button" class="lite" id="secAll">Expand all</button> <button type="button" class="lite" id="secNone">Collapse all</button></div>
+    <table class="chk"><thead><tr><th>Item</th><th class="c">Yes</th><th class="c">No</th><th class="c">Unknown</th><th>Found in the chart</th></tr></thead>` +
+    sections.map((s) => `<tbody class="secb${secClosed(s) ? " closed" : ""}" data-sec="${esc(s)}"><tr class="sec" title="Click to show or hide"><td colspan="5"><span class="caret">▾</span> ${esc(s)} <span class="cnt"></span></td></tr>` +
+      state.items.filter((it) => it.row.section === s).map(rowHtml).join("") + `</tbody>`).join("") +
+    `</table></section>`;
   html += referralHtml();
   html += `<section class="card"><b>Criteria used</b><p class="note">${state.rows.length} items from <b>hah-criteria.csv</b>, ${Object.keys(state.catch).length} postal-code prefixes from <b>catchment.csv</b>,
     ${state.stab.length} vital-sign limits from <b>hah-stability.csv</b>, ${state.dx.length} diagnoses from <b>hah-diagnoses.csv</b>. Edit them in Excel – no code changes needed. ${esc(state.diag.join(" · "))}</p>
@@ -348,10 +350,17 @@ function render() {
     <p class="note">Notes read: ${state.notes.map((n) => `#${n.n} ${esc(n.type)} (${esc(fmt(n.date))})`).join(" · ") || "none"}</p></section>`;
   $("out").innerHTML = html;
   document.querySelectorAll("input[data-k]").forEach((i) => (i.onchange = () => { state.answers[i.dataset.k] = i.value; refresh(); }));
+  document.querySelectorAll("tbody.secb > tr.sec").forEach((tr) => (tr.onclick = () => { const tb = tr.parentNode; tb.classList.toggle("closed"); secSave(tb.dataset.sec, tb.classList.contains("closed")); }));
+  const setAll = (closed) => document.querySelectorAll("tbody.secb").forEach((tb) => { tb.classList.toggle("closed", closed); secSave(tb.dataset.sec, closed); });
+  $("secAll").onclick = () => setAll(false); $("secNone").onclick = () => setAll(true);
   $("pdfBtn").onclick = makePdf;
   $("copyBtn").onclick = () => copyText(summaryText());
   refresh();
 }
+
+// remember which checklist sections are collapsed (this browser tab only)
+function secClosed(sec) { try { return sessionStorage.getItem("hah-sec:" + sec) === "1"; } catch (e) { return false; } }
+function secSave(sec, closed) { try { sessionStorage.setItem("hah-sec:" + sec, closed ? "1" : "0"); } catch (e) {} }
 
 function rowHtml(it) {
   const k = it.row.key, a = state.answers[k];
@@ -372,6 +381,13 @@ function refresh() {
   state.items.forEach((it) => {
     const tr = document.querySelector(`tr[data-row="${it.row.key}"]`);
     if (tr) tr.className = statusOf(it.row, state.answers[it.row.key]);
+  });
+  // section headers: how many not suitable (unfavourable answer) and unknown
+  document.querySelectorAll("tbody.secb").forEach((tb) => {
+    const its = state.items.filter((it) => it.row.section === tb.dataset.sec), st = its.map((it) => statusOf(it.row, state.answers[it.row.key]));
+    const bad = st.filter((x) => x === "concern").length, unk = st.filter((x) => x === "unknown").length, hardBad = its.filter((it, i) => it.row.hard && st[i] === "concern").length;
+    tb.querySelector(".cnt").innerHTML = (bad ? `<span class="pill bad">${bad} not suitable${hardBad ? ` (${hardBad} exclusion)` : ""}</span>` : `<span class="pill good">0 not suitable</span>`) +
+      (unk ? `<span class="pill unk">${unk} unknown</span>` : "") + `<span class="pill tot">${its.length} items</span>`;
   });
   $("banner").innerHTML = `<section class="banner ${o.code}"><b>${esc(o.title)}</b><div>${esc(o.detail)}</div></section>` +
     (o.code !== "no" ? `<section class="card"><b>Before referring – confirm with the patient / family and team</b><ul>${o.ask.map((a) => `<li>${esc(a.row.item)}</li>`).join("") || "<li>All items answered.</li>"}</ul>` +
