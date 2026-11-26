@@ -79,7 +79,7 @@
     { key: "wound", hint: "Wound care: dressing by wound type, change frequency, NPWT/VAC, photo review",
       words: ["wound", "ulcer", "pressure injur", "bedsore", "decubit", "dressing", "vac\\b", "npwt", "skin tear", "diabetic foot", "dehisc"] },
     { key: "onc", hint: "Common cancers: treatment options and oncologic emergencies (cord compression, hypercalcemia, TLS, febrile neutropenia)",
-      words: ["cancer", "malignan", "metasta", "tumou?r", "oncolog", "lymphoma", "leuk", "myeloma", "chemo", "febrile neutropen", "neutropenic", "svc obstruct", "brain met", "palliative"] },
+      words: ["cancer", "malignan", "metasta", "tumou?r", "oncolog", "lymphoma", "leuk", "myeloma", "plasmacytoma", "mgus", "paraprotein", "m.?spike", "light chain", "spep", "bence jones", "chemo", "febrile neutropen", "neutropenic", "svc obstruct", "brain met", "palliative"] },
     { key: "tox", hint: "Oncology toxicity: immunotherapy, ADC, bispecific and TKI side effects matched to the med list",
       words: ["immunotherapy", "checkpoint", "pembrolizumab", "nivolumab", "ipilimumab", "colitis on", "irae", "immune.?related", "tki\\b", "side effect of chemo", "toxicit"] },
     { key: "bsab", hint: "CRS/ICANS monitor for bispecifics (teclistamab etc.): grading and treatment",

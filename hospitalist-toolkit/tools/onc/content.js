@@ -388,6 +388,134 @@
         <tr><td>Primary CNS lymphoma</td><td>~30–50% long-term if fit; older patients worse</td></tr>
         <tr><td>Peripheral T-cell</td><td>5-year ~30–40%</td></tr></table>` } ] }
 ,
+  // =====================================================================================
+  { key: "myeloma", name: "Myeloma", full: "Multiple myeloma (and MGUS, smoldering myeloma, plasmacytoma)", link: LINKS.lymph,
+    intro: `<b>Think of it</b> in anyone over ~50 with two of: unexplained anemia, back or bone pain, high calcium, AKI, a high total protein (globulin gap), or recurrent infections. <b>Screen with SPEP + immunofixation AND serum free light chains</b> (SPEP alone misses light-chain myeloma, ~15–20%). Not curable for most, but median survival is now <b>many years</b>: treat for control, with curative-type intensity in fit patients.`,
+    sections: [
+    { t: "At a glance: the plasma cell spectrum and when it is myeloma", open: true, h: `
+      <table><tr><th>Condition</th><th>Defined by</th><th>What happens</th></tr>
+        <tr><td><b>MGUS</b></td><td>M-protein &lt;30 g/L, marrow clonal plasma cells &lt;10%, <b>no</b> myeloma-defining event</td><td>Watch only (SPEP/FLC yearly or per risk); ~1% per year progress</td></tr>
+        <tr><td><b>Smoldering myeloma</b></td><td>M-protein ≥30 g/L or urine M-protein ≥500 mg/24 h, and/or marrow 10–59%, no myeloma-defining event</td><td>Hematology follow-up; high-risk smoldering may be treated</td></tr>
+        <tr><td><b>Active multiple myeloma</b></td><td>Marrow clonal plasma cells ≥10% (or biopsy-proven plasmacytoma) <b>plus ≥1 myeloma-defining event</b> (below)</td><td>Treat</td></tr>
+        <tr><td>Solitary plasmacytoma</td><td>One bone or soft-tissue lesion, marrow &lt;10%, no CRAB</td><td>Radiotherapy (curative intent); watch for progression</td></tr>
+        <tr><td>AL amyloidosis</td><td>Light chains deposit in heart, kidney, nerves, liver, gut</td><td>Different urgency: cardiac amyloid is life-threatening; see Signs</td></tr></table>
+      <h4>Myeloma-defining events: SLiM-CRAB</h4>
+      <table><tr><th></th><th>Criterion</th></tr>
+        <tr><td><b>S</b>ixty</td><td>Clonal plasma cells ≥60% in the marrow</td></tr>
+        <tr><td><b>Li</b>ght chains</td><td>Involved:uninvolved serum free light chain ratio ≥100 (involved ≥100 mg/L)</td></tr>
+        <tr><td><b>M</b>RI</td><td>&gt;1 focal lesion ≥5 mm on MRI</td></tr>
+        <tr><td><b>C</b>alcium</td><td>&gt;2.75 mmol/L, or &gt;0.25 above the upper limit of normal</td></tr>
+        <tr><td><b>R</b>enal</td><td>Creatinine &gt;177 µmol/L or CrCl &lt;40 mL/min (from light chains)</td></tr>
+        <tr><td><b>A</b>nemia</td><td>Hb &lt;100 g/L, or &gt;20 g/L below normal</td></tr>
+        <tr><td><b>B</b>one</td><td>≥1 lytic lesion ≥5 mm on CT, PET-CT or skeletal survey</td></tr></table>
+      <h4>Staging and risk</h4>
+      <ul><li><b>R-ISS / R2-ISS</b>: β2-microglobulin, albumin, LDH and high-risk FISH. ISS III = β2-microglobulin ≥5.5 mg/L.</li>
+        <li><b>High-risk cytogenetics (FISH)</b>: del(17p)/TP53, t(4;14), t(14;16), t(14;20), gain/amplification 1q; "double-hit" = 2 or more. Also circulating plasma cells, extramedullary disease.</li></ul>` },
+    { t: "Symptoms", open: true, h: `
+      <table><tr><th>Symptom</th><th>Why</th><th>Notes</th></tr>
+        <tr><td><b>Bone pain</b>, especially back and ribs</td><td>Lytic lesions, vertebral fractures</td><td>~60–70% at diagnosis. Worse with movement; night pain or a band-like pain = think cord compression</td></tr>
+        <tr><td><b>Fatigue, breathlessness</b></td><td>Anemia (normocytic)</td><td>Often the first symptom</td></tr>
+        <tr><td>Thirst, polyuria, constipation, nausea, confusion, drowsiness</td><td>Hypercalcemia</td><td>Easy to blame on age or opioids</td></tr>
+        <tr><td>Reduced urine, swelling, nausea</td><td>AKI (cast nephropathy, hypercalcemia, dehydration, NSAIDs)</td><td>Often found on bloods, not symptoms</td></tr>
+        <tr><td><b>Recurrent infections</b></td><td>Low normal immunoglobulins (immunoparesis), neutropenia, treatment</td><td>Pneumococcal pneumonia, UTIs, zoster</td></tr>
+        <tr><td>Weight loss, night sweats</td><td>Tumour burden</td><td>Less prominent than in lymphoma</td></tr>
+        <tr><td><b>Leg weakness, numbness, urinary retention</b></td><td>Spinal cord or cauda equina compression</td><td>Emergency</td></tr>
+        <tr><td>Tingling, numb feet</td><td>Amyloid or paraprotein neuropathy; later bortezomib/thalidomide</td><td>Carpal tunnel syndrome is an amyloid clue</td></tr>
+        <tr><td>Blurred vision, headache, nosebleeds, gum bleeding, confusion, breathlessness</td><td><b>Hyperviscosity</b> (very high IgA, or IgG3; IgM = Waldenström)</td><td>Emergency: plasmapheresis</td></tr>
+        <tr><td>Breathlessness, ankle swelling, light-headed on standing, frothy urine, diarrhea</td><td><b>AL amyloidosis</b> (heart, kidney, autonomic nerves, gut)</td><td>Check NT-proBNP, troponin, urine albumin</td></tr></table>` },
+    { t: "Signs", open: true, h: `
+      <ul>
+        <li><b>Pallor</b>; bone tenderness (spine, ribs, sternum, pelvis); <b>height loss or kyphosis</b> from vertebral collapse; a pathologic fracture after little or no trauma.</li>
+        <li><b>Neurology</b>: leg weakness, sensory level, brisk or absent reflexes, saddle anesthesia, a palpable bladder = cord or cauda equina compression. Check every patient with back pain.</li>
+        <li><b>Dehydration and confusion</b> (hypercalcemia, AKI, sepsis).</li>
+        <li>A soft-tissue or bony mass: <b>plasmacytoma</b> (skull, ribs, chest wall, nasopharynx).</li>
+        <li>Signs of infection; fever.</li>
+        <li><b>Hyperviscosity</b>: mucosal bleeding, retinal vein engorgement ("sausage" veins), retinal hemorrhages on fundoscopy, drowsiness, heart failure.</li>
+        <li><b>AL amyloid clues</b>: <b>macroglossia</b> (tooth marks on the tongue), <b>periorbital purpura</b> ("raccoon eyes" after coughing or straining), nephrotic edema, hepatomegaly, low BP or orthostatic drop, heart failure with low voltage on ECG and thick walls on echo, carpal tunnel syndrome, shoulder pad sign.</li>
+        <li><b>Not typical</b> of myeloma: big lymph nodes or a big spleen (think lymphoma, Waldenström, CLL, or another diagnosis).</li>
+      </ul>` },
+    { t: "Investigations", open: true, h: `
+      <h4>When to suspect it (and send the screen)</h4>
+      <ul><li>Unexplained anemia (normocytic), especially with a <b>high total protein</b> (total protein − albumin ≥ 40 g/L = globulin gap) or a <b>low anion gap</b> (cationic IgG).</li>
+        <li>Hypercalcemia with a <b>low or normal PTH</b>; AKI with a bland sediment, or <b>urine protein much higher than the dipstick suggests</b> (dipstick misses light chains).</li>
+        <li>Back pain over 50 with red flags; osteoporotic or vertebral fracture with anemia or a raised ESR; recurrent bacterial infections; <b>rouleaux</b> on the smear; a very high ESR.</li>
+        <li>NAGMA with low K, low phosphate and glucose in the urine (proximal RTA / Fanconi from light chains): ${tk("acidbase", "Acid-base tab (RTA)")}.</li></ul>
+      <h4>Tests</h4>
+      <table><tr><th>Test</th><th>What it shows</th></tr>
+        <tr><td><b>SPEP + serum immunofixation</b></td><td>The M-protein (g/L) and its type (IgG ~50%, IgA ~20%, light chain only ~15–20%, IgD/IgM/non-secretory rare)</td></tr>
+        <tr><td><b>Serum free light chains</b> (κ, λ, ratio)</td><td>Abnormal ratio (normal ~0.26–1.65; adjusted range in CKD). <b>Involved ≥ 500 mg/L with AKI = probable cast nephropathy</b>. Ratio ≥100 = myeloma-defining</td></tr>
+        <tr><td>Urine protein electrophoresis + immunofixation (24 h)</td><td>Bence Jones protein; also needed for response monitoring and amyloid. Urine albumin:protein ratio low = light chains; high = glomerular (amyloid)</td></tr>
+        <tr><td>CBC, smear, reticulocytes</td><td>Anemia, rouleaux, circulating plasma cells (plasma cell leukemia if ≥5%)</td></tr>
+        <tr><td>Creatinine, electrolytes, <b>calcium + albumin</b>, urate, phosphate, total protein, albumin, LDH, <b>β2-microglobulin</b></td><td>CRAB, staging (ISS), TLS risk</td></tr>
+        <tr><td>Quantitative IgG, IgA, IgM</td><td>The involved Ig and suppression of the others (immunoparesis)</td></tr>
+        <tr><td><b>Bone marrow aspirate and biopsy</b></td><td>Clonal plasma cell % (CD138, κ/λ restriction), <b>FISH</b> (del17p, t(4;14), t(14;16), 1q), ± flow MRD later</td></tr>
+        <tr><td><b>Whole-body low-dose CT</b> (preferred) or PET-CT; MRI whole body/spine</td><td>Lytic lesions; MRI for marrow lesions in smoldering myeloma and for <b>suspected cord compression (urgent MRI whole spine)</b>. Skeletal survey is less sensitive. <b>Bone scan is not useful</b> (lytic lesions are cold)</td></tr>
+        <tr><td>Serum viscosity</td><td>If symptoms of hyperviscosity or very high M-protein (IgA especially)</td></tr>
+        <tr><td>NT-proBNP, troponin, urine albumin, ALP; echo ± cardiac MRI; fat pad or marrow Congo red</td><td>AL amyloidosis screen (any myeloma with HF, nephrotic proteinuria, neuropathy, unexplained low BP)</td></tr>
+        <tr><td>Kidney biopsy</td><td>AKI with involved FLC &lt; 500 mg/L, or albuminuria (amyloid, light chain deposition disease)</td></tr>
+        <tr><td>Before treatment</td><td>HBsAg, anti-HBc, HCV, HIV, VZV serology; echo (carfilzomib, amyloid); <b>blood group and antibody screen BEFORE daratumumab</b> (it interferes with crossmatching for months)</td></tr></table>
+      <p class="muted">Lab pearls: high protein can cause pseudohyponatremia; a paraprotein can interfere with some assays (phosphate, bilirubin, creatinine). Monitoring uses the same test that was abnormal at diagnosis (M-protein or FLC).</p>` },
+    { t: "Treatment: newly diagnosed", open: false, h: `
+      <p>Decided by hematology, mainly by <b>fitness and transplant eligibility</b> (usually ≤70–75 and fit), not age alone. BC Cancer protocols set the regimen and doses. Common backbone drugs: <b>D</b> = daratumumab (or Isa = isatuximab, anti-CD38), <b>V</b> = bortezomib (proteasome inhibitor), <b>R</b> = lenalidomide (immunomodulator), <b>d</b> = dexamethasone.</p>
+      <table><tr><th>Group</th><th>Usual approach</th></tr>
+        <tr><td><b>Transplant-eligible</b></td><td>Quadruplet induction <b>D-VRd</b> (or Isa-VRd) ~4–6 cycles → stem cell collection → <b>high-dose melphalan + autologous stem cell transplant</b> → consolidation (2 cycles) → <b>lenalidomide maintenance</b> until progression (± daratumumab or bortezomib for high risk). Some defer transplant to first relapse.</td></tr>
+        <tr><td><b>Transplant-ineligible, fit-ish</b></td><td><b>DRd</b> (daratumumab-lenalidomide-dex) continuous, or D-VRd / Isa-VRd then maintenance</td></tr>
+        <tr><td><b>Frail</b> (IMWG frailty score)</td><td>Dose-reduced regimens: DRd with low-dose dex, VRd-lite, Rd; dexamethasone 20 mg/week or less; supportive care first</td></tr>
+        <tr><td><b>AKI from cast nephropathy</b></td><td><b>Bortezomib-dexamethasone-based</b> (± daratumumab) started urgently (days, not weeks) to drop light chains; lenalidomide needs kidney dose adjustment. Plasma exchange is not routine</td></tr>
+        <tr><td>Solitary plasmacytoma</td><td>Involved-site radiotherapy (~40–50 Gy)</td></tr>
+        <tr><td>High-risk smoldering</td><td>Hematology may offer early treatment (e.g. daratumumab or Rd) or a trial</td></tr>
+        <tr><td>AL amyloidosis</td><td>Dara-CyBorD (daratumumab, cyclophosphamide, bortezomib, dex); careful in cardiac amyloid (fluids, BP, arrhythmias)</td></tr></table>
+      <h4>Supportive care (for everyone)</h4>
+      <ul>
+        <li><b>Bone</b>: zoledronic acid (dose by CrCl; avoid if CrCl &lt; 30) or <b>denosumab</b> (OK in kidney failure, but watch hypocalcemia and rebound on stopping); calcium + vitamin D; dental check (osteonecrosis of the jaw). Vertebroplasty/kyphoplasty for painful fractures; radiotherapy for pain or cord compression; orthopedics for long-bone lesions at risk of fracture.</li>
+        <li><b>VTE prophylaxis with lenalidomide, pomalidomide or thalidomide</b>: ASA if low risk; LMWH or a DOAC if higher risk (prior VTE, immobility, high-dose dex, carfilzomib, ESA).</li>
+        <li><b>Antiviral prophylaxis</b> (acyclovir or valacyclovir) with bortezomib, carfilzomib, daratumumab, bispecifics and after transplant/CAR-T (zoster risk).</li>
+        <li><b>PJP prophylaxis</b> (TMP-SMX) with bispecifics, CAR-T, high-dose steroids; <b>IVIG</b> if IgG &lt; 4 g/L with serious or recurrent infections (common on BCMA bispecifics); vaccines (pneumococcal, influenza, COVID, recombinant zoster).</li>
+        <li>Kidney: 2–3 L/day fluids unless heart failure; <b>no NSAIDs</b>; avoid IV contrast where possible (hydrate if needed); dose drugs for CrCl.</li>
+        <li>Anemia: transfuse for symptoms; ESA if chemo-related and Hb &lt; 100 (VTE risk). Steroid side effects: glucose, PPI, sleep, mood.</li>
+      </ul>` },
+    { t: "Treatment: relapsed and later lines", open: false, h: `
+      <p>Choice depends on what the myeloma is <b>refractory</b> to (progressed on or within 60 days of): lenalidomide, an anti-CD38 antibody, a proteasome inhibitor ("triple-class").</p>
+      <table><tr><th>Setting</th><th>Options (examples)</th></tr>
+        <tr><td>First relapse, lenalidomide-refractory</td><td>Carfilzomib-based (<b>KD</b> ± daratumumab/isatuximab), pomalidomide-based (<b>DPd</b>, PVd), <b>CAR-T early</b> (ciltacabtagene autoleucel from 2nd line), belantamab-based (BVd, BPd) where available, second transplant if long first remission</td></tr>
+        <tr><td>Not lenalidomide-refractory</td><td>DRd, KRd, IsaKd, DKd</td></tr>
+        <tr><td>Triple-class exposed</td><td><b>CAR-T</b> (cilta-cel, ide-cel); <b>BCMA bispecifics</b> (teclistamab, elranatamab, linvoseltamab); <b>GPRC5D bispecific</b> (talquetamab); belantamab mafodotin; selinexor-dex; venetoclax for t(11;14); clinical trials</td></tr>
+        <tr><td>Palliative</td><td>Radiotherapy for bone pain, low-dose steroids, cyclophosphamide-based regimens; early palliative care involvement. Many patients live years with sequential lines, so "palliative" does not mean short</td></tr></table>` },
+    { t: "What to watch for in hospital", open: true, h: `
+      <table><tr><th>Problem</th><th>Clue</th><th>Do</th></tr>
+        <tr><td><b>Hypercalcemia</b></td><td>Confusion, constipation, AKI; check corrected (or ionized) Ca</td><td>IV saline, zoledronic acid or denosumab (AKI), calcitonin; <b>steroids help in myeloma</b>; ${go("emerg", "Emergencies")} · ${tk("lytes", "Electrolytes tab")}</td></tr>
+        <tr><td><b>AKI / cast nephropathy</b></td><td>Rising creatinine, high involved FLC, bland urine with heavy proteinuria</td><td>Urgent FLC, fluids 2–3 L/day, stop NSAIDs/ACEi/nephrotoxins, treat Ca, <b>hematology today</b> (bortezomib-dex); ${tk("aki", "AKI tab")}</td></tr>
+        <tr><td><b>Cord compression</b></td><td>Back pain + any leg weakness, sensory level, retention</td><td>Dexamethasone, <b>MRI whole spine now</b>, rad onc ± spine surgery; ${go("emerg", "Emergencies")}</td></tr>
+        <tr><td>Pathologic fracture</td><td>Pain after minimal trauma; hip or long-bone lesions</td><td>Orthopedics (prophylactic fixation), RT after surgery; hip fracture pathway if relevant</td></tr>
+        <tr><td><b>Infection</b></td><td>Pneumonia (pneumococcus), UTI, zoster; low IgG; neutropenia</td><td>Low threshold for antibiotics; febrile neutropenia protocol; check IgG; IVIG if very low and recurrent</td></tr>
+        <tr><td><b>Hyperviscosity</b></td><td>Mucosal bleeding, visual change, confusion with very high M-protein</td><td>Urgent hematology: <b>plasmapheresis</b>; hydrate; <b>avoid transfusing until viscosity is lowered</b> (raises viscosity)</td></tr>
+        <tr><td><b>VTE</b></td><td>Lenalidomide/pomalidomide/thalidomide + dex, carfilzomib</td><td>Check prophylaxis is on the list; image leg swelling or dyspnea</td></tr>
+        <tr><td><b>Daratumumab / isatuximab</b></td><td>Positive antibody screen and incompatible crossmatch for up to 6 months</td><td><b>Tell the blood bank</b> the patient is on anti-CD38 before any transfusion (DTT-treated cells, K-negative units); infusion reactions with the first doses</td></tr>
+        <tr><td>Bortezomib</td><td>Peripheral neuropathy, orthostatic hypotension, zoster, thrombocytopenia (cyclical), diarrhea</td><td>Antiviral prophylaxis; hold or reduce for painful neuropathy (SC weekly is gentler)</td></tr>
+        <tr><td>Carfilzomib</td><td>Hypertension, heart failure, MI, pulmonary hypertension, TMA/AKI, dyspnea</td><td>BP, echo if dyspneic, troponin/NT-proBNP; smear and LDH if AKI with low platelets</td></tr>
+        <tr><td>Lenalidomide / pomalidomide</td><td>Cytopenias, rash, diarrhea (lenalidomide), VTE; teratogenic</td><td>Dose lenalidomide by CrCl; hold for neutropenic fever</td></tr>
+        <tr><td><b>CRS / ICANS</b></td><td>Teclistamab, elranatamab, talquetamab, linvoseltamab; CAR-T (cilta-cel can cause late parkinsonism and cranial nerve palsy)</td><td>${tk("bsab", "CRS/ICANS tab")}; call the myeloma/CAR-T team before treating</td></tr>
+        <tr><td>Talquetamab</td><td>Taste loss, weight loss, nail and skin peeling, dry mouth</td><td>Dietitian; dose spacing by hematology</td></tr>
+        <tr><td>Belantamab mafodotin</td><td>Keratopathy: blurred vision, dry eyes</td><td>Eye exam before each dose; lubricating drops</td></tr>
+        <tr><td>Selinexor</td><td>Nausea, anorexia, weight loss, <b>hyponatremia</b>, low platelets</td><td>Antiemetics (olanzapine + 5-HT3); Na checks</td></tr>
+        <tr><td>Dexamethasone pulses</td><td>Hyperglycemia, insomnia, agitation or psychosis, GI upset</td><td>Glucose checks on dex days; PPI; reduce dose in older patients</td></tr>
+        <tr><td>Melphalan / autologous transplant (day 0–30)</td><td>Mucositis, neutropenic fever, diarrhea, engraftment syndrome</td><td>Transplant team manages; febrile neutropenia protocol</td></tr></table>` },
+    { t: "When to call hematology urgently", open: false, h: `<ul>
+      <li>Suspected new myeloma with <b>AKI</b> (send FLC and SPEP and call the same day: delay costs kidney function), <b>hypercalcemia</b>, cord compression or hyperviscosity.</li>
+      <li>Febrile neutropenia; CRS/ICANS after a bispecific or CAR-T; suspected plasma cell leukemia (circulating plasma cells).</li>
+      <li>New heart failure, nephrotic syndrome or low BP in a patient with a paraprotein (AL amyloid).</li>
+      <li>Before stopping or holding anticancer drugs for more than a few days, or before a transfusion on daratumumab.</li></ul>` },
+    { t: "Prognosis (rough) and goals of care", open: false, h: `
+      <table><tr><th>Setting</th><th>Rough outlook</th></tr>
+        <tr><td>Newly diagnosed, transplant-eligible, standard risk (quadruplet + transplant)</td><td>Median survival &gt;10 years; many in deep remission (MRD-negative) for years</td></tr>
+        <tr><td>Transplant-ineligible (DRd)</td><td>Median survival ~6–8 years</td></tr>
+        <tr><td>R-ISS I / II / III</td><td>5-year survival roughly ~80% / ~60% / ~40% (older data; better now)</td></tr>
+        <tr><td>High-risk (del17p, ≥2 high-risk lesions, plasma cell leukemia)</td><td>Median ~3–5 years</td></tr>
+        <tr><td>Triple-class refractory</td><td>~1 year without CAR-T/bispecifics; CAR-T (cilta-cel) median progression-free ~3 years in later lines</td></tr>
+        <tr><td>MGUS</td><td>~1% per year progress to myeloma or related disease; most never do</td></tr></table>
+      <p class="muted">Frailty, kidney failure that does not recover, and cardiac amyloid lower survival. Discuss goals of care at each relapse; palliative care helps with bone pain and symptom burden at any stage.</p>` } ] }
+,
+
 
   // =====================================================================================
   { key: "bladder", name: "Bladder", full: "Bladder (urothelial) cancer", link: LINKS.prostate,

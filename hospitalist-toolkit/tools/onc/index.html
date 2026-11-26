@@ -60,7 +60,7 @@
 <body>
 <header>
   <h1>Oncology (common cancers)</h1>
-  <span class="pt">Lung, breast, colorectal, prostate, bladder, kidney, pancreas, melanoma, head &amp; neck, leukemia, lymphoma: intent, treatment for cure and palliation, what to watch for, emergencies. Read-only.</span>
+  <span class="pt">Lung, breast, colorectal, prostate, bladder, kidney, pancreas, melanoma, head &amp; neck, leukemia, lymphoma, myeloma: intent, treatment for cure and palliation, what to watch for, emergencies. Read-only.</span>
 </header>
 <nav id="nav">
   <button data-t="chart" class="on">Chart</button>
@@ -72,6 +72,7 @@
   <button data-t="prostate">Prostate</button>
   <button data-t="leuk">Leukemia</button>
   <button data-t="lymph">Lymphoma</button>
+  <button data-t="myeloma">Myeloma</button>
   <button data-t="bladder">Bladder</button>
   <button data-t="melanoma">Melanoma</button>
   <button data-t="hn">Head &amp; neck</button>
@@ -99,7 +100,7 @@
   </div>
   <details open data-k="chart-drugs"><summary>Anticancer and bone drugs on the medication list – what to watch for</summary><div id="chartDrugs" class="muted">No patient loaded.</div></details>
   <div class="grid2">
-    <details data-k="chart-markers"><summary>PSA / CEA / CA 15-3 / testosterone (last 3)</summary><div id="chartMarkers" class="muted">No patient loaded.</div></details>
+    <details data-k="chart-markers"><summary>PSA / CEA / CA 15-3 / testosterone / M-protein / free light chains (last 3)</summary><div id="chartMarkers" class="muted">No patient loaded.</div></details>
     <details data-k="chart-reports"><summary>Recent reports mentioning cancer findings</summary><div id="chartReports" class="muted">No patient loaded.</div></details>
   </div>
 </section>
@@ -132,6 +133,7 @@
 <section class="tab" id="tab-prostate"></section>
 <section class="tab" id="tab-leuk"></section>
 <section class="tab" id="tab-lymph"></section>
+<section class="tab" id="tab-myeloma"></section>
 <section class="tab" id="tab-bladder"></section>
 <section class="tab" id="tab-melanoma"></section>
 <section class="tab" id="tab-hn"></section>
@@ -152,7 +154,7 @@
       <label><input type="checkbox" data-ho="anticoag"> Blood thinner</label>
       <label><input type="checkbox" data-ho="bone"> Bone-strengthening drug</label>
       <label><input type="checkbox" data-ho="bonemets"> Cancer in the bones</label>
-      <label><input type="checkbox" data-ho="blood"> Leukemia / lymphoma</label>
+      <label><input type="checkbox" data-ho="blood"> Leukemia / lymphoma / myeloma</label>
       <label><input type="checkbox" data-ho="cellular"> CAR-T / bispecific</label>
     </div>
     <div class="calc"><label>Cancer centre / oncology phone <input id="hoPhone" placeholder="e.g. 250-___-____" style="width:170px"></label>

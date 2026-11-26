@@ -149,5 +149,34 @@ ok("drug list: acetaminophen matches nothing", pick(["acetaminophen 650 mg PO q6
 const n = R.note({ cancer: "Lung cancer", intent: "palliative", treatment: ["Osimertinib"], flags: ["x"], code: "M2", decision: "hold osimertinib" });
 ok("note has intent, drug, decision", /Intent: palliative/.test(n) && /Osimertinib/.test(n) && /My decision: hold osimertinib/.test(n));
 
+// ---- myeloma ----
+eq("myeloma detected", d(["Multiple myeloma, IgG kappa, not having achieved remission C90.00"]), "myeloma");
+eq("plasmacytoma detected", d(["Solitary plasmacytoma of rib"]), "myeloma");
+eq("MGUS is not myeloma", d(["Monoclonal gammopathy of undetermined significance D47.2"]), "");
+eq("bortezomib alone suggests myeloma", Object.keys(R.detectCancers([], DR.match(["bortezomib 1.3 mg/m2 SC"]))).join(","), "myeloma");
+const iq = S.findIndex((x) => /^Q:/.test(x.label)), ir = S.findIndex((x) => /^R:/.test(x.label));
+const fq = FL[iq], fr = FL[ir];
+ok("Q myeloma found", !!F[iq].cancers.myeloma);
+ok("Q cast nephropathy red", has(fq, /cast nephropathy/, "red"));
+ok("Q involved FLC 1850 named", has(fq, /involved free light chain 1850/));
+ok("Q NSAID stop", has(fq, /Myeloma on an NSAID/, "amber"));
+ok("Q lenalidomide VTE prophylaxis", has(fq, /VTE prophylaxis is expected/, "amber"));
+ok("Q zoster prophylaxis", has(fq, /zoster prophylaxis/));
+ok("Q blood bank anti-CD38", has(fq, /blood bank/));
+ok("Q back pain in myeloma", has(fq, /Back pain/));
+ok("Q hypercalcemia", has(fq, /moderate hypercalcemia/, "red"));
+ok("Q Hb 78 flagged", has(fq, /Hb 78 g\/L in myeloma/));
+eq("Q M-protein read", F[iq].latest.mspike && F[iq].latest.mspike.v, 41);
+eq("Q kappa read", F[iq].latest.kappa && F[iq].latest.kappa.v, 1850);
+eq("Q total protein read", F[iq].latest.tp && F[iq].latest.tp.v, 98);
+ok("R globulin gap prompt", has(fr, /Globulin gap 71/) && has(fr, /SPEP/));
+ok("R no myeloma card flags", !has(fr, /cast nephropathy/));
+const fx = C.parse({ obs: [{ resourceType: "Observation", status: "final", code: { text: "Kappa free light chain" }, effectiveDateTime: new Date(now - 36e5).toISOString(), valueQuantity: { value: 300, unit: "mg/L" } },
+  { resourceType: "Observation", status: "final", code: { text: "Lambda free light chain" }, effectiveDateTime: new Date(now - 36e5).toISOString(), valueQuantity: { value: 2, unit: "mg/L" } }] }, { now });
+ok("FLC ratio 150 flagged without myeloma", R.flags(fx, now).some((x) => /ratio 150/.test(x.text)));
+const K2 = require("../tools/onc/content.js");
+ok("myeloma card has symptoms, signs, investigations, treatment", ["Symptoms", "Signs", "Investigations", "Treatment: newly diagnosed", "Treatment: relapsed"].every((t) => K2.CANCERS.find((c) => c.key === "myeloma").sections.some((s) => s.t.indexOf(t) === 0)));
+ok("myeloma drugs in drug list", pick(["daratumumab 1800 mg SC", "pomalidomide 4 mg"]).length === 2);
+
 console.log(fail ? `\n${fail} FAILED` : "\nall passed");
 process.exit(fail ? 1 : 0);

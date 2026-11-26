@@ -39,12 +39,17 @@
     { id: "tsh", name: "TSH", loinc: ["3016-3", "11580-8"], re: /\btsh\b|thyrotropin|thyroid stimulating/i },
     { id: "cortisol", name: "Cortisol", loinc: ["2143-6"], re: /cortisol/i, not: /urine|free/i },
     { id: "trop", name: "Troponin", loinc: ["89579-7", "6598-7", "67151-1", "10839-9"], re: /troponin/i },
+    { id: "tp", name: "Total protein", loinc: ["2885-2"], re: /^(total )?protein(,? total)?$|^protein,? (serum|plasma)/i, not: /urine|fluid|csf|ascit|pleural|electro/i, conv: gdl },
+    { id: "igg", name: "IgG", loinc: ["2465-3"], re: /\bigg\b|immunoglobulin g\b/i, not: /csf|subclass|igg[1-4]|antibod|urine|index/i, conv: (v, u) => (/mg\s*\/\s*dl/i.test(u || "") ? v / 100 : v) },
+    { id: "kappa", name: "Free κ light chain", marker: true, loinc: ["36916-5"], re: /kappa/i, not: /urine|ratio|lambda/i, conv: (v, u) => (/mg\s*\/\s*dl/i.test(u || "") ? v * 10 : v) },
+    { id: "lambda", name: "Free λ light chain", marker: true, loinc: ["33944-0"], re: /lambda/i, not: /urine|ratio|kappa/i, conv: (v, u) => (/mg\s*\/\s*dl/i.test(u || "") ? v * 10 : v) },
+    { id: "mspike", name: "M-protein", marker: true, loinc: ["33358-3", "51435-6"], re: /m.?spike|monoclonal protein|paraprotein|m-?protein/i, not: /urine/i, conv: gdl },
     { id: "psa", name: "PSA", marker: true, loinc: ["2857-1", "35741-8"], re: /\bpsa\b|prostate specific/i, not: /free|ratio|%/i },
     { id: "cea", name: "CEA", marker: true, loinc: ["2039-6"], re: /\bcea\b|carcinoembryonic/i },
     { id: "ca153", name: "CA 15-3", marker: true, loinc: ["6875-9"], re: /ca[\s-]?15[\s-]?3|cancer antigen 15/i },
     { id: "ca199", name: "CA 19-9", marker: true, loinc: ["24108-3"], re: /ca[\s-]?19[\s-]?9|cancer antigen 19/i },
     { id: "testo", name: "Testosterone", loinc: ["2986-8"], re: /testosterone/i, not: /free|bioavail/i, conv: (v, u) => (/ng\s*\/\s*dl/i.test(u || "") ? v * 0.0347 : v) }];
-  const MARKER_LOINC = ["2857-1", "35741-8", "2039-6", "6875-9", "24108-3", "2986-8"];
+  const MARKER_LOINC = ["2857-1", "35741-8", "2039-6", "6875-9", "24108-3", "2986-8", "36916-5", "33944-0", "33358-3", "51435-6"];
 
   const isTemp = (r) => codes(r.code).some((c) => ["8310-5", "8331-1", "8332-9", "8333-7", "8334-5", "8328-7"].includes(c)) || /temp/i.test(label(r.code));
   const toC = (v, u) => (/f/i.test(u || "") || v > 50 ? +(((v - 32) * 5) / 9).toFixed(1) : +(+v).toFixed(1));

@@ -16,7 +16,8 @@
     hn: { re: /head and neck|oropharyn|oral cavity|tongue|tonsil|laryn|pharyn|salivary|parotid|floor of mouth|gingiva|buccal mucosa|\blip\b|sinonasal|C0\d(\.\d+)?\b|C1[0-4](\.\d+)?\b|C3[0-2](\.\d+)?\b/i },
     kidney: { re: /renal cell|\brcc\b|kidney|C64(\.\d+)?\b/i },
     panc: { re: /pancrea|C25(\.\d+)?\b/i },
-    lymph: { re: /lymphoma|hodgkin|\bdlbcl\b|burkitt|mycosis fungoides|C8[1-6](\.\d+)?\b|C88(\.\d+)?\b/i } };
+    lymph: { re: /lymphoma|hodgkin|\bdlbcl\b|burkitt|mycosis fungoides|C8[1-6](\.\d+)?\b|C88(\.\d+)?\b/i },
+    myeloma: { re: /myeloma|plasmacytoma|plasma cell (neoplasm|leuka?emia|dyscrasia|myeloma)|kahler|C90(\.\d+)?\b/i } };
   // heme subtypes (shown on the cancer card and used by rules)
   const SUB = {
     leuk: [["apl", /promyelocytic|\bapl\b|pml-?rara|C92\.4/i], ["aml", /acute myeloid|acute myelogenous|\baml\b|myeloblastic|C92\.0|C93\.0/i],
@@ -26,7 +27,7 @@
       ["pcnsl", /central nervous system lymphoma|cns lymphoma|primary cns|brain lymphoma|cerebral lymphoma|intraocular lymphoma/i],
       ["follicular", /follicular|C82/i], ["mantle", /mantle cell|C83\.1/i], ["marginal", /marginal zone|malt|C88\.4/i], ["tcell", /t-?cell lymphoma|peripheral t|anaplastic large|C84|C86/i]] };
   const SUBNAME = { apl: "APL", aml: "AML", all: "ALL", cml: "CML", cll: "CLL", hodgkin: "Hodgkin", dlbcl: "DLBCL", burkitt: "Burkitt", pcnsl: "primary CNS", follicular: "follicular", mantle: "mantle cell", marginal: "marginal zone", tcell: "T-cell" };
-  const CANCERWORD = /cancer|carcinoma|adenocarcinoma|malignan|neoplasm|tumou?r|nsclc|sclc|melanoma|\brcc\b|leuka?emia|lymphoma|hodgkin|\b(aml|cml|cll|apl|dlbcl)\b|\bALL\b|\bC\d\d/i;
+  const CANCERWORD = /cancer|carcinoma|adenocarcinoma|malignan|neoplasm|tumou?r|nsclc|sclc|melanoma|\brcc\b|leuka?emia|lymphoma|hodgkin|myeloma|plasmacytoma|\b(aml|cml|cll|apl|dlbcl)\b|\bALL\b|\bC\d\d/i;
   const NOTCANCER = /benign|hyperplasia|\bbph\b|polyp|adenoma(?!.*carcinoma)|screening|family history|fh of|fibroadenoma|cyst|prostatitis|nodule(?!.*malig)|leukemoid|lymphadenopathy|lymphocytosis|ipmn|intraductal papillary|neurogenic bladder|overactive bladder|\bD[0-4]\d/i;
   const SECONDARY = /secondary|metasta|\bmets?\b|C7[7-9]/i;
 
@@ -187,7 +188,7 @@
 
     // sites / text
     if (sites.mscc) out.push({ level: "red", go: "emerg", text: "Cord compression / epidural disease in the chart: dexamethasone, MRI whole spine, rad onc + spine surgery today." });
-    else if (sites.backpain && (sites.bone || (f.cancers && (f.cancers.prostate || f.cancers.breast || f.cancers.lung)))) out.push({ level: sites.weakness ? "red" : "amber", go: "emerg", text: `Back pain${sites.bone ? " with bone mets" : " with a cancer that spreads to bone"}${sites.weakness ? " and weakness/retention" : ""}: think spinal cord compression – neuro exam, MRI whole spine within 24 h${sites.weakness ? " (today)" : ""}.` });
+    else if (sites.backpain && (sites.bone || (f.cancers && (f.cancers.prostate || f.cancers.breast || f.cancers.lung || f.cancers.myeloma)))) out.push({ level: sites.weakness ? "red" : "amber", go: "emerg", text: `Back pain${sites.bone ? " with bone mets" : " with a cancer that spreads to bone"}${sites.weakness ? " and weakness/retention" : ""}: think spinal cord compression – neuro exam, MRI whole spine within 24 h${sites.weakness ? " (today)" : ""}.` });
     if (sites.svc) out.push({ level: "red", go: "emerg", text: "SVC obstruction in the chart: stridor/confusion → urgent stent; get tissue before steroids." });
     if (sites.pericard) out.push({ level: "red", go: "emerg", text: "Pericardial effusion / tamponade in the chart: echo, pericardiocentesis if tamponade." });
     if (sites.hemoptysis) out.push({ level: "amber", go: "emerg", text: `Hemoptysis${has(S.anticoag) ? " on an anticoagulant" : ""}${tag("vegf").length ? " on anti-VEGF" : ""}.` });
@@ -242,8 +243,30 @@
     if (drugs.some((d) => /Bleomycin/.test(d.name))) out.push({ level: "info", text: "Bleomycin: new cough/dyspnea → stop and CT; give the lowest FiO2 that keeps sats 88–92%." });
     if (sub.includes("pcnsl") && has(S.dex) && !hdmtx) out.push({ level: "info", text: "Primary CNS lymphoma on dexamethasone: steroids before the biopsy can make it non-diagnostic – confirm the tissue diagnosis is done or ask neurosurgery/hematology before continuing." });
 
-    // ---- bladder, melanoma, head & neck, kidney, pancreas ----
+    // ---- myeloma ----
     const C2 = f.cancers || {};
+    const imid = has(/lenalidomide|revlimid|pomalidomide|pomalyst|imnovid|thalidomide|thalomid/i);
+    if (C2.myeloma) {
+      const cr = L.cr && L.cr.v, kap = L.kappa && L.kappa.v, lam = L.lambda && L.lambda.v, inv = kap != null && lam != null ? Math.max(kap, lam) : null;
+      if (f.crRise || (cr != null && cr > 177)) out.push({ level: "red", tk: "aki", text: `Myeloma with ${f.crRise ? `creatinine ${f.crRise.from} → ${f.crRise.to}` : `creatinine ${cr}`} µmol/L${inv != null ? ` (involved free light chain ${inv} mg/L${inv >= 500 ? ": cast nephropathy likely" : ""})` : ""}: treat as light-chain cast nephropathy until proven otherwise – serum free light chains now, IV fluids 2–3 L/day if no heart failure, stop NSAIDs/nephrotoxins, avoid IV contrast, treat calcium, hematology today (bortezomib-dexamethasone).` });
+      if (has(S.nsaid)) out.push({ level: "amber", text: `Myeloma on an NSAID (${meds.filter((m) => S.nsaid.test(m)).slice(0, 2).join("; ")}): stop – high risk of AKI. Use acetaminophen, opioids, radiotherapy for bone pain.` });
+      if (L.hb && L.hb.v < 80) out.push({ level: "amber", text: `Hb ${L.hb.v} g/L in myeloma (marrow infiltration, kidney failure, treatment)${has(/daratumumab|darzalex|isatuximab|sarclisa/i) ? " – on anti-CD38: tell the blood bank before crossmatch" : ""}.` });
+      if (L.igg && L.igg.v < 4 && (tag("bispec").length || (tmax != null && tmax >= 38.0))) out.push({ level: "amber", text: `IgG ${L.igg.v} g/L in myeloma${tag("bispec").length ? " on a bispecific" : ""}: severe hypogammaglobulinemia – IVIG is usually given for serious or recurrent infections.` });
+    } else if (L.tp && L.alb && L.tp.v - L.alb.v >= 40 && ((L.hb && L.hb.v < 110) || (f.corrCa != null && f.corrCa > 2.6) || f.crRise)) {
+      out.push({ level: "info", text: `Globulin gap ${Math.round(L.tp.v - L.alb.v)} g/L (total protein ${L.tp.v} − albumin ${L.alb.v}) with ${[L.hb && L.hb.v < 110 && `Hb ${L.hb.v}`, f.corrCa != null && f.corrCa > 2.6 && `corrected Ca ${f.corrCa}`, f.crRise && "AKI"].filter(Boolean).join(", ")}: consider myeloma – SPEP with immunofixation and serum free light chains.` });
+    }
+    if (L.kappa && L.lambda && L.lambda.v > 0 && !C2.myeloma) {
+      const ratio = L.kappa.v / L.lambda.v;
+      if (ratio >= 100 || ratio <= 0.01) out.push({ level: "amber", text: `Free light chain ratio ${ratio >= 1 ? ratio.toFixed(0) : ratio.toFixed(3)} (κ ${L.kappa.v}, λ ${L.lambda.v} mg/L): ≥100 is myeloma-defining – hematology referral.` });
+    }
+    if (imid && !has(S.anticoag) && !has(S.antiplatelet)) out.push({ level: "amber", text: `${meds.filter((m) => /lenalidomide|revlimid|pomalidomide|pomalyst|imnovid|thalidomide|thalomid/i.test(m)).slice(0, 1).join("")}: VTE prophylaxis is expected (ASA if low risk; LMWH or DOAC if higher risk) – none on the medication list.` });
+    const mmAntiviral = drugs.filter((d) => /Bortezomib|Carfilzomib|Ixazomib|Anti-CD38|BCMA|GPRC5D/.test(d.name));
+    if (mmAntiviral.length && !has(S.antiviral)) out.push({ level: "info", text: `${mmAntiviral.map((d) => d.name.split(" (")[0]).join(", ")}: zoster prophylaxis (acyclovir or valacyclovir) is usually given – none on the medication list.` });
+    if (has(/daratumumab|darzalex|isatuximab|sarclisa/i)) out.push({ level: "info", text: "Anti-CD38 antibody (daratumumab/isatuximab): it makes the antibody screen and crossmatch positive for up to 6 months – tell the blood bank before any transfusion." });
+    if (has(/carfilzomib|kyprolis/i) && (f.crRise || (L.trop && L.trop.v > 50))) out.push({ level: "amber", text: `Carfilzomib with ${f.crRise ? "a creatinine rise" : `troponin ${L.trop.v}`}: think cardiac toxicity (HF, ischemia) or TMA – BP, echo, NT-proBNP, smear/LDH/haptoglobin; hold and call hematology.` });
+    if (has(/selinexor|xpovio/i) && L.na && L.na.v < 130) out.push({ level: "amber", tk: "hypona", text: `Na ${L.na.v} on selinexor (a known cause): hold dose, replace sodium, hematology.` });
+
+    // ---- bladder, melanoma, head & neck, kidney, pancreas ----
     if (C2.panc) {
       const bili = L.bili && L.bili.v;
       if (bili != null && bili >= 50) out.push({ level: tmax != null && tmax >= 38.0 ? "red" : "amber", text: `Bilirubin ${bili} µmol/L in pancreatic cancer${tmax != null && tmax >= 38.0 ? ` with fever ${tmax} °C: cholangitis? Blood cultures, antibiotics, urgent ERCP/PTBD` : ": biliary obstruction or stent occlusion? US/CT, GI for ERCP (chemo waits until it falls)"}.` });

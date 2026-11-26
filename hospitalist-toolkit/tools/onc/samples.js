@@ -111,7 +111,21 @@
         conditions: [cond("Adenocarcinoma of head of pancreas", "C25.0"), cond("Secondary malignant neoplasm of liver", "C78.7"), cond("Obstructive jaundice", "K83.1"), cond("Type 2 diabetes", "E11.9")],
         obs: [temp(now, 38.7, 2), lab(now, "1975-2", "Bilirubin total", 186, "umol/L", 3), lab(now, "751-8", "Neutrophils absolute", 1.8, "10*9/L", 3), lab(now, "1742-6", "ALT", 140, "U/L", 3), lab(now, "24108-3", "CA 19-9", 2400, "kU/L", 900), lab(now, "24108-3", "CA 19-9", 5100, "kU/L", 30)],
         medreqs: [req(now, "mFOLFIRINOX (oxaliplatin, irinotecan, leucovorin, fluorouracil) every 2 weeks", 150), req(now, "insulin glargine 14 units subcut daily", 9000), req(now, "ondansetron 8 mg PO q8h PRN")],
-        reports: [rep(now, "US Abdomen", "Intrahepatic and common bile duct dilatation; biliary stent in situ, possibly occluded.", 6)] }) } ];
+        reports: [rep(now, "US Abdomen", "Intrahepatic and common bile duct dilatation; biliary stent in situ, possibly occluded.", 6)] }) },
+    { label: "Q: 71 M, IgG-kappa multiple myeloma on D-VRd: creatinine 98 → 286, corrected Ca 3.1, free kappa 1850, back pain, ibuprofen, lenalidomide without VTE prophylaxis",
+      build: (now) => ({ patient: pt(71, "male", "TEST, Quebec (made-up)"),
+        conditions: [cond("Multiple myeloma, IgG kappa, not having achieved remission", "C90.00"), cond("Low back pain", "M54.5"), cond("Compression fracture of L2 vertebra", "M48.56")],
+        obs: [lab(now, "2160-0", "Creatinine", 98, "umol/L", 400), lab(now, "2160-0", "Creatinine", 286, "umol/L", 4), lab(now, "17861-6", "Calcium", 2.94, "mmol/L", 4), lab(now, "1751-7", "Albumin", 32, "g/L", 4),
+          lab(now, "2885-2", "Protein total", 98, "g/L", 4), lab(now, "718-7", "Hemoglobin", 78, "g/L", 4), lab(now, "36916-5", "Kappa light chains free", 1850, "mg/L", 30), lab(now, "33944-0", "Lambda light chains free", 6.2, "mg/L", 30),
+          lab(now, "33358-3", "M-protein (M-spike)", 41, "g/L", 30), lab(now, "2465-3", "IgG", 52, "g/L", 30), lab(now, "2823-3", "Potassium", 4.8, "mmol/L", 4)],
+        medreqs: [req(now, "daratumumab 1800 mg subcut weekly", 300), req(now, "bortezomib 1.3 mg/m2 subcut days 1, 8, 15", 300), req(now, "lenalidomide 25 mg PO days 1-21", 300),
+          req(now, "dexamethasone 40 mg PO weekly", 300), req(now, "ibuprofen 400 mg PO q6h PRN", 72), req(now, "pantoprazole 40 mg PO daily", 300)] }) },
+    { label: "R: 68 F, no cancer on the list: Hb 94, total protein 104, albumin 33, corrected Ca 2.78 (globulin gap – screen for myeloma?)",
+      build: (now) => ({ patient: pt(68, "female", "TEST, Romeo (made-up)"),
+        conditions: [cond("Anemia, unspecified", "D64.9"), cond("Fatigue", "R53.83")],
+        obs: [lab(now, "718-7", "Hemoglobin", 94, "g/L", 6), lab(now, "2885-2", "Protein total", 104, "g/L", 6), lab(now, "1751-7", "Albumin", 33, "g/L", 6), lab(now, "17861-6", "Calcium", 2.64, "mmol/L", 6),
+          lab(now, "2160-0", "Creatinine", 88, "umol/L", 6)],
+        medreqs: [req(now, "acetaminophen 1 g PO QID PRN")] }) } ];
 
   if (typeof module !== "undefined" && module.exports) module.exports = SAMPLES; else window.ONC_SAMPLES = SAMPLES;
 })();
