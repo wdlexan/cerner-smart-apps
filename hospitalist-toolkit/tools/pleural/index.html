@@ -41,6 +41,7 @@
     td.hi { color:var(--r-ink); font-weight:600; } td.old { color:var(--a-ink); }
     .scroll { overflow-x:auto; }
     .plan h3 { font-size:14px; margin:12px 0 4px; } .plan ul { margin:4px 0 8px 18px; padding:0; } .plan li { margin:3px 0; }
+    .bv { border-radius:6px; padding:8px 12px; margin:8px 0; font-weight:500; } .urgentbox { border-left:4px solid var(--r-ink); padding:2px 12px; margin:10px 0; border-radius:6px; background:var(--r-bg); color:var(--r-ink); }
     .plan .urgent h3 { color:var(--r-ink); } .plan .action h3 { color:var(--a-ink); }
     .chip { display:inline-block; padding:1px 8px; border-radius:10px; font-size:12px; font-weight:600; }
     .c-yes { background:var(--g-bg); color:var(--g-ink); } .c-no { background:var(--r-bg); color:var(--r-ink); } .c-unknown { background:var(--a-bg); color:var(--a-ink); }
@@ -186,6 +187,44 @@
         <label class="inl">Talc given <select id="talc"><option value="">No</option><option value="yes">Yes</option></select></label>
       </div></div></details>
     <details class="card inputs" open><summary><span>Chest tube problems: troubleshoot</span></summary><div class="body"><div class="row"><label class="inl">Problem <select id="trouble"></select></label></div><div id="troubleout"></div></div></details>
+    <details class="card inputs" open id="bubblecard"><summary><span>Bubbling: when to worry</span><span class="muted">air leak patterns</span></summary><div class="body plan">
+      <p><b>Expected:</b> cough-only or intermittent bubbling that decreases over time is a healing alveolar-pleural leak. <b>Concerning:</b> continuous, new or worsening, lasting beyond 5 days, with clinical deterioration, or stopping suddenly while the patient gets worse. Then think <b>system leak, bronchopleural fistula (BPF) or blocked tube</b>, not a simple parenchymal leak.</p>
+      <div class="row"><label class="inl">What is the bubbling doing? <select id="bubblepat">
+        <option value="">Choose…</option>
+        <option value="cough">Only with cough / forced expiration, less each day</option>
+        <option value="early">Small leak, first few days after surgery</option>
+        <option value="tidal">Water column swings (tidaling), no bubbling</option>
+        <option value="cont">Continuous, through the whole breathing cycle</option>
+        <option value="new">New, or worse after it had been settling</option>
+        <option value="long">Still bubbling after more than 5 days</option>
+        <option value="ppv">Large leak on positive-pressure ventilation</option>
+        <option value="stopped">Stopped suddenly, but the patient is worse (more subcut air, hypoxemia)</option>
+        <option value="sick">Bubbling with dyspnea, chest pain, hemoptysis, instability or spreading subcut air</option>
+        <option value="infect">Bubbling with fever, pus in the drain or purulent cough</option></select></label></div>
+      <div id="bubbleout"></div>
+      <h3>Concerning patterns</h3><ul>
+        <li><b>Continuous bubbling</b> through the whole respiratory cycle. Rule out a system leak first (loose connections, a side hole outside the chest wall, a damaged unit), then suspect a BPF: it bubbles continuously regardless of breathing phase and gets worse with positive pressure.</li>
+        <li><b>New bubbling, or worse after it had been decreasing:</b> new injury, BPF, tube migration or a system leak.</li>
+        <li><b>Leak lasting more than 5 days:</b> meets the definition of prolonged air leak; strongly suspect BPF. A persistent leak can be the only sign of a BPF.</li>
+        <li><b>Timing:</b> BPF peaks 8-12 days after surgery, most common after pneumonectomy (especially right-sided). Other risks: diabetes, COPD, neoadjuvant therapy, prolonged mechanical ventilation.</li>
+        <li><b>Large leak on positive-pressure ventilation:</b> minimize tidal volume, PEEP and inspiratory time.</li></ul>
+      <div class="urgentbox"><h3>Red flags: evaluate now</h3><ul>
+        <li>Bubbling with sudden dyspnea, chest pain, hemoptysis, hemodynamic instability, or new/increasing subcutaneous emphysema</li>
+        <li>Fever, purulent drainage or purulent cough: BPF with empyema</li>
+        <li>CXR: new or enlarging pneumothorax; a change in the air-fluid level (e.g. a falling level in a post-pneumonectomy space); air that reaccumulates quickly after clamping or tube removal</li>
+        <li>Bubbling that <b>stops suddenly</b> while subcutaneous emphysema increases or hypoxemia worsens: clotted, kinked or dislodged tube with possible tension physiology, not a healed leak</li></ul></div>
+      <h3>Next steps when bubbling is concerning</h3><ol>
+        <li>Check the system: connections, tubing, insertion site, side-hole position on CXR, and clamp test along the tubing (briefly, at the bedside, to find where the leak is).</li>
+        <li>CXR; CT if the source is unclear.</li>
+        <li>Bronchoscopy for continuous leaks or suspected BPF, plus urgent thoracic surgery. A BPF almost always needs urgent intervention, often reoperation for a stump leak.</li>
+        <li>Send pleural fluid if infection is a concern.</li>
+        <li>STS: exclude both a BPF and a system leak before reoperation for prolonged air leak.</li></ol>
+      <h3>Usually reassuring</h3><ul>
+        <li>Bubbling only with cough or forced expiration, especially if less each day</li>
+        <li>Small leaks in the first few postoperative days: most seal within 5 days</li>
+        <li>Tidaling of the water column without bubbling</li></ul>
+      <p class="muted">Source: summary supplied by Dr. W. Dong (Nov 2026); reference list [1-6] to be added.</p>
+    </div></details>
     <details class="card" open><summary><span>When to remove the chest tube</span><span class="muted" id="rmsum"></span></summary><div class="body plan" id="removal"></div></details>
     <details class="card inputs" open><summary><span>Pleural infection: drain or not, antibiotics, surgery, RAPID</span><span class="muted" id="rapidsum"></span></summary><div class="body plan" id="infection"></div></details>
     <details class="card inputs" open><summary><span>Malignant effusion: LENT, IPC or talc</span><span class="muted" id="lentsum"></span></summary><div class="body">
@@ -219,6 +258,22 @@
   <script src="app.js?v=20261123c"></script>
   <script>(function () { const sel = document.getElementById("suctionsit"); if (!sel) return;
     const set = () => document.querySelectorAll("#suctioncard [data-sit]").forEach((d) => { d.hidden = sel.value !== "all" && d.dataset.sit !== sel.value; });
+    sel.onchange = set; set(); })();
+  (function () { const sel = document.getElementById("bubblepat"), out = document.getElementById("bubbleout"); if (!sel) return;
+    const OK = "t0", WATCH = "t2", NOW = "t3";
+    const V = {
+      cough: [OK, "Expected: healing alveolar-pleural leak. Keep on water seal and watch it decrease day to day."],
+      early: [OK, "Usually fine: most small postoperative leaks seal within 5 days. Recheck daily; worry if it becomes continuous or lasts past day 5."],
+      tidal: [OK, "Reassuring: the tube is patent and there is no air leak. (No swing at all may mean a blocked tube or a re-expanded lung: check CXR.)"],
+      cont: [WATCH, "Concerning. First rule out a system leak (connections, side hole outside the chest wall, damaged unit; clamp test along the tubing). If none: suspect BPF. CXR, CT if unclear, bronchoscopy and thoracic surgery."],
+      "new": [WATCH, "Concerning: new injury, BPF, tube migration or a system leak. Check the system and the side holes on CXR."],
+      long: [WATCH, "Prolonged air leak (over 5 days): strongly suspect BPF. Exclude a system leak and BPF (CT, bronchoscopy); involve thoracic surgery. Risk is highest 8-12 days after surgery, after pneumonectomy (right more than left), with diabetes, COPD, neoadjuvant therapy, long ventilation."],
+      ppv: [WATCH, "Keep on suction. Lower tidal volume, PEEP and inspiratory time; aim for early liberation from the ventilator. Suspect BPF if large and continuous."],
+      stopped: [NOW, "RED FLAG: not a healed leak. Think clotted, kinked or dislodged tube with possible tension physiology. Assess now: check tubing and site, urgent CXR, be ready to decompress / replace the tube."],
+      sick: [NOW, "RED FLAG: evaluate now. Urgent CXR, check the system, senior / thoracic surgery help. Possible tension pneumothorax, BPF or tube failure."],
+      infect: [NOW, "RED FLAG: suspect BPF with empyema. Send pleural fluid, blood cultures, antibiotics, CT, and urgent thoracic surgery."]
+    };
+    const set = () => { const v = V[sel.value]; out.innerHTML = v ? `<div class="bv ${v[0]}">${v[1]}</div>` : ""; };
     sel.onchange = set; set(); })();</script>
   <script src="../../subtabs.js?v=20261121f"></script>
   <script>SubTabs.mount({ store: "pleural", top: ["Chart alerts", "#tiles"], dotSel: ".alert.urgent, .tile.t3, .plan .urgent", tabs: [
@@ -227,7 +282,7 @@
       {"key": "causes", "label": "Causes", "match": ["Likely causes", "All causes"]},
       {"key": "img", "label": "Imaging", "match": ["Imaging reports", "Imaging: what to look for"]},
       {"key": "tap", "label": "Tap & chest tube", "match": ["Thoracentesis", "Chest tube: which tube", "When to clamp", "Intrapleural tPA", "Chest tube orders", "Suction or water seal"]},
-      {"key": "tube", "label": "Tube problems & removal", "match": ["Who to call for chest tube help", "Chest tube in place", "Chest tube problems", "When to remove"]},
+      {"key": "tube", "label": "Tube problems & removal", "match": ["Who to call for chest tube help", "Chest tube in place", "Chest tube problems", "Bubbling: when to worry", "When to remove"]},
       {"key": "spec", "label": "Empyema & cancer", "match": ["Pleural infection", "Malignant effusion"]},
       {"key": "dc", "label": "Discharge & handout", "match": ["Discharge and follow-up", "Patient handout"]},
       {"key": "note", "label": "Note draft", "match": ["Note draft"]}] });</script>
