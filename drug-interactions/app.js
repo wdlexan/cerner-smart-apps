@@ -291,6 +291,15 @@
   });
   document.addEventListener('keydown', e => { if (e.target.id === 'propIn' && e.key === 'Enter') $('#propAdd').click(); });
 
+  // Status line inside the page (the toolkit hides each tool's header, so #status alone is not visible there)
+  function setStatus(msg, kind) {
+    const h = $('#status'); if (h) h.textContent = msg;
+    const n = $('#loadNote'); if (!n) return;
+    n.textContent = msg; n.className = 'loadnote ' + (kind || '');
+    n.style.display = msg ? 'block' : 'none';
+  }
+  const withTimeout = (pr, ms) => Promise.race([pr, new Promise((_, rej) => setTimeout(() => rej(new Error('timed out')), ms))]);
+
   // ---------------- FHIR ----------------
   const LABS = {
     qtc: { loinc: ['8636-3', '8634-8'], re: /\bqtc\b|qt\s*corr|corrected\s*qt/i },
@@ -332,66 +341,68 @@
 
   async function loadFHIR(client) {
     state.mode = 'fhir';
-    const status = $('#status');
-    status.textContent = 'Loading chart…';
+    setStatus('Loading medications, labs and problem list from the chart…', 'busy');
     const pid = client.patient.id;
     const errs = [];
-    try {
-      const p = await client.patient.read();
+    const since = new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10);
+    const T = 25000; // stop waiting for any one request after 25 s
+    const get = (label, pr) => withTimeout(pr, T).catch(e => { if (label) errs.push(label); return null; });
+    const [p, meds, labs, vitals, procs, conds] = await Promise.all([
+      get('patient', client.patient.read()),
+      get('medications', client.request(`MedicationRequest?patient=${pid}&status=active&_count=100`, { pageLimit: 0, flat: true })),
+      get('labs', client.request(`Observation?patient=${pid}&category=laboratory&date=ge${since}&_count=200`, { pageLimit: 3, flat: true })),
+      get('vitals', client.request(`Observation?patient=${pid}&category=vital-signs&date=ge${since}&_count=200`, { pageLimit: 2, flat: true })),
+      get('', client.request(`Observation?patient=${pid}&category=procedure&date=ge${since}&_count=100`, { pageLimit: 1, flat: true })),
+      get('problem list', client.request(`Condition?patient=${pid}&_count=100`, { pageLimit: 2, flat: true }))
+    ]);
+
+    if (p) {
       const n = (p.name || [])[0] || {};
       state.patient.name = n.text || [((n.given || []).join(' ')), n.family].filter(Boolean).join(' ');
       const mrn = (p.identifier || []).find(i => (i.type && (i.type.coding || []).some(c => c.code === 'MR')) || /mrn/i.test((i.type && i.type.text) || ''));
       state.patient.mrn = mrn ? mrn.value : '';
-      if (p.birthDate) { const b = new Date(p.birthDate), now = new Date(); let a = now.getFullYear() - b.getFullYear(); if (now < new Date(now.getFullYear(), b.getMonth(), b.getDate())) a--; state.pt.age = a; state.src.age = 'chart'; }
+      if (p.birthDate) { const bd = new Date(p.birthDate), now = new Date(); let ag = now.getFullYear() - bd.getFullYear(); if (now < new Date(now.getFullYear(), bd.getMonth(), bd.getDate())) ag--; state.pt.age = ag; state.src.age = 'chart'; }
       if (p.gender === 'female' || p.gender === 'male') { state.pt.sex = p.gender; state.src.sex = 'chart'; }
       $('#ptBanner').textContent = `${state.patient.name || 'Patient'} · ${state.pt.age ?? '?'}${state.pt.sex ? state.pt.sex[0].toUpperCase() : ''}${state.patient.mrn ? ' · MRN ' + state.patient.mrn : ''}`;
-    } catch (e) { errs.push('patient'); }
+    }
 
-    try {
-      const meds = await client.request(`MedicationRequest?patient=${pid}&status=active&_count=100`, { pageLimit: 0, flat: true });
-      state.meds = state.meds.filter(m => m.source !== 'chart').concat((meds || []).filter(m => m.resourceType === 'MedicationRequest').map(m => {
+    if (meds) {
+      state.meds = state.meds.filter(m => m.source !== 'chart').concat([].concat(meds).filter(m => m && m.resourceType === 'MedicationRequest').map(m => {
         const cc = m.medicationCodeableConcept || {};
         const name = cc.text || (cc.coding || []).map(c => c.display).filter(Boolean)[0] || (m.medicationReference && m.medicationReference.display) || '';
         const dose = (m.dosageInstruction || []).map(d => d.text).filter(Boolean).join('; ');
         return { text: (name + (dose && dose.toLowerCase().indexOf(name.toLowerCase()) < 0 ? ' — ' + dose : '')).trim(), source: 'chart' };
       }).filter(m => m.text));
-    } catch (e) { errs.push('medications'); }
-
-    const since = new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10);
-    const latest = {};
-    for (const cat of ['laboratory', 'vital-signs', 'procedure']) {
-      try {
-        const obs = await client.request(`Observation?patient=${pid}&category=${cat}&date=ge${since}&_count=200`, { pageLimit: 5, flat: true });
-        (obs || []).forEach(o => {
-          if (o.resourceType !== 'Observation' || o.status === 'entered-in-error') return;
-          const k = classify(o); if (!k) return;
-          const val = obsValue(o); if (!val) return;
-          const when = o.effectiveDateTime || o.issued || '';
-          if (!latest[k] || when > latest[k].when) latest[k] = { v: convert(k, val.v, val.u), when };
-        });
-      } catch (e) { if (cat !== 'procedure') errs.push(cat + ' observations'); }
     }
+
+    const latest = {};
+    [labs, vitals, procs].forEach(list => [].concat(list || []).forEach(o => {
+      if (!o || o.resourceType !== 'Observation' || o.status === 'entered-in-error') return;
+      const k = classify(o); if (!k) return;
+      const val = obsValue(o); if (!val) return;
+      const when = o.effectiveDateTime || o.issued || '';
+      if (!latest[k] || when > latest[k].when) latest[k] = { v: convert(k, val.v, val.u), when };
+    }));
     Object.entries(latest).forEach(([k, x]) => { state.pt[k] = x.v; state.src[k] = 'chart ' + (x.when || '').slice(0, 10); });
     if (latest.egfr) state.src.egfrLab = true;
     else if (state.pt.scr) { state.pt.egfr = DDI.ckdEpi2021(state.pt.scr, state.pt.age, state.pt.sex); if (state.pt.egfr) state.src.egfr = 'calculated CKD-EPI 2021'; }
 
-    try {
-      const conds = await client.request(`Condition?patient=${pid}&_count=100`, { pageLimit: 3, flat: true });
+    if (conds) {
       const found = [];
-      (conds || []).forEach(c => {
-        if (c.resourceType !== 'Condition') return;
+      [].concat(conds).forEach(c => {
+        if (!c || c.resourceType !== 'Condition') return;
         const cs = c.clinicalStatus && ((c.clinicalStatus.coding || [])[0] || {}).code;
         if (cs && !/active|recurrence|relapse/.test(cs)) return;
         const txt = (c.code && (c.code.text || (c.code.coding || []).map(x => x.display).join(' '))) || '';
         COND.forEach(([k, re]) => { if (re.test(txt)) { state.pt[k] = true; found.push(txt); } });
       });
       state.src.conditions = found.length ? 'Ticked from problem list: ' + [...new Set(found)].join('; ') : 'Nothing matched on the problem list – tick manually if relevant.';
-    } catch (e) { errs.push('conditions'); }
+    }
 
-    status.textContent = errs.length ? 'Could not load: ' + errs.join(', ') : 'Chart loaded ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const nMeds = state.meds.filter(m => m.source === 'chart').length;
+    setStatus(errs.length ? `Chart loaded with gaps – could not load: ${errs.join(', ')}. ${nMeds} active medications found.` : `Chart loaded: ${nMeds} active medications.${state.pt.qtc == null ? ' No QTc found – enter it on the Patient data tab.' : ''}`, errs.length ? 'warn' : 'ok');
   }
 
-  // ---------------- start ----------------
   const DEMO = {
     patient: { name: 'Demo Patient (made up)', mrn: '0000000' },
     meds: ['Azithromycin 500 mg PO daily', 'Citalopram 40 mg PO daily', 'Ondansetron 4 mg IV q8h PRN', 'Furosemide 40 mg IV BID',
@@ -406,17 +417,27 @@
       Object.assign(state.pt, DEMO.pt);
       state.pt.egfr = DDI.ckdEpi2021(state.pt.scr, state.pt.age, state.pt.sex); state.src.egfr = 'calculated CKD-EPI 2021';
       $('#ptBanner').textContent = 'DEMO – made-up patient';
-      $('#status').textContent = 'Demo mode – sample data only';
+      setStatus('Demo mode – made-up patient, sample data only.', 'warn');
     } else if (window.FHIR) {
-      // Works for a direct launch (launch.html) and inside the Hospitalist Toolkit (shared sign-in)
-      try { const client = await FHIR.oauth2.ready(); await loadFHIR(client); }
-      catch (e) { state.mode = 'manual'; $('#status').textContent = 'Not launched from Cerner – manual mode (paste meds on the Med list tab, or add ?demo=1)'; }
+      // Works for a direct launch (launch.html) and inside the Hospitalist Toolkit (shared sign-in).
+      // Draw the page straight away, then fill it in when the chart answers.
+      renderData(); run();
+      setStatus('Connecting to the chart…', 'busy');
+      let client = null;
+      try { client = await withTimeout(FHIR.oauth2.ready(), 15000); } catch (e) { client = null; }
+      if (client) {
+        try { await loadFHIR(client); } catch (e) { setStatus('Could not read the chart (' + (e.message || e) + ') – paste meds on the Med list tab.', 'warn'); }
+      } else {
+        state.mode = 'manual';
+        setStatus('Not launched from Cerner – manual mode: paste meds on the Med list tab (or add ?demo=1 for a made-up patient).', 'warn');
+      }
     } else {
-      $('#status').textContent = 'SMART library not loaded – manual mode';
+      setStatus('SMART library not loaded – manual mode: paste meds on the Med list tab.', 'warn');
     }
     renderData();
     run();
     if (!state.meds.length) document.querySelector('[data-tab="meds"]').click();
   }
+  window.addEventListener('error', e => setStatus('Script error: ' + e.message + ' – please report this.', 'warn'));
   start();
 })();

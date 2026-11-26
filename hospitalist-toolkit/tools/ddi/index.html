@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Drug interactions – QT · Serotonin · Seizure</title>
-<script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script><script src="../../pdf-overlay.js?v=20261120p"></script>
 <style>
   :root{--bg:#f6f7f9;--card:#fff;--ink:#1d2330;--mute:#5d6676;--line:#dde1e7;--brand:#1f5f8b;
         --ci:#7a0b2e;--hi:#b42318;--mo:#b54708;--lo:#1f6f43;--info:#475467}
@@ -56,6 +56,8 @@
   .verdict.pos{background:#fef3f2;color:var(--hi)}.verdict.neg{background:#ecfdf3;color:var(--lo)}
   .ref h4{margin:10px 0 4px}.ref ul{margin:4px 0;padding-left:20px}
   .empty{color:var(--lo);padding:6px 0}
+  .loadnote{margin:0 0 10px;padding:7px 10px;border-radius:6px;font-size:13px;background:#eef4fb;color:#1f5f8b;border:1px solid #c9dcef}
+  .loadnote.busy::before{content:"⏳ "}.loadnote.warn{background:#fff8e6;color:#7a4b00;border-color:#f3d9a4}.loadnote.ok{background:#ecfdf3;color:#1f6f43;border-color:#b5e3c8}
   .disclaimer{font-size:12px;color:var(--mute);margin-top:14px}
 </style>
 </head>
@@ -74,6 +76,7 @@
   <button data-tab="data">Patient data</button>
 </nav>
 <main>
+  <div id="loadNote" class="loadnote" style="display:none"></div>
   <section class="panel active" id="p-summary"></section>
   <section class="panel" id="p-qt"></section>
   <section class="panel" id="p-ss"></section>
@@ -82,7 +85,7 @@
   <section class="panel" id="p-data"></section>
   <p class="disclaimer">Decision support only. Drug lists are curated (CredibleMeds categories, the ONC high-priority DDI list and product monographs), not exhaustive. Confirm with pharmacy, <a href="https://crediblemeds.org" target="_blank" rel="noopener">CredibleMeds</a> and Lexicomp before changing therapy.</p>
 </main>
-<script src="rules.js"></script>
-<script src="app.js"></script>
+<script src="rules.js?v=20261126c"></script>
+<script src="app.js?v=20261126c"></script>
 </body>
 </html>
