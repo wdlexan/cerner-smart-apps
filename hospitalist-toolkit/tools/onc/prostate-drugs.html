@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Prostate cancer: common drugs, doses and side effects</title>
+<!-- Source for prostate-drugs.pdf. Rebuild: google-chrome --headless --no-pdf-header-footer --print-to-pdf=prostate-drugs.pdf prostate-drugs.html -->
+<style>
+  @page { size: letter; margin: 8mm 9mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif; color: #1f2933; font-size: 7.9pt; line-height: 1.2; margin: 0; }
+  h1 { font-size: 14pt; margin: 0 0 1mm; color: #0b4a99; }
+  .sub { color: #5f6c7b; font-size: 8.6pt; margin-bottom: 2.5mm; }
+  .grp { border: 0.3mm solid #dde3ea; border-radius: 2mm; margin: 0 0 2.2mm; break-inside: avoid; }
+  .grp > h2 { margin: 0; font-size: 9.4pt; background: #0b6bcb; color: #fff; padding: 0.9mm 3mm; border-radius: 2mm 2mm 0 0; }
+  .grp.adt > h2 { background: #0b4a99; } .grp.ar > h2 { background: #1d6b3a; } .grp.chemo > h2 { background: #9b1c1c; } .grp.parp > h2 { background: #6b3fa0; } .grp.rl > h2 { background: #8a5200; } .grp.bone > h2 { background: #5f6c7b; }
+  .grp .note { padding: 0.8mm 3mm 0; color: #5f6c7b; font-size: 7.6pt; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { padding: 0.7mm 2mm; vertical-align: top; text-align: left; border-top: 0.25mm solid #eef1f5; }
+  th { font-size: 7.4pt; color: #5f6c7b; font-weight: 600; }
+  td:nth-child(1) { width: 17%; } td:nth-child(2) { width: 27%; } td:nth-child(3) { width: 29%; }
+  td b.n { color: #0b4a99; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5mm; }
+  .box { border: 0.3mm solid #dde3ea; border-radius: 2mm; padding: 1.6mm 3mm; break-inside: avoid; }
+  .box h3 { margin: 0 0 1mm; font-size: 9.4pt; color: #0b4a99; }
+  .box ul { margin: 0; padding-left: 4.5mm; } .box li { margin: 0.3mm 0; }
+  .warn { background: #fff4e5; border: 0.3mm solid #f0c27b; border-radius: 2mm; padding: 1.2mm 3mm; font-size: 7.4pt; margin-top: 2mm; }
+  a { color: #0b4a99; }
+</style>
+</head>
+<body>
+  <h1>Prostate cancer: common drugs, usual doses and side effects</h1>
+  <div class="sub">Hospitalist Toolkit · Oncology tab · usual adult doses from product monographs and common protocols. <b>The BC Cancer protocol and the patient's treatment record decide the actual dose.</b></div>
+
+  <div class="grp adt"><h2>Androgen deprivation therapy (ADT): the backbone of almost every regimen, usually lifelong in metastatic disease</h2>
+    <table><tr><th>Drug (brand)</th><th>Usual dose and schedule</th><th>Common side effects</th><th>Hospitalist pearls</th></tr>
+      <tr><td><b class="n">Leuprolide</b> (Lupron Depot, Eligard)</td><td>7.5 mg q1 month, 22.5 mg q3 months, 30 mg q4 months, or 45 mg q6 months (IM or SC by product)</td><td rowspan="3">Hot flashes, fatigue, low libido and erectile dysfunction, weight gain and loss of muscle, <b>bone loss and fractures</b>, higher glucose and lipids, anemia, mood change, breast tenderness, QTc prolongation</td><td rowspan="3"><b>Do not stop in hospital</b> (note when the next injection is due). Starting a GnRH agonist causes a <b>testosterone flare</b> for 1–3 weeks: give bicalutamide 50 mg daily starting ~1 week before and for ~4 weeks, especially with bone pain or cord risk</td></tr>
+      <tr><td><b class="n">Goserelin</b> (Zoladex)</td><td>3.6 mg SC implant q28 days, or 10.8 mg q12 weeks</td></tr>
+      <tr><td><b class="n">Triptorelin</b> (Trelstar)</td><td>3.75 mg IM q4 weeks, 11.25 mg q12 weeks, or 22.5 mg q24 weeks</td></tr>
+      <tr><td><b class="n">Degarelix</b> (Firmagon), antagonist</td><td>240 mg SC loading (2 × 120 mg), then 80 mg SC q28 days</td><td>As above; injection-site pain and lumps</td><td><b>No flare</b>: preferred when there is cord compression risk or urgent need</td></tr>
+      <tr><td><b class="n">Relugolix</b> (Orgovyx), oral antagonist</td><td>360 mg PO on day 1, then 120 mg PO daily</td><td>As above; diarrhea</td><td>No flare; testosterone recovers fast if doses are missed. P-gp interactions</td></tr></table>
+  </div>
+
+  <div class="grp ar"><h2>Androgen receptor pathway inhibitors (added to ADT)</h2>
+    <table><tr><th>Drug (brand)</th><th>Usual dose and schedule</th><th>Common side effects</th><th>Hospitalist pearls</th></tr>
+      <tr><td><b class="n">Abiraterone</b> (Zytiga; Yonsa)</td><td>1000 mg PO daily on an empty stomach (Yonsa 500 mg with food) <b>+ prednisone</b> 5 mg BID (mCRPC) or 5 mg daily (mHSPC)</td><td>Mineralocorticoid excess: <b>hypertension, low K, edema</b>; raised ALT/AST; fatigue, hot flashes</td><td><b>Never give without prednisone</b>; stress-dose steroids if acutely ill (adrenal suppression). LFTs q2 weeks for 3 months, then monthly; K and BP</td></tr>
+      <tr><td><b class="n">Enzalutamide</b> (Xtandi)</td><td>160 mg PO daily</td><td>Fatigue, hypertension, falls and fractures, hot flashes, cognitive slowing; seizures (rare)</td><td><b>Strong CYP3A4 inducer</b>: lowers DOACs, some statins, calcium channel blockers, warfarin and many others – check with pharmacy</td></tr>
+      <tr><td><b class="n">Apalutamide</b> (Erleada)</td><td>240 mg PO daily</td><td><b>Rash</b> (can be severe), hypothyroidism, fatigue, falls and fractures, QTc</td><td>Strong CYP3A4 inducer; check TSH; hold for grade 3 rash</td></tr>
+      <tr><td><b class="n">Darolutamide</b> (Nubeqa)</td><td>600 mg PO BID with food (with ADT ± docetaxel in mHSPC)</td><td>Fatigue, rash; fewer falls and CNS effects than enzalutamide</td><td>Few drug interactions (raises rosuvastatin levels)</td></tr>
+      <tr><td><b class="n">Bicalutamide</b> (Casodex), first-generation</td><td>50 mg PO daily (flare cover or combined with ADT)</td><td>Breast enlargement and tenderness, hot flashes, raised LFTs</td><td>Main inpatient use: flare protection when a GnRH agonist is started</td></tr></table>
+  </div>
+
+  <div class="grp chemo"><h2>Chemotherapy (taxanes)</h2>
+    <table><tr><th>Drug (brand)</th><th>Usual dose and schedule</th><th>Common side effects</th><th>Hospitalist pearls</th></tr>
+      <tr><td><b class="n">Docetaxel</b> (Taxotere)</td><td>75 mg/m² IV q3 weeks, ~6 cycles (+ prednisone 5 mg BID in mCRPC; with ADT ± darolutamide in mHSPC)</td><td><b>Neutropenia and febrile neutropenia</b> (day 7–10), neuropathy, fluid retention and edema, nail changes, hair loss, mouth sores, infusion reactions (dexamethasone premed)</td><td>Fever = febrile neutropenia until proven otherwise; watch for pneumonitis</td></tr>
+      <tr><td><b class="n">Cabazitaxel</b> (Jevtana)</td><td>25 mg/m² IV q3 weeks (20 mg/m² often used) + prednisone; G-CSF prophylaxis</td><td>Neutropenia, <b>diarrhea</b>, fatigue, hematuria, nausea</td><td>Febrile neutropenia risk high; dehydration and AKI from diarrhea</td></tr></table>
+  </div>
+
+  <div class="two">
+    <div class="grp parp" style="margin:0"><h2>PARP inhibitors (BRCA / HRR-mutated)</h2>
+      <table><tr><th>Drug</th><th>Dose</th><th>Side effects / pearls</th></tr>
+        <tr><td><b class="n">Olaparib</b> (Lynparza)</td><td>300 mg PO BID (alone or with abiraterone)</td><td><b>Anemia</b>, nausea, fatigue, VTE; rare MDS/AML. Avoid strong CYP3A4 inhibitors</td></tr>
+        <tr><td><b class="n">Talazoparib</b> (Talzenna)</td><td>0.5 mg PO daily with enzalutamide 160 mg</td><td>Anemia (often needs transfusion), neutropenia, fatigue</td></tr>
+        <tr><td><b class="n">Niraparib + abiraterone</b> (Akeega)</td><td>200 mg / 1000 mg PO daily + prednisone</td><td>Anemia, hypertension, low K, fatigue</td></tr></table>
+    </div>
+    <div class="grp rl" style="margin:0"><h2>Radioligands and radiopharmaceuticals</h2>
+      <table><tr><th>Drug</th><th>Dose</th><th>Side effects / pearls</th></tr>
+        <tr><td><b class="n">Lutetium-177 PSMA</b> (Pluvicto)</td><td>7.4 GBq IV q6 weeks, up to 6 doses</td><td>Dry mouth, fatigue, nausea, <b>cytopenias</b>, rarely kidney injury. Radiation precautions for a few days after each dose</td></tr>
+        <tr><td><b class="n">Radium-223</b> (Xofigo)</td><td>55 kBq/kg IV q4 weeks × 6 (bone-only mets, no visceral)</td><td>Diarrhea, nausea, <b>low counts</b>. Not combined with abiraterone (fractures)</td></tr></table>
+    </div>
+  </div>
+
+  <div class="grp bone" style="margin-top:2.2mm"><h2>Bone-targeted drugs</h2>
+    <table><tr><th>Drug (brand)</th><th>Usual dose and schedule</th><th>Common side effects</th><th>Hospitalist pearls</th></tr>
+      <tr><td><b class="n">Denosumab</b> (Xgeva; Prolia)</td><td>Bone mets (mCRPC): 120 mg SC q4 weeks. ADT bone loss: 60 mg SC q6 months</td><td><b>Low calcium</b>, joint pain, fatigue, osteonecrosis of the jaw</td><td>Calcium + vitamin D; OK in kidney failure but hypocalcemia is worse; <b>rebound fractures if stopped</b> without a follow-on drug</td></tr>
+      <tr><td><b class="n">Zoledronic acid</b> (Zometa; Aclasta)</td><td>Bone mets: 4 mg IV q12 weeks (or q4 weeks), dose by CrCl. Osteoporosis: 5 mg IV yearly</td><td>Flu-like reaction for 1–3 days, low calcium, kidney toxicity, osteonecrosis of the jaw</td><td>Avoid if CrCl &lt; 30; check creatinine before each dose</td></tr></table>
+  </div>
+
+  <div class="two" style="margin-top:2.2mm">
+    <div class="box"><h3>Other drugs you may see</h3>
+      <ul><li><b>Pembrolizumab</b> 200 mg IV q3 weeks or 400 mg q6 weeks for MSI-high/dMMR tumours: immune side effects (colitis, pneumonitis, thyroid, adrenal).</li>
+        <li><b>Prednisone or dexamethasone</b> with abiraterone, docetaxel or cabazitaxel, and for symptom control: glucose, mood, adrenal suppression.</li>
+        <li><b>Older hormone drugs</b> (rare now): estrogens (VTE), ketoconazole (liver), cyproterone (liver, VTE).</li></ul></div>
+    <div class="box"><h3>Sources and full doses</h3>
+      <ul><li>BC Cancer Cancer Drug Manual (drug monographs and patient handouts): <a href="https://www.bccancer.bc.ca/health-professionals/clinical-resources/cancer-drug-manual/drug-index">bccancer.bc.ca → Cancer Drug Manual → drug index</a></li>
+        <li>BC Cancer genitourinary chemotherapy protocols (the regimen and dose actually used): <a href="https://www.bccancer.bc.ca/health-professionals/clinical-resources/chemotherapy-protocols/genitourinary">bccancer.bc.ca → Chemotherapy protocols → Genitourinary</a></li>
+        <li>Product monographs (Health Canada Drug Product Database).</li></ul></div>
+  </div>
+
+  <div class="warn"><b>Unverified draft written by Claude</b> from product monographs and common protocols to mid-2026; doses change with protocol, kidney and liver function, and dose reductions. Confirm with the BC Cancer protocol, the patient's oncologist and pharmacy before ordering. Hormone therapy is usually continued in hospital; ask oncology before holding oral anticancer drugs.</div>
+</body>
+</html>

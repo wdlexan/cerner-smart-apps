@@ -212,7 +212,8 @@
 
   // =====================================================================================
   { key: "prostate", name: "Prostate", full: "Prostate cancer", link: LINKS.prostate,
-    intro: `<b>Most men live a long time with it.</b> Metastatic disease goes from hormone-sensitive (mHSPC) to castration-resistant (mCRPC: progression with testosterone &lt;1.7 nmol/L).`,
+    intro: `<b>Most men live a long time with it.</b> Metastatic disease goes from hormone-sensitive (mHSPC) to castration-resistant (mCRPC: progression with testosterone &lt;1.7 nmol/L).
+      <div style="margin-top:6px"><a href="prostate-drugs.pdf?v=20261126a" target="_blank" rel="noopener"><b>Common prostate cancer drugs: usual doses and side effects (PDF)</b></a> · <a href="https://www.bccancer.bc.ca/health-professionals/clinical-resources/cancer-drug-manual/drug-index" target="_blank" rel="noopener">BC Cancer Drug Manual</a></div>`,
     sections: [
     { t: "At a glance: intent and biomarkers", open: true, h: `
       <table><tr><th>Setting</th><th>Intent</th></tr>
