@@ -31,6 +31,7 @@ async function init(client) {
   state.notes = notes; state.vitals = vitals; state.conds = conds;
   evaluate();
   render();
+  if (window.HaHMatrices) HaHMatrices.prefill({ patient: state.patient, notes, conds, negated });
   setStatus(`Read ${notes.length} note(s), ${vitals.length} vital sign(s), ${conds.length} diagnosis record(s).`);
 }
 

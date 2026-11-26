@@ -30,7 +30,7 @@ const TOOLS = [
   { key: "cw",    label: "Choosing Wisely", tags: "choosing wisely low value tests overuse",      path: "tools/cw/index.html", keepHeader: true }, // its header holds the Look back control
   { key: "dx",    label: "Diagnosis check", tags: "diagnosis check cognitive bias second look missed differential harm",      path: "tools/dx/index.html", keepHeader: true }, // its header holds the Look back control
   { key: "ed",    label: "ED screen", tags: "ed er emergency screen admission",            path: "tools/ed/index.html" },
-  { key: "hah",   label: "Hospital at Home", tags: "hospital at home hah virtual ward",     path: "tools/hah/index.html" },
+  { key: "hah",   label: "Hospital at Home", tags: "hospital at home hah virtual ward escalation risk repatriation predictor asthma transfer matrix death in the home edith expected death",     path: "tools/hah/index.html" },
   { key: "calc",  label: "Calculators", tags: "calculators scores egfr curb chads wells",          path: "tools/calc/index.html" },
   { key: "ai",    label: "AI summary", tags: "ai summary draft llm",           path: "tools/ai/index.html" },
   { key: "pc",    label: "Peritoneal carcinomatosis", tags: "peritoneal carcinomatosis peritoneum metastases omental cake pci sugarbaker hipec crs cytoreduction malignant bowel obstruction mbo sbo octreotide buscopan venting peg malignant ascites paracentesis pleurx indwelling catheter colorectal gastric ovarian pseudomyxoma cea ca-125 chemo oncology prognosis", path: "tools/pc/index.html" },

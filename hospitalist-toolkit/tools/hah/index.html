@@ -68,11 +68,21 @@
     <p class="note" id="status" style="margin:0">Loading…</p>
     <div id="out"></div>
     <div id="viewer"></div>
+    <div id="escRisk" style="display:grid;gap:10px"></div>
+    <div id="asthma" style="display:grid;gap:10px"></div>
+    <div id="death" style="display:grid;gap:10px"></div>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script><script src="../../pdf-overlay.js?v=20261120p"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
   <script src="criteria-loader.js"></script>
-  <script src="app.js"></script>
+  <script src="hah-matrices.js?v=20261126a"></script>
+  <script src="app.js?v=20261126a"></script>
+  <script src="../../subtabs.js?v=20261121f"></script>
+  <script>SubTabs.mount({ store: "hah", top: ["#status"], tabs: [
+    { key: "screen", label: "Candidate screen", match: ["#out", "#viewer"] },
+    { key: "risk",   label: "Escalation risk",  match: ["#escRisk"] },
+    { key: "asthma", label: "Asthma transfer",  match: ["#asthma"] },
+    { key: "death",  label: "Death at home",    match: ["#death"] } ] });</script>
 </body>
 </html>
