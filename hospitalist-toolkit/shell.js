@@ -132,6 +132,7 @@ async function start(client) {
   if (!TOOLS.some((t) => t.key === first)) { try { first = localStorage.getItem(TAB_KEY); } catch (e) {} }
   if (!TOOLS.some((t) => t.key === first)) first = TOOLS[0].key;
   show(first);
+  if (window.TKSuggest) window.TKSuggest.init(client); // "Which tool?" pop-up (suggest.js): reads the chart and lists the tabs that fit
 }
 
 // ---- Tool menus: a few pinned tools, then pull-down menus by topic (desktop). The phone keeps one scrolling row.
