@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Renal tubular acidosis: types and pathophysiology</title>
+<!-- Source for rta-infosheet.pdf. Rebuild: google-chrome --headless --no-pdf-header-footer --print-to-pdf=rta-infosheet.pdf rta-infosheet.html -->
+<style>
+  @page { size: letter; margin: 9mm 10mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif; color: #1f2933; font-size: 8pt; line-height: 1.2; margin: 0; }
+  h1 { font-size: 15pt; margin: 0 0 1mm; color: #0b4a99; }
+  .sub { color: #5f6c7b; font-size: 9pt; margin-bottom: 3mm; }
+  .step { border: 0.3mm solid #dde3ea; border-radius: 2mm; margin: 0 0 2.4mm; break-inside: avoid; }
+  .step > h2 { margin: 0; font-size: 10pt; background: #0b6bcb; color: #fff; padding: 1.1mm 3mm; border-radius: 2mm 2mm 0 0; }
+  .step.t1 > h2 { background: #8a5200; } .step.t2 > h2 { background: #1d6b3a; } .step.t3 > h2 { background: #5f6c7b; } .step.t4 > h2 { background: #9b1c1c; }
+  .step .f { padding: 0.8mm 3mm; }
+  .step ul { margin: 0.6mm 0 1.2mm; padding-left: 5mm; } .step li { margin: 0.3mm 0; }
+  .lab { font-weight: 700; color: #0b4a99; }
+  table { border-collapse: collapse; width: 100%; }
+  td, th { padding: 0.6mm 2.5mm; vertical-align: top; text-align: left; border-top: 0.25mm solid #e3e8ee; }
+  th { font-size: 8pt; color: #fff; background: #0b4a99; font-weight: 600; }
+  td:first-child { font-weight: 600; width: 21%; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm; }
+  .box { border: 0.3mm solid #dde3ea; border-radius: 2mm; padding: 2mm 3mm; break-inside: avoid; }
+  .box h3 { margin: 0 0 1.2mm; font-size: 10pt; color: #0b4a99; }
+  .box ul { margin: 0; padding-left: 4.5mm; } .box li { margin: 0.3mm 0; }
+  code { font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 8.6pt; background: #eef2f7; padding: 0 1mm; border-radius: 1mm; }
+  .warn { background: #fff4e5; border: 0.3mm solid #f0c27b; border-radius: 2mm; padding: 1.4mm 3mm; font-size: 7.6pt; margin-top: 2mm; }
+  .pb { break-before: page; }
+  .small { font-size: 7.8pt; color: #5f6c7b; }
+  svg { display: block; width: 100%; height: 34mm; }
+  svg text { font-family: "Segoe UI", system-ui, Arial, sans-serif; }
+</style>
+</head>
+<body>
+  <h1>Renal tubular acidosis (RTA): types and pathophysiology</h1>
+  <div class="sub">Hospitalist Toolkit · Acid-base tab · RTA causes a normal anion gap (hyperchloraemic) metabolic acidosis · SI units</div>
+
+  <div class="step"><h2>Where each type fails along the nephron</h2>
+    <div class="f">
+      <svg viewBox="0 0 760 150" role="img" aria-label="Nephron diagram showing type 2 RTA in the proximal tubule and types 1 and 4 in the collecting duct">
+        <rect x="8" y="48" width="78" height="52" rx="26" fill="#e3eefc" stroke="#0b4a99"/>
+        <text x="47" y="78" text-anchor="middle" font-size="12" fill="#0b4a99">Glomerulus</text>
+        <line x1="86" y1="74" x2="110" y2="74" stroke="#5f6c7b" stroke-width="2"/>
+        <rect x="110" y="38" width="210" height="72" rx="8" fill="#e4f4ea" stroke="#1d6b3a" stroke-width="1.5"/>
+        <text x="215" y="58" text-anchor="middle" font-size="12.5" font-weight="700" fill="#1d6b3a">Proximal tubule</text>
+        <text x="215" y="76" text-anchor="middle" font-size="11" fill="#1f2933">Reabsorbs 85–90% of filtered HCO3</text>
+        <text x="215" y="92" text-anchor="middle" font-size="11" fill="#1f2933">Makes NH3 (the urine buffer)</text>
+        <text x="215" y="132" text-anchor="middle" font-size="12" font-weight="700" fill="#1d6b3a">Type 2 (proximal): HCO3 leaks out</text>
+        <line x1="320" y1="74" x2="344" y2="74" stroke="#5f6c7b" stroke-width="2"/>
+        <rect x="344" y="48" width="96" height="52" rx="8" fill="#f5f7fa" stroke="#9aa7b5"/>
+        <text x="392" y="70" text-anchor="middle" font-size="11.5" fill="#5f6c7b">Loop of Henle</text>
+        <text x="392" y="86" text-anchor="middle" font-size="11.5" fill="#5f6c7b">and distal tubule</text>
+        <line x1="440" y1="74" x2="464" y2="74" stroke="#5f6c7b" stroke-width="2"/>
+        <rect x="464" y="20" width="288" height="108" rx="8" fill="#fff4e5" stroke="#8a5200" stroke-width="1.5"/>
+        <text x="608" y="38" text-anchor="middle" font-size="12.5" font-weight="700" fill="#8a5200">Collecting duct</text>
+        <rect x="474" y="46" width="130" height="58" rx="6" fill="#fff" stroke="#8a5200"/>
+        <text x="539" y="62" text-anchor="middle" font-size="10.5" font-weight="700" fill="#8a5200">α-intercalated cell</text>
+        <text x="539" y="77" text-anchor="middle" font-size="10" fill="#1f2933">Pumps H+ into urine,</text>
+        <text x="539" y="90" text-anchor="middle" font-size="10" fill="#1f2933">trapped as NH4+</text>
+        <rect x="612" y="46" width="130" height="58" rx="6" fill="#fff" stroke="#9b1c1c"/>
+        <text x="677" y="62" text-anchor="middle" font-size="10.5" font-weight="700" fill="#9b1c1c">Principal cell</text>
+        <text x="677" y="77" text-anchor="middle" font-size="10" fill="#1f2933">Aldosterone → ENaC Na+</text>
+        <text x="677" y="90" text-anchor="middle" font-size="10" fill="#1f2933">in, K+ out (lumen −)</text>
+        <text x="539" y="120" text-anchor="middle" font-size="12" font-weight="700" fill="#8a5200">Type 1 (distal)</text>
+        <text x="677" y="120" text-anchor="middle" font-size="12" font-weight="700" fill="#9b1c1c">Type 4 (hyperkalaemic)</text>
+        <text x="608" y="145" text-anchor="middle" font-size="10.5" fill="#5f6c7b">Type 3 (mixed, CA II deficiency) = proximal + distal</text>
+      </svg>
+    </div>
+  </div>
+
+  <div class="step"><h2>Normal renal acid-base handling</h2>
+    <div class="f"><ul>
+      <li><span class="lab">Proximal convoluted tubule:</span> reabsorbs about 85–90% of filtered bicarbonate and makes ammonia (NH3), which buffers acid in the urine.</li>
+      <li><span class="lab">Collecting duct (distal nephron):</span> type A (α) intercalated cells pump H+ into the urine, where it is trapped as ammonium (NH4+). Each H+ secreted makes a new HCO3, replacing the HCO3 used up buffering the day's dietary acid.</li>
+      <li>So the kidney can fail in three ways: it loses filtered HCO3 (proximal), it cannot secrete H+ (distal), or it makes too little NH3 to carry the acid out (hyperkalaemic, low aldosterone).</li>
+    </ul></div>
+  </div>
+
+  <div class="step t1"><h2>Type 1 RTA (distal)</h2>
+    <div class="f"><ul>
+      <li><span class="lab">Primary defect:</span> α-intercalated cells in the cortical and medullary collecting duct cannot secrete H+, or secreted H+ leaks back across a damaged tubule wall (e.g. amphotericin).</li>
+      <li><span class="lab">Acid-base effect:</span> the distal nephron cannot lower urine pH below 5.5, even with severe acidaemia. H+ that should be excreted is retained in the blood.</li>
+      <li><span class="lab">Low K:</span> with no H+ secreted to balance Na+ reabsorption in the collecting duct, the lumen becomes more negative and pulls K+ into the urine. Volume depletion switches on aldosterone, which makes K+ wasting worse.</li>
+      <li><span class="lab">Nephrocalcinosis and stones:</span> chronic acidosis releases calcium phosphate from bone. Acidosis also makes the proximal tubule reabsorb more citrate. Urine that is high in calcium, low in citrate and alkaline (pH &gt; 5.5) easily forms calcium phosphate stones.</li>
+    </ul></div>
+  </div>
+
+  <div class="step t2"><h2>Type 2 RTA (proximal)</h2>
+    <div class="f"><ul>
+      <li><span class="lab">Primary defect:</span> the proximal tubule reabsorbs less filtered HCO3. The cause is a defect in the luminal Na+/H+ exchanger, the basolateral Na+/HCO3 cotransporter or carbonic anhydrase.</li>
+      <li><span class="lab">Acid-base effect:</span> the renal threshold for HCO3 falls (often to about 12–18 mmol/L). At first, a lot of HCO3 spills into the urine and urine pH rises. Once serum HCO3 falls below the new threshold, the proximal tubule can handle the smaller filtered load. The distal nephron still works, so urine pH drops below 5.5. The acidosis is <b>self-limited</b>: HCO3 settles at the threshold and rarely goes much lower.</li>
+      <li><span class="lab">Low K:</span> HCO3 that is not reabsorbed reaches the distal nephron as an anion that cannot be reabsorbed, carrying extra Na+ and water with it. This switches on aldosterone and drives K+ out in the urine. Giving alkali makes this worse.</li>
+      <li><span class="lab">Fanconi syndrome:</span> when the whole proximal tubule is damaged, other solutes that travel with Na+ also spill into the urine: phosphate, glucose (with normal blood glucose), amino acids and uric acid. Long-term, this leads to bone disease (osteomalacia).</li>
+    </ul></div>
+  </div>
+
+  <div class="two">
+    <div class="step t3" style="margin:0"><h2>Type 3 RTA (mixed)</h2>
+      <div class="f"><ul>
+        <li><span class="lab">Primary defect:</span> a proximal HCO3 reabsorption defect plus a distal H+ secretion defect together. The classic cause is autosomal recessive carbonic anhydrase II deficiency (CA II is needed in both segments).</li>
+        <li>Rarely used as its own category now. CA II deficiency also impairs osteoclasts, causing osteopetrosis and cerebral calcification.</li>
+      </ul></div>
+    </div>
+    <div class="step t4" style="margin:0"><h2>Type 4 RTA (hyperkalaemic)</h2>
+      <div class="f"><ul>
+        <li><span class="lab">Primary defect:</span> low aldosterone (hyporeninaemic hypoaldosteronism, e.g. diabetic kidney disease) or tubular resistance to aldosterone (K-sparing diuretics, trimethoprim, obstructive uropathy) in the cortical collecting duct.</li>
+        <li><span class="lab">High K:</span> without aldosterone, principal cells take up less Na+ through ENaC. The lumen loses the negative charge that draws K+ into the urine.</li>
+        <li><span class="lab">Low ammonia:</span> high K inside the cells suppresses proximal NH3 production and transport. With too little NH3 buffer, net acid excretion falls, even though the collecting duct can still lower urine pH below 5.5.</li>
+      </ul></div>
+    </div>
+  </div>
+
+  <div class="step pb"><h2>Summary comparison</h2>
+    <table>
+      <tr><th>Feature</th><th>Type 1 (distal)</th><th>Type 2 (proximal)</th><th>Type 4 (hyperkalaemic)</th></tr>
+      <tr><td>Primary defect</td><td>Impaired distal H+ secretion</td><td>Impaired proximal HCO3 reabsorption</td><td>Aldosterone deficiency or resistance</td></tr>
+      <tr><td>Serum K</td><td>Low</td><td>Low (worse with alkali)</td><td>High</td></tr>
+      <tr><td>Urine pH during acidosis</td><td>&gt; 5.5 (always)</td><td>&lt; 5.5 once HCO3 is below threshold</td><td>&lt; 5.5</td></tr>
+      <tr><td>Serum HCO3</td><td>Can be very low (&lt; 10)</td><td>Usually 12–18 (self-limited)</td><td>Usually 17–22 (mild)</td></tr>
+      <tr><td>Urine anion gap</td><td>Positive</td><td>Variable (often negative at steady state)</td><td>Positive</td></tr>
+      <tr><td>Other clues</td><td>Stones, nephrocalcinosis, low urine citrate</td><td>Fanconi: glucosuria with normal glucose, low PO4, low urate</td><td>CKD (often eGFR 20–60), diabetes, culprit drugs</td></tr>
+      <tr><td>Key complication</td><td>Kidney stones, nephrocalcinosis, bone disease</td><td>Bone disease (osteomalacia), Fanconi syndrome</td><td>Severe hyperkalaemia</td></tr>
+      <tr><td>Alkali needed</td><td>Modest: 1–2 mmol/kg/day</td><td>Large: 10–15 mmol/kg/day, with K</td><td>Often not needed if K is controlled</td></tr>
+    </table>
+  </div>
+
+  <div class="two">
+    <div class="box"><h3>Bedside approach to a normal gap acidosis</h3>
+      <ul>
+        <li><b>1. Exclude the obvious:</b> diarrhoea, ileostomy, fistula, large saline load, DKA recovery, acetazolamide or topiramate, ureteric diversion.</li>
+        <li><b>2. Urine anion gap</b> (spot urine): <code>UNa + UK − UCl</code>. Negative = kidneys making NH4+ normally → GI loss or saline. Positive = too little NH4+ → RTA (or CKD).</li>
+        <li><b>3. Urine osmolal gap</b> if UAG is unreliable (urine Na &lt; 20, ketones, other anions): <code>Uosm − (2 × (UNa + UK) + Uurea + Uglucose)</code>. Urine NH4+ ≈ gap ÷ 2. Gap &lt; 40 = low NH4+ (renal); &gt; 100 = appropriate.</li>
+        <li><b>4. Serum K:</b> low → type 1, type 2 or GI loss. High → type 4 (or hyperkalaemic distal RTA).</li>
+        <li><b>5. Fresh urine pH</b> (pH meter if possible): &gt; 5.5 with low NH4+ → type 1. &lt; 5.5 → type 2 or type 4.</li>
+        <li><b>6. Proximal clues:</b> glucose in urine with normal blood glucose, low phosphate, low urate.</li>
+      </ul>
+      <div class="warn">Pitfall: in diarrhoea the kidney makes so much NH3 that urine pH can be &gt; 5.5. Do not call it distal RTA if the UAG is negative or the urine osmolal gap is high.</div>
+    </div>
+    <div class="box"><h3>Common causes in adults</h3>
+      <ul>
+        <li><b>Type 1:</b> Sjögren, lupus, RA, primary biliary cholangitis, hypercalciuria, amphotericin B, lithium, ifosfamide, toluene (glue sniffing), sickle cell disease, transplant rejection.</li>
+        <li><b>Type 2:</b> myeloma (light chains), tenofovir disoproxil, ifosfamide, cisplatin, aminoglycosides, deferasirox, valproate, acetazolamide, topiramate, heavy metals, Wilson disease, amyloidosis.</li>
+        <li><b>Type 4:</b> diabetic kidney disease (hyporeninaemic hypoaldosteronism), ACE inhibitors, ARBs, spironolactone, eplerenone, amiloride, trimethoprim, pentamidine, heparin, NSAIDs, tacrolimus, cyclosporine, obstructive uropathy, adrenal insufficiency, kidney transplant.</li>
+        <li><b>Hyperkalaemic distal RTA (voltage defect):</b> obstruction, sickle cell, lupus, amiloride or trimethoprim. Like type 4 but urine pH &gt; 5.5.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="two" style="margin-top:3mm">
+    <div class="box"><h3>Treatment (by type)</h3>
+      <ul>
+        <li><b>All:</b> treat the cause, stop the culprit drug where possible, and replace K <b>before or with</b> alkali when K is low.</li>
+        <li><b>Type 1:</b> potassium citrate (or sodium bicarbonate) about 1–2 mmol/kg/day in divided doses, aiming for a normal HCO3. Citrate also lowers stone risk.</li>
+        <li><b>Type 2:</b> much larger alkali doses, about 10–15 mmol/kg/day, because extra HCO3 is lost in the urine. Give K with it. A thiazide can reduce the alkali needed. Fanconi: phosphate and vitamin D.</li>
+        <li><b>Type 4:</b> treat high K first (local protocol). Review trimethoprim, NSAIDs, K-sparing diuretics and heparin, and weigh the benefits of ACEi/ARB. Use a low-K diet, a loop or thiazide diuretic if not volume deplete, and a K binder (sodium zirconium cyclosilicate or patiromer). Consider fludrocortisone only in true aldosterone deficiency without hypertension or fluid overload. Correcting K often improves the acidosis. Add sodium bicarbonate if HCO3 stays low (CKD).</li>
+      </ul>
+    </div>
+    <div class="box"><h3>When to involve nephrology</h3>
+      <ul>
+        <li>Type unclear after urine AG, urine pH and K</li>
+        <li>Suspected type 1 or type 2 in an adult (needs a cause: autoimmune screen, SPEP and free light chains, renal ultrasound)</li>
+        <li>Fanconi syndrome, stones or nephrocalcinosis</li>
+        <li>HCO3 &lt; 15 that persists, or high alkali doses needed</li>
+        <li>K ≥ 6 that keeps coming back, or a kidney transplant patient</li>
+      </ul>
+      <h3 style="margin-top:2.4mm">Tests to send</h3>
+      <ul>
+        <li>Urine Na, K, Cl, osmolality, urea, glucose; fresh urine pH</li>
+        <li>Serum K, phosphate, urate, glucose, creatinine</li>
+        <li>Type 1: renal ultrasound (stones/nephrocalcinosis), urine Ca and citrate, ANA, SSA/SSB</li>
+        <li>Type 2: urinalysis for glucose, urine phosphate, SPEP and free light chains</li>
+        <li>Type 4: renin, aldosterone, AM cortisol; bladder scan or ultrasound for obstruction</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="warn" style="margin-top:3mm"><b>Unverified draft.</b> Pathophysiology summarised from the user's notes. Bedside approach, causes and treatment written by Claude from general references (Kraut &amp; Madias; Rodríguez Soriano; Batlle) and not checked. Doses are approximate: confirm with references, Island Health protocols and pharmacy before use.</div>
+</body>
+</html>

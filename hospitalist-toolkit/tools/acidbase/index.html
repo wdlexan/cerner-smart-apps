@@ -71,6 +71,10 @@
     .ref td:first-child { font-weight:600; white-space:normal; width:32%; }
     .sparks { display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:10px; }
     .sparks .sp { border:1px solid var(--line); border-radius:8px; padding:6px 10px; } .sparks .sp b { font-size:13px; }
+    a.pdfbtn { text-decoration:none; border:1px solid var(--accent); color:var(--accent); border-radius:6px; padding:5px 10px; }
+    .rtagrid th:first-child, .rtagrid td:first-child { font-weight:600; white-space:normal; } .rtagrid td { white-space:normal; }
+    .rtagrid th.on, .rtagrid td.on { background:var(--b-bg); color:var(--b-ink); font-weight:600; }
+    .rta h3 { font-size:14px; margin:12px 0 4px; } .rta ul { margin:4px 0 8px 18px; padding:0; } .rta li { margin:3px 0; }
     @media print { .noprint { display:none; } }
   </style>
 </head>
@@ -123,12 +127,16 @@
             <label>Ethanol <input type="number" id="m-ethanol" step="1"> <span class="u">mmol/L</span></label>
             <label>Salicylate <input type="number" id="m-salicylate" step="0.1"> <span class="u">mmol/L</span></label>
             <label>CK <input type="number" id="m-CK" step="1"> <span class="u">U/L</span></label>
+            <label>Phosphate <input type="number" id="m-phos" step="0.01"> <span class="u">mmol/L</span></label>
           </fieldset>
           <fieldset><legend>Urine (spot)</legend>
             <label>Sodium <input type="number" id="m-uNa" step="1"> <span class="u">mmol/L</span></label>
             <label>Potassium <input type="number" id="m-uK" step="1"> <span class="u">mmol/L</span></label>
             <label>Chloride <input type="number" id="m-uCl" step="1"> <span class="u">mmol/L</span></label>
             <label>pH <input type="number" id="m-uPH" step="0.5"> <span class="u"></span></label>
+            <label>Osmolality <input type="number" id="m-uOsm" step="1"> <span class="u">mmol/kg</span></label>
+            <label>Urea <input type="number" id="m-uUrea" step="1"> <span class="u">mmol/L</span></label>
+            <label>Glucose <input type="number" id="m-uGlu" step="0.1"> <span class="u">mmol/L</span></label>
           </fieldset>
         </div>
         <div class="row"><button id="m-clear" hidden>Clear typed values</button><span class="muted" id="m-src"></span></div>
@@ -140,7 +148,7 @@
 
     <details class="card" open>
       <summary><span>Interpretation, step by step</span><span class="muted" id="intsum"></span></summary>
-      <div class="body"><div class="row noprint"><a class="primary" href="infosheet.pdf?v=20261117c" target="_blank" rel="noopener" style="text-decoration:none;border:1px solid var(--accent);color:var(--accent);border-radius:6px;padding:5px 10px">Infosheet (PDF): the steps with ✓/✗ rules, GOLDMARK, red flags</a></div><div class="dis" id="dis"></div><ol class="steps" id="steps"></ol>
+      <div class="body"><div class="row noprint"><a class="pdfbtn" href="infosheet.pdf?v=20261117c" target="_blank" rel="noopener">Infosheet (PDF): the steps with ✓/✗ rules, GOLDMARK, red flags</a> <a class="pdfbtn" href="rta-infosheet.pdf?v=20261126a" target="_blank" rel="noopener">RTA infosheet (PDF)</a></div><div class="dis" id="dis"></div><ol class="steps" id="steps"></ol>
         <div class="src">Winter's formula; Boston compensation rules (acute/chronic respiratory 1 &amp; 3.5–4 per 10 mmHg up, 2 &amp; 4–5 per 10 down; metabolic alkalosis 0.7 × HCO3 + 20); albumin-corrected anion gap (+0.25 per g/L below 40, Figge); delta ratio; osmolar gap in SI units. Unverified draft.</div></div>
     </details>
 
@@ -152,6 +160,14 @@
     <details class="card" open>
       <summary><span>Relevant medications and problems</span><span class="muted" id="medsum"></span></summary>
       <div class="body" id="meds"></div>
+    </details>
+
+    <details class="card" open id="sec-rta">
+      <summary><span>Renal tubular acidosis (RTA)</span><span class="muted" id="rtasum"></span></summary>
+      <div class="body">
+        <div class="row noprint"><a class="pdfbtn" href="rta-infosheet.pdf?v=20261126a" target="_blank" rel="noopener">RTA infosheet (PDF): types 1–4, pathophysiology, comparison table, approach, treatment</a></div>
+        <div id="rta"></div>
+      </div>
     </details>
 
     <details class="card">
@@ -168,16 +184,19 @@
   <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
   <script src="../../pdf-overlay.js?v=20261120p"></script>
   <script src="rules.js?v=20261117b"></script>
-  <script src="chart.js?v=20261117a"></script>
-  <script src="samples.js?v=20261117a"></script>
+  <script src="rta.js?v=20261126a"></script>
+  <script src="chart.js?v=20261126a"></script>
+  <script src="samples.js?v=20261126a"></script>
   <script src="reference.js?v=20261117b"></script>
   <script src="../../notedraft.js?v=20261113a"></script>
-  <script src="app.js?v=20261117c"></script>
+  <script src="app.js?v=20261126a"></script>
   <script src="../../subtabs.js?v=20261121f"></script>
   <script>SubTabs.mount({ store: "acidbase", top: ["#tiles", "Red flags"], tabs: [
       {"key": "interp", "label": "Gas & interpretation", "match": ["Patient and blood gas", "#sec-manual", "Interpretation, step by step"]},
       {"key": "trend", "label": "Trend & medicines", "match": ["Trend (14 days)", "Relevant medications"]},
+      {"key": "rta", "label": "RTA", "match": ["#sec-rta"]},
       {"key": "causes", "label": "Causes & first steps", "match": ["Causes, tests and first steps"]},
-      {"key": "note", "label": "Note draft", "match": ["#sec-note"]}] });</script>
+      {"key": "note", "label": "Note draft", "match": ["#sec-note"]}] });
+    if (/^#rta\b/.test(location.hash) && SubTabs.show) SubTabs.show("rta");</script>
 </body>
 </html>

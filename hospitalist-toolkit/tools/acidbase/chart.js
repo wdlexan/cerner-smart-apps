@@ -44,6 +44,9 @@
     { id: "uK", label: "Urine potassium", loinc: ["2828-2", "2829-0"], re: /potassium|\bk\b/i, unit: "mmol/L" },
     { id: "uCl", label: "Urine chloride", loinc: ["2078-4", "2079-2"], re: /chloride|\bcl\b/i, unit: "mmol/L" },
     { id: "uPH", label: "Urine pH", loinc: ["2756-5", "5803-2", "2748-2"], re: /\bph\b/i, ok: (v) => v >= 4 && v <= 9.5, unit: "" },
+    { id: "uOsm", label: "Urine osmolality", loinc: ["2695-4"], re: /osmol/i, not: /gap|calc/i, ok: (v) => v > 30 && v < 1500, unit: "mmol/kg" },
+    { id: "uUrea", label: "Urine urea", loinc: ["3095-7", "22702-5", "59570-2"], re: /\burea\b|urea nitrogen|\bbun\b|\buun\b/i, not: /creatinine|ratio|24/i, conv: mg(0.357), unit: "mmol/L" },
+    { id: "uGlu", label: "Urine glucose", loinc: ["2350-7", "15076-3"], re: /glucose/i, conv: mg(1 / 18.016), unit: "mmol/L" },
     { id: "uKet", label: "Urine ketones", loinc: ["2514-8", "5797-6"], re: /ketone/i, unit: "" }];
 
   const PROB = {
@@ -65,7 +68,7 @@
 
   function parse(raw, opts) {
     const now = (opts && opts.now) || Date.now();
-    const f = { sex: "", age: null, gasObs: [], gases: [], c: {}, u: {}, meds: [], medNames: [], prob: {} };
+    const f = { sex: "", age: null, gasObs: [], gases: [], c: {}, u: {}, meds: [], medNames: [], prob: {}, probNames: [] };
     CHEM.forEach((d) => (f.c[d.id] = [])); URINE_LABS.forEach((d) => (f.u[d.id] = []));
     const p = raw.patient;
     if (p) { f.sex = String(p.gender || "").toLowerCase(); if (p.birthDate) f.age = Math.floor((now - new Date(p.birthDate).getTime()) / (365.25 * DAY)); }
@@ -80,7 +83,8 @@
       if (OTHER.test(where)) return;
       if (URINE.test(where)) {
         const d = URINE_LABS.find((x) => x.loinc.some((c) => cs.includes(c))) || URINE_LABS.find((x) => x.re.test(name) && !(x.not && x.not.test(name)));
-        if (d && (!d.ok || d.ok(q.value))) f.u[d.id].push({ t, v: q.value, shown: q.value + " " + u, name });
+        const uv = d && d.conv ? d.conv(q.value, u) : q.value;
+        if (d && (!d.ok || d.ok(uv))) f.u[d.id].push({ t, v: uv, shown: q.value + " " + u, name });
         return;
       }
       // blood gas analytes first (a gas LOINC, or a gas-only analyte name, or a gas-looking name)
@@ -122,6 +126,7 @@
     (raw.conditions || []).forEach((c) => {
       if (c.clinicalStatus && /resolved|inactive|remission/i.test(JSON.stringify(c.clinicalStatus))) return;
       const txt = label(c.code) + " " + codes(c.code).join(" ");
+      f.probNames.push(txt.trim());
       Object.keys(PROB).forEach((k) => { if (PROB[k].test(txt)) (f.prob[k] = f.prob[k] || []).push(label(c.code) || codes(c.code)[0]); });
     });
     return f;

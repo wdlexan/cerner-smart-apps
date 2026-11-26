@@ -16,7 +16,9 @@
     bhb: (now, v, h) => lab(now, "53060-9", "Beta-Hydroxybutyrate", v, "mmol/L", h), eth: (now, v, h) => lab(now, "5643-2", "Ethanol Level", v, "mmol/L", h),
     sal: (now, v, h) => lab(now, "4024-6", "Salicylate Level", v, "mmol/L", h),
     una: (now, v, h) => lab(now, "2955-3", "Sodium Urine Random", v, "mmol/L", h), uk: (now, v, h) => lab(now, "2828-2", "Potassium Urine Random", v, "mmol/L", h),
-    ucl: (now, v, h) => lab(now, "2078-4", "Chloride Urine Random", v, "mmol/L", h), uph: (now, v, h) => lab(now, "2756-5", "pH Urine", v, "", h) };
+    ucl: (now, v, h) => lab(now, "2078-4", "Chloride Urine Random", v, "mmol/L", h), uph: (now, v, h) => lab(now, "2756-5", "pH Urine", v, "", h),
+    uosm: (now, v, h) => lab(now, "2695-4", "Osmolality Urine", v, "mmol/kg", h), uurea: (now, v, h) => lab(now, "3095-7", "Urea Urine Random", v, "mmol/L", h),
+    uglu: (now, v, h) => lab(now, "15076-3", "Glucose Urine Random", v, "mmol/L", h), phos: (now, v, h) => lab(now, "2777-1", "Phosphate", v, "mmol/L", h) };
   const req = (now, name, h) => ({ resourceType: "MedicationRequest", status: "active", medicationCodeableConcept: { text: name }, authoredOn: iso(now, h) });
   const cond = (text, code) => ({ resourceType: "Condition", clinicalStatus: { coding: [{ code: "active" }] }, code: { coding: [{ system: "http://hl7.org/fhir/sid/icd-10-cm", code }], text } });
   const pt = (age, sex) => ({ resourceType: "Patient", gender: sex, birthDate: new Date(Date.now() - age * 365.25 * 864e5).toISOString().slice(0, 10) });
@@ -59,6 +61,26 @@
 
     { label: "G: Respiratory alkalosis + high gap (salicylate pattern)", build: (now) => ({
       patient: pt(23, "female"), conditions: [],
-      obs: [].concat(gas(now, 1, "venous", { pH: 7.46, pCO2: 20, HCO3: 14 }), lytes(now, 1, 141, 3.6, 104, 14), [L.alb(now, 41, 1), L.lac(now, 2.4, 1), L.glu(now, 5.5, 1)]), medreqs: [] }) }
+      obs: [].concat(gas(now, 1, "venous", { pH: 7.46, pCO2: 20, HCO3: 14 }), lytes(now, 1, 141, 3.6, 104, 14), [L.alb(now, 41, 1), L.lac(now, 2.4, 1), L.glu(now, 5.5, 1)]), medreqs: [] }) },
+
+    { label: "H: Type 4 RTA: diabetes, CKD, ramipril + spironolactone + TMP-SMX, K 6.1", build: (now) => ({
+      patient: pt(71, "male"), conditions: [cond("Type 2 diabetes mellitus with diabetic chronic kidney disease", "E11.22"), cond("Chronic kidney disease, stage 3b", "N18.32")],
+      obs: [].concat(gas(now, 2, "venous", { pH: 7.31, pCO2: 34, HCO3: 17 }), lytes(now, 2, 136, 6.1, 112, 17),
+        [L.alb(now, 34, 2), L.glu(now, 8.2, 2), L.cr(now, 160, 2), L.urea(now, 12, 2), L.una(now, 45, 1.5), L.uk(now, 18, 1.5), L.ucl(now, 40, 1.5), L.uph(now, 5.2, 1.5)]),
+      medreqs: [req(now, "Ramipril 10 mg PO daily", 900), req(now, "Spironolactone 25 mg PO daily", 400), req(now, "Sulfamethoxazole-trimethoprim DS 1 tab PO BID", 72), req(now, "Heparin 5,000 units subcut q12h", 48)] }) },
+
+    { label: "I: Distal (type 1) RTA: Sjögren, K 2.9, urine pH 6.5", build: (now) => ({
+      patient: pt(48, "female"), conditions: [cond("Sjögren syndrome", "M35.00"), cond("Nephrolithiasis", "N20.0")],
+      obs: [].concat(gas(now, 2, "venous", { pH: 7.3, pCO2: 31, HCO3: 15 }), lytes(now, 2, 139, 2.9, 117, 15),
+        [L.alb(now, 40, 2), L.glu(now, 5.4, 2), L.cr(now, 72, 2), L.phos(now, 1.0, 2),
+          L.una(now, 40, 1.5), L.uk(now, 30, 1.5), L.ucl(now, 50, 1.5), L.uph(now, 6.5, 1.5), L.uosm(now, 320, 1.5), L.uurea(now, 150, 1.5), L.uglu(now, 0, 1.5)]),
+      medreqs: [req(now, "Hydroxychloroquine 200 mg PO BID", 900)] }) },
+
+    { label: "J: Proximal (type 2) RTA / Fanconi on tenofovir: glucosuria, PO4 0.55", build: (now) => ({
+      patient: pt(58, "male"), conditions: [cond("HIV disease", "B20")],
+      obs: [].concat(gas(now, 2, "venous", { pH: 7.31, pCO2: 32, HCO3: 16 }), lytes(now, 2, 138, 3.1, 113, 16),
+        [L.alb(now, 38, 2), L.glu(now, 5.6, 2), L.cr(now, 115, 2), L.phos(now, 0.55, 2),
+          L.una(now, 35, 1.5), L.uk(now, 20, 1.5), L.ucl(now, 60, 1.5), L.uph(now, 5.3, 1.5), L.uglu(now, 8, 1.5)]),
+      medreqs: [req(now, "Emtricitabine-tenofovir disoproxil (Truvada) 1 tab PO daily", 2000), req(now, "Dolutegravir 50 mg PO daily", 2000)] }) }
   ];
 })();

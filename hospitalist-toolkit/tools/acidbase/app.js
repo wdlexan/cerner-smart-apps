@@ -1,19 +1,19 @@
 /* Acid-Base page. Read-only from the chart; typed values stay in this page. UNVERIFIED draft. */
-const R = window.AcidBaseRules, C = window.AcidBaseChart, REF = window.ACIDBASE_REF, ORDER = window.ACIDBASE_ORDER, DAY = C.DAY, HR = C.HR;
+const RTA = window.AcidBaseRTA, R = window.AcidBaseRules, C = window.AcidBaseChart, REF = window.ACIDBASE_REF, ORDER = window.ACIDBASE_ORDER, DAY = C.DAY, HR = C.HR;
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const fmtDT = (t) => new Date(t).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 const ago = (t) => { const h = (Date.now() - t) / HR; return h < 1 ? Math.max(1, Math.round(h * 60)) + " min ago" : h < 48 ? Math.round(h) + " h ago" : Math.round(h / 24) + " d ago"; };
 const rd = (v, d) => (v == null || isNaN(v) ? null : Math.round(v * Math.pow(10, d)) / Math.pow(10, d));
-const DEC = { pH: 2, K: 1, glucose: 1, urea: 1, lactate: 1, bhb: 1, salicylate: 1, HCO3: 1, uPH: 1 };
+const DEC = { pH: 2, phos: 2, uGlu: 1, K: 1, glucose: 1, urea: 1, lactate: 1, bhb: 1, salicylate: 1, HCO3: 1, uPH: 1 };
 const fmt = (k, v) => (v == null ? "" : String(rd(v, DEC[k] != null ? DEC[k] : 0)));
 
 const GASF = ["pH", "pCO2", "HCO3", "pO2"];
-const CHEMF = ["Na", "K", "Cl", "tCO2", "albumin", "glucose", "urea", "creatinine", "lactate", "bhb", "osm", "ethanol", "salicylate", "CK"];
-const URF = ["uNa", "uK", "uCl", "uPH"];
+const CHEMF = ["Na", "K", "Cl", "tCO2", "albumin", "glucose", "urea", "creatinine", "lactate", "bhb", "osm", "ethanol", "salicylate", "CK", "phos"];
+const URF = ["uNa", "uK", "uCl", "uPH", "uOsm", "uUrea", "uGlu"];
 const MF = GASF.concat(CHEMF, URF);
 /* how far from the gas a chemistry value may be (hours) */
-const WIN = { Na: 6, K: 6, Cl: 6, tCO2: 6, glucose: 6, lactate: 3, albumin: 72, urea: 24, creatinine: 24, bhb: 12, osm: 12, ethanol: 12, salicylate: 12, CK: 48 };
+const WIN = { Na: 6, K: 6, Cl: 6, tCO2: 6, glucose: 6, lactate: 3, albumin: 72, urea: 24, creatinine: 24, bhb: 12, osm: 12, ethanol: 12, salicylate: 12, CK: 48, phos: 48 };
 const state = { f: null, gasIdx: -1 };
 
 /* Adult reference ranges shown beside each box (typical Canadian SI ranges; check the Island Health lab's own range).
@@ -29,7 +29,8 @@ const RANGES = {
   creatinine: { lo: 45, hi: 110, t: "45–90 F, 60–110 M" }, lactate: { lo: 0.5, hi: 2.0, t: "0.5–2.0" },
   bhb: { hi: 0.6, t: "< 0.6 (≥ 3 ketoacidosis)" }, osm: { lo: 275, hi: 295, t: "275–295" },
   ethanol: { hi: 2, t: "none (< 2)" }, salicylate: { hi: 2.2, t: "therapeutic ≤ 2.2; toxic > 2.2" }, CK: { hi: 200, t: "< 200 (approx.)" },
-  uNa: { t: "< 20 = kidney holding Na" }, uK: { t: "> 20 with low K = kidney loss" }, uCl: { t: "< 20 = Cl-responsive" }, uPH: { lo: 4.5, hi: 8, t: "4.5–8 (< 5.5 = acidifies)" }
+  uNa: { t: "< 20 = kidney holding Na" }, uK: { t: "> 20 with low K = kidney loss" }, uCl: { t: "< 20 = Cl-responsive" }, uPH: { lo: 4.5, hi: 8, t: "4.5–8 (< 5.5 = acidifies)" },
+  phos: { lo: 0.8, hi: 1.45, t: "0.80–1.45" }, uOsm: { t: "for urine osmolal gap" }, uUrea: { t: "for urine osmolal gap" }, uGlu: { t: "> 1 with normal blood glucose = proximal" }
 };
 const UNITS = {};
 function rangeFor(k, spec) {
@@ -115,7 +116,7 @@ function draw() {
   $("intsum").textContent = out.disorders.filter((x) => !/^No /.test(x)).length ? out.disorders.length + " process" + (out.disorders.length > 1 ? "es" : "") : "";
   $("steps").innerHTML = out.steps.map((s) => `<li><span class="mk ${s.ok === true ? "ok" : s.ok === false ? "no" : "na"}">${s.ok === true ? "✓" : s.ok === false ? "✗" : "?"}</span><b>${esc(s.title)}</b><div style="margin-top:4px">${esc(s.text)}</div>${s.teach ? `<div class="teach">${esc(s.teach)}</div>` : ""}</li>`).join("");
 
-  drawMeds(meds); drawRef(out); NOTE.update();
+  drawMeds(meds); drawRef(out); drawRTA(m, out); NOTE.update();
 }
 
 function drawMeds(meds) {
@@ -142,6 +143,46 @@ function drawRef(out) {
       <h3 style="font-size:13.5px;margin:10px 0 4px">Tests</h3><ul style="margin:4px 0 6px 18px;padding:0">${r.tests.map((x) => "<li>" + esc(x) + "</li>").join("")}</ul>
       <h3 style="font-size:13.5px;margin:10px 0 4px">First steps</h3><ul style="margin:4px 0 6px 18px;padding:0">${r.steps.map((x) => "<li>" + esc(x) + "</li>").join("")}</ul></div></details>`; }).join("") +
     '<div class="src">Unverified summary from general references (Berend NEJM 2014; Kraut &amp; Madias; Emmett 2020; BICAR-ICU 2018). Follow Island Health protocols and the Poison Centre where they differ.</div>';
+}
+
+/* ---- RTA screen ---- */
+const NAGMA = "Normal anion gap (hyperchloraemic) metabolic acidosis";
+const RTA_COLS = [["type1", "Type 1 (distal)"], ["type2", "Type 2 (proximal)"], ["type4", "Type 4 (hyperkalaemic)"], ["gi", "GI loss (not RTA)"]];
+const RTA_ROWS = [
+  ["Serum K", ["Low", "Low (worse with alkali)", "High", "Low or normal"]],
+  ["Urine pH in acidosis", ["> 5.5 always", "< 5.5 once HCO3 below threshold", "< 5.5", "Often < 5.5 (can be > 5.5 from NH3)"]],
+  ["Urine AG / NH4+", ["Positive / low", "Variable", "Positive / low", "Negative / high"]],
+  ["Serum HCO3", ["Can be < 10", "Usually 12–18", "Usually 17–22", "Any"]],
+  ["Clues", ["Stones, nephrocalcinosis, Sjögren", "Fanconi: glucosuria, low PO4, myeloma, tenofovir", "Diabetes, CKD, ACEi/ARB, TMP, spironolactone", "Diarrhoea, stoma, fistula"]],
+  ["Alkali", ["1–2 mmol/kg/day", "10–15 mmol/kg/day + K", "Often not needed; treat K", "Treat losses; K"]]];
+function rtaInput(v) { const o = Object.assign({}, v); if (state.f) { const k = C.near(state.f.u.uKet, Date.now(), 48); if (k) o.uKet = k.v; } return o; }
+function drawRTA(m, out) {
+  const nag = out.disorders.indexOf(NAGMA) > -1;
+  const s = RTA.screen(rtaInput(m.v), state.f ? state.f.medNames : [], state.f ? state.f.probNames : [], nag);
+  state.rta = s;
+  $("rtasum").textContent = nag ? s.label : "only when a normal gap acidosis is found";
+  const li = (a) => a.map((x) => "<li>" + esc(x) + "</li>").join("");
+  const hot = s.best === "hyperKdistal" ? "type4" : s.best;
+  const tbl = `<div class="scroll"><table class="rtagrid"><tr><th></th>${RTA_COLS.map((c) => `<th class="${c[0] === hot ? "on" : ""}">${esc(c[1])}</th>`).join("")}</tr>` +
+    RTA_ROWS.map((r) => `<tr><td>${esc(r[0])}</td>${r[1].map((x, i) => `<td class="${RTA_COLS[i][0] === hot ? "on" : ""}">${esc(x)}</td>`).join("")}</tr>`).join("") + "</table></div>";
+  if (!nag) { $("rta").innerHTML = '<div class="muted">No normal anion gap acidosis in these values, so the RTA screen is off. RTA causes a low HCO3 with a normal anion gap. The table below is for reference.</div>' + tbl; return; }
+  const tiles = '<div class="tiles" style="margin:8px 0">' +
+    tile("Urine anion gap", s.UAG, s.UAG == null ? "needs urine Na, K, Cl" : s.UAG > 0 ? "positive: low NH4+" : "negative: NH4+ made", s.UAG == null ? "" : s.UAG > 0 ? "t2" : "t0") +
+    tile("Urine osmolal gap", s.UOG, s.UOG == null ? "needs urine osm, urea" : "NH4+ ≈ " + s.uNH4 + " mmol/L", s.UOG == null ? "" : s.UOG < 40 ? "t2" : "t0") +
+    tile("Urine pH", m.v.uPH != null ? fmt("uPH", m.v.uPH) : null, m.v.uPH == null ? "fresh sample" : m.v.uPH > 5.5 ? "> 5.5: cannot acidify" : "≤ 5.5: acidifies", m.v.uPH == null ? "" : m.v.uPH > 5.5 ? "t2" : "t1") +
+    tile("Serum K", m.v.K != null ? fmt("K", m.v.K) : null, m.v.K == null ? "" : m.v.K > 5 ? "high → type 4" : m.v.K < 3.5 ? "low → type 1/2 or GI" : "normal", m.v.K == null ? "" : m.v.K > 5 || m.v.K < 3.5 ? "t2" : "t0") + "</div>";
+  const verdict = `<div class="verdict ${s.best === "gi" ? "t0" : s.best === "unclear" ? "t1" : "t2"}"><div class="big">Best fit: ${esc(s.label)}</div>${s.reasons.length ? "<ul style='margin:4px 0 0 18px;padding:0'>" + li(s.reasons) + "</ul>" : '<div class="s">Not enough urine results yet.</div>'}</div>`;
+  const cau = s.cautions.map((c) => `<div class="alert info"><b>Note</b>${esc(c)}</div>`).join("");
+  const dr = s.drugs.length || s.probs.length ? "<h3>Possible causes in this chart</h3><table>" +
+    s.drugs.map((d) => `<tr><td class="wrap">${esc(d.name)}</td><td class="wrap">${esc(d.label)} · ${esc(d.types.map((t) => RTA.LABEL[t]).join(", "))}</td></tr>`).join("") +
+    s.probs.map((p) => `<tr><td class="wrap">${esc(p.name)}</td><td class="wrap">${esc(p.label)} · ${esc(p.types.map((t) => RTA.LABEL[t]).join(", "))}</td></tr>`).join("") + "</table>" : "";
+  const opts = Object.keys(RTA.TREAT).filter((k) => k !== "unclear");
+  const pick = state.rtaPick && opts.indexOf(state.rtaPick) > -1 ? state.rtaPick : (opts.indexOf(s.best) > -1 ? s.best : "type4");
+  const treat = `<h3>Treatment <select id="rtapick">${opts.map((k) => `<option value="${k}"${k === pick ? " selected" : ""}>${esc(RTA.LABEL[k])}${k === s.best ? " (best fit)" : ""}</option>`).join("")}</select></h3><ul>${li(RTA.TREAT[pick])}</ul>`;
+  $("rta").innerHTML = `<div class="rta">${tiles}${verdict}${cau}${s.missing.length ? "<h3>Tests to send</h3><ul>" + li(s.missing) + "</ul>" : ""}${dr}${treat}` +
+    (s.nephro.length ? `<div class="alert action"><b>Nephrology</b>${esc(s.nephro.join(" "))}</div>` : "") + "<h3>How the types compare</h3>" + tbl +
+    '<div class="src">Urine AG = UNa + UK − UCl; urine osmolal gap = Uosm − (2 × (UNa + UK) + Uurea + Uglucose), NH4+ ≈ gap ÷ 2. Unverified draft (Kraut &amp; Madias; Batlle).</div></div>';
+  $("rtapick").onchange = (e) => { state.rtaPick = e.target.value; drawRTA(m, out); };
 }
 
 /* ---- trend: small line charts + table of gases ---- */
@@ -180,6 +221,9 @@ function acidNote(full) {
   if (d.osmGap != null) vals.push(`Osmolar gap ${d.osmGap} (measured ${fmt("osm", v.osm)}, calculated ${d.calcOsm})`);
   ["lactate", "bhb", "glucose", "K", "salicylate"].forEach((k) => { if (v[k] != null) vals.push(({ lactate: "Lactate", bhb: "BHB", glucose: "Glucose", K: "K", salicylate: "Salicylate" })[k] + " " + fmt(k, v[k])); });
   if (d.UAG != null) vals.push("Urine AG " + d.UAG);
+  const S = state.rta && state.rta.relevant ? state.rta : null;
+  if (S && S.UOG != null) vals.push("Urine osmolal gap " + S.UOG + " (NH4+ ~" + S.uNH4 + ")");
+  if (S && v.uPH != null) vals.push("Urine pH " + fmt("uPH", v.uPH));
   const assess = out.disorders.length ? [out.disorders.join("; ") + "."] : [];
   const steps = out.steps.filter((s) => full || s.ok === false).map((s) => s.title.replace(/^\d+[ab]?\.\s*/, "") + ": " + s.text);
   const flags = out.flags.map((x) => x.text);
@@ -188,6 +232,8 @@ function acidNote(full) {
   if (has("hagma")) plan.push("HAGMA workup: lactate, BHB, osmolar gap, salicylate/acetaminophen as indicated; treat cause.");
   if (has("toxalc")) plan.push("Toxic alcohol suspected: fomepizole, nephrology for dialysis, Poison Centre.");
   if (has("nagma")) plan.push("NAGMA: urine anion gap/pH, review saline and GI losses; balanced crystalloid; replace K.");
+  if (S && S.best !== "unclear") plan.push("RTA screen: " + S.label + ". " + (RTA.TREAT[S.best] || []).slice(0, 2).join(" "));
+  else if (S) plan.push("RTA screen: type not yet clear; send " + S.missing.slice(0, 3).join("; ") + ".");
   if (has("metalk")) plan.push("Metabolic alkalosis: urine Cl, replace K/Mg, volume and chloride if responsive; review diuretics.");
   if (has("respacid")) plan.push("Respiratory acidosis: review opioids/sedatives, O2 target 88–92% if retainer, NIV/ICU if worsening.");
   if (has("respalk")) plan.push("Respiratory alkalosis: look for hypoxaemia, sepsis, PE, salicylate.");

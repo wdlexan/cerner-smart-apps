@@ -84,8 +84,8 @@ const S = window.ACIDBASE_SAMPLES, now = Date.now();
 function run(i) {
   const f = C.parse(S[i].build(now)), g = f.gases[f.gases.length - 1], v = {};
   ["pH", "pCO2", "HCO3", "pO2"].forEach((k) => (v[k] = g ? g[k] : null));
-  ["Na", "K", "Cl", "tCO2", "albumin", "glucose", "urea", "creatinine", "lactate", "bhb", "osm", "ethanol", "salicylate"].forEach((k) => { const e = C.nearLab(f.c[k], g ? g.t : now, 72); v[k] = e ? e.v : null; });
-  ["uNa", "uK", "uCl", "uPH"].forEach((k) => { const e = C.near(f.u[k], g ? g.t : now, 48); v[k] = e ? e.v : null; });
+  ["Na", "K", "Cl", "tCO2", "albumin", "glucose", "urea", "creatinine", "lactate", "bhb", "osm", "ethanol", "salicylate", "phos"].forEach((k) => { const e = C.nearLab(f.c[k], g ? g.t : now, 72); v[k] = e ? e.v : null; });
+  ["uNa", "uK", "uCl", "uPH", "uOsm", "uUrea", "uGlu"].forEach((k) => { const e = C.near(f.u[k], g ? g.t : now, 48); v[k] = e ? e.v : null; });
   v.specimen = g ? g.spec : "";
   return { f, g, v, o: R.interpret(v, R.classifyMeds(f.medNames)) };
 }
@@ -103,6 +103,28 @@ const f2 = C.parse({ obs: [
   { resourceType: "Observation", status: "final", code: { text: "Phosphate" }, effectiveDateTime: new Date(now - 36e5).toISOString(), valueQuantity: { value: 1.1, unit: "mmol/L" } }] }, { now });
 near = (n, g, w, t) => { const ok = g != null && Math.abs(g - w) <= t; if (!ok) fail++; console.log((ok ? "ok   " : "FAIL ") + n + ": got " + g + ", want ~" + w); };
 near("glucose mg/dL -> mmol/L", f2.c.glucose[0].v, 9.99, 0.02); near("pCO2 kPa -> mmHg", f2.gases[0].pCO2, 40, 0.1); eq("phosphate not read as pH", f2.gases.length, 1); eq("name-only gas grouped", f2.gases[0].pH, 7.4);
+
+// ---- RTA screen (rta.js) ----
+const T = require("../tools/acidbase/rta.js");
+const rta = (i) => { const y = run(i); return Object.assign(y, { s: T.screen(y.v, y.f.medNames, y.f.probNames, y.o.disorders.some((d) => d.indexOf("Normal anion gap") === 0)) }); };
+x = rta(3); eq("RTA D diarrhoea relevant", x.s.relevant, true); eq("RTA D -> GI", x.s.best, "gi"); eq("RTA D UAG", x.s.UAG, -25);
+x = rta(7); eq("RTA H NAGMA found", x.s.relevant, true); eq("RTA H -> type 4", x.s.best, "type4"); eq("RTA H UAG", x.s.UAG, 23);
+has("RTA H TMP named", x.s.reasons, "Sulfamethoxazole-trimethoprim"); has("RTA H spironolactone", x.s.drugs.map((d) => d.label), "Mineralocorticoid"); has("RTA H heparin", x.s.drugs.map((d) => d.label), "Heparin");
+has("RTA H ACEi", x.s.drugs.map((d) => d.label), "ACE inhibitor"); has("RTA H diabetes", x.s.probs.map((p) => p.label), "Diabetes"); has("RTA H nephro K>=6", x.s.nephro, "K 6.1");
+x = rta(8); eq("RTA I -> type 1", x.s.best, "type1"); eq("RTA I UOG", x.s.UOG, 30); eq("RTA I NH4", x.s.uNH4, 15); has("RTA I Sjogren", x.s.reasons, "Sjögren"); has("RTA I workup", x.s.missing, "SSA/SSB");
+x = rta(9); eq("RTA J -> type 2", x.s.best, "type2"); has("RTA J glucosuria", x.s.fanconi, "Glucose in urine"); has("RTA J low PO4", x.s.fanconi, "phosphate"); has("RTA J tenofovir", x.s.reasons, "Tenofovir"); has("RTA J SPEP", x.s.missing, "SPEP");
+// hand cases
+let s2 = T.screen({ K: 3.0, tCO2: 14, uNa: 30, uK: 25, uCl: 80, uPH: 6.2 }, [], [], true); eq("diarrhoea with urine pH 6.2 still GI", s2.best, "gi"); has("NH3 pitfall caution", s2.cautions, "NOT distal");
+s2 = T.screen({ K: 5.8, tCO2: 18, uNa: 40, uK: 20, uCl: 35, uPH: 6.3 }, ["Amiloride 5 mg"], ["Benign prostatic hyperplasia"], true); eq("high K + urine pH 6.3 -> voltage", s2.best, "hyperKdistal"); has("obstruction test", s2.missing, "Bladder scan");
+s2 = T.screen({ K: 3.2, tCO2: 16, uNa: 12, uK: 30, uCl: 30 }, [], [], true); has("UAG unreliable caution", s2.cautions, "urine Na < 20"); has("asks for UOG", s2.missing, "osmolal gap");
+s2 = T.screen({ K: 4.0, tCO2: 20 }, [], [], false); eq("not relevant without NAGMA", s2.relevant, false); has("asks for urine lytes", s2.missing, "Urine Na, K, Cl");
+s2 = T.screen({ K: 4.6, tCO2: 17, creatinine: 400, uNa: 50, uK: 30, uCl: 60, uPH: 5.2 }, [], [], true); eq("advanced CKD", s2.best, "ckd");
+eq("lisinopril is ACEi", T.screen({}, ["Lisinopril 20 mg"], [], true).drugs[0].label, "ACE inhibitor");
+// chart reading: urine osmolality / urea in mg/dL
+const f3 = C.parse({ obs: [
+  { resourceType: "Observation", status: "final", code: { text: "Urea Nitrogen Urine Random" }, effectiveDateTime: new Date(now - 36e5).toISOString(), valueQuantity: { value: 420, unit: "mg/dL" } },
+  { resourceType: "Observation", status: "final", code: { text: "Osmolality Urine" }, effectiveDateTime: new Date(now - 36e5).toISOString(), valueQuantity: { value: 410, unit: "mOsm/kg" } }] }, { now });
+near("urine urea N mg/dL -> mmol/L", f3.u.uUrea[0].v, 150, 0.5); eq("urine osm read", f3.u.uOsm[0].v, 410); eq("urine osm not urine Na", f3.u.uNa.length, 0);
 
 console.log(fail ? "\n" + fail + " FAILED" : "\nall passed");
 process.exit(fail ? 1 : 0);
