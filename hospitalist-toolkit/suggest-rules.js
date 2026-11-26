@@ -78,6 +78,8 @@
       words: ["pain", "analges", "neuropathic", "pregabalin", "gabapentin", "duloxetine", "chronic pain", "breakthrough pain", "opioid conversion", "equianalgesic"] },
     { key: "ddi", hint: "Drug interactions: QT prolongation, serotonin syndrome and seizure-threshold risk on the current meds",
       words: ["interaction", "ddi", "qtc?\\b", "torsade", "serotonin", "serotonergic", "seizure threshold", "linezolid", "maoi"] },
+    { key: "supp", hint: "Supplement interactions: vitamins, minerals and herbal products checked against the current meds (bleeding, transplant levels, chelation spacing, biotin lab interference)",
+      words: ["supplements?", "herbal", "natural (health )?products?", "naturopath", "st\\.? john'?s wort", "ginkgo", "turmeric", "red yeast rice", "kava", "ashwagandha", "biotin", "cbd oil", "kratom"] },
     { key: "g6pd", hint: "G6PD: check current meds against CPIC risk, signs of hemolysis",
       words: ["g6pd", "hemolys", "haemolys", "rasburicase", "primaquine", "dapsone"] },
     { key: "risk", hint: "Risk screen: pressure injury, nutrition, sleep, dysphagia and falls from the notes",
@@ -316,6 +318,7 @@
     ["seizure", /levetiracetam|keppra|phenytoin|dilantin|valpro|lacosamide|carbamazepine|lamotrigine|brivaracetam|clobazam|topiramate/i, "On an antiseizure medication", 1],
     ["af", /apixaban|rivaroxaban|edoxaban|dabigatran|warfarin/i, "On an oral anticoagulant", 1],
     ["ddi", /citalopram|escitalopram|methadone|haloperidol|ondansetron|domperidone|azithromycin|clarithromycin|moxifloxacin|levofloxacin|ciprofloxacin|amiodarone|sotalol|linezolid|tramadol|meperidine|bupropion|clozapine|cefepime|imipenem|phenelzine|tranylcypromine|moclobemide|methylene blue/i, "On a QT / serotonergic / seizure-risk drug", 1],
+    ["supp", /st\.? john'?s wort|hypericum|ginkgo|ginseng|turmeric|curcumin|fish oil|omega-3|glucosamine|red yeast rice|licorice|melatonin|biotin|valerian|kava|ashwagandha|echinacea|berberine|cannabidiol|\bcbd\b|probiotic|multivitamin|calcium carbonate|ferrous|magnesium oxide|vitamin [dek]\b|cholecalciferol/i, "On a vitamin, mineral or herbal supplement", 1],
     ["g6pd", /rasburicase|primaquine|dapsone|methylene blue/i, "Drug with G6PD hemolysis risk", 2],
     ["liver", /lactulose|rifaximin|spironolactone.*furosemide|terlipressin/i, "On a liver-disease medication", 1],
     ["chf", /sacubitril|entresto|dapagliflozin|empagliflozin|eplerenone/i, "On heart-failure therapy", 1]
