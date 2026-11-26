@@ -140,6 +140,37 @@
       <div id="clamp"></div></div></details>
     <details class="card" open><summary><span>Intrapleural tPA + DNase (MIST2)</span></summary><div class="body plan" id="lytics"></div></details>
     <details class="card" open><summary><span>Chest tube orders and daily care</span></summary><div class="body plan" id="orders"></div></details>
+    <details class="card inputs" open id="suctioncard"><summary><span>Suction or water seal</span><span class="muted">water seal is the default</span></summary><div class="body plan">
+      <p><b>Default: water seal (gravity drainage)</b> for most chest tubes. Suction is used selectively. Routine suction does not shorten air leak, drain duration or length of stay after lung resection, and may prolong some air leaks.</p>
+      <p class="muted">Terms: every modern drainage unit has a water seal chamber that acts as a one-way valve. "Placing on water seal" just means taking the tube off active suction (usually set at −20 cmH₂O).</p>
+      <h3>Put the tube on suction (or back on suction) if</h3>
+      <ul><li>The lung is not fully expanded, or the pneumothorax is enlarging on CXR while on water seal</li>
+        <li>Subcutaneous emphysema is increasing</li>
+        <li>Clinical deterioration: hypoxemia or hemodynamic compromise</li>
+        <li>Moderate-to-severe restrictive lung disease</li>
+        <li>Large air leak or suspected bronchopleural fistula</li></ul>
+      <h3>By situation</h3>
+      <div class="row"><label class="inl">Situation <select id="suctionsit">
+        <option value="all">Show all</option><option value="resect">After lung resection (lobectomy, VATS)</option><option value="psp">Primary spontaneous pneumothorax</option>
+        <option value="trauma">Traumatic pneumothorax / hemothorax</option><option value="ppv">On positive-pressure ventilation</option></select></label></div>
+      <div data-sit="resect"><h3>After lung resection (lobectomy, VATS)</h3><ul>
+        <li>STS consensus favours early change to water seal. In one RCT (n=254), water seal on POD1 once the lung was fully expanded shortened time to drain removal and lowered prolonged air leak (5.6% vs 0.7%).</li>
+        <li>Meta-analyses: no outcome benefit from suction, though a residual pleural space is more common on water seal.</li>
+        <li>Small air leaks usually seal on water seal; large leaks do not seem to benefit from it.</li>
+        <li>Hybrid option: moderate suction overnight, water seal during the day to allow mobilization.</li>
+        <li>Digital systems have no true water seal mode: with a leak they apply regulated suction even at low settings, so the analog-system data do not transfer directly.</li></ul></div>
+      <div data-sit="psp"><h3>Primary spontaneous pneumothorax</h3><ul>
+        <li>Do not start suction straight away: up to 70% of lungs re-expand by day 3 on drainage alone.</li>
+        <li>Add high-volume, low-pressure suction if the lung does not re-expand or the air leak persists (very low certainty evidence).</li>
+        <li>Do not let prolonged suction delay referral for definitive (surgical) management: that delay is linked to worse outcomes.</li></ul></div>
+      <div data-sit="trauma"><h3>Traumatic pneumothorax / hemothorax</h3><ul>
+        <li>Less settled. A 2026 meta-analysis (5 RCTs, n=404): suction shortened tube duration by about 3 days and improved full lung expansion, but every trial was at high risk of bias.</li>
+        <li>2026 SEAL IT cluster-randomized study (pneumothorax; excluded hemothorax over 300 mL and tubes placed before CT): initial water seal shortened tube duration (41 vs 51 h) with no increase in complications.</li></ul></div>
+      <div data-sit="ppv"><h3>On positive-pressure ventilation</h3><ul>
+        <li>Keeping the tube on suction is reasonable: risk of tension physiology, and positive pressure can enlarge an air leak.</li>
+        <li>Help the leak heal: lower tidal volume, PEEP and inspiratory time, and liberate from the ventilator early.</li></ul></div>
+      <p class="muted">Source: summary supplied by Dr. W. Dong (Nov 2026); reference list [1-9] to be added. Check the trial numbers against the papers.</p>
+    </div></details>
     <details class="card" open><summary><span>Who to call for chest tube help: 8N respiratory nurse</span></summary><div class="body plan" id="nursecard"></div></details>
     <details class="card inputs" open><summary><span>Chest tube in place: status</span></summary><div class="body">
       <div class="row">
@@ -186,13 +217,16 @@
   <script src="chart.js?v=20261123a"></script>
   <script src="samples.js?v=20261123b"></script>
   <script src="app.js?v=20261123c"></script>
+  <script>(function () { const sel = document.getElementById("suctionsit"); if (!sel) return;
+    const set = () => document.querySelectorAll("#suctioncard [data-sit]").forEach((d) => { d.hidden = sel.value !== "all" && d.dataset.sit !== sel.value; });
+    sel.onchange = set; set(); })();</script>
   <script src="../../subtabs.js?v=20261121f"></script>
   <script>SubTabs.mount({ store: "pleural", top: ["Chart alerts", "#tiles"], dotSel: ".alert.urgent, .tile.t3, .plan .urgent", tabs: [
       {"key": "assess", "label": "Assess", "match": ["Patient and situation", "Plan now"]},
       {"key": "fluid", "label": "Fluid analysis", "match": ["Fluid analysis", "What to send"]},
       {"key": "causes", "label": "Causes", "match": ["Likely causes", "All causes"]},
       {"key": "img", "label": "Imaging", "match": ["Imaging reports", "Imaging: what to look for"]},
-      {"key": "tap", "label": "Tap & chest tube", "match": ["Thoracentesis", "Chest tube: which tube", "When to clamp", "Intrapleural tPA", "Chest tube orders"]},
+      {"key": "tap", "label": "Tap & chest tube", "match": ["Thoracentesis", "Chest tube: which tube", "When to clamp", "Intrapleural tPA", "Chest tube orders", "Suction or water seal"]},
       {"key": "tube", "label": "Tube problems & removal", "match": ["Who to call for chest tube help", "Chest tube in place", "Chest tube problems", "When to remove"]},
       {"key": "spec", "label": "Empyema & cancer", "match": ["Pleural infection", "Malignant effusion"]},
       {"key": "dc", "label": "Discharge & handout", "match": ["Discharge and follow-up", "Patient handout"]},

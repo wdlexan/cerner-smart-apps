@@ -27,7 +27,7 @@
     { key: "echo", hint: "Echo compare: prior vs current report side by side with changes flagged",
       words: ["echo", "echocardiogram", "tte", "tee", "ejection fraction", "lvef", "compare echo"] },
     { key: "pleural", hint: "Pleural effusion: Light's criteria, fluid tests, chest tube choice and complications, when to pull the tube",
-      words: ["pleural", "effusion", "thoracent", "chest tube", "chest drain", "pigtail", "empyema", "hemothorax", "pleurx", "pleurodesis", "light.?s criteria"] },
+      words: ["pleural", "effusion", "thoracent", "chest tube", "chest drain", "pigtail", "empyema", "hemothorax", "pleurx", "pleurodesis", "light.?s criteria", "suction", "water seal", "air leak", "pneumothorax", "subcutaneous emphysema"] },
     { key: "ild", hint: "ILD: pattern, acute exacerbation work-up and treatment, drug causes, home oxygen",
       words: ["ild\\b", "interstitial", "pulmonary fibrosis", "ipf\\b", "fibrosis", "honeycomb", "ground glass", "pneumonitis", "nintedanib", "pirfenidone"] },
     { key: "acls", hint: "ACLS: code timer, rhythm algorithms, Hs and Ts, peri-arrest, post-ROSC",
