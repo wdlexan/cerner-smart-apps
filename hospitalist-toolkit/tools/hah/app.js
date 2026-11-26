@@ -198,6 +198,7 @@ function evaluate() {
       else {
         r.answer = /^in/i.test(c.status) ? "Yes" : /^out/i.test(c.status) ? "No" : "Unknown";
         r.note = `postal code ${pc} → ${c.area || pre} (${c.status}${c.site ? ", " + c.site : ""})` + (r.answer === "Unknown" ? " – check drive time" : "");
+        if (state.postalFrom) r.note += ` (from ${state.postalFrom})`;
       }
       return r;
     }
@@ -303,7 +304,12 @@ function diagnosisText() {
 }
 function postalCode() {
   const a = (state.patient.address || []).find((x) => x.use === "home") || (state.patient.address || [])[0] || {};
-  return (a.postalCode || "").toUpperCase();
+  if (a.postalCode) return a.postalCode.toUpperCase();
+  // not on the patient record: look in the notes (including imported / typed notes), newest first, for a BC postal code
+  const PC = /(?:\b(?:postal(?: code)?|british columbia|b\.?c\.?)\s*[:#.]?\s*|^\s*)(V\d[A-Z])\s?(\d[A-Z]\d)\b/im;
+  const notes = (state.notes || []).slice().sort((x, y) => String(y.date || "").localeCompare(String(x.date || "")));
+  for (const n of notes) { const m = PC.exec(n.text || ""); if (m) { state.postalFrom = `${n.type || "note"} ${fmt(n.date)}`; return (m[1] + " " + m[2]).toUpperCase(); } }
+  return "";
 }
 function identifier(words) {
   const hit = (state.patient.identifier || []).find((id) => {

@@ -300,4 +300,9 @@ Doing well on treatment. Sodium 131 mmol/L today. Continue the current plan and 
   const labs = r.items.filter((i) => i.kind === "lab").map((i) => i.label);
   ok("med doses not read as labs (folic acid, KCl)", !labs.length, labs);
   ok("potassium chloride kept as a med", r.items.some((i) => i.kind === "med" && /potassium chloride/i.test(i.label)), r.items.filter((i) => i.kind === "med").map((i) => i.label)); }
+// address block with a unit-dash street number, misspelled city; postal code without a street line; labelled postal code
+{ const d = X.demographics("Darren Harry\n9-554 Goldstream Ave\nVicotoria, British Columbia V9B 5N6\nPhone: (672) 324-2583\nDOB: 09-JUL-1981\nPHN: 9015 689 458\nMRN: 1180546");
+  ok("unit-dash street, city, province, postal", d.street === "9-554 Goldstream Ave" && d.city === "Vicotoria" && d.province === "BC" && d.postal === "V9B 5N6", d);
+  ok("postal from city line with no street", X.demographics("Jane Doe\nVictoria, BC V8R 1A1\nDOB: 01-JAN-1950").postal === "V8R 1A1");
+  ok("labelled postal code", X.demographics("Postal code: v9a 3k4").postal === "V9A 3K4"); }
 console.log(`\n${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);
