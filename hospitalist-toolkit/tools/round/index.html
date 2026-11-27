@@ -194,7 +194,7 @@ function toast(m){let t=document.getElementById('toast');if(!t){t=document.creat
 function firstSentence(t,max=220){t=String(t||'').replace(/^\s*(S|O|A|P|A\/P|A&P)\s*:\s*/i,'').replace(/\s+/g,' ').trim();if(!t)return '';const m=t.match(/^.*?[.!?](\s|$)/);let s=(m?m[0]:t).trim();if(s.length>max)s=s.slice(0,max-1)+'…';return s;}
 function trunc(t,n){t=String(t||'').replace(/\s+/g,' ').trim();return t.length>n?t.slice(0,n-1)+'…':t;}
 
-function template(){return {id:uid(),name:'',room:'',mrn:'',age:'',sex:'',dob:'',phn:'',address:'',admitDate:todayStr(),reason:'',status:'active',
+function template(){return {id:uid(),name:'',room:'',mrn:'',age:'',sex:'',dob:'',phn:'',address:'',phone:'',cell:'',admitDate:todayStr(),reason:'',status:'active',
   admission:{raw:'',oneLiner:'',summary:'',problems:[],detected:null,meds:[],medsRaw:''},labs:[],labsRaw:'',labsAbnOnly:false,
   basics:{code:'',allergies:'',vte:'',diet:'',mobility:'',mobilityNote:'',isolation:'',contacts:'',fp:'',consultants:'',lines:[]},
   notes:[],noteDraft:{date:todayStr(),text:'',course:''},tasks:[],pending:[],abx:[],watch:[],
@@ -507,15 +507,22 @@ function parseDemo(t){t=String(t||'');const o={};const MON={jan:1,feb:2,mar:3,ap
     if(y&&mo&&d&&+mo<=12&&+d<=31)o.dob=`${y}-${pad(mo)}-${pad(d)}`;}
   const ph=t.match(/\b(?:BC\s*)?(?:PHN|Personal Health (?:Number|No\.?|#))\s*[:#-]?\s*(9[\d\s-]{9,13})/i);if(ph){const dg=ph[1].replace(/\D/g,'').slice(0,10);if(/^9\d{9}$/.test(dg))o.phn=dg;}
   const mr=t.match(/\b(?:MRN|Medical Record (?:Number|No\.?|#))\s*[:#-]?\s*([A-Z]{0,2}\d{5,10})\b/i);if(mr)o.mrn=mr[1];
-  const ad=t.match(/\b(?:Home\s+)?Address\s*[:#-]\s*([^\n]{6,140})/i);if(ad)o.address=ad[1].replace(/\s+/g,' ').replace(/\s*(Phone|Tel|Home Phone|Cell)\b.*$/i,'').trim().replace(/[,;]$/,'');
+  const ad=t.match(/\b(?:Home\s+)?Address\s*[:#-]\s*([^\n]{6,140})/i);if(ad){let a1=ad[1].replace(/\s*(Phone|Tel|Home Phone|Cell)\b.*$/i,'').trim().replace(/[,;]$/,'');
+    if(!/\b[A-Z]\d[A-Z]\s?\d[A-Z]\d\b/i.test(a1)){const after=t.slice(ad.index+ad[0].length).split('\n').map(l=>l.trim()).filter(Boolean)[0]||'';
+      if(/\b[A-Z]\d[A-Z]\s?\d[A-Z]\d\b/i.test(after)&&after.length<90&&!/:/.test(after))a1+=', '+after;} // second line: "Langford, British Columbia V9B 0W6"
+    o.address=a1.replace(/\s+/g,' ').replace(/,?\s*British Columbia\b/i,', BC').replace(/,\s*,/g,',');}
   if(!o.address){ // no "Address:" label: a line with a street number and a postal code (not the hospital's own address)
     const pc=t.split('\n').map(l=>l.trim()).find(l=>/\b\d+[A-Za-z]?\s+\S[^\n]{2,90}?\b[A-Z]\d[A-Z]\s?\d[A-Z]\d\b/i.test(l)&&!/hospital way|V8Z\s?6R5|V8R\s?1J8|1952 Bay St|Fax|Tel\b/i.test(l));
     if(pc){const m=pc.match(/(\d+[A-Za-z]?\s+\S[^\n]{2,90}?\b[A-Z]\d[A-Z]\s?\d[A-Z]\d)\b/i);if(m)o.address=m[1].replace(/\s+/g,' ').trim();}}
+  const tel=re=>{const m=t.match(re);return m?m[1].replace(/[^\d]/g,'').replace(/^1(?=\d{10}$)/,'').replace(/^(\d{3})(\d{3})(\d{4})$/,'$1-$2-$3'):'';};
+  const P='(\\(?\\d{3}\\)?[\\s.-]?\\d{3}[\\s.-]?\\d{4})';
+  const hp=tel(new RegExp('\\b(?:Home\\s*Phone|Phone\\s*\\(home\\)|Phone|Tel(?:ephone)?|Home)\\s*(?:#|No\\.?)?\\s*[:#-]\\s*'+P,'i'));if(hp)o.phone=hp;
+  const cp=tel(new RegExp('\\b(?:Cell(?:\\s*Phone)?|Mobile(?:\\s*Phone)?)\\s*(?:#|No\\.?)?\\s*[:#-]\\s*'+P,'i'));if(cp)o.cell=cp;
   return o;}
 function summarizeAdmission(){const p=curP();const raw=p.admission.raw;if(!raw.trim()){toast('Paste the admission note first.');return;}
   const r=parseNote(raw);p.admission.oneLiner=r.oneLiner;p.admission.summary=r.summary;
   if(!p.admission.problems.length)p.admission.problems=r.problems;
-  const dm=parseDemo(raw);['dob','phn','mrn','address'].forEach(k=>{if(!p[k]&&dm[k])p[k]=dm[k];});if(!p.age&&p.dob)p.age=ageFrom(p.dob);
+  const dm=parseDemo(raw);['dob','phn','mrn','address','phone','cell'].forEach(k=>{if(dm[k]&&(!p[k]||(k==='address'&&dm[k].startsWith(p[k])&&dm[k].length>p[k].length)))p[k]=dm[k];});if(!p.age&&p.dob)p.age=ageFrom(p.dob);
   if(!p.age&&r.age)p.age=r.age;if(!p.sex&&r.sex)p.sex=r.sex;if(!p.reason&&r.cc)p.reason=r.cc;
   if(!p.basics.code&&r.code)p.basics.code=r.code;if(!p.basics.allergies&&r.allergies)p.basics.allergies=r.allergies;
   if(r.meds.length)p.admission.meds=r.meds;const nl=mergeLabs(p,r.labs);
@@ -617,7 +624,7 @@ function renderMain(){
      <label class="mut">Admitted ${B('admitDate',p.admitDate,'','date','','data-side="1"')}</label>
      ${hd!=null?`<span class="flag grn">Hospital day ${hd}</span>`:''}</div><div class="phead" style="margin-top:6px">
      <label class="mut">DOB ${B('dob',p.dob,'','date','','data-r="1"')}</label> ${B('phn',p.phn,'PHN (10 digits)','text','','size="13" inputmode="numeric"')}
-     ${B('address',p.address,'Address: street, city, BC postal code','text','grow','style="flex:1;min-width:280px"')}${p.phn&&!/^9\d{9}$/.test(String(p.phn).replace(/\D/g,''))?'<span class="flag amb">PHN should be 10 digits starting with 9</span>':''}${p.status!=='active'?'<span class="flag amb">Discharged</span>':''}
+     ${B('address',p.address,'Address: street, city, BC postal code','text','grow','style="flex:1;min-width:280px"')} ${B('phone',p.phone,'Home phone','text','','size="13" inputmode="tel"')} ${B('cell',p.cell,'Cell','text','','size="13" inputmode="tel"')}${p.phn&&!/^9\d{9}$/.test(String(p.phn).replace(/\D/g,''))?'<span class="flag amb">PHN should be 10 digits starting with 9</span>':''}${p.status!=='active'?'<span class="flag amb">Discharged</span>':''}
    </div>
    <div style="margin-top:6px">${B('reason',p.reason,'Reason for admission / working diagnosis','text','','style="width:100%"')}</div>
    <div class="actions"><button class="pri" onclick="showHandover()">Handover summary</button><button class="pri" onclick="showDischarge()">Discharge summary</button>

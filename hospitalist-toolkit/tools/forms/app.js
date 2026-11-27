@@ -152,7 +152,7 @@ function notebookPt() {
     const sex = /^f/i.test(p.sex || "") ? "female" : /^m/i.test(p.sex || "") ? "male" : "";
     return { id: p.id, fromNotebook: true, age: p.age || "", room: p.room || "",
         fullName: [first, last].filter(Boolean).join(" "), first, last, initial: "", dob: p.dob || "", sex, sexLabel: { male: "Male", female: "Female" }[sex] || "",
-        phn: String(p.phn || "").replace(/\D/g, ""), mrn: p.mrn || "", ...splitAddress(p.address), homePhone: "", workPhone: "", mobile: "", email: "" };
+        phn: String(p.phn || "").replace(/\D/g, ""), mrn: p.mrn || "", ...splitAddress(p.address), homePhone: p.phone || "", workPhone: "", mobile: p.cell || "", email: "" };
 }
 // "1234 Fort St, Victoria, BC V8R 1H4" -> street / city / province / postal
 function splitAddress(a) {
