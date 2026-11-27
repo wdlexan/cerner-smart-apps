@@ -205,7 +205,11 @@ function renderSrc() {
 window.addEventListener("storage", e => { // a different patient opened in the Rounding notebook
     if (e.key !== NB_KEY) return;
     const nb = notebookPt();
-    if (SRC === "note" && (!nb || nb.id !== NB_ID)) useSource(nb ? "note" : defaultSrc(), false); else renderSrc();
+    if (SRC === "note" && (!nb || nb.id !== NB_ID)) useSource(nb ? "note" : defaultSrc(), false);
+    else if (SRC === "note" && nb) { // same patient, details added in the notebook (e.g. address): fill the boxes that are still empty
+        PT = nb; renderBanner(); renderSrc();
+        for (const form of FORMS) if (built[form.id]) prefill(form);
+    } else renderSrc();
 });
 
 // ---------- home screen ----------

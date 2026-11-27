@@ -508,6 +508,9 @@ function parseDemo(t){t=String(t||'');const o={};const MON={jan:1,feb:2,mar:3,ap
   const ph=t.match(/\b(?:BC\s*)?(?:PHN|Personal Health (?:Number|No\.?|#))\s*[:#-]?\s*(9[\d\s-]{9,13})/i);if(ph){const dg=ph[1].replace(/\D/g,'').slice(0,10);if(/^9\d{9}$/.test(dg))o.phn=dg;}
   const mr=t.match(/\b(?:MRN|Medical Record (?:Number|No\.?|#))\s*[:#-]?\s*([A-Z]{0,2}\d{5,10})\b/i);if(mr)o.mrn=mr[1];
   const ad=t.match(/\b(?:Home\s+)?Address\s*[:#-]\s*([^\n]{6,140})/i);if(ad)o.address=ad[1].replace(/\s+/g,' ').replace(/\s*(Phone|Tel|Home Phone|Cell)\b.*$/i,'').trim().replace(/[,;]$/,'');
+  if(!o.address){ // no "Address:" label: a line with a street number and a postal code (not the hospital's own address)
+    const pc=t.split('\n').map(l=>l.trim()).find(l=>/\b\d+[A-Za-z]?\s+\S[^\n]{2,90}?\b[A-Z]\d[A-Z]\s?\d[A-Z]\d\b/i.test(l)&&!/hospital way|V8Z\s?6R5|V8R\s?1J8|1952 Bay St|Fax|Tel\b/i.test(l));
+    if(pc){const m=pc.match(/(\d+[A-Za-z]?\s+\S[^\n]{2,90}?\b[A-Z]\d[A-Z]\s?\d[A-Z]\d)\b/i);if(m)o.address=m[1].replace(/\s+/g,' ').trim();}}
   return o;}
 function summarizeAdmission(){const p=curP();const raw=p.admission.raw;if(!raw.trim()){toast('Paste the admission note first.');return;}
   const r=parseNote(raw);p.admission.oneLiner=r.oneLiner;p.admission.summary=r.summary;
