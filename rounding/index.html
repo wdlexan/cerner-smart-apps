@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rounding Notebook — Hospitalist Toolkit</title>
+<style>
+:root{--bg:#f5f7f8;--card:#fff;--ink:#1d2a33;--mut:#5f6f7a;--line:#d9e1e6;--acc:#0b6e7f;--acc2:#e6f3f5;--red:#b3261e;--redbg:#fdecea;--amb:#8a5a00;--ambbg:#fff4d6;--grn:#1e6b3a;--grnbg:#e6f4ea}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.45 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+header{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:8px 14px;background:var(--acc);color:#fff}
+header .brand{font-weight:700;font-size:16px;margin-right:auto}
+header input{padding:3px 5px;border-radius:4px;border:0}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:6px;padding:5px 10px}
+button:hover{border-color:var(--acc)}
+button.pri{background:var(--acc);color:#fff;border-color:var(--acc)}
+button.sm{padding:2px 7px;font-size:12px}
+button.x{border:0;background:none;color:var(--mut);font-size:16px;padding:0 6px}
+button.x:hover{color:var(--red)}
+header button{background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.4)}
+.wrap{display:flex;min-height:calc(100vh - 48px)}
+aside{width:260px;flex-shrink:0;background:var(--card);border-right:1px solid var(--line);padding:10px;overflow:auto}
+main{flex:1;padding:14px 18px;overflow:auto;min-width:0}
+input,select,textarea{font:inherit;color:var(--ink);border:1px solid var(--line);border-radius:5px;padding:4px 6px;background:#fff}
+textarea{width:100%;resize:vertical}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--acc2);border-color:var(--acc)}
+.addp{display:grid;gap:5px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.pitem{padding:7px 8px;border-radius:6px;cursor:pointer;margin-bottom:3px;border:1px solid transparent}
+.pitem:hover{background:var(--acc2)}
+.pitem.on{background:var(--acc2);border-color:var(--acc)}
+.pitem .nm{font-weight:600}
+.badge{display:inline-block;font-size:11px;padding:0 6px;border-radius:9px;background:#eef1f3;color:var(--mut);margin:2px 3px 0 0}
+.badge.red{background:var(--redbg);color:var(--red)}
+.badge.amb{background:var(--ambbg);color:var(--amb)}
+.badge.grn{background:var(--grnbg);color:var(--grn)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:10px}
+.phead{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.phead input{width:auto}
+.actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.tabs{display:flex;flex-wrap:wrap;gap:3px;border-bottom:2px solid var(--line);margin:6px 0 10px}
+.tab{border:0;border-radius:6px 6px 0 0;background:none;padding:7px 11px;color:var(--mut);margin-bottom:-2px;border-bottom:2px solid transparent}
+.tab.on{color:var(--acc);border-bottom-color:var(--acc);font-weight:600;background:var(--card)}
+details{background:var(--card);border:1px solid var(--line);border-radius:8px;margin-bottom:10px}
+summary{cursor:pointer;padding:8px 12px;font-weight:600;color:var(--acc);list-style:none;user-select:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"▸ ";display:inline-block;transition:transform .15s}
+details[open]>summary::before{transform:rotate(90deg)}
+.db{padding:2px 12px 12px}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:5px 0;border-bottom:1px dashed var(--line)}
+.row:last-child{border-bottom:0}
+.row .grow{flex:1;min-width:160px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px}
+label.f{display:grid;gap:2px;font-size:12px;color:var(--mut)}
+label.f input,label.f select,label.f textarea{font-size:14px}
+.mut{color:var(--mut);font-size:12px}
+.flag{font-size:12px;font-weight:600;padding:1px 7px;border-radius:9px}
+.flag.red{background:var(--redbg);color:var(--red)}
+.flag.amb{background:var(--ambbg);color:var(--amb)}
+.flag.grn{background:var(--grnbg);color:var(--grn)}
+.bar{height:8px;background:#eef1f3;border-radius:5px;overflow:hidden;width:160px}
+.bar>i{display:block;height:100%;background:var(--acc)}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chip{font-size:12px;border-radius:14px;padding:3px 9px;background:var(--acc2);border:1px solid #bfdfe4;color:var(--acc)}
+.done{opacity:.55;text-decoration:line-through}
+.note{border:1px solid var(--line);border-radius:6px;padding:8px;margin:8px 0}
+.hidden{display:none!important}
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;z-index:9;padding:16px}
+.mbox{background:#fff;border-radius:10px;width:min(860px,100%);max-height:92vh;display:flex;flex-direction:column;padding:12px}
+.mhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+#mtext{flex:1;min-height:50vh;font-family:ui-monospace,Consolas,monospace;font-size:13px}
+.mbtns{display:flex;gap:6px;align-items:center;margin-top:8px}
+.warn{font-size:12px;color:var(--amb);margin:6px 0 0}
+#datapanel{background:#fff;border-bottom:1px solid var(--line);padding:10px 14px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+#toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#1d2a33;color:#fff;padding:8px 14px;border-radius:6px;z-index:10}
+@media(max-width:760px){.wrap{flex-direction:column}aside{width:auto;border-right:0;border-bottom:1px solid var(--line);max-height:45vh}}
+@media print{header,aside,.tabs,.actions,#datapanel{display:none}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">Rounding Notebook</div>
+  <span>My week <input type="date" id="wkStart"> to <input type="date" id="wkEnd"></span>
+  <button onclick="handoverAll()">Handover — all patients</button>
+  <button onclick="toggleData()">Settings / backup</button>
+</header>
+<div id="datapanel" class="hidden">
+  <label class="f">Your first name (consult messages)<input id="setFirst" placeholder="e.g. Wayne"></label>
+  <label class="f">Name on summaries<input id="setFull" placeholder="e.g. Dr. W. Dong"></label>
+  <button onclick="exportData()">Export backup (.json)</button>
+  <label class="f">Import backup<input type="file" id="importFile" accept=".json" onchange="importData(this)"></label>
+  <button id="clearBtn" onclick="clearAll()">Clear all patients</button>
+  <span class="mut">Everything is saved only in this browser on this computer. Nothing is sent anywhere. Clear before leaving a shared computer.</span>
+</div>
+<div class="wrap"><aside id="side"></aside><main id="main"></main></div>
+
+<div id="modal" class="hidden"><div class="mbox">
+  <div class="mhead"><b id="mtitle"></b><button class="x" onclick="closeModal()">✕</button></div>
+  <textarea id="mtext"></textarea>
+  <div class="mbtns"><button class="pri" onclick="copyOut(false)">Copy</button><button onclick="copyOut(true)">Copy as AI prompt</button><button onclick="window.print()">Print</button><span id="mmsg" class="mut"></span></div>
+  <p class="warn">You can edit the text above before copying. "Copy as AI prompt" adds rewrite instructions. Paste it only into an AI tool Island Health has approved for patient data, or use made-up patients.</p>
+</div></div>
+
+<script>
+/* ============ storage & helpers ============ */
+const KEY='rounding-notebook-v1';
+let S, modalAI='';
+function blank(){return {settings:{weekStart:'',weekEnd:'',first:'',full:''},patients:[],cur:null,tab:'admission'};}
+function load(){try{S=JSON.parse(localStorage.getItem(KEY))||blank();}catch(e){S=blank();}
+  S.settings=Object.assign(blank().settings,S.settings||{});S.patients=(S.patients||[]).map(ensure);}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){toast('Could not save in this browser — export a backup.');}}
+const uid=()=>Math.random().toString(36).slice(2,9);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function dnum(s){if(!s)return null;const a=String(s).split('-').map(Number);if(!a[0]||!a[1]||!a[2])return null;return Date.UTC(a[0],a[1]-1,a[2])/864e5;}
+function addDays(s,n){const v=dnum(s);if(v==null)return '';return new Date((v+n)*864e5).toISOString().slice(0,10);}
+function diff(a,b){const x=dnum(a),y=dnum(b);return(x==null||y==null)?null:y-x;}
+function fmt(s){const v=dnum(s);if(v==null)return '';return new Date(v*864e5).toLocaleDateString('en-CA',{month:'short',day:'numeric',timeZone:'UTC'});}
+function getP(o,path){return path.split('.').reduce((a,k)=>a==null?a:a[k],o);}
+function setP(o,path,v){const ks=path.split('.');let a=o;ks.slice(0,-1).forEach(k=>{if(a[k]==null||typeof a[k]!=='object')a[k]={};a=a[k];});a[ks[ks.length-1]]=v;}
+function toast(m){let t=document.getElementById('toast');if(!t){t=document.createElement('div');t.id='toast';document.body.appendChild(t);}t.textContent=m;t.classList.remove('hidden');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.add('hidden'),2600);}
+function firstSentence(t,max=220){t=String(t||'').replace(/^\s*(S|O|A|P|A\/P|A&P)\s*:\s*/i,'').replace(/\s+/g,' ').trim();if(!t)return '';const m=t.match(/^.*?[.!?](\s|$)/);let s=(m?m[0]:t).trim();if(s.length>max)s=s.slice(0,max-1)+'…';return s;}
+function trunc(t,n){t=String(t||'').replace(/\s+/g,' ').trim();return t.length>n?t.slice(0,n-1)+'…':t;}
+
+function template(){return {id:uid(),name:'',room:'',mrn:'',age:'',sex:'',admitDate:todayStr(),reason:'',status:'active',
+  admission:{raw:'',oneLiner:'',summary:'',problems:[],detected:null},
+  basics:{code:'',allergies:'',vte:'',diet:'',mobility:'',mobilityNote:'',isolation:'',contacts:'',fp:'',consultants:'',lines:[]},
+  notes:[],noteDraft:{date:todayStr(),text:'',course:''},tasks:[],pending:[],abx:[],watch:[],
+  discharge:{edd:'',dispo:'',barriers:'',diagnosis:'',checklist:{},custom:[],medChanges:[],followup:[],ptWatch:[]}};}
+function ensure(p){const t=template();(function merge(a,b){for(const k in b){if(a[k]===undefined)a[k]=b[k];else if(b[k]&&typeof b[k]==='object'&&!Array.isArray(b[k])&&a[k]&&typeof a[k]==='object')merge(a[k],b[k]);}})(p,t);return p;}
+const curP=()=>S.patients.find(p=>p.id===S.cur);
+
+/* ============ clinical libraries (rules, no AI) ============ */
+const ABX=[['amoxicillin-clavulanate',/amoxicillin[- ]?clavulan\w*|amox[- ]?clav|clavulin/i],['amoxicillin',/\bamoxicillin\b(?![- ]?clav)/i],['ampicillin',/\bampicillin\b/i],
+['piperacillin-tazobactam',/piperacillin|pip[- ]?tazo|tazocin/i],['ceftriaxone',/ceftriaxone/i],['cefazolin',/cefazolin|ancef/i],['cephalexin',/cephalexin|keflex/i],['cefuroxime',/cefuroxime/i],
+['ceftazidime',/ceftazidime/i],['cefepime',/cefepime/i],['cefixime',/cefixime/i],['meropenem',/meropenem/i],['ertapenem',/ertapenem/i],['vancomycin',/vancomycin|\bvanco\b/i],
+['linezolid',/linezolid/i],['daptomycin',/daptomycin/i],['doxycycline',/doxycycline/i],['azithromycin',/azithromycin/i],['clarithromycin',/clarithromycin/i],
+['levofloxacin',/levofloxacin/i],['moxifloxacin',/moxifloxacin/i],['ciprofloxacin',/ciprofloxacin|\bcipro\b/i],['metronidazole',/metronidazole|flagyl/i],['clindamycin',/clindamycin/i],
+['TMP-SMX',/tmp[- \/]?smx|septra|bactrim|sulfamethoxazole|cotrimoxazole/i],['nitrofurantoin',/nitrofurantoin|macrobid/i],['fosfomycin',/fosfomycin/i],['gentamicin',/gentamicin/i],
+['tobramycin',/tobramycin/i],['cloxacillin',/cloxacillin/i],['penicillin G',/penicillin g\b|pen g\b/i],['fluconazole',/fluconazole/i],['rifampin',/rifampin|rifampicin/i]];
+const IVONLY=/ceftriaxone|cefazolin|piperacillin|ceftazidime|cefepime|meropenem|ertapenem|vancomycin|daptomycin|gentamicin|tobramycin|cloxacillin|penicillin g|ampicillin/i;
+
+// Condition-specific rules. watch = clinician watch-for [item, if-then plan]; pt = what the patient watches for at home; fu = follow-up [type, what, when]
+const COND=[
+ {id:'chf',label:'Heart failure',re:/heart failure|\bchf\b|\bhfref\b|\bhfpef\b|decompensat/i,
+  watch:[['Creatinine/K+ with diuresis','If Cr rises >25% or K+ <3.5 or >5.5 → review diuretic dose, replace/hold K+'],['Daily weights and ins/outs','If weight not falling or I/O positive → increase diuretic or switch to IV']],
+  pt:['Weigh yourself every morning after using the toilet. Call your family doctor if your weight goes up more than 1 kg (2 lb) in a day or 2 kg (5 lb) in a week.','More short of breath, needing more pillows to sleep, or new leg swelling: see your doctor soon. Severe breathlessness or chest pain: call 9-1-1.'],
+  fu:[['Family physician','Review volume status, weight and diuretic dose','Within 7 days'],['Lab test','Electrolytes and creatinine','In 1 week'],['Clinic','Heart Function Clinic referral if not already followed','Referral at discharge']]},
+ {id:'pna',label:'Pneumonia',re:/pneumonia|\bcap\b|\bhap\b|aspiration/i,
+  watch:[['Not improving at 48–72 h','If still febrile/worse O2 → repeat CXR or CT for effusion/empyema, review cultures and antibiotic choice'],['Aspiration risk','If coughing with meals → SLP swallow assessment']],
+  pt:['Fever that comes back after it settled, or cough and breathing getting worse instead of better: see your doctor or return to the ER.','Severe shortness of breath, blue lips, or new confusion: call 9-1-1.'],
+  fu:[['Imaging','Repeat chest X-ray to confirm resolution (age over 50, smoker, or not fully cleared)','6–8 weeks']]},
+ {id:'anticoag',label:'Blood thinner',re:/apixaban|eliquis|rivaroxaban|xarelto|edoxaban|dabigatran|pradaxa|warfarin|coumadin|enoxaparin|dalteparin|tinzaparin|fragmin|heparin infusion/i,
+  watch:[['Bleeding on anticoagulation','If Hb drops ≥20 g/L or melena → hold anticoagulant, type & screen, scope/imaging as indicated']],
+  pt:['Black or bloody stools, vomiting blood, or blood in your urine: go to the ER.','A fall or hit to the head while on a blood thinner: go to the ER even if you feel fine.','Sudden severe headache, weakness on one side, or trouble speaking: call 9-1-1.'],
+  fu:[['Family physician','Review anticoagulant: indication, dose for kidney function, duration','Within 2 weeks']]},
+ {id:'uti',label:'UTI / pyelonephritis',re:/\buti\b|urinary tract infection|pyelonephritis|urosepsis/i,
+  watch:[['Persistent fever on antibiotics','If febrile at 72 h → renal ultrasound/CT for obstruction or abscess']],
+  pt:['Fever, pain in your side or back, or vomiting so you cannot keep your antibiotic down: return to the ER.'],
+  fu:[]},
+ {id:'cell',label:'Cellulitis',re:/cellulitis|erysipelas|skin and soft tissue/i,
+  watch:[['Spreading erythema / pain out of proportion','If rapid spread, crepitus or pain out of proportion → urgent surgical review for necrotizing infection']],
+  pt:['Redness spreading past the line drawn on your skin, fever, or quickly increasing pain: see a doctor the same day.'],
+  fu:[['Family physician','Check that the skin infection is settling','In 3–5 days']]},
+ {id:'copd',label:'COPD',re:/\bcopd\b|aecopd|emphysema/i,
+  watch:[['CO2 retention','If drowsy on O2 → VBG/ABG, target SpO2 88–92%, consider BiPAP']],
+  pt:['Using your rescue inhaler more often, more sputum or a change in its colour: start your action plan or see your doctor.','Severe breathlessness, or too breathless to speak: call 9-1-1.'],
+  fu:[['Family physician','Review inhalers and action plan; pulmonary rehab referral','Within 2 weeks']]},
+ {id:'aki',label:'AKI',re:/\baki\b|acute kidney injury|acute renal failure/i,
+  watch:[['Creatinine, K+ and urine output','If K+ >6 or ECG changes → treat hyperkalemia; if anuric → bladder scan, renal US, consider nephrology'],['Nephrotoxic drugs','Hold NSAIDs, ACEi/ARB, metformin, SGLT2i while recovering; renally dose antibiotics']],
+  pt:['Passing much less urine than usual, or unable to keep fluids down: see your doctor. Get the repeat blood test that was arranged.'],
+  fu:[['Lab test','Creatinine and electrolytes','In 1 week'],['Family physician','Decide when to restart held kidney-related medications','Within 1–2 weeks']]},
+ {id:'gib',label:'GI bleed',re:/gi bleed|gastrointestinal bleed|melena|hematemesis|upper gi|lower gi bleed|\bugib\b|\blgib\b/i,
+  watch:[['Rebleeding','If Hb drop ≥20 g/L, melena, or HR >100 / SBP <100 → 2 large-bore IVs, crossmatch, call GI']],
+  pt:['Black or tarry stools, vomiting blood or coffee-ground material, dizziness or fainting: go to the ER.'],
+  fu:[['Lab test','CBC (hemoglobin)','In 1 week'],['Specialist','GI follow-up / repeat scope if advised','As per GI']]},
+ {id:'hip',label:'Hip fracture / ortho surgery',re:/hip fracture|femoral neck|intertrochanteric|hemiarthroplasty|\borif\b|arthroplasty|\bdhs\b|\bimn\b/i,
+  watch:[['Post-op delirium','If new confusion → CAM, look for retention, constipation, pain, hypoxia, drugs'],['Hb drop after surgery','If Hb <80 or symptomatic → transfuse, check for bleeding'],['Urinary retention after catheter removal','If no void in 6 h → bladder scan']],
+  pt:['Wound redness, drainage, opening, or fever: see your doctor.','Calf pain or swelling: see a doctor the same day. Sudden shortness of breath or chest pain: call 9-1-1.'],
+  fu:[['Specialist','Orthopedics follow-up; staple/suture removal','10–14 days'],['Family physician','Osteoporosis treatment and bone density; falls prevention','Within 4–6 weeks']]},
+ {id:'dm',label:'Diabetes / insulin',re:/diabetes|\bt2dm\b|\bt1dm\b|\bdm2\b|insulin|hyperglyc|\bdka\b|\bhhs\b/i,
+  watch:[['Hypoglycemia','If BG <4 → hypoglycemia protocol, reduce basal/hold prandial when not eating'],['Steroid hyperglycemia','If on prednisone/dex → add AM NPH or prandial insulin']],
+  pt:['Low blood sugar (shaky, sweaty, confused): take fast sugar, recheck in 15 minutes. If you have lows more than once, call your doctor.'],
+  fu:[['Family physician','Diabetes medication review and A1c','Within 2–4 weeks']]},
+ {id:'seiz',label:'Seizure',re:/seizure|epilep|status epilepticus/i,
+  watch:[['Recurrent seizure','If seizure >5 min → lorazepam per protocol; check AED levels, Na, glucose, adherence']],
+  pt:['A seizure lasting more than 5 minutes, or back-to-back seizures without waking up in between: call 9-1-1.','Do not drive until your doctor tells you it is safe.'],
+  fu:[['Specialist','Neurology / first seizure clinic','As arranged'],['Other','Driving restriction discussed and documented','At discharge']]},
+ {id:'stroke',label:'Stroke / TIA',re:/stroke|\btia\b|transient ischemic|\bcva\b/i,
+  watch:[['Neuro deterioration','If new deficit → code stroke / urgent CT'],['Dysphagia','NPO until swallow screen passed']],
+  pt:['Sudden face drooping, arm or leg weakness, or trouble speaking: call 9-1-1 right away, even if it goes away.'],
+  fu:[['Clinic','Stroke prevention clinic','As per urgency'],['Family physician','BP, lipids, antiplatelet; driving','Within 2 weeks']]},
+ {id:'na',label:'Hyponatremia',re:/hyponatr|low sodium|\bsiadh\b/i,
+  watch:[['Overcorrection of Na','If Na rises >8 mmol/L in 24 h (high ODS risk) → stop hypotonic losses / give D5W ± DDAVP; check Na q4–6h early']],
+  pt:['Follow the fluid limit you were given. New confusion, unsteadiness, or vomiting: see your doctor.'],
+  fu:[['Lab test','Sodium','In 2–3 days, then weekly until stable']]},
+ {id:'delir',label:'Delirium / dementia',re:/delirium|confus|dementia|\bcam\b positive/i,
+  watch:[['Worsening delirium','If agitation → look for cause first (retention, constipation, pain, drugs, infection); minimize antipsychotics and benzos']],
+  pt:['For family: new or worse confusion, more sleepy than usual, or agitation: see the doctor soon.'],
+  fu:[['Family physician','Cognitive follow-up once recovered','In 4–8 weeks']]},
+ {id:'etoh',label:'Alcohol use',re:/alcohol|\betoh\b|withdrawal|ciwa/i,
+  watch:[['Alcohol withdrawal','CIWA monitoring; if seizure, hallucinations or rising CIWA → escalate'],['Wernicke','Thiamine before glucose; if confusion/ataxia/eye signs → high-dose IV thiamine']],
+  pt:['Shaking, sweating, seeing things that are not there, or a seizure after stopping alcohol: go to the ER.'],
+  fu:[['Clinic','Addiction medicine / RAAM clinic','As arranged']]},
+ {id:'opioid',label:'Opioids',re:/hydromorphone|dilaudid|morphine|oxycodone|fentanyl|methadone|opioid/i,
+  watch:[['Over-sedation / respiratory depression','If POSS 3–4 or RR <10 → hold opioid, naloxone per protocol; avoid with benzodiazepines/gabapentinoids']],
+  pt:['Very sleepy, hard to wake, or slow breathing: call 9-1-1. Do not mix your pain medicine with alcohol or sleeping pills.'],
+  fu:[['Family physician','Opioid taper plan and bowel regimen','Within 1–2 weeks']]},
+ {id:'cdiff',label:'C. difficile',re:/c\.? ?diff|clostridio|difficile/i,
+  watch:[['Severe C. diff','If WBC >15, Cr >133, ileus or distension → treat as severe, abdominal imaging, surgical review if fulminant']],
+  pt:['Diarrhea coming back (3 or more loose stools a day) after it settled: call your doctor.'],
+  fu:[]},
+ {id:'steroid',label:'Steroids',re:/prednisone|dexamethasone|methylpred|hydrocortisone/i,
+  watch:[['Steroid side effects','Glucose, BP, mood/delirium; GI and bone protection if prolonged']],
+  pt:['Do not stop your prednisone suddenly unless your doctor tells you to.'],
+  fu:[['Family physician','Steroid taper plan','As per plan']]},
+ {id:'vte',label:'DVT / PE',re:/\bdvt\b|\bpe\b|pulmonary embol|deep vein thromb/i,
+  watch:[['Clinical deterioration with PE','If hypotension, rising O2 need or RV strain → escalate, consider thrombolysis/ICU']],
+  pt:['Sudden worse shortness of breath, chest pain, or fainting: call 9-1-1.'],
+  fu:[['Family physician','Anticoagulation duration and cancer screening as appropriate','In 3 months']]}
+];
+function detectConds(p){const txt=[p.reason,p.admission.raw,p.admission.summary,p.admission.oneLiner,p.discharge.diagnosis,...p.admission.problems.map(x=>x.text),...p.notes.map(n=>n.text),...p.abx.map(a=>a.drug+' '+a.indication)].join('\n');return COND.filter(c=>c.re.test(txt));}
+
+/* ============ admission note parser (rules, runs in browser) ============ */
+const HEAD={cc:['chief complaint','cc','reason for admission','reason for referral','presenting complaint','reason for consult','reason for consultation'],
+ hpi:['history of present illness','hpi','history of presenting illness','presenting illness','history of the presenting illness'],
+ pmhx:['past medical history','pmhx','pmh','medical history','past history','past medical/surgical history','past medical and surgical history'],
+ meds:['medications','home medications','meds','medications prior to admission','current medications','outpatient medications','home meds','medication list'],
+ allergies:['allergies','allergy','drug allergies'],
+ social:['social history','social hx','sh','social'],func:['functional status','function','baseline function','functional history','baseline'],
+ exam:['physical exam','physical examination','exam','examination','objective','pe','on examination'],
+ inv:['labs','investigations','laboratory','results','diagnostics','imaging','lab results','laboratory data'],
+ ap:['assessment and plan','assessment & plan','impression and plan','impression & plan','impression','assessment','a/p','a&p','plan','assessment/plan'],
+ code:['code status','goals of care','most','goc']};
+const HMAP={};for(const k in HEAD)HEAD[k].forEach(h=>HMAP[h]=k);
+function parseNote(text){
+  const sec={};let curK='pre';sec.pre=[];
+  String(text||'').split(/\r?\n/).forEach(line=>{
+    const L=line.trim();if(!L){return;}
+    const m=L.match(/^([A-Za-z][A-Za-z &\/]{0,45}?)\s*(?::|-{1,2}|–)\s*(.*)$/);
+    const whole=L.replace(/[:\s]+$/,'').toLowerCase();
+    if(HMAP[whole]){curK=HMAP[whole];sec[curK]=sec[curK]||[];return;}
+    if(m&&HMAP[m[1].trim().toLowerCase()]){curK=HMAP[m[1].trim().toLowerCase()];sec[curK]=sec[curK]||[];if(m[2])sec[curK].push(m[2]);return;}
+    (sec[curK]=sec[curK]||[]).push(L);
+  });
+  const j=k=>(sec[k]||[]).join(' ').replace(/\s+/g,' ').trim();
+  const all=String(text||'');
+  const ageM=all.match(/\b(\d{1,3})\s*(?:-|\s)?\s*(?:years?[- ]old|yo\b|y\/o|y\.o\.|yr[- ]old)\s*(male|female|man|woman|gentleman|lady|m\b|f\b)?/i);
+  let age='',sex='';if(ageM){age=ageM[1];const s=(ageM[2]||'').toLowerCase();sex=/^(m|male|man|gentleman)$/.test(s)?'M':/^(f|female|woman|lady)$/.test(s)?'F':'';}
+  let code='';const cm=all.match(/(?:MOST|code status|goals of care|GOC)[^\n]{0,40}?\b(M[123]|C[012])\b/i);if(cm)code=cm[1].toUpperCase();else if(/full code/i.test(all))code='Full code (MOST not documented)';else if(/\bDNR\b|do not resuscitate/i.test(all))code='DNR (confirm MOST level)';
+  const hpi=j('hpi')||j('pre');
+  const oneLiner=trunc((hpi.match(/^.*?[.!?](\s|$).*?[.!?](\s|$)/)||[hpi])[0],350);
+  const pmhxLines=(sec.pmhx||[]).map(x=>x.replace(/^[-•*\d.)\s]+/,'').trim()).filter(Boolean);
+  const apLines=(sec.ap||[]);
+  let problems=[];
+  apLines.forEach(l=>{const mm=l.match(/^\s*(?:#\s*\d*|\d+[.)]|[-•*])\s*(.+)$/);if(mm)problems.push(mm[1].trim());});
+  if(!problems.length&&apLines.length)problems=j('ap').split(/(?<=[.;])\s+/).filter(s=>s.length>3).slice(0,8);
+  problems=problems.slice(0,12).map(t=>{const parts=t.split(/\s*(?:[:–—]|\s-\s)\s*/);return {text:trunc(parts[0],120),status:'Active',plan:trunc(parts.slice(1).join(' — '),300)};});
+  const abx=ABX.filter(a=>a[1].test(all)).map(a=>a[0]);
+  const summary=[
+    j('cc')&&('Reason for admission: '+trunc(j('cc'),200)),
+    hpi&&('HPI: '+trunc(hpi,700)),
+    pmhxLines.length&&('PMHx: '+trunc(pmhxLines.join('; '),500)),
+    j('meds')&&('Home meds: '+trunc(j('meds'),400)),
+    j('allergies')&&('Allergies: '+trunc(j('allergies'),150)),
+    (j('social')||j('func'))&&('Social / function: '+trunc([j('social'),j('func')].filter(Boolean).join(' '),300)),
+    j('inv')&&('Key results: '+trunc(j('inv'),400)),
+    code&&('Code status: '+code),
+    problems.length&&('Impression / plan:\n'+problems.map(p=>'- '+p.text+(p.plan?' — '+p.plan:'')).join('\n'))
+  ].filter(Boolean).join('\n');
+  return {age,sex,code,oneLiner,summary,problems,abx,allergies:trunc(j('allergies'),150),cc:trunc(j('cc'),150),found:Object.keys(sec).filter(k=>k!=='pre'&&sec[k].length)};
+}
+
+/* ============ actions ============ */
+function addPatient(){const p=template();p.room=document.getElementById('np_room').value.trim();p.name=document.getElementById('np_name').value.trim();p.admitDate=document.getElementById('np_admit').value||todayStr();
+  S.patients.push(p);S.cur=p.id;S.tab='admission';save();render();}
+function selectP(id){S.cur=id;save();render();}
+function setTab(t){S.tab=t;save();renderMain();}
+let delArm=null;
+function delPatient(){const p=curP();if(!p)return;if(delArm!==p.id){delArm=p.id;toast('Press Delete again to remove this patient permanently.');setTimeout(()=>delArm=null,4000);return;}
+  S.patients=S.patients.filter(x=>x.id!==p.id);S.cur=S.patients[0]?.id||null;delArm=null;save();render();}
+function toggleDischarged(){const p=curP();p.status=p.status==='active'?'discharged':'active';save();render();}
+const TPL={'admission.problems':()=>({text:'',status:'Active',plan:''}),'basics.lines':()=>({type:'PIV',inserted:todayStr(),plan:''}),
+ tasks:()=>({cat:'Consult',text:'',due:todayStr(),done:false}),pending:()=>({test:'',ordered:todayStr(),expected:'',status:'Pending',result:''}),
+ abx:()=>({drug:'',indication:'',route:'IV',start:todayStr(),days:7,ivpo:'',note:''}),watch:()=>({level:'High',item:'',plan:''}),
+ 'discharge.medChanges':()=>({type:'Started',med:'',reason:''}),'discharge.followup':()=>({type:'Family physician',what:'',when:'',status:'To book'}),
+ 'discharge.ptWatch':()=>({text:''}),'discharge.custom':()=>({text:'',done:false})};
+function addItem(path,preset){const p=curP();const arr=getP(p,path);const it=Object.assign(TPL[path](),preset||{});arr.push(it);save();renderMain();
+  if(!preset||!preset.text&&!preset.item&&!preset.test&&!preset.drug&&!preset.med&&!preset.what){const el=document.querySelector(`[data-l="${path}"][data-i="${arr.length-1}"]:not(select):not([type=date]):not([type=checkbox]):not([type=number])`);if(el)el.focus();}}
+function delItem(path,i){const p=curP();getP(p,path).splice(i,1);save();renderMain();}
+function moveTo(path,i,to){/* reserved */}
+
+function summarizeAdmission(){const p=curP();const raw=p.admission.raw;if(!raw.trim()){toast('Paste the admission note first.');return;}
+  const r=parseNote(raw);p.admission.oneLiner=r.oneLiner;p.admission.summary=r.summary;
+  if(!p.admission.problems.length)p.admission.problems=r.problems;
+  if(!p.age&&r.age)p.age=r.age;if(!p.sex&&r.sex)p.sex=r.sex;if(!p.reason&&r.cc)p.reason=r.cc;
+  if(!p.basics.code&&r.code)p.basics.code=r.code;if(!p.basics.allergies&&r.allergies)p.basics.allergies=r.allergies;
+  p.admission.detected={abx:r.abx,found:r.found};save();render();toast('Summary made — edit anything that is wrong.');}
+function addAbx(name){addItem('abx',{drug:name,route:IVONLY.test(name)?'IV':'PO',start:curP().admitDate||todayStr()});toast(name+' added to the antibiotic tracker.');}
+function addSuggestion(kind,ci,ii){const c=COND.find(x=>x.id===ci);if(!c)return;
+  if(kind==='watch'){const w=c.watch[ii];addItem('watch',{level:'High',item:w[0],plan:w[1]});}
+  if(kind==='pt'){addItem('discharge.ptWatch',{text:c.pt[ii]});}
+  if(kind==='fu'){const f=c.fu[ii];addItem('discharge.followup',{type:f[0],what:f[1],when:f[2]});}
+  toast('Added.');}
+function addNote(){const p=curP();const d=p.noteDraft;if(!d.text.trim()){toast('Write the note first.');return;}
+  p.notes.push({id:uid(),date:d.date||todayStr(),text:d.text,course:d.course});p.noteDraft={date:todayStr(),text:'',course:''};save();renderMain();toast('Note saved.');}
+function carryForward(){const p=curP();const last=[...p.notes].sort((a,b)=>a.date<b.date?1:-1)[0];if(!last){toast('No previous note to carry forward.');return;}
+  p.noteDraft.text=last.text;save();renderMain();toast('Last note copied into today’s draft — edit what changed.');}
+function soapTemplate(){const p=curP();const hd=p.admitDate?diff(p.admitDate,p.noteDraft.date||todayStr())+1:'';
+  const ab=p.abx.map(a=>{const i=abxInfo(a,p.noteDraft.date);return i?`${a.drug} day ${i.day}/${a.days}`:''}).filter(Boolean).join(', ');
+  p.noteDraft.text=(p.noteDraft.text?p.noteDraft.text+'\n\n':'')+`Hospital day ${hd}${ab?' | Abx: '+ab:''}\nS: \nO: \nA/P:\n`+p.admission.problems.filter(x=>x.status!=='Resolved').map(x=>'# '+x.text+': ').join('\n');save();renderMain();}
+function consultMsg(i){const p=curP();const t=p.tasks[i];const first=S.settings.first||'___';
+  const brief=firstSentence(p.admission.oneLiner||p.reason||'',170).replace(/…$/,'');
+  const msg=`Hello Dr. ___, This is ${first}, hospitalist. I have ${p.name||'[name]'}, ${p.age||'[age]'}${p.sex||''}, MRN ${p.mrn||'[MRN]'}${p.room?' in '+p.room:''}. ${brief}${brief&&!/[.!?]$/.test(brief)?'.':''} ${t.text?t.text+(/[.!?]$/.test(t.text)?'':'.'):''} Your help is much appreciated. Thanks, ${first}`.replace(/\s+/g,' ');
+  openModal('Consult message',msg,'');}
+function abxInfo(a,ref){if(!a.start||!a.days)return null;ref=ref||todayStr();const day=diff(a.start,ref)+1;const last=addDays(a.start,Number(a.days)-1);return {day,last,left:Number(a.days)-day,pct:Math.max(0,Math.min(100,day/Number(a.days)*100))};}
+
+/* ============ rendering ============ */
+const opt=(list,v)=>list.map(o=>{const [val,lab]=Array.isArray(o)?o:[o,o];return `<option value="${esc(val)}"${String(val)===String(v)?' selected':''}>${esc(lab)}</option>`;}).join('');
+const B=(path,v,ph='',type='text',cls='',extra='')=>`<input type="${type}" class="${cls}" data-b="${path}" value="${esc(v)}" placeholder="${esc(ph)}" ${extra}>`;
+const L=(path,i,k,v,ph='',type='text',cls='',extra='')=>`<input type="${type}" class="${cls}" data-l="${path}" data-i="${i}" data-k="${k}" value="${esc(v)}" placeholder="${esc(ph)}" ${extra}>`;
+const LS=(path,i,k,list,v)=>`<select data-l="${path}" data-i="${i}" data-k="${k}">${opt(list,v)}</select>`;
+const LT=(path,i,k,v,ph='',rows=2)=>`<textarea data-l="${path}" data-i="${i}" data-k="${k}" rows="${rows}" placeholder="${esc(ph)}">${esc(v)}</textarea>`;
+const X=(path,i)=>`<button class="x" title="Remove" onclick="delItem('${path}',${i})">✕</button>`;
+const sec=(title,body,open=true)=>`<details ${open?'open':''}><summary>${title}</summary><div class="db">${body}</div></details>`;
+
+function counts(p){const t=todayStr(),we=S.settings.weekEnd;
+  const openTasks=p.tasks.filter(x=>!x.done).length;
+  const overdueTasks=p.tasks.filter(x=>!x.done&&x.due&&x.due<t).length;
+  const pend=p.pending.filter(x=>x.status!=='Reviewed').length;
+  const pendAfter=p.pending.filter(x=>x.status==='Pending'&&we&&x.expected&&x.expected>we).length;
+  const toReview=p.pending.filter(x=>x.status==='Resulted – needs review').length;
+  const abxA=p.abx.map(a=>({a,i:abxInfo(a)})).filter(o=>o.i&&o.i.left>=0);
+  const ckDone=DCHK.filter(c=>p.discharge.checklist[c[0]]).length;
+  return {openTasks,overdueTasks,pend,pendAfter,toReview,abxA,ckDone};}
+
+function renderSide(){
+  const act=S.patients.filter(p=>p.status==='active').sort((a,b)=>(a.room||'~').localeCompare(b.room||'~',undefined,{numeric:true}));
+  const dc=S.patients.filter(p=>p.status!=='active');
+  const item=p=>{const c=counts(p);return `<div class="pitem ${p.id===S.cur?'on':''}" onclick="selectP('${p.id}')">
+    <div class="nm">${esc(p.room||'—')} · ${esc(p.name||'Unnamed')}</div>
+    <div>${c.openTasks?`<span class="badge ${c.overdueTasks?'red':''}">${c.openTasks} to-do</span>`:''}${c.toReview?`<span class="badge red">${c.toReview} result to review</span>`:''}${c.pendAfter?`<span class="badge amb">${c.pendAfter} pending after week</span>`:''}${c.abxA.map(o=>`<span class="badge ${o.i.left<=0?'grn':''}">${esc(o.a.drug||'abx')} d${o.i.day}/${o.a.days}</span>`).join('')}${p.discharge.edd?`<span class="badge">EDD ${fmt(p.discharge.edd)}</span>`:''}</div></div>`;};
+  document.getElementById('side').innerHTML=`<div class="addp"><b>Add patient</b>
+    <input id="np_room" placeholder="Room (e.g. 7B-12)"><input id="np_name" placeholder="Name or initials"><label class="mut">Admit date <input id="np_admit" type="date" value="${todayStr()}"></label><button class="pri" onclick="addPatient()">Add patient</button></div>
+    <div class="mut" style="margin-bottom:4px">My patients (${act.length})</div>${act.map(item).join('')||'<div class="mut">No patients yet.</div>'}
+    ${dc.length?`<details style="margin-top:10px"><summary>Discharged (${dc.length})</summary><div class="db">${dc.map(item).join('')}</div></details>`:''}
+    <div style="margin-top:12px"><button class="sm" onclick="loadDemo()">Load made-up demo patient</button></div>`;
+}
+
+function renderMain(){
+  const p=curP();const M=document.getElementById('main');
+  if(!p){M.innerHTML=`<div class="card"><h2 style="margin-top:0">Rounding Notebook</h2><p>Add a patient on the left, paste the admission note, and press <b>Summarize admission</b>. Chart a short note each day; when you are done, press <b>Handover summary</b> or <b>Discharge summary</b> to compile everything.</p><p class="mut">Set your working week in the bar at the top so pending tests and antibiotic stop dates that fall after your week are flagged for handover.</p></div>`;return;}
+  const c=counts(p);const hd=p.admitDate?diff(p.admitDate,todayStr())+1:null;
+  const tabs=[['admission','Admission'],['basics','Basics'],['notes',`Daily notes${p.notes.length?' ('+p.notes.length+')':''}`],['tasks',`To-do${c.openTasks?' ('+c.openTasks+')':''}`],
+    ['pending',`Pending tests${c.pend?' ('+c.pend+')':''}`],['abx',`Antibiotics${c.abxA.length?' ('+c.abxA.length+')':''}`],['watch',`Watch for${p.watch.length?' ('+p.watch.length+')':''}`],['discharge','Discharge']];
+  M.innerHTML=`<div class="card"><div class="phead">
+     ${B('room',p.room,'Room','text','','size="7" data-side="1"')} ${B('name',p.name,'Name','text','','size="18" data-side="1"')}
+     ${B('mrn',p.mrn,'MRN','text','','size="10"')} ${B('age',p.age,'Age','text','','size="3"')}
+     <select data-b="sex">${opt([['','Sex'],'M','F','X'],p.sex)}</select>
+     <label class="mut">Admitted ${B('admitDate',p.admitDate,'','date','','data-side="1"')}</label>
+     ${hd!=null?`<span class="flag grn">Hospital day ${hd}</span>`:''}${p.status!=='active'?'<span class="flag amb">Discharged</span>':''}
+   </div>
+   <div style="margin-top:6px">${B('reason',p.reason,'Reason for admission / working diagnosis','text','','style="width:100%"')}</div>
+   <div class="actions"><button class="pri" onclick="showHandover()">Handover summary</button><button class="pri" onclick="showDischarge()">Discharge summary</button>
+     <button onclick="toggleDischarged()">${p.status==='active'?'Mark discharged':'Move back to my list'}</button><button onclick="delPatient()">Delete</button></div></div>
+   <div class="tabs">${tabs.map(t=>`<button class="tab ${S.tab===t[0]?'on':''}" onclick="setTab('${t[0]}')">${t[1]}</button>`).join('')}</div>
+   <div id="tabbody">${(VIEWS[S.tab]||VIEWS.admission)(p)}</div>`;
+}
+
+const VIEWS={
+admission(p){const d=p.admission.detected;const conds=detectConds(p);
+  return sec('Paste admission note',`<textarea data-b="admission.raw" rows="9" placeholder="Paste the admission H&P / consult note here">${esc(p.admission.raw)}</textarea>
+     <div class="actions"><button class="pri" onclick="summarizeAdmission()">Summarize admission</button><button onclick="aiAdmission()">Copy as AI prompt</button><span class="mut">Summarize runs in this browser only — nothing is sent anywhere.</span></div>`,!p.admission.summary)
+  +sec('Admission summary (edit freely)',`<label class="f">One-liner ${B('admission.oneLiner',p.admission.oneLiner,'e.g. 84M with CHF and CKD3 admitted with RLL pneumonia','text','','style="width:100%"')}</label>
+     <label class="f" style="margin-top:6px">Summary<textarea data-b="admission.summary" rows="10">${esc(p.admission.summary)}</textarea></label>`)
+  +sec('Active problems',p.admission.problems.map((x,i)=>`<div class="row">${LS('admission.problems',i,'status',['Active','Improving','Watching','Resolved'],x.status)}
+      ${L('admission.problems',i,'text',x.text,'Problem','text','grow',x.status==='Resolved'?'style="opacity:.6"':'')}${L('admission.problems',i,'plan',x.plan,'Plan / status','text','grow')}${X('admission.problems',i)}</div>`).join('')
+      +`<button class="sm" onclick="addItem('admission.problems')">+ Problem</button>`)
+  +sec('Found in the note',`${d&&d.abx.length?`<div class="mut">Antibiotics mentioned — add to the countdown:</div><div class="chips" style="margin:4px 0 10px">${d.abx.map(a=>`<button class="chip" onclick="addAbx('${a}')">+ ${esc(a)}</button>`).join('')}</div>`:''}
+      ${conds.length?`<div class="mut">Conditions recognized: ${conds.map(c=>esc(c.label)).join(', ')}. Suggestions are on the Watch for and Discharge tabs.</div>`:'<div class="mut">Nothing recognized yet — press Summarize admission.</div>'}
+      ${d&&d.found.length?`<div class="mut" style="margin-top:6px">Note sections read: ${d.found.join(', ')}</div>`:''}`,!!d);
+},
+basics(p){const b='basics.';
+  return sec('Code status, allergies, safety',`<div class="grid2">
+     <label class="f">Code status (MOST)<select data-b="basics.code">${opt([['','Not documented'],'M1','M2','M3','C0','C1','C2',p.basics.code&&!['M1','M2','M3','C0','C1','C2'].includes(p.basics.code)?p.basics.code:null].filter(Boolean),p.basics.code)}</select></label>
+     <label class="f">Allergies ${B(b+'allergies',p.basics.allergies,'NKDA / list')}</label>
+     <label class="f">VTE prophylaxis<select data-b="basics.vte">${opt([['','Not yet addressed'],'LMWH','UFH','DOAC (therapeutic)','Warfarin','Mechanical only','Contraindicated (bleeding)','Not needed — ambulating'],p.basics.vte)}</select></label>
+     <label class="f">Isolation<select data-b="basics.isolation">${opt([['','None'],'Contact','Droplet','Droplet/contact','Airborne','Contact plus (C. diff)'],p.basics.isolation)}</select></label>
+     <label class="f">Diet / swallow ${B(b+'diet',p.basics.diet,'e.g. Minced, mildly thick; NPO')}</label>
+     <label class="f">Mobility<select data-b="basics.mobility">${opt([['','Not assessed'],'Independent','Walker / cane','1 assist','2 assist','Lift / bed-bound','PT assessing'],p.basics.mobility)}</select></label>
+     <label class="f">Mobility notes ${B(b+'mobilityNote',p.basics.mobilityNote,'e.g. PT: needs 4WW, stairs at home')}</label>
+   </div>`)
+  +sec('Lines, tubes and catheters',p.basics.lines.map((x,i)=>{const d=diff(x.inserted,todayStr());return `<div class="row">${LS('basics.lines',i,'type',['PIV','PICC','Central line','Foley','NG tube','Chest tube','Surgical drain','Other'],x.type)}
+      <label class="mut">Inserted ${L('basics.lines',i,'inserted',x.inserted,'','date','','data-r="1"')}</label>${d!=null?`<span class="flag ${x.type==='Foley'&&d>=3?'amb':'grn'}">Day ${d+1}</span>`:''}
+      ${L('basics.lines',i,'plan',x.plan,'Indication / plan to remove','text','grow')}${X('basics.lines',i)}</div>`}).join('')+`<button class="sm" onclick="addItem('basics.lines')">+ Line / tube</button><div class="mut" style="margin-top:4px">Foley day 3 or later is flagged — review whether it is still needed.</div>`)
+  +sec('People',`<div class="grid2"><label class="f">Family / SDM contacts<textarea data-b="basics.contacts" rows="2" placeholder="Name, relationship, phone">${esc(p.basics.contacts)}</textarea></label>
+     <label class="f">Family physician<textarea data-b="basics.fp" rows="2" placeholder="Dr. name / none (unattached)">${esc(p.basics.fp)}</textarea></label>
+     <label class="f">Consultants following<textarea data-b="basics.consultants" rows="2" placeholder="e.g. Cardiology, Ortho">${esc(p.basics.consultants)}</textarea></label></div>`);
+},
+notes(p){const d=p.noteDraft;const sorted=p.notes.map((n,i)=>({n,i})).sort((a,b)=>a.n.date<b.n.date?1:-1);
+  return sec('Today’s note',`<div class="phead"><label class="mut">Date ${B('noteDraft.date',d.date,'','date')}</label><button class="sm" onclick="soapTemplate()">Insert SOAP + problem list</button><button class="sm" onclick="carryForward()">Copy last note forward</button></div>
+      <textarea data-b="noteDraft.text" rows="9" style="margin-top:6px" placeholder="S / O / A&P …">${esc(d.text)}</textarea>
+      <label class="f" style="margin-top:6px">One line for the hospital course (used in handover and discharge summary)${B('noteDraft.course',d.course,'e.g. Febrile overnight; switched ceftriaxone → pip-tazo; CT shows small effusion','text','','style="width:100%"')}</label>
+      <div class="actions"><button class="pri" onclick="addNote()">Save note</button></div>`)
+  +sec(`Saved notes (${p.notes.length})`,sorted.map(({n,i})=>`<div class="note"><div class="phead">${L('notes',i,'date',n.date,'','date','','data-r="1"')}<b>${p.admitDate?'Hospital day '+(diff(p.admitDate,n.date)+1):''}</b><span style="flex:1"></span>${X('notes',i)}</div>
+      ${LT('notes',i,'text',n.text,'',5)}${L('notes',i,'course',n.course,'Hospital course line','text','','style="width:100%;margin-top:4px"')}</div>`).join('')||'<div class="mut">No saved notes yet.</div>');
+},
+tasks(p){const t=todayStr();const cats=['Consult','Call family','Order test','Review result','Med change','Goals of care','Forms / paperwork','Discharge planning','Other'];
+  const row=({x,i})=>`<div class="row ${x.done?'done':''}"><input type="checkbox" data-l="tasks" data-i="${i}" data-k="done" ${x.done?'checked':''}>${LS('tasks',i,'cat',cats,x.cat)}
+     ${L('tasks',i,'text',x.text,x.cat==='Call family'?'Who / what to discuss':'What needs doing','text','grow')}<label class="mut">Due ${L('tasks',i,'due',x.due,'','date')}</label>
+     ${!x.done&&x.due&&x.due<t?'<span class="flag red">Overdue</span>':''}${!x.done&&x.due===t?'<span class="flag amb">Today</span>':''}
+     ${x.cat==='Consult'?`<button class="sm" onclick="consultMsg(${i})">Consult message</button>`:''}${x.cat==='Call family'&&p.basics.contacts?`<span class="mut">📞 ${esc(trunc(p.basics.contacts,60))}</span>`:''}${X('tasks',i)}</div>`;
+  const all=p.tasks.map((x,i)=>({x,i}));const open=all.filter(o=>!o.x.done).sort((a,b)=>(a.x.due||'9')<(b.x.due||'9')?-1:1);const done=all.filter(o=>o.x.done);
+  return sec('Things to do',`<div class="chips" style="margin-bottom:8px">${cats.map(c=>`<button class="chip" onclick="addItem('tasks',{cat:'${c}'})">+ ${c}</button>`).join('')}</div>${open.map(row).join('')||'<div class="mut">Nothing open.</div>'}`)
+  +sec(`Done (${done.length})`,done.map(row).join('')||'<div class="mut">None yet.</div>',false);
+},
+pending(p){const t=todayStr(),we=S.settings.weekEnd;
+  const st=['Pending','Resulted – needs review','Reviewed','Follow up after discharge'];
+  return sec('Pending tests',`${!we?'<div class="flag amb" style="display:inline-block;margin-bottom:6px">Set "My week" at the top to flag tests due after your week</div>':''}`+p.pending.map((x,i)=>{
+     let f='';if(x.status==='Pending'){if(we&&x.expected&&x.expected>we)f='<span class="flag amb">After your week — hand over</span>';else if(x.expected&&x.expected<t)f='<span class="flag red">Overdue — chase</span>';}
+     if(x.status==='Resulted – needs review')f='<span class="flag red">Review</span>';
+     return `<div class="row ${x.status==='Reviewed'?'done':''}">${L('pending',i,'test',x.test,'Test (e.g. CT chest, blood cultures, biopsy)','text','grow')}
+       <label class="mut">Ordered ${L('pending',i,'ordered',x.ordered,'','date')}</label><label class="mut">Expected ${L('pending',i,'expected',x.expected,'','date')}</label>
+       ${LS('pending',i,'status',st,x.status)}${f}${L('pending',i,'result',x.result,'Result / action','text','grow')}${X('pending',i)}</div>`;}).join('')
+     +`<div class="chips" style="margin-top:8px"><button class="chip" onclick="addItem('pending')">+ Test</button>${['Blood cultures','Urine culture','CT','MRI','Echo','Pathology / biopsy','Send-out lab'].map(s=>`<button class="chip" onclick="addItem('pending',{test:'${s}'})">+ ${s}</button>`).join('')}</div>`);
+},
+abx(p){const we=S.settings.weekEnd,edd=p.discharge.edd;
+  return sec('Antibiotic countdown',p.abx.map((a,i)=>{const inf=abxInfo(a);let f='';
+     if(inf){if(inf.day<1)f='<span class="flag amb">Not started</span>';else if(inf.left<0)f='<span class="flag grn">Course complete</span>';else if(inf.left===0)f='<span class="flag amb">Last day today</span>';
+       if(inf.left>0&&we&&inf.last>we)f+=' <span class="flag amb">Ends after your week</span>';if(inf.left>0&&edd&&inf.last>edd)f+=' <span class="flag amb">Ends after EDD — stop date on Rx</span>';}
+     const ivpoDue=a.route==='IV'&&a.ivpo&&a.ivpo<=todayStr();
+     return `<div class="note"><div class="phead">${L('abx',i,'drug',a.drug,'Antibiotic','text','','list="abxlist" size="20"')}${L('abx',i,'indication',a.indication,'Indication / organism','text','grow')}
+        ${LS('abx',i,'route',['IV','PO','IV → PO switched'],a.route)}${X('abx',i)}</div>
+        <div class="phead" style="margin-top:6px"><label class="mut">Day 1 ${L('abx',i,'start',a.start,'','date')}</label><label class="mut">Total days ${L('abx',i,'days',a.days,'','number','','min="1" style="width:60px"')}</label>
+        ${a.route==='IV'?`<label class="mut">IV → PO review ${L('abx',i,'ivpo',a.ivpo,'','date')}</label>`:''}</div>
+        ${inf?`<div class="phead" style="margin-top:6px"><b>Day ${Math.max(inf.day,0)} of ${a.days}</b><div class="bar"><i style="width:${inf.pct}%"></i></div><span class="mut">Last dose ${fmt(inf.last)} · ${inf.left>0?inf.left+' day'+(inf.left>1?'s':'')+' left':''}</span>${f}${ivpoDue?'<span class="flag red">IV → PO review due</span>':''}</div>`:''}
+        ${L('abx',i,'note',a.note,'Notes (levels, cultures, stewardship advice)','text','','style="width:100%;margin-top:6px"')}</div>`;}).join('')
+     +`<button class="sm" onclick="addItem('abx',{start:'${p.admitDate||todayStr()}'})">+ Antibiotic</button><div class="mut" style="margin-top:6px">Day 1 = first effective dose (include ER or pre-admission doses). Last dose = Day 1 + total days − 1.</div>
+     <datalist id="abxlist">${ABX.map(a=>`<option value="${a[0]}">`).join('')}</datalist>`);
+},
+watch(p){const conds=detectConds(p);
+  return sec('What to watch out for',p.watch.map((x,i)=>`<div class="row">${LS('watch',i,'level',['High','Medium','Low'],x.level)}<span class="flag ${x.level==='High'?'red':x.level==='Medium'?'amb':'grn'}">${x.level}</span>
+      ${L('watch',i,'item',x.item,'Watch for…','text','grow')}${L('watch',i,'plan',x.plan,'If… then…','text','grow')}${X('watch',i)}</div>`).join('')+`<button class="sm" onclick="addItem('watch')">+ Watch item</button>`)
+  +sec('Suggestions for this patient',conds.length?conds.map(c=>`<div style="margin-bottom:8px"><b>${esc(c.label)}</b><div class="chips" style="margin-top:3px">${c.watch.map((w,j)=>`<button class="chip" title="${esc(w[1])}" onclick="addSuggestion('watch','${c.id}',${j})">+ ${esc(w[0])}</button>`).join('')}</div></div>`).join(''):'<div class="mut">No conditions recognized from the admission, problems or notes yet.</div>');
+},
+discharge(p){const conds=detectConds(p);const pend=p.pending.filter(x=>x.status!=='Reviewed');
+  return sec('Discharge plan',`<div class="grid2"><label class="f">Estimated discharge date ${B('discharge.edd',p.discharge.edd,'','date','','data-side="1"')}</label>
+      <label class="f">Going to<select data-b="discharge.dispo">${opt([['','Not decided'],'Home','Home with home care','Assisted living','Long-term care','Rehab / GR','Transitional care','Hospice','Other hospital','Other'],p.discharge.dispo)}</select></label>
+      <label class="f">Barriers to discharge ${B('discharge.barriers',p.discharge.barriers,'e.g. awaiting PT, home care start, family meeting')}</label>
+      <label class="f">Discharge diagnosis ${B('discharge.diagnosis',p.discharge.diagnosis,'Main diagnosis')}</label></div>`)
+  +sec(`Discharge checklist (${counts(p).ckDone}/${DCHK.length})`,DCHK.map(c=>`<label class="row" style="cursor:pointer"><input type="checkbox" data-b="discharge.checklist.${c[0]}" ${p.discharge.checklist[c[0]]?'checked':''}><span class="${p.discharge.checklist[c[0]]?'done':''}">${c[1]}</span></label>`).join('')
+      +p.discharge.custom.map((x,i)=>`<div class="row"><input type="checkbox" data-l="discharge.custom" data-i="${i}" data-k="done" ${x.done?'checked':''}>${L('discharge.custom',i,'text',x.text,'Other discharge item','text','grow')}${X('discharge.custom',i)}</div>`).join('')
+      +`<button class="sm" onclick="addItem('discharge.custom')">+ Item</button>`)
+  +sec('Medication changes',p.discharge.medChanges.map((x,i)=>`<div class="row">${LS('discharge.medChanges',i,'type',['Started','Stopped','Dose changed','Held — restart later'],x.type)}${L('discharge.medChanges',i,'med',x.med,'Medication and dose','text','grow')}${L('discharge.medChanges',i,'reason',x.reason,'Reason','text','grow')}${X('discharge.medChanges',i)}</div>`).join('')+`<button class="sm" onclick="addItem('discharge.medChanges')">+ Medication change</button>`)
+  +sec('Follow-up the patient needs',p.discharge.followup.map((x,i)=>`<div class="row">${LS('discharge.followup',i,'type',['Family physician','Specialist','Clinic','Lab test','Imaging','Home care / community','Other'],x.type)}
+      ${L('discharge.followup',i,'what',x.what,'Who / what','text','grow')}${L('discharge.followup',i,'when',x.when,'When','text','','size="14"')}${LS('discharge.followup',i,'status',['To book','Referral sent','Booked','Patient to book'],x.status)}${X('discharge.followup',i)}</div>`).join('')
+      +`<button class="sm" onclick="addItem('discharge.followup')">+ Follow-up</button> <button class="sm" onclick="addItem('discharge.followup',{type:'Clinic',what:'South Island Discharge Clinic (RJH) referral',when:'Within 1–2 weeks'})">+ South Island Discharge Clinic</button>
+      ${pend.length?`<div class="mut" style="margin-top:8px">Pending results that will be listed for follow-up: ${pend.map(x=>esc(x.test||'test')).join(', ')}</div>`:''}
+      ${conds.some(c=>c.fu.length)?`<div style="margin-top:8px" class="mut">Suggested for this patient:</div><div class="chips">${conds.flatMap(c=>c.fu.map((f,j)=>`<button class="chip" onclick="addSuggestion('fu','${c.id}',${j})">+ ${esc(c.label)}: ${esc(f[1])}</button>`)).join('')}</div>`:''}`)
+  +sec('What the patient should watch for',p.discharge.ptWatch.map((x,i)=>`<div class="row">${LT('discharge.ptWatch',i,'text',x.text,'Plain-language warning sign and what to do',2)}${X('discharge.ptWatch',i)}</div>`).join('')
+      +`<button class="sm" onclick="addItem('discharge.ptWatch')">+ Warning sign</button>
+      ${conds.length?`<div style="margin-top:8px" class="mut">Condition-specific suggestions (click to add):</div>${conds.map(c=>`<div style="margin-top:4px"><b class="mut">${esc(c.label)}</b><div class="chips">${c.pt.map((t,j)=>`<button class="chip" style="text-align:left" onclick="addSuggestion('pt','${c.id}',${j})">+ ${esc(trunc(t,90))}</button>`).join('')}</div></div>`).join('')}`:''}`)
+  +`<div class="actions"><button class="pri" onclick="showDischarge()">Make discharge summary</button></div>`;
+}};
+const DCHK=[['medrec','Medication reconciliation done'],['rx','Prescriptions written (antibiotic stop date on Rx)'],['labreq','Lab / imaging requisitions for after discharge'],
+ ['fu','Follow-up appointments booked or referrals sent'],['pending','Pending results assigned to someone'],['homecare','Home care / community referrals'],
+ ['equip','Equipment and mobility aids arranged'],['family','Family / SDM told about discharge'],['transport','Transport arranged'],['most','MOST / goals of care reviewed'],
+ ['lines','Lines and catheters removed (or plan documented)'],['sidc','South Island Discharge Clinic referral considered'],['fp','Discharge summary sent to family physician']];
+
+/* ============ output text ============ */
+function ptLine(p){const hd=p.admitDate?diff(p.admitDate,todayStr())+1:null;
+  return `${p.room||'—'} | ${p.name||'Unnamed'}${p.age?', '+p.age+(p.sex||''):''}${p.mrn?' | MRN '+p.mrn:''}${p.admitDate?' | Admitted '+p.admitDate+' (day '+hd+')':''}`;}
+function courseLines(p,n){const s=[...p.notes].sort((a,b)=>a.date<b.date?-1:1);return (n?s.slice(-n):s).map(x=>`- ${fmt(x.date)}: ${x.course||firstSentence(x.text)}`);}
+function handoverText(p){const t=todayStr(),we=S.settings.weekEnd,b=p.basics,o=[];
+  o.push('=== '+ptLine(p)+' ===');
+  if(p.reason)o.push('Admitted for: '+p.reason);
+  if(p.admission.oneLiner)o.push('Summary: '+p.admission.oneLiner);
+  o.push(`Code status: ${b.code||'NOT DOCUMENTED'} | Allergies: ${b.allergies||'not recorded'}${b.isolation?' | Isolation: '+b.isolation:''}`);
+  const misc=[b.vte?'VTE: '+b.vte:'VTE: not addressed',b.mobility&&'Mobility: '+b.mobility+(b.mobilityNote?' ('+b.mobilityNote+')':''),b.diet&&'Diet: '+b.diet].filter(Boolean);o.push(misc.join(' | '));
+  if(b.lines.length)o.push('Lines/tubes: '+b.lines.map(l=>`${l.type} day ${diff(l.inserted,t)+1}${l.plan?' ('+l.plan+')':''}`).join('; '));
+  const pr=p.admission.problems.filter(x=>x.status!=='Resolved');if(pr.length){o.push('Problems:');pr.forEach(x=>o.push(`- ${x.text}${x.plan?' — '+x.plan:''}${x.status!=='Active'?' ['+x.status+']':''}`));}
+  const cl=courseLines(p,3);if(cl.length){o.push('Recent course:');o.push(...cl);}
+  const ab=p.abx.map(a=>({a,i:abxInfo(a)})).filter(x=>x.i&&x.i.left>=0);
+  if(ab.length){o.push('Antibiotics:');ab.forEach(({a,i})=>o.push(`- ${a.drug} ${a.route}${a.indication?' for '+a.indication:''}: day ${i.day} of ${a.days}, last dose ${i.last}${we&&i.last>we?'  <-- ends after my week':''}${a.route==='IV'&&a.ivpo?' (IV→PO review '+a.ivpo+')':''}`));}
+  const pe=p.pending.filter(x=>x.status!=='Reviewed');
+  if(pe.length){o.push('Pending:');pe.forEach(x=>o.push(`- ${x.test}${x.expected?' (expected '+x.expected+')':''}${x.status!=='Pending'?' ['+x.status+']':''}${x.status==='Pending'&&we&&x.expected>we?'  <-- after my week':''}${x.status==='Pending'&&x.expected&&x.expected<t?'  <-- overdue':''}${x.result?': '+x.result:''}`));}
+  const td=p.tasks.filter(x=>!x.done);if(td.length){o.push('To do:');td.forEach(x=>o.push(`- [${x.cat}] ${x.text}${x.due?' (due '+x.due+')':''}`));}
+  if(p.watch.length){o.push('Watch for:');[...p.watch].sort((a,b)=>'HML'.indexOf(a.level[0])-'HML'.indexOf(b.level[0])).forEach(x=>o.push(`- [${x.level}] ${x.item}${x.plan?' → '+x.plan:''}`));}
+  const d=p.discharge;const left=DCHK.length-counts(p).ckDone;
+  o.push(`Dispo: ${d.dispo||'not decided'}${d.edd?' | EDD '+d.edd:''}${d.barriers?' | Barriers: '+d.barriers:''} | Discharge checklist ${DCHK.length-left}/${DCHK.length}`);
+  if(b.contacts)o.push('Contacts: '+b.contacts.replace(/\n/g,'; '));
+  if(b.consultants)o.push('Consultants: '+b.consultants.replace(/\n/g,'; '));
+  return o.join('\n');}
+function dischargeText(p){const d=p.discharge,b=p.basics,dc=d.edd||todayStr(),o=[];const H=s=>{o.push('');o.push(s.toUpperCase());};
+  o.push('DISCHARGE SUMMARY');
+  o.push(`Patient: ${p.name||'—'}${p.age?', '+p.age+(p.sex||''):''}${p.mrn?' | MRN '+p.mrn:''}`);
+  o.push(`Admitted: ${p.admitDate||'—'} | Discharged: ${dc}${p.admitDate?' | Length of stay: '+diff(p.admitDate,dc)+' days':''}${S.settings.full?' | Physician: '+S.settings.full:''}`);
+  o.push(`Discharged to: ${d.dispo||'—'}`);
+  H('Reason for admission');o.push(p.reason||'—');
+  H('Discharge diagnosis');o.push(d.diagnosis||p.reason||'—');
+  const other=p.admission.problems.filter(x=>x.text&&x.text!==d.diagnosis);if(d.diagnosis&&other.length){o.push('Other issues this admission: '+other.map(x=>x.text+(x.status==='Resolved'?' (resolved)':'')).join('; '));}
+  H('Presentation');o.push(p.admission.oneLiner||trunc(p.admission.summary,500)||'—');
+  if(p.admission.problems.length){H('Hospital course by problem');p.admission.problems.forEach(x=>o.push(`- ${x.text}${x.plan?': '+x.plan:''}${x.status?' ['+x.status+']':''}`));}
+  const cl=courseLines(p);if(cl.length){H('Course timeline');o.push(...cl);}
+  if(p.abx.length){H('Antibiotics');p.abx.forEach(a=>{const i=abxInfo(a,dc);if(!i){o.push('- '+a.drug);return;}
+     o.push(`- ${a.drug} ${a.route}${a.indication?' for '+a.indication:''}: started ${a.start}, ${a.days}-day course. `+(i.left>0?`CONTINUE at home — last dose ${i.last} (${i.left} more day${i.left>1?'s':''} after discharge).`:`Completed${i.last?' '+i.last:''}.`));});}
+  if(d.medChanges.length){H('Medication changes');d.medChanges.forEach(x=>o.push(`- ${x.type}: ${x.med}${x.reason?' — '+x.reason:''}`));}
+  const pe=p.pending.filter(x=>x.status!=='Reviewed');
+  if(pe.length){H('Results pending at discharge — please follow up');pe.forEach(x=>o.push(`- ${x.test}${x.expected?' (expected '+x.expected+')':''}${x.result?': '+x.result:''}`));}
+  H('Follow-up needed');
+  const fu=d.followup.map(x=>`- ${x.type}: ${x.what}${x.when?' — '+x.when:''}${x.status?' ['+x.status+']':''}`);
+  p.abx.forEach(a=>{const i=abxInfo(a,dc);if(i&&i.left>0)fu.push(`- Complete ${a.drug} — last dose ${i.last}`);});
+  if(pe.length)fu.push('- Review the pending results listed above');
+  o.push(...(fu.length?fu:['- None documented']));
+  if(b.lines.length){H('Lines / devices still in place');b.lines.forEach(l=>o.push(`- ${l.type} (inserted ${l.inserted})${l.plan?': '+l.plan:''}`));}
+  H('What the patient should watch for');o.push(...(d.ptWatch.length?d.ptWatch.map(x=>'- '+x.text):['- None documented']));
+  H('Code status');o.push(b.code||'Not documented');
+  if(b.allergies)o.push('Allergies: '+b.allergies);
+  return o.join('\n');}
+
+/* ============ modal ============ */
+function openModal(title,text,aiPrefix){document.getElementById('mtitle').textContent=title;document.getElementById('mtext').value=text;modalAI=aiPrefix;document.getElementById('mmsg').textContent='';
+  document.querySelector('.mbtns button:nth-child(2)').style.display=aiPrefix?'':'none';document.getElementById('modal').classList.remove('hidden');}
+function closeModal(){document.getElementById('modal').classList.add('hidden');}
+async function copyOut(ai){const t=document.getElementById('mtext').value;const txt=ai?modalAI+'\n\n'+t:t;
+  try{await navigator.clipboard.writeText(txt);}catch(e){const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');}catch(_){}ta.remove();}
+  document.getElementById('mmsg').textContent=ai?'Copied with AI instructions.':'Copied.';}
+const AI_HO='Rewrite the hospitalist handover notes below into a concise, accurate verbal-handover style summary for the next hospitalist. Keep every pending test, to-do, antibiotic day count, code status and if/then contingency. Do not add any fact that is not in the notes. Flag anything that looks inconsistent.';
+const AI_DC='Rewrite the notes below into a concise discharge summary for the family physician (headings: diagnosis, course by problem, medication changes, pending results, follow-up, what to watch for). Keep every pending result, follow-up item, antibiotic stop date and medication change. Keep the patient warning signs condition-specific and plain-language. Do not add any fact that is not in the notes.';
+function showHandover(){const p=curP();openModal('Handover — '+(p.name||p.room||'patient'),handoverText(p),AI_HO);}
+function handoverAll(){const act=S.patients.filter(p=>p.status==='active').sort((a,b)=>(a.room||'~').localeCompare(b.room||'~',undefined,{numeric:true}));
+  if(!act.length){toast('No active patients.');return;}
+  const hdr=`HANDOVER — ${act.length} patients — ${todayStr()}${S.settings.weekEnd?' (my week ends '+S.settings.weekEnd+')':''}`;
+  openModal('Handover — all patients',hdr+'\n\n'+act.map(handoverText).join('\n\n'),AI_HO);}
+function showDischarge(){const p=curP();openModal('Discharge summary — '+(p.name||p.room||'patient'),dischargeText(p),AI_DC);}
+function aiAdmission(){const p=curP();if(!p.admission.raw.trim()){toast('Paste the admission note first.');return;}
+  openModal('Admission note — AI prompt',p.admission.raw,'Summarize this hospital admission note for a hospitalist: one-line summary, PMHx, home meds, allergies, code status, and a numbered problem list with the plan for each. Also list antibiotics with start dates, pending tests, and things to watch for. Do not add facts not in the note.');}
+
+/* ============ settings, backup, demo ============ */
+function toggleData(){document.getElementById('datapanel').classList.toggle('hidden');}
+function exportData(){const blob=new Blob([JSON.stringify(S,null,1)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='rounding-backup-'+todayStr()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);}
+function importData(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!Array.isArray(d.patients))throw 0;S=d;load2();save();render();toast('Backup loaded.');}catch(e){toast('That file is not a Rounding Notebook backup.');}inp.value='';};r.readAsText(f);}
+function load2(){S.settings=Object.assign(blank().settings,S.settings||{});S.patients=S.patients.map(ensure);syncSettings();}
+let clearArm=false;
+function clearAll(){const b=document.getElementById('clearBtn');if(!clearArm){clearArm=true;b.textContent='Click again to erase everything';setTimeout(()=>{clearArm=false;b.textContent='Clear all patients';},4000);return;}
+  const st=S.settings;S=blank();S.settings=st;clearArm=false;b.textContent='Clear all patients';save();render();toast('All patients cleared from this browser.');}
+function syncSettings(){['weekStart','weekEnd'].forEach(k=>document.getElementById(k==='weekStart'?'wkStart':'wkEnd').value=S.settings[k]||'');
+  document.getElementById('setFirst').value=S.settings.first||'';document.getElementById('setFull').value=S.settings.full||'';}
+function loadDemo(){const p=template();p.room='7B-12';p.name='TEST, Demo (made-up)';p.mrn='0000000';p.admitDate=addDays(todayStr(),-4);
+  p.admission.raw=`Reason for admission: Right lower lobe pneumonia with acute on chronic heart failure
+History of present illness: 84 year old male with HFrEF (EF 30%), CKD 3b and atrial fibrillation on apixaban presented with 4 days of productive cough, fever and worsening dyspnea. In ER febrile 38.6, SpO2 86% RA, BNP 4200, CXR RLL consolidation with small effusion. Received ceftriaxone 2 g IV and azithromycin in ER.
+Past medical history:
+- HFrEF EF 30%
+- CKD 3b (baseline Cr 160)
+- Atrial fibrillation
+- Type 2 diabetes on insulin
+Medications: apixaban 2.5 mg BID, furosemide 40 mg daily, bisoprolol 2.5 mg daily, insulin glargine 18 units qHS
+Allergies: penicillin (rash)
+Social history: lives with wife, uses walker, home care once weekly
+Code status: MOST M2
+Assessment and plan:
+1. RLL pneumonia - ceftriaxone + azithromycin, blood and sputum cultures pending
+2. Acute on chronic HFrEF - IV furosemide 40 mg BID, daily weights
+3. AKI on CKD - monitor creatinine with diuresis
+4. Type 2 diabetes - reduce glargine while eating poorly`;
+  S.patients.push(p);S.cur=p.id;S.tab='admission';summarizeAdmission();
+  p.pending.push({test:'Blood cultures',ordered:p.admitDate,expected:addDays(p.admitDate,5),status:'Pending',result:''});
+  p.abx.push({drug:'ceftriaxone',indication:'RLL pneumonia',route:'IV',start:p.admitDate,days:7,ivpo:addDays(p.admitDate,3),note:''});
+  p.tasks.push({cat:'Call family',text:'Update wife on plan and possible discharge',due:todayStr(),done:false});
+  p.notes.push({id:uid(),date:addDays(todayStr(),-1),text:'S: Less SOB. O: afebrile, SpO2 93% 2L. A/P: improving.',course:'Afebrile, weaning O2; diuresing well (−1.2 kg)'});
+  save();render();}
+
+/* ============ binding ============ */
+function onEdit(e,isChange){const t=e.target;if(!t.closest('#main'))return;const p=curP();if(!p)return;
+  const rer=t.type==='checkbox'||t.tagName==='SELECT'||t.type==='date'||t.type==='number'||t.dataset.r==='1';
+  if(isChange!==rer&&!(isChange===false&&!rer))return; // text: handled on input; structured: handled on change
+  let v=t.type==='checkbox'?t.checked:t.value;
+  if(t.dataset.b)setP(p,t.dataset.b,v);
+  else if(t.dataset.l){const arr=getP(p,t.dataset.l);const it=arr&&arr[+t.dataset.i];if(!it)return;it[t.dataset.k]=t.type==='number'?(v===''?'':Number(v)):v;}
+  else return;
+  save();if(rer)render();else if(t.dataset.side)renderSide();}
+document.addEventListener('input',e=>onEdit(e,false));
+document.addEventListener('change',e=>onEdit(e,true));
+['wkStart','wkEnd'].forEach(id=>document.getElementById(id).addEventListener('change',e=>{S.settings[id==='wkStart'?'weekStart':'weekEnd']=e.target.value;save();render();}));
+['setFirst','setFull'].forEach(id=>document.getElementById(id).addEventListener('input',e=>{S.settings[id==='setFirst'?'first':'full']=e.target.value;save();}));
+document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal();});
+function render(){renderSide();renderMain();}
+load();syncSettings();render();
+</script>
+</body>
+</html>
