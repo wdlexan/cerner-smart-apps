@@ -80,7 +80,7 @@ details.mgrp{background:var(--card)}details.mgrp.inpt{background:#fffbe6}
 details.mgrp>summary.mgh{padding:2px 0;color:var(--ink)}
 .mcmp{border:1px solid #f0c9a8;background:#fff6ee;border-radius:6px;padding:6px 10px;margin:6px 0}
 .mcmp h4{margin:6px 0 2px;font-size:13px;color:#8a3b00}.mcmp ul{margin:0 0 4px 18px;padding:0;font-size:13px}
-.mcmp .ok{color:#1e6b3a}.mcmp .kchg{color:#8a3b00;font-weight:600}
+.mcmp .ok{color:#1e6b3a}input.med{border:1px solid transparent;background:transparent;padding:1px 4px;font:inherit;color:inherit;border-radius:4px;margin-right:2px}input.med:hover{border-color:var(--line)}input.med:focus{border-color:var(--acc);background:#fff;outline:none}.mcmp .kchg{color:#8a3b00;font-weight:600}
 .msub{font-size:12px;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:.04em;margin:6px 0 1px}
 table.mt{border-collapse:collapse;width:100%;font-size:13px}
 table.mt td{padding:1px 6px 1px 0;border-bottom:1px dashed var(--line);vertical-align:middle;line-height:1.3}
@@ -383,6 +383,13 @@ function fillDischargeMeds(){const p=curP();const r=compareMeds(p.admission.meds
   r.newIn.forEach(m=>add('Started',mname(m)+' '+mdesc(m),'New in hospital — continue at discharge?'));
   save();renderMain();toast(`Refreshed: ${n} change${n===1?'':'s'} from the med lists${kept?`, ${kept} line${kept===1?'':'s'} you typed kept`:''}.`+(n?' Review each line.':' Home and inpatient lists match.'));}
 let MOPEN={};
+function addMed(g){const p=curP();const m=TPL['admission.meds']();m.group=g;p.admission.meds.push(m);save();renderMain();
+  const el=document.querySelector(`[data-l="admission.meds"][data-i="${p.admission.meds.length-1}"][data-k="name"]`);if(el)el.focus();}
+function tidyMeds(p){let ch=false;const ms=p.admission.meds;
+  const keep=ms.filter(m=>!NOTMED.test(m.name||''));if(keep.length!==ms.length){p.admission.meds=keep;ch=true;}
+  p.admission.meds.forEach(m=>{ // repair lines read before the 1,500 mg fix: dose "1", route "500 mg = 3 tab", freq "oral, TID"
+    if(/^\d{1,3}$/.test(m.dose||'')&&/^\d{3}\s*[a-z]/i.test(m.route||'')){m.dose=m.dose+m.route;const f=String(m.freq||'').split(/\s*,\s*/);m.route=f.length>1?f.shift():'';m.freq=f.join(', ');ch=true;}});
+  if(ch)save();}
 const MEDGROUP=/^(Inpatient|Home|Prescriptions?|Documented|Outpatient|Continued|Discontinued|PRN medications|Scheduled|Continuous)\b[:\s]*/i;
 function parseMeds(text){const out=[];let group='';
   const SPLIT=/\s+(?=(?:[a-z]|[A-Z]{2,}[a-z])[A-Za-z\-]*(?:\s[a-zA-Z][A-Za-z\-]+){0,3}\s*(?:\([^)]*\))?\s*,\s*[<>]?[\d.]+)/;
@@ -392,7 +399,9 @@ function parseMeds(text){const out=[];let group='';
   String(text||'').split(/\r?\n/).forEach(line=>glue(line.split(SPLIT)).forEach(e=>{e=e.replace(/^\s*[-•*\d.)]+\s+/,'').trim();if(!e)return;
     const g=e.match(MEDGROUP);if(g){group=g[1];e=e.slice(g[0].length).trim();}if(!e||NOTMED.test(e))return;
     if(!/\d/.test(e)&&!/,/.test(e)){if(e.length<40&&!/[a-z]{3,}\s+[a-z]{3,}\s+[a-z]{3,}/.test(e))group=e.replace(/:$/,'');else if(e.length<60)out.push({name:e,dose:'',route:'',freq:'',prn:false,group,cls:medClass(e),dc:'Continue'});return;}
-    const parts=e.split(/\s*,\s*/);let name=parts[0],dose=parts[1]||'',route=parts[2]||'',freq=parts.slice(3).join(', ');
+    e=e.replace(/(\d),(\d{3})(?!\d)/g,'$1$2'); // 1,500 mg -> 1500 mg
+    const parts=[];{let d=0,cur='';for(const ch of e){if(ch==='(')d++;if(ch===')')d=Math.max(0,d-1);if(ch===','&&!d){parts.push(cur.trim());cur='';}else cur+=ch;}parts.push(cur.trim());} // commas inside (...) stay in the name
+    let name=parts[0],dose=parts[1]||'',route=parts[2]||'',freq=parts.slice(3).join(', ');
     if(parts.length===1){const m=e.match(/^(.+?)\s+([<>]?[\d.]+\s*(?:mg|mcg|g|units?|IntUnit|mL|mmol|mEq|%|puffs?|tabs?|drops?)\b)\s*(.*)$/i);if(m){name=m[1];dose=m[2];freq=m[3];}}
     out.push({name:name.trim(),dose:dose.trim(),route:route.trim(),freq:freq.trim(),prn:/\bPRN\b/i.test(e),group,cls:medClass(name),dc:'Continue'});}));
   return out;}
@@ -477,7 +486,7 @@ let delArm=null;
 function delPatient(){const p=curP();if(!p)return;if(delArm!==p.id){delArm=p.id;toast('Press Delete again to remove this patient permanently.');setTimeout(()=>delArm=null,4000);return;}
   S.patients=S.patients.filter(x=>x.id!==p.id);S.cur=S.patients[0]?.id||null;delArm=null;save();render();}
 function toggleDischarged(){const p=curP();p.status=p.status==='active'?'discharged':'active';save();render();}
-const TPL={'admission.problems':()=>({text:'',status:'Active',plan:''}),'basics.lines':()=>({type:'PIV',inserted:todayStr(),plan:''}),
+const TPL={'admission.meds':()=>({name:'',dose:'',route:'oral',freq:'',prn:false,group:'',cls:[],dc:'Continue',added:true}),'admission.problems':()=>({text:'',status:'Active',plan:''}),'basics.lines':()=>({type:'PIV',inserted:todayStr(),plan:''}),
  tasks:()=>({cat:'Consult',text:'',due:todayStr(),done:false}),pending:()=>({test:'',ordered:todayStr(),expected:'',status:'Pending',result:''}),
  abx:()=>({drug:'',indication:'',route:'IV',start:todayStr(),days:7,ivpo:'',note:''}),watch:()=>({level:'High',item:'',plan:''}),
  'discharge.medChanges':()=>({type:'Started',med:'',reason:''}),'discharge.followup':()=>({type:'Family physician',what:'',when:'',status:'To book'}),
@@ -595,28 +604,29 @@ admission(p){const d=p.admission.detected;const conds=detectConds(p);
       ${conds.length?`<div class="mut">Conditions recognized: ${conds.map(c=>esc(c.label)).join(', ')}. Suggestions are on the Watch for and Discharge tabs.</div>`:'<div class="mut">Nothing recognized yet — press Summarize admission.</div>'}
       ${d&&d.found.length?`<div class="mut" style="margin-top:6px">Note sections read: ${d.found.join(', ')}</div>`:''}`,!!d);
 },
-meds(p){const ms=p.admission.meds;const groups=[...new Set(ms.map(m=>m.group||''))];
+meds(p){tidyMeds(p);const ms=p.admission.meds;const groups=[...new Set(ms.map(m=>m.group||''))];
   const DCO=[['Continue','Continue'],['Stopped','Stopped'],['Dose changed','Dose changed'],['Held — restart later','Held'],['New this admission','New']];
-  const row=(m,i)=>`<tr class="${m.dc&&m.dc!=='Continue'?'mchg':''}"><td class="mn"><b>${esc(m.name.replace(/\s*\((.*?)\)/,(x,y)=>' ('+y+')'))}</b>${(m.cls||[]).map(c=>` <span class="badge ${/Anticoag|Opioid|Benzo|Insulin|Antipsych/.test(c)?'red':''}">${esc(c)}</span>`).join('')}</td>
-      <td class="md">${esc([m.dose,m.route,m.freq.replace(/,?\s*PRN\b/i,'')].filter(Boolean).join(' · '))}</td>
+  const row=(m,i)=>`<tr class="${m.dc&&m.dc!=='Continue'?'mchg':''}"><td class="mn">${m.added&&!m.nameSet?L('admission.meds',i,'name',m.name,'Medication name','text','med grow','size="26" data-r="1"'):`<b>${esc(m.name.replace(/\s*\((.*?)\)/,(x,y)=>' ('+y+')'))}</b>`}${(m.cls||[]).map(c=>` <span class="badge ${/Anticoag|Opioid|Benzo|Insulin|Antipsych/.test(c)?'red':''}">${esc(c)}</span>`).join('')}</td>
+      <td class="md">${L('admission.meds',i,'dose',m.dose,'dose','text','med','size="13" data-r="1" title="Dose — edit if wrong"')}${L('admission.meds',i,'route',m.route,'route','text','med','size="6" data-r="1"')}${L('admission.meds',i,'freq',String(m.freq||'').replace(/,?\s*PRN\b/i,''),'how often','text','med','size="14" data-r="1"')}<label class="mut" style="font-size:12px;white-space:nowrap"><input type="checkbox" data-l="admission.meds" data-i="${i}" data-k="prn" ${m.prn?'checked':''}> PRN</label>${m.edited?' <span class="badge" title="You changed this line">edited</span>':''}</td>
       <td class="mx">${LS('admission.meds',i,'dc',DCO,m.dc||'Continue')}${m.dc&&m.dc!=='Continue'?L('admission.meds',i,'why',m.why||'','Reason','text','','size="14"'):''}${X('admission.meds',i)}</td></tr>`;
   const block=(g)=>{const list=ms.map((m,i)=>({m,i})).filter(o=>(o.m.group||'')===g);const sch=list.filter(o=>!o.m.prn),prn=list.filter(o=>o.m.prn);
     const inpt=/inpatient/i.test(g);
     const op=MOPEN[g]!==false;
     return `<details class="mgrp ${inpt?'inpt':''}" ${op?'open':''} data-g="${esc(g)}" ontoggle="MOPEN[this.dataset.g]=this.open"><summary class="mgh">${esc(g||'Medications')} <span class="mut">(${list.length})</span></summary>
       ${sch.length?`<div class="msub">Scheduled (${sch.length})</div><table class="mt">${sch.map(o=>row(o.m,o.i)).join('')}</table>`:''}
-      ${prn.length?`<div class="msub">PRN (${prn.length})</div><table class="mt">${prn.map(o=>row(o.m,o.i)).join('')}</table>`:''}</details>`;};
+      ${prn.length?`<div class="msub">PRN (${prn.length})</div><table class="mt">${prn.map(o=>row(o.m,o.i)).join('')}</table>`:''}
+      <button class="sm" style="margin-top:4px" onclick="addMed('${esc(g)}')">+ Add ${inpt?'inpatient':g?esc(g.toLowerCase()):''} med</button></details>`;};
   const cr=compareMeds(ms);const li=a=>a.map(x=>`<li>${x}</li>`).join('');
   const cmp=cr?`<div class="mcmp"><b>Home vs inpatient</b> <span class="mut">— updated automatically from the two lists</span>
       <h4>Home meds held / not ordered in hospital (${cr.held.length})</h4>${cr.held.length?`<ul>${li(cr.held.map(m=>`<b>${esc(mname(m))}</b> <span class="mut">${esc(mdesc(m))}</span>`))}</ul>`:'<div class="ok">None — every scheduled home med has an inpatient order.</div>'}
-      ${cr.changed.length?`<h4>Changed: dose, schedule, PRN or drug (${cr.changed.length})</h4><ul>${li(cr.changed.map(x=>`<b>${esc(mname(x.h))}</b>: home ${esc(mdesc(x.h))} → hospital ${x.swap?'<b>'+esc(mname(x.i))+'</b> ':''}${esc(mdesc(x.i))}} <span class="${x.kind==='lower'||x.kind==='higher'?'kchg':'mut'}">— ${esc(kdesc(x))}</span>`))}</ul>`:''}
+      ${cr.changed.length?`<h4>Changed: dose, schedule, PRN or drug (${cr.changed.length})</h4><ul>${li(cr.changed.map(x=>`<b>${esc(mname(x.h))}</b>: home ${esc(mdesc(x.h))} → hospital ${x.swap?'<b>'+esc(mname(x.i))+'</b> ':''}${esc(mdesc(x.i))} <span class="${x.kind==='lower'||x.kind==='higher'?'kchg':'mut'}">— ${esc(kdesc(x))}</span>`))}</ul>`:''}
       ${cr.same.length?`<div class="mut" style="font-size:12.5px;margin-top:4px">Same dose at home and in hospital (${cr.same.length}): ${esc(cr.same.map(m=>mname(m).replace(/\s*\(.*$/,'')).join(', '))}</div>`:''}
       ${cr.heldPrn.length?`<h4>Home PRN meds not ordered (${cr.heldPrn.length})</h4><div style="font-size:13px">${esc(cr.heldPrn.map(mname).join(', '))}</div>`:''}
       ${cr.newIn.length?`<h4>New in hospital (${cr.newIn.length})</h4><div style="font-size:13px">${esc(cr.newIn.map(mname).join(', '))}</div>`:''}
       <div class="actions"><button class="sm" onclick="copyMedCompare()">Copy list</button>${cr.held.length?' <button class="sm" onclick="markHeldMeds()">Mark held home meds as "Held" for discharge</button>':''}
       <span class="mut">Matching is by drug name — check combination products and brand names.</span></div></div>`:'';
   return sec(`Medications (${ms.length})`,ms.length?cmp+groups.map(block).join('')
-      +`<div class="mut" style="margin-top:6px">Set "At discharge" for any med you stop, change, hold or start — it goes into the discharge summary's medication changes.</div>`
+      +`<div class="mut" style="margin-top:6px">Click a dose, route or frequency to correct it (the comparison updates when you leave the box). Set "At discharge" for any med you stop, change, hold or start — it goes into the discharge summary's medication changes.</div>`
       :'<div class="mut">No medications yet. Press Summarize admission on the Admission tab, or paste a med list below.</div>')
   +sec('Paste a medication list',`<textarea data-b="admission.medsRaw" rows="5" placeholder="Paste the med list (PowerChart Medications / admission med rec)">${esc(p.admission.medsRaw)}</textarea><div class="actions"><button class="pri" onclick="parseMedsBox()">Read medications</button><span class="mut">Replaces the list above.</span></div>`,!ms.length);
 },
@@ -837,6 +847,8 @@ function onEdit(e,isChange){const t=e.target;if(!t.closest('#main'))return;const
   if(t.dataset.b)setP(p,t.dataset.b,v);
   else if(t.dataset.l){const arr=getP(p,t.dataset.l);const it=arr&&arr[+t.dataset.i];if(!it)return;it[t.dataset.k]=t.type==='number'?(v===''?'':Number(v)):v;}
   else return;
+  if(t.dataset.l==='admission.meds'){const it=p.admission.meds[+t.dataset.i];if(it){if(/dose|route|freq|prn/.test(t.dataset.k)&&!it.added)it.edited=true;
+    if(t.dataset.k==='name'){it.cls=medClass(it.name);if(it.name.trim())it.nameSet=true;}}}
   if(t.dataset.l==='tasks'&&t.dataset.k==='done'){const it=p.tasks[+t.dataset.i];if(it&&it.done&&it.cat==='Order test'&&!it.moved){
     p.pending.push({test:it.text||'Test',ordered:todayStr(),expected:'',status:'Pending',result:''});it.moved=true;toast('Ordered — moved to Tests to review.');}}
   save();if(rer)render();else if(t.dataset.side)renderSide();}
