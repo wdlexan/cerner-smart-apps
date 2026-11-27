@@ -80,7 +80,7 @@ details.mgrp{background:var(--card)}details.mgrp.inpt{background:#fffbe6}
 details.mgrp>summary.mgh{padding:2px 0;color:var(--ink)}
 .mcmp{border:1px solid #f0c9a8;background:#fff6ee;border-radius:6px;padding:6px 10px;margin:6px 0}
 .mcmp h4{margin:6px 0 2px;font-size:13px;color:#8a3b00}.mcmp ul{margin:0 0 4px 18px;padding:0;font-size:13px}
-.mcmp .ok{color:#1e6b3a}
+.mcmp .ok{color:#1e6b3a}.mcmp .kchg{color:#8a3b00;font-weight:600}
 .msub{font-size:12px;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:.04em;margin:6px 0 1px}
 table.mt{border-collapse:collapse;width:100%;font-size:13px}
 table.mt td{padding:1px 6px 1px 0;border-bottom:1px dashed var(--line);vertical-align:middle;line-height:1.3}
@@ -326,31 +326,44 @@ function medKeys(name){const ks=new Set();const n=String(name||'').toLowerCase()
   const add=str=>{const w=str.replace(/[^a-z0-9\- ]/g,' ').split(/\s+/).filter(x=>x&&!BADW.test(x)&&!/^\d/.test(x));if(!w.length)return;
     let k=w[0]==='insulin'&&w[1]?'insulin '+w[1]:w[0];if(w[0]==='polyethylene')k='polyethylene';k=MALIAS[k]||MALIAS[w[0]]||k;ks.add(k);};
   add(n.replace(/\(.*?\)/g,' '));(n.match(/\(([^)]*)\)/g)||[]).forEach(x=>add(x.slice(1,-1)));return ks;}
-const normDF=m=>(String(m.dose||'')+'|'+String(m.freq||'').replace(/,?\s*PRN\b/i,'')).toLowerCase().replace(/\s+/g,'').replace(/start:.*$/,'').replace(/units?/,'unit');
 const isHomeG=g=>/home|documented|prescri|outpatient/i.test(g||''),isInptG=g=>/inpatient/i.test(g||'');
 const MSWAP=[['PPI',/prazole/i],['statin',/statin/i],['ARB',/sartan/i],['ACE inhibitor',/pril\b/i],['beta-blocker',/olol\b|carvedilol/i],['dihydropyridine CCB',/dipine/i],['DPP-4 inhibitor',/gliptin/i],['SGLT2 inhibitor',/gliflozin/i],['H1 antihistamine',/tadine|cetirizine/i],['bisphosphonate',/dronate/i],['inhaled steroid',/sonide|ticasone|metasone/i]];
 const mclassOf=n=>{const c=MSWAP.find(x=>x[1].test(n||''));return c?c[0]:'';};
+/* dose comparison: per-dose amount x times per day, so "81 mg QAM" = "81 mg DAILY", "50 mg AM & SUPPER" = "50 mg BID", "1 500 mg = 3 tab" = 1500 mg */
+const FREQN=[[/\bQ2H\b/i,12],[/\bQ3H\b/i,8],[/\bQ4H\b/i,6],[/\bQID\b|\bQ6H\b|FOUR TIMES/i,4],[/\bTID\b|\bQ8H\b|THREE TIMES|\bAM\s*(&|AND)\s*(NOON|LUNCH)\s*(&|AND)\s*(SUPPER|PM|DINNER)/i,3],
+ [/\bBID\b|\bQ12H\b|TWICE|\bAM\s*(&|AND)\s*(SUPPER|PM|HS|QHS|BEDTIME|DINNER)\b/i,2],[/WEEKLY|Q\s*WEEK|ONCE A WEEK/i,1/7],
+ [/DAILY|\bQAM\b|\bQPM\b|\bQHS\b|\bHS\b|SUPPER|DINNER|BREAKFAST|BEDTIME|\bQD\b|Q24H|ONCE/i,1]];
+const AMT=/(\d[\d ,]*(?:\.\d+)?)\s*(mg|mcg|g|units?|mL|mmol|mEq|tabs?|caps?|puffs?|drops?|app|supp)\b/i;
+const bare=m=>String(m.name||'').replace(/\(.*?\)/g,' ');
+function doseOf(m){for(const t of [m.dose,mdesc(m),bare(m)]){const x=String(t||'').split('=')[0].match(AMT);if(x){const n=parseFloat(x[1].replace(/[ ,]/g,''));if(!isNaN(n)&&n>0)return {n,u:x[2].toLowerCase().replace(/s$/,'')};}}return null;}
+function freqN(m){const t=String(m.freq||'')+' '+mdesc(m)+' '+bare(m);const f=FREQN.find(x=>x[0].test(t));return f?f[1]:0;}
+function cmpDose(h,i){const dh=doseOf(h),di=doseOf(i),fh=freqN(h),fi=freqN(i);let o;
+  if(dh&&di&&dh.u===di.u&&fh&&fi){const a=dh.n*fh,b=di.n*fi;o=Math.abs(a-b)<1e-6*Math.max(a,1)?{kind:dh.n===di.n?'same':'split'}:{kind:b<a?'lower':'higher',a,b,u:dh.u};}
+  else if(dh&&di&&dh.u===di.u&&dh.n!==di.n)o={kind:di.n<dh.n?'lower':'higher',per:1,a:dh.n,b:di.n,u:dh.u};
+  else if(dh&&di&&dh.u===di.u&&dh.n===di.n&&(!fh||!fi||fh===fi))o={kind:'same'};
+  else o={kind:'unclear'};
+  if(!!h.prn!==!!i.prn){if(o.kind==='same'||o.kind==='split')o={kind:h.prn?'nowSched':'nowPrn'};else o.prnNote=i.prn?'now PRN only':'now scheduled';}return o;}
+const KLAB={lower:'lower dose',higher:'higher dose',split:'same daily total, schedule changed',nowPrn:'now PRN only',nowSched:'now scheduled (PRN at home)',unclear:'check by hand — could not compare'};
+const kdesc=x=>x.swap?'formulary swap, same class: '+x.swap:KLAB[x.kind]+(x.a!=null?` (${+(+x.a).toFixed(2)} → ${+(+x.b).toFixed(2)} ${x.u}${x.per?' per dose':'/day'})`:'')+(x.prnNote?', '+x.prnNote:'');
 function compareMeds(ms){ms=ms.filter(m=>!NOTMED.test(m.name));const H=ms.filter(m=>isHomeG(m.group)),I=ms.filter(m=>isInptG(m.group));
   if(!H.length||!I.length)return null;const IK=I.map(m=>({m,k:medKeys(m.name)}));const used=new Set();
   const r={held:[],heldPrn:[],changed:[],same:[],newIn:[]};
   H.forEach(h=>{const hk=medKeys(h.name);const hit=IK.filter(o=>[...o.k].some(k=>hk.has(k)));
     if(!hit.length){const c=mclassOf(h.name);const sw=c&&IK.find(o=>!used.has(o.m)&&mclassOf(o.m.name)===c);
       if(sw){used.add(sw.m);r.changed.push({h,i:sw.m,swap:c});return;}(h.prn?r.heldPrn:r.held).push(h);return;}hit.forEach(o=>used.add(o.m));
-    const same=hit.find(o=>normDF(o.m)===normDF(h));if(same)r.same.push(h);else r.changed.push({h,i:hit.find(o=>!o.m.prn)?.m||hit[0].m});});
+    const cands=hit.map(o=>({i:o.m,c:cmpDose(h,o.m)}));const best=cands.find(x=>x.c.kind==='same')||cands.find(x=>!!x.i.prn===!!h.prn)||cands[0];
+    if(best.c.kind==='same')r.same.push(h);else r.changed.push(Object.assign({h,i:best.i},best.c));});
   r.newIn=I.filter(m=>!used.has(m)&&!m.prn);return r;}
 const mdesc=m=>[m.dose,m.route,String(m.freq||'').replace(/,?\s*PRN\b/i,'').replace(/,?\s*Start:.*$/i,'')].filter(Boolean).join(' ');
 const mname=m=>String(m.name||'').replace(/\s*-\s*RANGE DOSE/i,'');
 function medCompareText(r){const o=[];
   o.push('Home meds held / not ordered in hospital'+(r.held.length?':':': none'));r.held.forEach(m=>o.push('- '+mname(m)+' '+mdesc(m)));
-  if(r.changed.length){o.push('Dose or frequency changed in hospital:');r.changed.forEach(x=>o.push('- '+mname(x.h)+': home '+mdesc(x.h)+' → hospital '+(x.swap?mname(x.i)+' ':'')+mdesc(x.i)+(x.swap?' (formulary swap, same class: '+x.swap+')':'')));}
+  if(r.changed.length){o.push('Changed in hospital:');r.changed.forEach(x=>o.push('- '+mname(x.h)+': home '+mdesc(x.h)+' → hospital '+(x.swap?mname(x.i)+' ':'')+mdesc(x.i)+' — '+kdesc(x)));}
   if(r.heldPrn.length)o.push('Home PRN meds not ordered: '+r.heldPrn.map(mname).join(', '));
   if(r.newIn.length)o.push('New in hospital: '+r.newIn.map(m=>mname(m)+' '+mdesc(m)).join('; '));return o.join('\n');}
 function copyMedCompare(){const r=compareMeds(curP().admission.meds);if(!r)return;openModal('Home vs inpatient medications',medCompareText(r),'');}
 function markHeldMeds(){const p=curP();const r=compareMeds(p.admission.meds);if(!r)return;let n=0;
   r.held.forEach(h=>{if(!h.dc||h.dc==='Continue'){h.dc='Held — restart later';h.why=h.why||'Not ordered in hospital';n++;}});save();renderMain();toast(n+' home meds marked Held.');}
-const FMULT=[[/\bQID\b|\bQ6H\b/i,4],[/\bTID\b|\bQ8H\b/i,3],[/\bBID\b|\bQ12H\b/i,2],[/\bQ4H\b/i,6],[/\bQ3H\b/i,8],[/\bQ2H\b/i,12],[/WEEKLY|Q\s*WEEK/i,1/7],[/DAILY|\bQAM\b|\bQPM\b|\bQHS\b|\bHS\b|SUPPER|BREAKFAST|\bQD\b|ONCE A DAY/i,1]];
-const dailyAmt=m=>{const d=parseFloat(String(m.dose||'').replace(/,/g,''));if(isNaN(d))return NaN;const f=FMULT.find(x=>x[0].test(m.freq||''));return f?d*f[1]:NaN;};
-const doseUnit=m=>(String(m.dose||'').toLowerCase().match(/[a-z]+/)||[''])[0].replace(/s$/,'');
 function fillDischargeMeds(){const p=curP();const r=compareMeds(p.admission.meds);
   if(!r){toast('Need both a Home and an Inpatient medication list on the Meds tab (paste them there first).');return;}
   const L=p.discharge.medChanges;const have=new Set(L.map(x=>(x.type+'|'+x.med).toLowerCase()));let n=0;
@@ -359,10 +372,8 @@ function fillDischargeMeds(){const p=curP();const r=compareMeds(p.admission.meds
   r.held.forEach(h=>{if(!skip(h))add('Stopped',mname(h)+' '+mdesc(h),'Home med not ordered in hospital — confirm stop vs restart');});
   r.changed.forEach(x=>{if(skip(x.h))return;
     if(x.swap){add('Dose changed',mname(x.h)+' '+mdesc(x.h),'Hospital formulary swap to '+mname(x.i)+' '+mdesc(x.i)+' ('+x.swap+') — usually resume home drug');return;}
-    const a=dailyAmt(x.h),b=dailyAmt(x.i),same=doseUnit(x.h)===doseUnit(x.i);
-    const dir=same&&!isNaN(a)&&!isNaN(b)?(b<a?'Lower':b>a?'Higher':'Same total daily'):'Different';
-    const why=dir==='Lower'||dir==='Higher'?`${dir} dose than home (home ${mdesc(x.h)}; ${+a.toFixed(2)} → ${+b.toFixed(2)} ${doseUnit(x.h)}/day)`
-      :dir==='Same total daily'?`Same daily total, schedule changed (home ${mdesc(x.h)})`:`Dose or schedule different from home (home ${mdesc(x.h)})`;
+    const type=x.kind==='nowPrn'?'Dose changed':'Dose changed';
+    const why=(x.kind==='lower'?'Lower':x.kind==='higher'?'Higher':'Changed')+' vs home: '+kdesc(x)+' (home '+mdesc(x.h)+')';
     add('Dose changed',mname(x.i)+' '+mdesc(x.i),why);});
   r.newIn.forEach(m=>add('Started',mname(m)+' '+mdesc(m),'New in hospital — continue at discharge?'));
   save();renderMain();toast(n?n+' medication changes added — review each line.':'No new changes found (already listed or lists match).');}
@@ -593,7 +604,8 @@ meds(p){const ms=p.admission.meds;const groups=[...new Set(ms.map(m=>m.group||''
   const cr=compareMeds(ms);const li=a=>a.map(x=>`<li>${x}</li>`).join('');
   const cmp=cr?`<div class="mcmp"><b>Home vs inpatient</b> <span class="mut">— updated automatically from the two lists</span>
       <h4>Home meds held / not ordered in hospital (${cr.held.length})</h4>${cr.held.length?`<ul>${li(cr.held.map(m=>`<b>${esc(mname(m))}</b> <span class="mut">${esc(mdesc(m))}</span>`))}</ul>`:'<div class="ok">None — every scheduled home med has an inpatient order.</div>'}
-      ${cr.changed.length?`<h4>Dose, frequency or drug changed (${cr.changed.length})</h4><ul>${li(cr.changed.map(x=>`<b>${esc(mname(x.h))}</b>: home ${esc(mdesc(x.h))} → hospital ${x.swap?'<b>'+esc(mname(x.i))+'</b> ':''}${esc(mdesc(x.i))}${x.swap?` <span class="mut">(swap, same class: ${esc(x.swap)})</span>`:''}`))}</ul>`:''}
+      ${cr.changed.length?`<h4>Changed: dose, schedule, PRN or drug (${cr.changed.length})</h4><ul>${li(cr.changed.map(x=>`<b>${esc(mname(x.h))}</b>: home ${esc(mdesc(x.h))} → hospital ${x.swap?'<b>'+esc(mname(x.i))+'</b> ':''}${esc(mdesc(x.i))}} <span class="${x.kind==='lower'||x.kind==='higher'?'kchg':'mut'}">— ${esc(kdesc(x))}</span>`))}</ul>`:''}
+      ${cr.same.length?`<div class="mut" style="font-size:12.5px;margin-top:4px">Same dose at home and in hospital (${cr.same.length}): ${esc(cr.same.map(m=>mname(m).replace(/\s*\(.*$/,'')).join(', '))}</div>`:''}
       ${cr.heldPrn.length?`<h4>Home PRN meds not ordered (${cr.heldPrn.length})</h4><div style="font-size:13px">${esc(cr.heldPrn.map(mname).join(', '))}</div>`:''}
       ${cr.newIn.length?`<h4>New in hospital (${cr.newIn.length})</h4><div style="font-size:13px">${esc(cr.newIn.map(mname).join(', '))}</div>`:''}
       <div class="actions"><button class="sm" onclick="copyMedCompare()">Copy list</button>${cr.held.length?' <button class="sm" onclick="markHeldMeds()">Mark held home meds as "Held" for discharge</button>':''}
