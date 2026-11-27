@@ -319,15 +319,16 @@ const MEDCLASS=[['Anticoagulant',/apixaban|rivaroxaban|edoxaban|dabigatran|warfa
  ['BP / heart',/pril\b|sartan\b|olol\b|dipine\b|diltiazem|verapamil|digoxin|amiodarone|hydralazine|nitrate|isosorbide|sacubitril/i],
  ['Anticholinergic',/oxybutynin|tolterodine|diphenhydramine|dimenhydrinate|hydroxyzine|amitriptyline|nortriptyline|benztropine|scopolamine|paroxetine/i]];
 const medClass=n=>MEDCLASS.filter(c=>c[1].test(n)).map(c=>c[0]);
-const NOTMED=/^(Medications Based on|Date BPMH|BPMH\b|Best Possible Medication|Compliance\b|Comments?\s*:|Last dose|Self-directed|Patient (is )?(taking|not taking)|Info(rmation)? source|Source\s*:|Pharmacy\s*:|Notes?\s*:)/i;
+const NOTMED=/^(\(\d+\)$|\.?HAH Patient|Medications \(\d+\)|Medications Based on|Date BPMH|BPMH\b|Best Possible Medication|Compliance\b|Comments?\s*:|Last dose|Self-directed|Patient (is )?(taking|not taking)|Info(rmation)? source|Source\s*:|Pharmacy\s*:|Notes?\s*:)/i;
 /* ---- home vs inpatient comparison ---- */
-const MALIAS={'acetylsalicylic':'aspirin','asa':'aspirin','lasix':'furosemide','tylenol':'acetaminophen','gravol':'dimenhydrinate','senokot':'senna','glysennid':'senna','synthroid':'levothyroxine','eltroxin':'levothyroxine','coumadin':'warfarin','eliquis':'apixaban','xarelto':'rivaroxaban','lipitor':'atorvastatin','crestor':'rosuvastatin','norvasc':'amlodipine','altace':'ramipril','lopresor':'metoprolol','glucophage':'metformin','diamicron':'gliclazide','zyloprim':'allopurinol','pantoloc':'pantoprazole','tecta':'pantoprazole','losec':'omeprazole','prevacid':'lansoprazole','neurontin':'gabapentin','lyrica':'pregabalin','lax-a-day':'polyethylene','restoralax':'polyethylene','peg':'polyethylene','colace':'docusate','lantus':'insulin glargine','basaglar':'insulin glargine','toujeo':'insulin glargine','tresiba':'insulin degludec','levemir':'insulin detemir','novorapid':'insulin aspart','humalog':'insulin lispro','jardiance':'empagliflozin','forxiga':'dapagliflozin','ozempic':'semaglutide','januvia':'sitagliptin','entresto':'sacubitril'};
+const MALIAS={'lomotil':'diphenoxylate','lenoltec':'acetaminophen','tylenol#3':'acetaminophen','imodium':'loperamide','loperamide':'loperamide','zofran':'ondansetron','flomax':'tamsulosin','ventolin':'salbutamol','eltroxin':'levothyroxine','acetylsalicylic':'aspirin','asa':'aspirin','lasix':'furosemide','tylenol':'acetaminophen','gravol':'dimenhydrinate','senokot':'senna','glysennid':'senna','synthroid':'levothyroxine','eltroxin':'levothyroxine','coumadin':'warfarin','eliquis':'apixaban','xarelto':'rivaroxaban','lipitor':'atorvastatin','crestor':'rosuvastatin','norvasc':'amlodipine','altace':'ramipril','lopresor':'metoprolol','glucophage':'metformin','diamicron':'gliclazide','zyloprim':'allopurinol','pantoloc':'pantoprazole','tecta':'pantoprazole','losec':'omeprazole','prevacid':'lansoprazole','neurontin':'gabapentin','lyrica':'pregabalin','lax-a-day':'polyethylene','restoralax':'polyethylene','peg':'polyethylene','colace':'docusate','lantus':'insulin glargine','basaglar':'insulin glargine','toujeo':'insulin glargine','tresiba':'insulin degludec','levemir':'insulin detemir','novorapid':'insulin aspart','humalog':'insulin lispro','jardiance':'empagliflozin','forxiga':'dapagliflozin','ozempic':'semaglutide','januvia':'sitagliptin','entresto':'sacubitril'};
 const BADW=/^(tab|tabs|tablet|cap|capsule|ec|er|sr|xl|cr|la|inj|injection|oral|topical|rectal|range|dose|adult|extra|strength|micro|kwikpen|pen|solution|susp|liquid|suppository|patch|gel|cream|ointment)$/i;
-function medKeys(name){const ks=new Set();const n=String(name||'').toLowerCase();
+const MFR=/^(jamp|mylan|teva|sandoz|pms|apo|mint|taro|auro|mar|aa|act|riva|sanis|pro|nat|ran|novo|dom|phl|gd|med|bio|ag|m|jamp|accel|nra|van|sivem|marcan|ratio|nu|co|rbx|priva|bmd|ach|jp|lupin|zym|vita|natco|glenmark|sun)[- ](?=[a-z])/;
+function medKeys(name){const ks=new Set();const n=String(name||'').toLowerCase().replace(MFR,'').replace(/\(([^)]*)\)/g,(x,y)=>'('+y.replace(MFR,'')+')');
   const add=str=>{const w=str.replace(/[^a-z0-9\- ]/g,' ').split(/\s+/).filter(x=>x&&!BADW.test(x)&&!/^\d/.test(x));if(!w.length)return;
     let k=w[0]==='insulin'&&w[1]?'insulin '+w[1]:w[0];if(w[0]==='polyethylene')k='polyethylene';k=MALIAS[k]||MALIAS[w[0]]||k;ks.add(k);};
   add(n.replace(/\(.*?\)/g,' '));(n.match(/\(([^)]*)\)/g)||[]).forEach(x=>add(x.slice(1,-1)));return ks;}
-const isHomeG=g=>/home|documented|prescri|outpatient/i.test(g||''),isInptG=g=>/inpatient/i.test(g||'');
+const isHomeG=g=>/home|documented|prescri|outpatient/i.test(g||''),isInptG=g=>!!g&&!isHomeG(g);
 const MSWAP=[['PPI',/prazole/i],['statin',/statin/i],['ARB',/sartan/i],['ACE inhibitor',/pril\b/i],['beta-blocker',/olol\b|carvedilol/i],['dihydropyridine CCB',/dipine/i],['DPP-4 inhibitor',/gliptin/i],['SGLT2 inhibitor',/gliflozin/i],['H1 antihistamine',/tadine|cetirizine/i],['bisphosphonate',/dronate/i],['inhaled steroid',/sonide|ticasone|metasone/i]];
 const mclassOf=n=>{const c=MSWAP.find(x=>x[1].test(n||''));return c?c[0]:'';};
 /* dose comparison: per-dose amount x times per day, so "81 mg QAM" = "81 mg DAILY", "50 mg AM & SUPPER" = "50 mg BID", "1 500 mg = 3 tab" = 1500 mg */
@@ -354,7 +355,7 @@ function compareMeds(ms){ms=ms.filter(m=>!NOTMED.test(m.name));const H=ms.filter
       if(sw){used.add(sw.m);r.changed.push({h,i:sw.m,swap:c});return;}(h.prn?r.heldPrn:r.held).push(h);return;}hit.forEach(o=>used.add(o.m));
     const cands=hit.map(o=>({i:o.m,c:cmpDose(h,o.m)}));const best=cands.find(x=>x.c.kind==='same')||cands.find(x=>!!x.i.prn===!!h.prn)||cands[0];
     if(best.c.kind==='same')r.same.push(h);else r.changed.push(Object.assign({h,i:best.i},best.c));});
-  r.newIn=I.filter(m=>!used.has(m)&&!m.prn);return r;}
+  r.newIn=I.filter(m=>!used.has(m)&&!m.prn&&!/continuous/i.test(m.group||''));return r;}
 const mdesc=m=>[m.dose,m.route,String(m.freq||'').replace(/,?\s*PRN\b/i,'').replace(/,?\s*Start:.*$/i,'')].filter(Boolean).join(' ');
 const mname=m=>String(m.name||'').replace(/\s*-\s*RANGE DOSE/i,'');
 function medCompareText(r){const o=[];
@@ -687,7 +688,7 @@ meds(p){tidyMeds(p);const ms=p.admission.meds;const groups=[...new Set(ms.map(m=
       <td class="md">${L('admission.meds',i,'dose',m.dose,'dose','text','med','size="13" data-r="1" title="Dose — edit if wrong"')}${L('admission.meds',i,'route',m.route,'route','text','med','size="6" data-r="1"')}${L('admission.meds',i,'freq',String(m.freq||'').replace(/,?\s*PRN\b/i,''),'how often','text','med','size="14" data-r="1"')}<label class="mut" style="font-size:12px;white-space:nowrap"><input type="checkbox" data-l="admission.meds" data-i="${i}" data-k="prn" ${m.prn?'checked':''}> PRN</label>${m.edited?' <span class="badge" title="You changed this line">edited</span>':''}</td>
       <td class="mx">${LS('admission.meds',i,'dc',DCO,m.dc||'Continue')}${m.dc&&m.dc!=='Continue'?L('admission.meds',i,'why',m.why||'','Reason','text','','size="14"'):''}${X('admission.meds',i)}</td></tr>`;
   const block=(g)=>{const list=ms.map((m,i)=>({m,i})).filter(o=>(o.m.group||'')===g);const sch=list.filter(o=>!o.m.prn),prn=list.filter(o=>o.m.prn);
-    const inpt=/inpatient/i.test(g);
+    const inpt=!!g&&!isHomeG(g);
     const op=MOPEN[g]!==false;
     return `<details class="mgrp ${inpt?'inpt':''}" ${op?'open':''} data-g="${esc(g)}" ontoggle="MOPEN[this.dataset.g]=this.open"><summary class="mgh">${esc(g||'Medications')} <span class="mut">(${list.length})</span></summary>
       ${sch.length?`<div class="msub">Scheduled (${sch.length})</div><table class="mt">${sch.map(o=>row(o.m,o.i)).join('')}</table>`:''}
@@ -701,7 +702,7 @@ meds(p){tidyMeds(p);const ms=p.admission.meds;const groups=[...new Set(ms.map(m=
       ${cr.heldPrn.length?`<h4>Home PRN meds not ordered (${cr.heldPrn.length})</h4><div style="font-size:13px">${esc(cr.heldPrn.map(mname).join(', '))}</div>`:''}
       ${cr.newIn.length?`<h4>New in hospital (${cr.newIn.length})</h4><div style="font-size:13px">${esc(cr.newIn.map(mname).join(', '))}</div>`:''}
       <div class="actions"><button class="sm pri" onmousedown="event.preventDefault()" onclick="refreshMedCompare()" title="Compare the Home and Inpatient lists again after your changes">↻ Refresh comparison</button><button class="sm" onclick="copyMedCompare()">Copy list</button>${cr.held.length?' <button class="sm" onclick="markHeldMeds()">Mark held home meds as "Held" for discharge</button>':''}
-      <span class="mut">Matching is by drug name — check combination products and brand names.</span></div></div>`:'';
+      <span class="mut">Matching is by drug name — check combination products and brand names.</span></div></div>`:(ms.length?`<div class="mcmp"><b>Home vs inpatient</b> <span class="mut">— needs a Home list and a hospital list (Inpatient / Scheduled / Continuous). Paste both into "Paste a medication list", with the "Home" heading above the home meds.</span></div>`:'');
   return sec(`Medications (${ms.length})`,ms.length?cmp+groups.map(block).join('')
       +`<div class="mut" style="margin-top:6px">Click a dose, route or frequency to correct it (the comparison updates when you leave the box). Set "At discharge" for any med you stop, change, hold or start — it goes into the discharge summary's medication changes.</div>`
       :'<div class="mut">No medications yet. Press Summarize admission on the Admission tab, or paste a med list below.</div>')
