@@ -4,11 +4,11 @@
    A tab is only loaded the first time you open it, and stays loaded when you switch away. */
 
 // To add a tool: put its files in tools/<folder>/ and add a line here.
-const TOOL_V = "20261126t"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
+const TOOL_V = "20261126u"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
 const TOOLS = [
   { key: "today", label: "Today (what changed)", tags: "what changed daily trends vitals overnight summary", path: "tools/today/index.html" },
   { key: "plist", label: "Patient list (screenshot)", tags: "patient list screenshot excel spreadsheet rounding list census floor ward ocr", path: "tools/plist/index.html" },
-  { key: "round", label: "Rounding notebook", tags: "rounding notebook daily notes handover handoff sign out to do pending tests antibiotic countdown watch for discharge summary follow-up admission summary paste", path: "tools/round/index.html" },
+  { key: "round", label: "Rounding notebook", tags: "rounding notebook daily notes handover handoff sign out to do pending tests antibiotic countdown watch for discharge summary follow-up admission summary paste", path: "tools/round/index.html", keepHeader: true }, // its header holds My week, Handover all, OneDrive and Settings
   { key: "labs",  label: "Labs", tags: "lab results cbc lytes electrolytes chemistry blood work",                 path: "tools/labs/index.html" },
   { key: "crit",  label: "Critical labs → MRP", tags: "critical lab alert mrp teams page message",  path: "tools/critical/index.html" },
   { key: "notes", label: "Notes", tags: "notes documents progress note discharge summary compile",                path: "tools/notes/index.html" },

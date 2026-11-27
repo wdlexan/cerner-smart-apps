@@ -124,6 +124,7 @@ function cloudUI(msg,warn){const b=document.getElementById('cloudBtn'),bar=docum
   else if(fh&&fhOK){b.textContent='☁ Saved to '+fh.name;b.title='Linked to '+fh.name+' — every change is saved there';}
   else if(fh){b.textContent='☁ Reconnect '+fh.name;b.title='Click to allow saving to your OneDrive file again';}
   else{b.textContent='☁ Link OneDrive file';}
+  const sd=document.getElementById('cloudSide');if(sd)sd.textContent=b.textContent;
   if(m)m.textContent=fh?(fhOK?'Linked: '+fh.name:'Linked to '+fh.name+' — needs reconnecting'):'Not linked';
   if(msg){bar.innerHTML=msg;bar.classList.remove('hidden');bar.style.background=warn?'#fff4d6':'#e6f4ea';bar.style.color=warn?'#8a5a00':'#1e6b3a';}else bar.classList.add('hidden');}
 function cloudClick(){if(!fh){toggleData();return;}if(!fhOK)cloudReconnect();else toast('Saving to '+fh.name+' in your OneDrive folder.');}
@@ -465,6 +466,7 @@ function renderSide(){
     <div>${c.openTasks?`<span class="badge ${c.overdueTasks?'red':''}">${c.openTasks} to-do</span>`:''}${c.toReview?`<span class="badge red">${c.toReview} result to review</span>`:''}${c.pendAfter?`<span class="badge amb">${c.pendAfter} test due after week</span>`:''}${c.abxA.map(o=>`<span class="badge ${o.i.left<=0?'grn':''}">${esc(o.a.drug||'abx')} d${o.i.day}/${o.a.days}</span>`).join('')}${p.discharge.edd?`<span class="badge">EDD ${fmt(p.discharge.edd)}</span>`:''}</div></div>`;};
   document.getElementById('side').innerHTML=`<div class="addp"><b>Add patient</b>
     <input id="np_room" placeholder="Room (e.g. 7B-12)"><input id="np_name" placeholder="Name or initials"><label class="mut">Admit date <input id="np_admit" type="date" value="${todayStr()}"></label><button class="pri" onclick="addPatient()">Add patient</button></div>
+    <button class="sm" id="cloudSide" style="margin-bottom:6px;display:block" onclick="cloudClick()">☁ OneDrive file</button>
     <button class="sm" style="margin-bottom:10px" onclick="openListReader()" title="Read a PowerChart patient-list screenshot, then press Send to Rounding notebook">📷 Add patients from a list screenshot</button>
     <div class="mut" style="margin-bottom:4px">My patients (${act.length})</div>${act.map(item).join('')||'<div class="mut">No patients yet.</div>'}
     ${dc.length?`<details style="margin-top:10px"><summary>Discharged (${dc.length})</summary><div class="db">${dc.map(item).join('')}</div></details>`:''}
@@ -739,7 +741,7 @@ document.addEventListener('change',e=>onEdit(e,true));
 ['wkStart','wkEnd'].forEach(id=>document.getElementById(id).addEventListener('change',e=>{S.settings[id==='wkStart'?'weekStart':'weekEnd']=e.target.value;save();render();}));
 ['setFirst','setFull'].forEach(id=>document.getElementById(id).addEventListener('input',e=>{S.settings[id==='setFirst'?'first':'full']=e.target.value;save();}));
 document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal();});
-function render(){renderSide();renderMain();}
+function render(){renderSide();renderMain();if(typeof cloudUI==='function')try{const sd=document.getElementById('cloudSide');if(sd)sd.textContent=document.getElementById('cloudBtn').textContent;}catch(e){}}
 window.addEventListener('storage',e=>{if(e.key===KEY){load();syncSettings();render();cloudInit();toast('Patient list updated.');}});
 function openListReader(){try{if(window.parent!==window&&typeof window.parent.show==='function'){window.parent.show('plist');return;}}catch(e){}
   window.open(/\/tools\/round\//.test(location.pathname)?'../plist/index.html':'../hospitalist-toolkit/tools/plist/index.html','_blank');}
