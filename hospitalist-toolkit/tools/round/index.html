@@ -254,7 +254,7 @@ function parseNote(text){
   let problems=[];
   apLines.forEach(l=>{const mm=l.match(/^\s*(?:#\s*\d*|\d+[.)]|[-•*])\s*(.+)$/);if(mm)problems.push(mm[1].trim());});
   if(!problems.length&&apLines.length)problems=j('ap').split(/(?<=[.;])\s+/).filter(s=>s.length>3).slice(0,8);
-  problems=problems.slice(0,12).map(t=>{const parts=t.split(/\s*(?:[:–—]|\s-\s)\s*/);return {text:trunc(parts[0],120),status:'Active',plan:trunc(parts.slice(1).join(' — '),300)};});
+  problems=problems.slice(0,12).map(t=>{const parts=t.split(/\s*(?:[:–—]|\s-\s)\s*/);return {text:trunc(parts[0],250),status:'Active',plan:trunc(parts.slice(1).join(' — '),400)};});
   const abx=ABX.filter(a=>a[1].test(all)).map(a=>a[0]);
   const summary=[
     j('cc')&&('Reason for admission: '+trunc(j('cc'),200)),
@@ -312,6 +312,7 @@ function consultMsg(i){const p=curP();const t=p.tasks[i];const first=S.settings.
   const brief=firstSentence(p.admission.oneLiner||p.reason||'',170).replace(/…$/,'');
   const msg=`Hello Dr. ___, This is ${first}, hospitalist. I have ${p.name||'[name]'}, ${p.age||'[age]'}${p.sex||''}, MRN ${p.mrn||'[MRN]'}${p.room?' in '+p.room:''}. ${brief}${brief&&!/[.!?]$/.test(brief)?'.':''} ${t.text?t.text+(/[.!?]$/.test(t.text)?'':'.'):''} Your help is much appreciated. Thanks, ${first}`.replace(/\s+/g,' ');
   openModal('Consult message',msg,'');}
+function untrackedAbx(p){const txt=[p.admission.raw,...p.notes.map(n=>n.text+' '+n.course)].join('\n');return ABX.filter(a=>a[1].test(txt)&&!p.abx.some(x=>a[1].test(x.drug))).map(a=>a[0]);}
 function abxInfo(a,ref){if(!a.start||!a.days)return null;ref=ref||todayStr();const day=diff(a.start,ref)+1;const last=addDays(a.start,Number(a.days)-1);return {day,last,left:Number(a.days)-day,pct:Math.max(0,Math.min(100,day/Number(a.days)*100))};}
 
 /* ============ rendering ============ */
@@ -423,8 +424,8 @@ pending(p){const t=todayStr(),we=S.settings.weekEnd;
        ${LS('pending',i,'status',st,x.status)}${f}${L('pending',i,'result',x.result,'Result / action','text','grow')}${X('pending',i)}</div>`;}).join('')
      +`<div class="chips" style="margin-top:8px"><button class="chip" onclick="addItem('pending')">+ Test</button>${['Blood cultures','Urine culture','CT','MRI','Echo','Pathology / biopsy','Send-out lab'].map(s=>`<button class="chip" onclick="addItem('pending',{test:'${s}'})">+ ${s}</button>`).join('')}</div>`);
 },
-abx(p){const we=S.settings.weekEnd,edd=p.discharge.edd;
-  return sec('Antibiotic countdown',p.abx.map((a,i)=>{const inf=abxInfo(a);let f='';
+abx(p){const we=S.settings.weekEnd,edd=p.discharge.edd;const un=untrackedAbx(p);
+  return (un.length?`<div class="card"><span class="mut">Mentioned in your notes but not in the countdown:</span> <span class="chips" style="display:inline-flex">${un.map(a=>`<button class="chip" onclick="addAbx('${a}')">+ ${esc(a)}</button>`).join('')}</span></div>`:'')+sec('Antibiotic countdown',p.abx.map((a,i)=>{const inf=abxInfo(a);let f='';
      if(inf){if(inf.day<1)f='<span class="flag amb">Not started</span>';else if(inf.left<0)f='<span class="flag grn">Course complete</span>';else if(inf.left===0)f='<span class="flag amb">Last day today</span>';
        if(inf.left>0&&we&&inf.last>we)f+=' <span class="flag amb">Ends after your week</span>';if(inf.left>0&&edd&&inf.last>edd)f+=' <span class="flag amb">Ends after EDD — stop date on Rx</span>';}
      const ivpoDue=a.route==='IV'&&a.ivpo&&a.ivpo<=todayStr();
@@ -469,7 +470,11 @@ const DCHK=[['medrec','Medication reconciliation done'],['rx','Prescriptions wri
 /* ============ output text ============ */
 function ptLine(p){const hd=p.admitDate?diff(p.admitDate,todayStr())+1:null;
   return `${p.room||'—'} | ${p.name||'Unnamed'}${p.age?', '+p.age+(p.sex||''):''}${p.mrn?' | MRN '+p.mrn:''}${p.admitDate?' | Admitted '+p.admitDate+' (day '+hd+')':''}`;}
-function courseLines(p,n){const s=[...p.notes].sort((a,b)=>a.date<b.date?-1:1);return (n?s.slice(-n):s).map(x=>`- ${fmt(x.date)}: ${x.course||firstSentence(x.text)}`);}
+const VITALRE=/^\s*(vitals?( (&|and) measurements)?|physical exam(ination)?|exam|objective)\s*:?\s*$|\b(HR|BP|RR|SpO2|O2 sat|Temp|T)\s*:\s*\d/i;
+function noteGist(t,max){const lines=String(t||'').split(/\r?\n/).map(l=>l.replace(/^\s*[-•*]+\s*/,'').trim()).filter(l=>l&&!VITALRE.test(l));
+  let s=lines.map(l=>/[.!?;:]$/.test(l)?l:l+'.').join(' ').replace(/\s+/g,' ').trim();
+  if(max&&s.length>max){s=s.slice(0,max);const k=s.lastIndexOf('. ');s=(k>max*0.6?s.slice(0,k+1):s)+' …';}return s;}
+function courseLines(p,n,max){const s=[...p.notes].sort((a,b)=>a.date<b.date?-1:1);return (n?s.slice(-n):s).map(x=>`- ${fmt(x.date)}${p.admitDate?' (day '+(diff(p.admitDate,x.date)+1)+')':''}: ${x.course?x.course+(max?'':' — '+noteGist(x.text,0)):noteGist(x.text,max)}`);}
 function handoverText(p){const t=todayStr(),we=S.settings.weekEnd,b=p.basics,o=[];
   o.push('=== '+ptLine(p)+' ===');
   if(p.reason)o.push('Admitted for: '+p.reason);
@@ -478,7 +483,7 @@ function handoverText(p){const t=todayStr(),we=S.settings.weekEnd,b=p.basics,o=[
   const misc=[b.vte?'VTE: '+b.vte:'VTE: not addressed',b.mobility&&'Mobility: '+b.mobility+(b.mobilityNote?' ('+b.mobilityNote+')':''),b.diet&&'Diet: '+b.diet].filter(Boolean);o.push(misc.join(' | '));
   if(b.lines.length)o.push('Lines/tubes: '+b.lines.map(l=>`${l.type} day ${diff(l.inserted,t)+1}${l.plan?' ('+l.plan+')':''}`).join('; '));
   const pr=p.admission.problems.filter(x=>x.status!=='Resolved');if(pr.length){o.push('Problems:');pr.forEach(x=>o.push(`- ${x.text}${x.plan?' — '+x.plan:''}${x.status!=='Active'?' ['+x.status+']':''}`));}
-  const cl=courseLines(p,3);if(cl.length){o.push('Recent course:');o.push(...cl);}
+  const cl=courseLines(p,3,400);if(cl.length){o.push('Recent course:');o.push(...cl);}
   const ab=p.abx.map(a=>({a,i:abxInfo(a)})).filter(x=>x.i&&x.i.left>=0);
   if(ab.length){o.push('Antibiotics:');ab.forEach(({a,i})=>o.push(`- ${a.drug} ${a.route}${a.indication?' for '+a.indication:''}: day ${i.day} of ${a.days}, last dose ${i.last}${we&&i.last>we?'  <-- ends after my week':''}${a.route==='IV'&&a.ivpo?' (IV→PO review '+a.ivpo+')':''}`));}
   const pe=p.pending.filter(x=>x.status!=='Reviewed');
@@ -500,9 +505,10 @@ function dischargeText(p){const d=p.discharge,b=p.basics,dc=d.edd||todayStr(),o=
   const other=p.admission.problems.filter(x=>x.text&&x.text!==d.diagnosis);if(d.diagnosis&&other.length){o.push('Other issues this admission: '+other.map(x=>x.text+(x.status==='Resolved'?' (resolved)':'')).join('; '));}
   H('Presentation');o.push(p.admission.oneLiner||trunc(p.admission.summary,500)||'—');
   if(p.admission.problems.length){H('Hospital course by problem');p.admission.problems.forEach(x=>o.push(`- ${x.text}${x.plan?': '+x.plan:''}${x.status?' ['+x.status+']':''}`));}
-  const cl=courseLines(p);if(cl.length){H('Course timeline');o.push(...cl);}
+  const cl=courseLines(p,0,0);if(cl.length){H('Course timeline');o.push(...cl);}
   if(p.abx.length){H('Antibiotics');p.abx.forEach(a=>{const i=abxInfo(a,dc);if(!i){o.push('- '+a.drug);return;}
      o.push(`- ${a.drug} ${a.route}${a.indication?' for '+a.indication:''}: started ${a.start}, ${a.days}-day course. `+(i.left>0?`CONTINUE at home — last dose ${i.last} (${i.left} more day${i.left>1?'s':''} after discharge).`:`Completed${i.last?' '+i.last:''}.`));});}
+  const un=untrackedAbx(p);if(un.length){if(!p.abx.length)H('Antibiotics');o.push('Also mentioned in notes (not in the countdown — check dates/stop date): '+un.join(', '));}
   if(d.medChanges.length){H('Medication changes');d.medChanges.forEach(x=>o.push(`- ${x.type}: ${x.med}${x.reason?' — '+x.reason:''}`));}
   const pe=p.pending.filter(x=>x.status!=='Reviewed');
   if(pe.length){H('Results pending at discharge — please follow up');pe.forEach(x=>o.push(`- ${x.test}${x.expected?' (expected '+x.expected+')':''}${x.result?': '+x.result:''}`));}
