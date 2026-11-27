@@ -148,7 +148,7 @@
     <details class="card" open><summary><span>When to refer to cardiology</span></summary><div class="body plan" id="ia-refer"></div></details>
     <details class="card" open><summary><span>Chart alerts</span><span class="muted" id="alertsum"></span></summary><div class="body" id="alerts"></div></details>
     <details class="card" open><summary><span>Discharge and follow-up</span></summary><div class="body plan" id="fu"></div></details>
-    <details class="card" open><summary><span>Patient handout: managing heart failure at home</span></summary><div class="body">
+    <details class="card" open id="handout-card"><summary><span>Patient handout: managing heart failure at home</span></summary><div class="body">
       <div class="row">
         <label class="inl">Water pill <input id="h-diur" size="28" placeholder="e.g. furosemide 40 mg every morning"></label>
         <label class="inl"><input type="checkbox" id="h-flex"> Extra dose allowed:</label> <input id="h-flexdose" size="28" placeholder="e.g. 1 extra 40 mg tablet">
@@ -184,6 +184,7 @@
       {"key": "cause", "label": "Cause & tests", "match": ["Cause:", "Investigations"]},
       {"key": "isch", "label": "Ischemia & cardiology", "match": ["Ischemia", "When to refer to cardiology"]},
       {"key": "dc", "label": "Discharge & handout", "match": ["Discharge and follow-up", "Patient handout"]},
-      {"key": "note", "label": "Note draft", "match": ["Note draft"]}] });</script>
+      {"key": "note", "label": "Note draft", "match": ["Note draft"]}] });
+    if (location.hash === "#handout") setTimeout(() => { SubTabs.show && SubTabs.show("dc"); const el = document.getElementById("handout-card"); if (el) { el.open = true; el.scrollIntoView({ block: "start" }); } }, 300);</script>
 </body>
 </html>

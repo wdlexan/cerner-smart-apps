@@ -4,7 +4,7 @@
    A tab is only loaded the first time you open it, and stays loaded when you switch away. */
 
 // To add a tool: put its files in tools/<folder>/ and add a line here.
-const TOOL_V = "20261126w"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
+const TOOL_V = "20261127a"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
 const TOOLS = [
   { key: "today", label: "Today (what changed)", tags: "what changed daily trends vitals overnight summary", path: "tools/today/index.html" },
   { key: "plist", label: "Patient list (screenshot)", tags: "patient list screenshot excel spreadsheet rounding list census floor ward ocr", path: "tools/plist/index.html" },
@@ -224,6 +224,18 @@ function setupSearch() {
   });
 }
 
+// Open a tab at one section: showAt("chf", "handout-card", "dc") opens CHF, its "dc" sub-tab, and scrolls to #handout-card.
+window.showAt = function (key, id, sub) {
+  show(key);
+  const f = document.querySelector(`#frames iframe[data-k="${key}"]`);
+  const go = () => { try {
+      const w = f.contentWindow, d = f.contentDocument, el = d && d.getElementById(id); if (!el) return false;
+      if (sub && w.SubTabs && w.SubTabs.show) w.SubTabs.show(sub);
+      if (el.tagName === "DETAILS") el.open = true;
+      el.scrollIntoView({ behavior: "smooth", block: "start" }); return true; } catch (e) { return false; } };
+  if (go()) return;
+  let n = 0; const t = setInterval(() => { if (go() || ++n > 60) { clearInterval(t); setTimeout(go, 1200); } }, 250); // first visit: wait for the tab to load, then once more after the chart fills in
+};
 function show(key) {
   const tool = TOOLS.find((t) => t.key === key);
   window.__tkTab = key;

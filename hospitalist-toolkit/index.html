@@ -26,6 +26,10 @@
     #toolsearch:focus { outline:2px solid #fff; }
     #nomatch { font-size:13px; color:#dbe9f8; padding:8px 0; }
     nav { display:flex; gap:2px; overflow-x:auto; min-width:0; }
+    /* desktop: wrap the menus onto a second line instead of scrolling them sideways, so Today / Patient list / Rounding notebook never slide out of view */
+    html:not(.pocket) body { overflow-x:hidden; }
+    html:not(.pocket) .navrow { align-items:flex-start; }
+    html:not(.pocket) nav { flex-wrap:wrap; overflow-x:visible; row-gap:0; }
     nav button { background:transparent; color:#dbe9f8; border:0; border-bottom:3px solid transparent; padding:8px 14px;
                  font-size:14px; cursor:pointer; white-space:nowrap; }
     nav button:hover { color:#fff; }
@@ -78,7 +82,7 @@
   <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.2/build/fhir-client.js"></script>
   <script src="pocket.js?v=20261120a"></script>
   <script src="pdf-overlay.js?v=20261120p"></script>
-  <script src="shell.js?v=20261125e"></script>
+  <script src="shell.js?v=20261127a"></script>
   <script src="suggest-rules.js?v=20261125e"></script>
   <script src="suggest.js?v=20261125c"></script>
   <script src="consult-widget.js?v=20261125a"></script>

@@ -692,7 +692,7 @@ discharge(p){const conds=detectConds(p);const pend=p.pending.filter(x=>x.status!
       ${pend.length?`<div class="mut" style="margin-top:8px">Pending results that will be listed for follow-up: ${pend.map(x=>esc(x.test||'test')).join(', ')}</div>`:''}
       ${conds.some(c=>c.fu.length)?`<div style="margin-top:8px" class="mut">Suggested for this patient:</div><div class="chips">${conds.flatMap(c=>c.fu.map((f,j)=>`<button class="chip" onclick="addSuggestion('fu','${c.id}',${j})">+ ${esc(c.label)}: ${esc(f[1])}</button>`)).join('')}</div>`:''}`)
   +sec('What the patient should watch for',p.discharge.ptWatch.map((x,i)=>`<div class="row">${LT('discharge.ptWatch',i,'text',x.text,'Plain-language warning sign and what to do',2)}${X('discharge.ptWatch',i)}</div>`).join('')
-      +`<button class="sm" onclick="addItem('discharge.ptWatch')">+ Warning sign</button>
+      +`<button class="sm" onclick="addItem('discharge.ptWatch')">+ Warning sign</button> <button class="sm" onclick="openHfHandout()">Heart failure patient handout →</button>
       ${conds.length?`<div style="margin-top:8px" class="mut">Condition-specific suggestions (click to add):</div>${conds.map(c=>`<div style="margin-top:4px"><b class="mut">${esc(c.label)}</b><div class="chips">${c.pt.map((t,j)=>`<button class="chip" style="text-align:left" onclick="addSuggestion('pt','${c.id}',${j})">+ ${esc(trunc(t,90))}</button>`).join('')}</div></div>`).join('')}`:''}`)
   +`<div class="actions"><button class="pri" onclick="showDischarge()">Make discharge summary</button></div>`;
 }};
@@ -830,6 +830,8 @@ document.addEventListener('change',e=>onEdit(e,true));
 document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal();});
 function render(){renderSide();renderMain();if(typeof cloudUI==='function')try{const sd=document.getElementById('cloudSide');if(sd)sd.textContent=document.getElementById('cloudBtn').textContent;}catch(e){}}
 window.addEventListener('storage',e=>{if(e.key===KEY){load();syncSettings();render();cloudInit();toast('Patient list updated.');}});
+function openHfHandout(){try{if(window.parent!==window&&typeof window.parent.showAt==='function'){window.parent.showAt('chf','handout-card','dc');return;}}catch(e){}
+  window.open((location.pathname.includes('/tools/round/')?'../chf/index.html':'../hospitalist-toolkit/tools/chf/index.html')+'#handout','_blank','noopener');}
 function openListReader(){try{if(window.parent!==window&&typeof window.parent.show==='function'){window.parent.show('plist');return;}}catch(e){}
   window.open(/\/tools\/round\//.test(location.pathname)?'../plist/index.html':'../hospitalist-toolkit/tools/plist/index.html','_blank');}
 load();syncSettings();render();
