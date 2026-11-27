@@ -506,6 +506,11 @@ function summarizeAdmission(){const p=curP();const raw=p.admission.raw;if(!raw.t
 function parseMedsBox(){const p=curP();const m=parseMeds(p.admission.medsRaw);if(!m.length){toast('No medications found in the pasted text.');return;}p.admission.meds=m;p.admission.medsRaw='';save();renderMain();toast(m.length+' medications read.');}
 function readLabsBox(){const p=curP();const l=parseLabs(p.labsRaw);if(!l.length){toast('No lab results with dates found — paste rows like "Sodium 128 mmol/L Low 23/11/26 04:25".');return;}const n=mergeLabs(p,l);p.labsRaw='';save();renderMain();toast(`${l.length} results read, ${n} new.`);}
 function clearDcMeds(){const p=curP();if(!confirmArm('dcmeds'))return;p.discharge.medChanges=[];save();renderMain();}
+/* The toolkit's Consult button asks the open tab for its patient: give it the Rounding notebook's current patient, not the Cerner one */
+window.consultPatient=function(){const p=curP();if(!p)return null;let n=String(p.name||'').trim();if(/,/.test(n))n=n.split(',').map(x=>x.trim()).filter(Boolean).reverse().join(' ');
+  const act=p.admission.problems.filter(x=>x.text&&x.status!=='Resolved').map(x=>x.text);
+  let hx=p.admission.oneLiner||p.reason||'';hx=hx.replace(/^This is an? /i,'').replace(/^\d+[- ]?(year|yr|y)[- ]?old\s+(male|female|man|woman|M|F)\b[,]?\s*(with\s+)?(an?\s+)?/i,'').replace(/\s+/g,' ').trim();hx=hx.charAt(0).toUpperCase()+hx.slice(1);const w=hx.split(' ');if(w.length>28)hx=w.slice(0,28).join(' ')+'…';
+  return {key:p.id,name:n,age:p.age||'',sex:/^f/i.test(p.sex||'')?'female':/^m/i.test(p.sex||'')?'male':'',mrn:p.mrn||'',problem:act[0]||trunc(p.reason,60),hx,problems:act};};
 function clearAdmission(){const p=curP();if(!p)return;if(!confirmArm('adm')){toast('Press "Clear admission info" again to erase the note, summary, problems and medications for this patient.');return;}
   const a=p.admission;a.raw='';a.oneLiner='';a.summary='';a.problems=[];a.detected=null;a.meds=[];a.medsRaw='';save();render();
   toast('Admission info cleared.'+(p.labs.length?' Labs read from the note are still on the Labs tab — use "Clear all labs" there if they belong to another patient.':''));}

@@ -201,7 +201,7 @@
   window.ConsultWidget = { build, suggest, microText, summarizeLabs, labLine, shortName, PERTINENT, parseContacts, smsLink, SERVICES, parseVcards, guessService, contactLine, readSheet, listPatients };
   if (typeof document === "undefined") return;
 
-  let pt = null, probs = [], labs = [], labsLoaded = false, micro = [], probsLoaded = false;
+  let pt = null, probs = [], labs = [], labsLoaded = false, micro = [], probsLoaded = false, chartSaved = null, lastOv = null;
   async function loadPatient() {
     const ctx = window.CONSULT_CTX || {};
     let client = ctx.client || null;
@@ -456,16 +456,25 @@
       if (pan.style.display === "block") { pan.style.display = "none"; return; }
       pan.style.display = "block"; $("cw-words").textContent = "Reading the patient…";
       await loadPatient();
-      const f = patientFields();
+      // A tab with its own patient (Rounding notebook) can hand over that patient instead of the Cerner/test one
+      let ov = null; try { ov = window.CONSULT_CTX && window.CONSULT_CTX.override && window.CONSULT_CTX.override(); } catch (e) {}
+      if (ov) { if (!chartSaved) chartSaved = { labs, micro, probs }; labs = []; micro = []; probs = ov.problems || []; }
+      else if (chartSaved) { ({ labs, micro, probs } = chartSaved); chartSaved = null; }
+      if (ov && ov.key !== lastOv) { lastOv = ov.key; ["cw-prob", "cw-hx", "cw-why"].forEach((id) => ($(id).value = "")); $("cw-xp").value = ""; }
+      if (!ov && lastOv) { lastOv = null; ["cw-prob", "cw-hx", "cw-why"].forEach((id) => ($(id).value = "")); }
+      const f = ov ? { name: ov.name, age: ov.age, sex: ov.sex, mrn: ov.mrn } : patientFields();
+      if (ov) { $("cw-name").value = f.name || ""; $("cw-age").value = f.age || ""; $("cw-mrn").value = f.mrn || ""; $("cw-sex").value = f.sex || "";
+        if (!$("cw-prob").value && ov.problem) $("cw-prob").value = ov.problem; if (!$("cw-hx").value && ov.hx) $("cw-hx").value = ov.hx; }
       // a patient picked from the Excel list stays picked; otherwise the chart patient fills in
       if (!$("cw-xp").value) { if (f.name) $("cw-name").value = f.name; if (f.age != null && f.age !== "") $("cw-age").value = f.age; if (f.mrn) $("cw-mrn").value = f.mrn; if (f.sex) $("cw-sex").value = f.sex; }
       $("cw-probs").innerHTML = probs.map((p) => `<option value="${p.replace(/"/g, "&quot;")}">`).join("");
       const t = topic().replace(/\s*\b(check|tab|review|by site|follow-?up|toolkit|calculator|summary|chooser|flowsheet|screen|monitor|app|pathway|matrix|tracker)\b.*$/i, "").trim();
-      if (!$("cw-prob").value && t && !/^(today|notes|labs|forms|meds|physical exam|infections|antibiotic|what changed|ai|diagnosis|choosing wisely|consult|mobility|watch)/i.test(t)) $("cw-prob").value = t;
+      if (!$("cw-prob").value && t && !/^(rounding|patient list|today|notes|labs|forms|meds|physical exam|infections|antibiotic|what changed|ai|diagnosis|choosing wisely|consult|mobility|watch)/i.test(t)) $("cw-prob").value = t;
       $("cw-prob").placeholder = probs.length ? "pick from the problem list or type" : "e.g. ESBL pyelonephritis";
       if (!$("cw-dr").value) { $("cw-svc").value = defaultService(); picked = null; drawLabs(); } drawWho(); edited = false; refresh();
-      if (!pt) $("cw-words").textContent = "No chart patient (demo or not launched) – type name, age and MRN.";
-      sugs = pt ? suggest({ labs, probs, micro }) : []; drawSug(); badge();
+      if (ov) $("cw-words").textContent = "Patient from the Rounding notebook" + (ov.mrn ? "" : " – no MRN saved there, type it in") + ".";
+      else if (!pt) $("cw-words").textContent = "No chart patient (demo or not launched) – type name, age and MRN.";
+      sugs = ov ? suggest({ labs: [], probs, micro: [] }) : pt ? suggest({ labs, probs, micro }) : []; drawSug(); badge();
     };
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();

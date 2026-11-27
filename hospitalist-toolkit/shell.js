@@ -4,7 +4,7 @@
    A tab is only loaded the first time you open it, and stays loaded when you switch away. */
 
 // To add a tool: put its files in tools/<folder>/ and add a line here.
-const TOOL_V = "20261127h"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
+const TOOL_V = "20261127i"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
 const TOOLS = [
   { key: "today", label: "Today (what changed)", tags: "what changed daily trends vitals overnight summary", path: "tools/today/index.html" },
   { key: "plist", label: "Patient list (screenshot)", tags: "patient list screenshot excel spreadsheet rounding list census floor ward ocr", path: "tools/plist/index.html" },
@@ -119,7 +119,7 @@ async function start(client) {
   try { sessionStorage.removeItem("toolkit-target"); } catch (e) {}
 
   // Consult button (consult-widget.js): patient from this client, topic and usual service from the open tab
-  window.CONSULT_CTX = { client, tabKey: () => window.__tkTab || "", topic: () => { const t = TOOLS.find((x) => x.key === window.__tkTab); return t ? t.label.replace(/\s*\(.*?\)/, "") : ""; } };
+  window.CONSULT_CTX = { client, override: () => { const f = document.querySelector(`#frames iframe.on[data-k="${window.__tkTab}"]`); try { return f && f.contentWindow.consultPatient ? f.contentWindow.consultPatient() : null; } catch (e) { return null; } }, tabKey: () => window.__tkTab || "", topic: () => { const t = TOOLS.find((x) => x.key === window.__tkTab); return t ? t.label.replace(/\s*\(.*?\)/, "") : ""; } };
   window.TK = { patientId: client.patient.id, isPdfPatient: /^pdfpt-/.test(client.patient.id), switchPatient, backToCerner }; // used by the PDF import button
   try { $("patient").textContent = describe(await client.patient.read()); }
   catch (e) { $("patient").textContent = "Patient " + client.patient.id; }
