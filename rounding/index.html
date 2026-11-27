@@ -81,15 +81,19 @@ label.f input,label.f select,label.f textarea{font-size:14px}
   <div class="brand">Rounding Notebook</div>
   <span>My week <input type="date" id="wkStart"> to <input type="date" id="wkEnd"></span>
   <button onclick="handoverAll()">Handover — all patients</button>
+  <button id="cloudBtn" onclick="cloudClick()" title="Save the notebook to a file in your OneDrive folder">☁ Link OneDrive file</button>
   <button onclick="toggleData()">Settings / backup</button>
 </header>
+<div id="cloudBar" class="hidden" style="background:#fff4d6;color:#8a5a00;padding:8px 14px;border-bottom:1px solid #e8d9a8"></div>
 <div id="datapanel" class="hidden">
   <label class="f">Your first name (consult messages)<input id="setFirst" placeholder="e.g. Wayne"></label>
   <label class="f">Name on summaries<input id="setFull" placeholder="e.g. Dr. W. Dong"></label>
   <button onclick="exportData()">Export backup (.json)</button>
   <label class="f">Import backup<input type="file" id="importFile" accept=".json" onchange="importData(this)"></label>
   <button id="clearBtn" onclick="clearAll()">Clear all patients</button>
-  <span class="mut">Everything is saved only in this browser on this computer. Nothing is sent anywhere. Clear before leaving a shared computer.</span>
+  <span style="flex-basis:100%"></span>
+  <b>OneDrive file</b><button onclick="cloudCreate()">Create a new notebook file…</button><button onclick="cloudOpen()">Open my notebook file…</button><button onclick="cloudUnlink()">Unlink</button><span id="cloudMsg" class="mut"></span>
+  <span class="mut" style="flex-basis:100%">Save the notebook file inside your OneDrive folder (e.g. OneDrive – Island Health › Documents). Every change is saved to it and OneDrive syncs it; on another computer press <b>Open my notebook file…</b> once. Works in Edge and Chrome. Keep the notebook open on one computer at a time. Without a linked file, everything stays only in this browser.</span>
 </div>
 <div class="wrap"><aside id="side"></aside><main id="main"></main></div>
 
@@ -107,7 +111,53 @@ let S, modalAI='';
 function blank(){return {settings:{weekStart:'',weekEnd:'',first:'',full:''},patients:[],cur:null,tab:'admission'};}
 function load(){try{S=JSON.parse(localStorage.getItem(KEY))||blank();}catch(e){S=blank();}
   S.settings=Object.assign(blank().settings,S.settings||{});S.patients=(S.patients||[]).map(ensure);}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){toast('Could not save in this browser — export a backup.');}}
+function save(){S.savedAt=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){toast('Could not save in this browser — export a backup.');}cloudSchedule();}
+
+/* ============ OneDrive (or any) file sync: File System Access API, Edge/Chrome ============ */
+const CAN_FILE='showOpenFilePicker' in window;
+let fh=null,fhOK=false,fTimer=null,fLastWrite=0,fBusy=false;
+function idb(){return new Promise((ok,bad)=>{const r=indexedDB.open('rounding-notebook',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>ok(r.result);r.onerror=()=>bad(r.error);});}
+async function kv(k,v){try{const db=await idb();return await new Promise((ok,bad)=>{const t=db.transaction('kv',v===undefined?'readonly':'readwrite'),st=t.objectStore('kv');
+  const r=v===undefined?st.get(k):(v===null?st.delete(k):st.put(v,k));r.onsuccess=()=>ok(r.result);r.onerror=()=>bad(r.error);});}catch(e){return undefined;}}
+function cloudUI(msg,warn){const b=document.getElementById('cloudBtn'),bar=document.getElementById('cloudBar'),m=document.getElementById('cloudMsg');
+  if(!CAN_FILE){b.textContent='☁ OneDrive: use Edge/Chrome';b.disabled=true;}
+  else if(fh&&fhOK){b.textContent='☁ Saved to '+fh.name;b.title='Linked to '+fh.name+' — every change is saved there';}
+  else if(fh){b.textContent='☁ Reconnect '+fh.name;b.title='Click to allow saving to your OneDrive file again';}
+  else{b.textContent='☁ Link OneDrive file';}
+  if(m)m.textContent=fh?(fhOK?'Linked: '+fh.name:'Linked to '+fh.name+' — needs reconnecting'):'Not linked';
+  if(msg){bar.innerHTML=msg;bar.classList.remove('hidden');bar.style.background=warn?'#fff4d6':'#e6f4ea';bar.style.color=warn?'#8a5a00':'#1e6b3a';}else bar.classList.add('hidden');}
+function cloudClick(){if(!fh){toggleData();return;}if(!fhOK)cloudReconnect();else toast('Saving to '+fh.name+' in your OneDrive folder.');}
+function wrap(){return JSON.stringify({app:'rounding-notebook',version:1,savedAt:S.savedAt||Date.now(),data:S});}
+function unwrap(txt){const o=JSON.parse(txt);const d=o&&o.app==='rounding-notebook'?o.data:o;if(!d||!Array.isArray(d.patients))throw new Error('not a Rounding notebook file');d.savedAt=d.savedAt||o.savedAt||0;return d;}
+function cloudSchedule(){if(!fh||!fhOK)return;clearTimeout(fTimer);fTimer=setTimeout(cloudWrite,1200);}
+async function cloudWrite(){if(!fh||!fhOK||fBusy)return;fBusy=true;try{const w=await fh.createWritable();await w.write(wrap());await w.close();fLastWrite=Date.now();cloudUI();}
+  catch(e){fhOK=false;cloudUI('Could not save to <b>'+esc(fh.name)+'</b> ('+esc(e.message||e)+'). Changes are still kept in this browser. <button onclick="cloudReconnect()">Reconnect</button>',true);}finally{fBusy=false;}}
+function adopt(d,why){const st=S.settings;S=d;S.settings=Object.assign(blank().settings,st,d.settings||{});S.patients=(S.patients||[]).map(ensure);
+  try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}syncSettings();render();if(why)toast(why);}
+async function cloudRead(){const f=await fh.getFile();if(!f.size)return null;return {d:unwrap(await f.text()),mod:f.lastModified};}
+// After linking or reconnecting: newer side wins (the file, if it was saved later on another computer)
+async function cloudSync(){const r=await cloudRead();if(r&&(r.d.savedAt||0)>(S.savedAt||0)){adopt(r.d,'Loaded the latest notebook from '+fh.name+'.');}else await cloudWrite();fLastWrite=Date.now();cloudUI();}
+async function cloudCreate(){if(!CAN_FILE){toast('Use Edge or Chrome for OneDrive saving, or Export backup.');return;}
+  try{const h=await window.showSaveFilePicker({suggestedName:'rounding-notebook.json',types:[{description:'Rounding notebook',accept:{'application/json':['.json']}}]});
+    fh=h;fhOK=true;await kv('fh',h);if(!S.savedAt)S.savedAt=Date.now();await cloudWrite();cloudUI('Linked to <b>'+esc(h.name)+'</b>. Every change is now saved there. Make sure you saved it inside your OneDrive folder.');}
+  catch(e){if(e.name!=='AbortError')toast('Could not create the file: '+(e.message||e));}}
+async function cloudOpen(){if(!CAN_FILE){toast('Use Edge or Chrome for OneDrive saving, or Import backup.');return;}
+  try{const [h]=await window.showOpenFilePicker({types:[{description:'Rounding notebook',accept:{'application/json':['.json']}}]});
+    if((await h.requestPermission({mode:'readwrite'}))!=='granted'){toast('Saving to that file was not allowed.');return;}
+    fh=h;fhOK=true;await kv('fh',h);const r=await cloudRead();
+    if(r){try{localStorage.setItem(KEY+'-before-open',JSON.stringify(S));}catch(e){}adopt(r.d,'Opened '+h.name+' ('+r.d.patients.length+' patients).');}else await cloudWrite();
+    fLastWrite=Date.now();cloudUI();}
+  catch(e){if(e.name!=='AbortError')toast('Could not open: '+(e.message||e));}}
+async function cloudReconnect(){if(!fh)return;try{if((await fh.requestPermission({mode:'readwrite'}))==='granted'){fhOK=true;await cloudSync();cloudUI();}}catch(e){toast('Could not reconnect: '+(e.message||e));}}
+async function cloudUnlink(){fh=null;fhOK=false;await kv('fh',null);cloudUI();toast('Unlinked. The notebook stays in this browser; the OneDrive file is unchanged.');}
+async function cloudInit(){cloudUI();if(!CAN_FILE)return;const h=await kv('fh');if(!h)return;fh=h;
+  let perm='prompt';try{perm=await h.queryPermission({mode:'readwrite'});}catch(e){}
+  if(perm==='granted'){fhOK=true;try{await cloudSync();}catch(e){fhOK=false;}cloudUI();}
+  else cloudUI('Your notebook is linked to <b>'+esc(h.name)+'</b> in OneDrive. <button onclick="cloudReconnect()">Reconnect</button> to load the latest version and keep saving there.',true);}
+// coming back to this window: pick up changes saved from another computer
+async function cloudCheck(){if(!fh||!fhOK||fBusy)return;try{const f=await fh.getFile();if(f.lastModified>fLastWrite+1500){const r=await cloudRead();
+  if(r&&(r.d.savedAt||0)>(S.savedAt||0)){adopt(r.d,'Updated from '+fh.name+' (changed on another computer).');}fLastWrite=Math.max(fLastWrite,f.lastModified);}}catch(e){}}
+window.addEventListener('focus',cloudCheck);document.addEventListener('visibilitychange',()=>{if(!document.hidden)cloudCheck();});
 const uid=()=>Math.random().toString(36).slice(2,9);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
@@ -690,7 +740,7 @@ document.addEventListener('change',e=>onEdit(e,true));
 ['setFirst','setFull'].forEach(id=>document.getElementById(id).addEventListener('input',e=>{S.settings[id==='setFirst'?'first':'full']=e.target.value;save();}));
 document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal();});
 function render(){renderSide();renderMain();}
-window.addEventListener('storage',e=>{if(e.key===KEY){load();syncSettings();render();toast('Patient list updated.');}});
+window.addEventListener('storage',e=>{if(e.key===KEY){load();syncSettings();render();cloudInit();toast('Patient list updated.');}});
 function openListReader(){try{if(window.parent!==window&&typeof window.parent.show==='function'){window.parent.show('plist');return;}}catch(e){}
   window.open(/\/tools\/round\//.test(location.pathname)?'../plist/index.html':'../hospitalist-toolkit/tools/plist/index.html','_blank');}
 load();syncSettings();render();
