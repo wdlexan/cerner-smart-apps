@@ -519,7 +519,14 @@ function addSuggestion(kind,ci,ii){const c=COND.find(x=>x.id===ci);if(!c)return;
   if(kind==='fu'){const f=c.fu[ii];addItem('discharge.followup',{type:f[0],what:f[1],when:f[2]});}
   toast('Added.');}
 function addNote(){const p=curP();const d=p.noteDraft;if(!d.text.trim()){toast('Write the note first.');return;}
-  p.notes.push({id:uid(),date:d.date||todayStr(),text:d.text,course:d.course});p.noteDraft={date:todayStr(),text:'',course:''};save();renderMain();const f=testsInNotes(p).length;toast(f?'Note saved — '+f+' ordered test'+(f>1?'s':'')+' found: add them on Tests to review.':'Note saved.');}
+  const ei=d.editId?p.notes.findIndex(n=>n.id===d.editId):-1;
+  if(ei>=0)Object.assign(p.notes[ei],{date:d.date||p.notes[ei].date,text:d.text,course:d.course,edited:Date.now()});else p.notes.push({id:uid(),date:d.date||todayStr(),text:d.text,course:d.course});
+  p.noteDraft={date:todayStr(),text:'',course:''};save();renderMain();const f=testsInNotes(p).length;toast((ei>=0?'Note updated':'Note saved')+(f?' — '+f+' ordered test'+(f>1?'s':'')+' found: add them on Tests to review.':'.'));}
+function editNote(i){const p=curP();const n=p.notes[i];if(!n)return;if(!n.id)n.id=uid();
+  if(p.noteDraft.text.trim()&&p.noteDraft.editId!==n.id&&!confirmArm('editnote')){toast('Today’s note has unsaved text — press Edit again to replace it with this note.');return;}
+  p.noteDraft={date:n.date,text:n.text,course:n.course||'',editId:n.id};save();renderMain();
+  const t=document.querySelector('[data-b="noteDraft.text"]');if(t){t.scrollIntoView({block:'center'});t.focus();}}
+function cancelEdit(){const p=curP();p.noteDraft={date:todayStr(),text:'',course:''};save();renderMain();toast('Edit cancelled — the saved note is unchanged.');}
 function carryForward(){const p=curP();const last=[...p.notes].sort((a,b)=>a.date<b.date?1:-1)[0];if(!last){toast('No previous note to carry forward.');return;}
   p.noteDraft.text=last.text;save();renderMain();toast('Last note copied into today’s draft — edit what changed.');}
 function soapTemplate(){const p=curP();const hd=p.admitDate?diff(p.admitDate,p.noteDraft.date||todayStr())+1:'';
@@ -664,8 +671,8 @@ notes(p){const d=p.noteDraft;const sorted=p.notes.map((n,i)=>({n,i})).sort((a,b)
   return sec('Today’s note',`<div class="phead"><label class="mut">Date ${B('noteDraft.date',d.date,'','date')}</label><button class="sm" onclick="soapTemplate()">Insert SOAP + problem list</button><button class="sm" onclick="carryForward()">Copy last note forward</button></div>
       <textarea data-b="noteDraft.text" rows="9" style="margin-top:6px" placeholder="S / O / A&P …">${esc(d.text)}</textarea>
       <label class="f" style="margin-top:6px">One line for the hospital course (used in handover and discharge summary)${B('noteDraft.course',d.course,'e.g. Febrile overnight; switched ceftriaxone → pip-tazo; CT shows small effusion','text','','style="width:100%"')}</label>
-      <div class="actions"><button class="pri" onclick="addNote()">Save note</button></div>`)
-  +sec(`Saved notes (${p.notes.length})`,sorted.map(({n,i})=>`<div class="note"><div class="phead">${L('notes',i,'date',n.date,'','date','','data-r="1"')}<b>${p.admitDate?'Hospital day '+(diff(p.admitDate,n.date)+1):''}</b><span style="flex:1"></span>${X('notes',i)}</div>
+      <div class="actions">${d.editId&&p.notes.some(n=>n.id===d.editId)?`<button class="pri" onclick="addNote()">Update note</button><button onclick="cancelEdit()">Cancel edit</button><span class="mut">Editing the saved note from ${esc(d.date)}</span>`:'<button class="pri" onclick="addNote()">Save note</button>'}</div>`)
+  +sec(`Saved notes (${p.notes.length})`,sorted.map(({n,i})=>`<div class="note"><div class="phead">${L('notes',i,'date',n.date,'','date','','data-r="1"')}<b>${p.admitDate?'Hospital day '+(diff(p.admitDate,n.date)+1):''}</b><span style="flex:1"></span><span class="mut" style="font-size:12px">${n.edited?'edited '+new Date(n.edited).toLocaleString('en-CA',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})+' · ':''}changes save as you type</span><button class="sm" onclick="editNote(${i})">✎ Edit</button>${X('notes',i)}</div>
       ${LT('notes',i,'text',n.text,'',5)}${L('notes',i,'course',n.course,'Hospital course line','text','','style="width:100%;margin-top:4px"')}</div>`).join('')||'<div class="mut">No saved notes yet.</div>');
 },
 tasks(p){const t=todayStr();const cats=['Consult','Call family','Order test','Review result','Med change','Goals of care','Forms / paperwork','Discharge planning','Other'];
@@ -868,6 +875,7 @@ function onEdit(e,isChange){const t=e.target;if(!t.closest('#main'))return;const
   else return;
   if(t.dataset.l==='admission.meds'){const it=p.admission.meds[+t.dataset.i];if(it){if(/dose|route|freq|prn/.test(t.dataset.k)&&!it.added)it.edited=true;
     if(t.dataset.k==='name'){it.cls=medClass(it.name);if(it.name.trim())it.nameSet=true;}}}
+  if(t.dataset.l==='notes'){const it=p.notes[+t.dataset.i];if(it)it.edited=Date.now();}
   if(t.dataset.l==='tasks'&&t.dataset.k==='done'){const it=p.tasks[+t.dataset.i];if(it&&it.done&&it.cat==='Order test'&&!it.moved){
     p.pending.push({test:it.text||'Test',ordered:todayStr(),expected:'',status:'Pending',result:''});it.moved=true;toast('Ordered — moved to Tests to review.');}}
   save();if(rer)render();else if(t.dataset.side)renderSide();}
