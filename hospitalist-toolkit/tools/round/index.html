@@ -73,6 +73,17 @@ label.f input,label.f select,label.f textarea{font-size:14px}
 #datapanel{background:#fff;border-bottom:1px solid var(--line);padding:10px 14px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 #toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#1d2a33;color:#fff;padding:8px 14px;border-radius:6px;z-index:10}
 @media(max-width:760px){.wrap{flex-direction:column}aside{width:auto;border-right:0;border-bottom:1px solid var(--line);max-height:45vh}}
+.mgrp{border:1px solid var(--line);border-radius:6px;padding:4px 8px 6px;margin:6px 0}
+.mgrp.inpt{background:#fffbe6;border-color:#f0e2a8}
+.mgh{font-size:17px;font-weight:700;color:var(--ink);margin:2px 0 2px}
+.msub{font-size:12px;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:.04em;margin:6px 0 1px}
+table.mt{border-collapse:collapse;width:100%;font-size:13px}
+table.mt td{padding:1px 6px 1px 0;border-bottom:1px dashed var(--line);vertical-align:middle;line-height:1.3}
+table.mt tr:last-child td{border-bottom:0}
+table.mt td.mn{width:34%}table.mt td.md{color:var(--mut)}table.mt td.mx{text-align:right;white-space:nowrap;width:1%}
+table.mt select,table.mt input{font-size:12px;padding:1px 4px}
+table.mt .badge{font-size:10px;margin:0 0 0 3px}
+table.mt tr.mchg td{background:#fdecea}
 @media print{header,aside,.tabs,.actions,#datapanel{display:none}}
 </style>
 </head>
@@ -298,7 +309,7 @@ const MEDCLASS=[['Anticoagulant',/apixaban|rivaroxaban|edoxaban|dabigatran|warfa
 const medClass=n=>MEDCLASS.filter(c=>c[1].test(n)).map(c=>c[0]);
 const MEDGROUP=/^(Inpatient|Home|Prescriptions?|Documented|Outpatient|Continued|Discontinued|PRN medications|Scheduled|Continuous)\b[:\s]*/i;
 function parseMeds(text){const out=[];let group='';
-  const SPLIT=/\s+(?=[a-z][A-Za-z\-]+(?:\s[a-zA-Z][A-Za-z\-]+){0,3}\s*(?:\([^)]*\))?\s*,\s*[<>]?[\d.]+)/;
+  const SPLIT=/\s+(?=(?:[a-z]|[A-Z]{2,}[a-z])[A-Za-z\-]*(?:\s[a-zA-Z][A-Za-z\-]+){0,3}\s*(?:\([^)]*\))?\s*,\s*[<>]?[\d.]+)/;
   const glue=arr=>{const o=[];let carry='';arr.forEach(f=>{const g=f.match(MEDGROUP);const body=g?f.slice(g[0].length):f;
       if(/^[a-z][A-Za-z\-]*$/.test(body.trim())){carry+=(g?g[0]:'')+body.trim()+' ';return;}o.push(carry+f);carry='';});if(carry)o.push(carry.trim());
       return o.map(x=>{const g=x.match(/^(.*?)\b(Inpatient|Home|Prescriptions?|Documented|Outpatient)\s+(.*)$/);return g&&!g[1].trim()?x:x;});};
@@ -507,11 +518,16 @@ admission(p){const d=p.admission.detected;const conds=detectConds(p);
       ${d&&d.found.length?`<div class="mut" style="margin-top:6px">Note sections read: ${d.found.join(', ')}</div>`:''}`,!!d);
 },
 meds(p){const ms=p.admission.meds;const groups=[...new Set(ms.map(m=>m.group||''))];
-  const DCO=['Continue','Stopped','Dose changed','Held — restart later','New this admission'];
-  const row=(m,i)=>`<div class="row"><div class="grow" style="min-width:220px"><b>${esc(m.name)}</b>${m.prn?' <span class="flag amb">PRN</span>':''}${(m.cls||[]).map(c=>` <span class="badge ${/Anticoag|Opioid|Benzo|Insulin|Antipsych/.test(c)?'red':''}">${esc(c)}</span>`).join('')}
-      <div class="mut">${esc([m.dose,m.route,m.freq].filter(Boolean).join(' · '))}</div></div>
-      <label class="mut">At discharge ${LS('admission.meds',i,'dc',DCO,m.dc||'Continue')}</label>${m.dc&&m.dc!=='Continue'?L('admission.meds',i,'why',m.why||'','Reason','text','','size="18"'):''}${X('admission.meds',i)}</div>`;
-  return sec(`Medications (${ms.length})`,ms.length?groups.map(g=>`${g?`<div class="mut" style="margin-top:6px;font-weight:600">${esc(g)}</div>`:''}${ms.map((m,i)=>({m,i})).filter(o=>(o.m.group||'')===g).map(o=>row(o.m,o.i)).join('')}`).join('')
+  const DCO=[['Continue','Continue'],['Stopped','Stopped'],['Dose changed','Dose changed'],['Held — restart later','Held'],['New this admission','New']];
+  const row=(m,i)=>`<tr class="${m.dc&&m.dc!=='Continue'?'mchg':''}"><td class="mn"><b>${esc(m.name.replace(/\s*\((.*?)\)/,(x,y)=>' ('+y+')'))}</b>${(m.cls||[]).map(c=>` <span class="badge ${/Anticoag|Opioid|Benzo|Insulin|Antipsych/.test(c)?'red':''}">${esc(c)}</span>`).join('')}</td>
+      <td class="md">${esc([m.dose,m.route,m.freq.replace(/,?\s*PRN\b/i,'')].filter(Boolean).join(' · '))}</td>
+      <td class="mx">${LS('admission.meds',i,'dc',DCO,m.dc||'Continue')}${m.dc&&m.dc!=='Continue'?L('admission.meds',i,'why',m.why||'','Reason','text','','size="14"'):''}${X('admission.meds',i)}</td></tr>`;
+  const block=(g)=>{const list=ms.map((m,i)=>({m,i})).filter(o=>(o.m.group||'')===g);const sch=list.filter(o=>!o.m.prn),prn=list.filter(o=>o.m.prn);
+    const inpt=/inpatient/i.test(g);
+    return `<div class="mgrp ${inpt?'inpt':''}">${g?`<div class="mgh">${esc(g)} <span class="mut">(${list.length})</span></div>`:''}
+      ${sch.length?`<div class="msub">Scheduled (${sch.length})</div><table class="mt">${sch.map(o=>row(o.m,o.i)).join('')}</table>`:''}
+      ${prn.length?`<div class="msub">PRN (${prn.length})</div><table class="mt">${prn.map(o=>row(o.m,o.i)).join('')}</table>`:''}</div>`;};
+  return sec(`Medications (${ms.length})`,ms.length?groups.map(block).join('')
       +`<div class="mut" style="margin-top:6px">Set "At discharge" for any med you stop, change, hold or start — it goes into the discharge summary's medication changes.</div>`
       :'<div class="mut">No medications yet. Press Summarize admission on the Admission tab, or paste a med list below.</div>')
   +sec('Paste a medication list',`<textarea data-b="admission.medsRaw" rows="5" placeholder="Paste the med list (PowerChart Medications / admission med rec)">${esc(p.admission.medsRaw)}</textarea><div class="actions"><button class="pri" onclick="parseMedsBox()">Read medications</button><span class="mut">Replaces the list above.</span></div>`,!ms.length);
