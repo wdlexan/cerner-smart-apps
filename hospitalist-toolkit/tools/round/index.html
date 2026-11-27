@@ -285,7 +285,7 @@ const TPL={'admission.problems':()=>({text:'',status:'Active',plan:''}),'basics.
  'discharge.medChanges':()=>({type:'Started',med:'',reason:''}),'discharge.followup':()=>({type:'Family physician',what:'',when:'',status:'To book'}),
  'discharge.ptWatch':()=>({text:''}),'discharge.custom':()=>({text:'',done:false})};
 function addItem(path,preset){const p=curP();const arr=getP(p,path);const it=Object.assign(TPL[path](),preset||{});arr.push(it);save();renderMain();
-  if(!preset||!preset.text&&!preset.item&&!preset.test&&!preset.drug&&!preset.med&&!preset.what){const el=document.querySelector(`[data-l="${path}"][data-i="${arr.length-1}"]:not(select):not([type=date]):not([type=checkbox]):not([type=number])`);if(el)el.focus();}}
+  if(!preset||path==='tasks'||!preset.text&&!preset.item&&!preset.test&&!preset.drug&&!preset.med&&!preset.what){const el=document.querySelector(`[data-l="${path}"][data-i="${arr.length-1}"]:not(select):not([type=date]):not([type=checkbox]):not([type=number])`);if(el){el.focus();const n=el.value.length;try{el.setSelectionRange(n,n);}catch(e){}}}}
 function delItem(path,i){const p=curP();getP(p,path).splice(i,1);save();renderMain();}
 function moveTo(path,i,to){/* reserved */}
 
@@ -419,7 +419,7 @@ tasks(p){const t=todayStr();const cats=['Consult','Call family','Order test','Re
      ${!x.done&&x.due&&x.due<t?'<span class="flag red">Overdue</span>':''}${!x.done&&x.due===t?'<span class="flag amb">Today</span>':''}
      ${x.cat==='Consult'?`<button class="sm" onclick="consultMsg(${i})">Consult message</button>`:''}${x.cat==='Call family'&&p.basics.contacts?`<span class="mut">📞 ${esc(trunc(p.basics.contacts,60))}</span>`:''}${X('tasks',i)}</div>`;
   const all=p.tasks.map((x,i)=>({x,i}));const open=all.filter(o=>!o.x.done).sort((a,b)=>(a.x.due||'9')<(b.x.due||'9')?-1:1);const done=all.filter(o=>o.x.done);
-  return sec('Things to do',`<div class="chips" style="margin-bottom:8px">${cats.map(c=>`<button class="chip" onclick="addItem('tasks',{cat:'${c}'})">+ ${c}</button>`).join('')}</div>${open.map(row).join('')||'<div class="mut">Nothing open.</div>'}`)
+  return sec('Things to do',`<div class="chips" style="margin-bottom:8px">${cats.map(c=>`<button class="chip" onclick="addItem('tasks',{cat:'${c}'})">+ ${c}</button>`).join('')}</div><div class="chips" style="margin-bottom:8px"><span class="mut" style="align-self:center">Order a test:</span>${['Blood work','Blood cultures','Urine culture','CT','MRI','Ultrasound','X-ray','Echo','Pathology / biopsy','Send-out lab'].map(t=>`<button class="chip" onclick="addItem('tasks',{cat:'Order test',text:'${t} '})">+ ${t}</button>`).join('')}</div>${open.map(row).join('')||'<div class="mut">Nothing open.</div>'}`)
   +sec(`Done (${done.length})`,done.map(row).join('')||'<div class="mut">None yet.</div>',false);
 },
 pending(p){const t=todayStr(),we=S.settings.weekEnd;
@@ -431,7 +431,7 @@ pending(p){const t=todayStr(),we=S.settings.weekEnd;
        <label class="mut">Ordered ${L('pending',i,'ordered',x.ordered,'','date')}</label><label class="mut">Expected ${L('pending',i,'expected',x.expected,'','date')}</label>
        ${LS('pending',i,'status',st,x.status)}${f}${L('pending',i,'result',x.result,'Result / action','text','grow')}${X('pending',i)}</div>`;}).join('')
      +(()=>{const f=testsInNotes(p);return f.length?`<div style="margin-top:10px" class="mut">Found in your daily notes — click to add:</div><div class="chips">${f.map((x,i)=>`<button class="chip" title="${esc(x.clause)}" onclick="addTestFromNote(${i})">+ ${esc(x.name)} <span class="mut">(${fmt(x.date)}: ${esc(trunc(x.clause,50))})</span></button>`).join('')}</div>`:'';})()
-     +`<div class="chips" style="margin-top:8px"><button class="chip" onclick="addItem('pending')">+ Test</button>${['Blood cultures','Urine culture','CT','MRI','Echo','Pathology / biopsy','Send-out lab'].map(s=>`<button class="chip" onclick="addItem('pending',{test:'${s}'})">+ ${s}</button>`).join('')}</div>`);
+     +`<div class="chips" style="margin-top:8px"><button class="chip" onclick="addItem('pending')">+ Test already ordered</button></div><div class="mut" style="margin-top:4px">To order a new test, use the To-do tab — it moves here when you tick it as ordered.</div>`);
 },
 abx(p){const we=S.settings.weekEnd,edd=p.discharge.edd;const un=untrackedAbx(p);
   return (un.length?`<div class="card"><span class="mut">Mentioned in your notes but not in the countdown:</span> <span class="chips" style="display:inline-flex">${un.map(a=>`<button class="chip" onclick="addAbx('${a}')">+ ${esc(a)}</button>`).join('')}</span></div>`:'')+sec('Antibiotic countdown',p.abx.map((a,i)=>{const inf=abxInfo(a);let f='';
