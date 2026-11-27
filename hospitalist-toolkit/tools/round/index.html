@@ -415,6 +415,7 @@ function renderSide(){
     <div>${c.openTasks?`<span class="badge ${c.overdueTasks?'red':''}">${c.openTasks} to-do</span>`:''}${c.toReview?`<span class="badge red">${c.toReview} result to review</span>`:''}${c.pendAfter?`<span class="badge amb">${c.pendAfter} test due after week</span>`:''}${c.abxA.map(o=>`<span class="badge ${o.i.left<=0?'grn':''}">${esc(o.a.drug||'abx')} d${o.i.day}/${o.a.days}</span>`).join('')}${p.discharge.edd?`<span class="badge">EDD ${fmt(p.discharge.edd)}</span>`:''}</div></div>`;};
   document.getElementById('side').innerHTML=`<div class="addp"><b>Add patient</b>
     <input id="np_room" placeholder="Room (e.g. 7B-12)"><input id="np_name" placeholder="Name or initials"><label class="mut">Admit date <input id="np_admit" type="date" value="${todayStr()}"></label><button class="pri" onclick="addPatient()">Add patient</button></div>
+    <button class="sm" style="margin-bottom:10px" onclick="openListReader()" title="Read a PowerChart patient-list screenshot, then press Send to Rounding notebook">📷 Add patients from a list screenshot</button>
     <div class="mut" style="margin-bottom:4px">My patients (${act.length})</div>${act.map(item).join('')||'<div class="mut">No patients yet.</div>'}
     ${dc.length?`<details style="margin-top:10px"><summary>Discharged (${dc.length})</summary><div class="db">${dc.map(item).join('')}</div></details>`:''}
     <div style="margin-top:12px"><button class="sm" onclick="loadDemo()">Load made-up demo patient</button></div>`;
@@ -689,6 +690,9 @@ document.addEventListener('change',e=>onEdit(e,true));
 ['setFirst','setFull'].forEach(id=>document.getElementById(id).addEventListener('input',e=>{S.settings[id==='setFirst'?'first':'full']=e.target.value;save();}));
 document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal();});
 function render(){renderSide();renderMain();}
+window.addEventListener('storage',e=>{if(e.key===KEY){load();syncSettings();render();toast('Patient list updated.');}});
+function openListReader(){try{if(window.parent!==window&&typeof window.parent.show==='function'){window.parent.show('plist');return;}}catch(e){}
+  window.open(/\/tools\/round\//.test(location.pathname)?'../plist/index.html':'../hospitalist-toolkit/tools/plist/index.html','_blank');}
 load();syncSettings();render();
 </script>
 </body>

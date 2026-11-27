@@ -104,6 +104,7 @@
     <div style="overflow:auto;max-height:60vh;margin-top:10px"><table id="tbl"></table></div>
     <div class="row">
       <button id="dl">Download Excel</button>
+      <button id="toRound" title="Put the ticked patients (not discharged) into the Rounding notebook tab">Send to Rounding notebook</button>
       <label class="small"><input type="checkbox" id="spare" checked> add 3 empty patient rows at the end</label>
       <button class="ghost" id="addp">+ Add patient by hand</button>
       <button class="ghost" id="clear">Clear list</button>
@@ -345,6 +346,39 @@
   $("clear").onclick = () => { rows = []; $("thumbs").innerHTML = ""; $("status").textContent = ""; $("dlmsg").textContent = ""; draw(); };
 
   // ---- Excel out ----
+  // ---- Send the ticked patients to the Rounding notebook (same browser storage it uses; matched by MRN, else name) ----
+  $("toRound").onclick = () => {
+    const KEY = "rounding-notebook-v1", m = $("dlmsg");
+    let S = null; try { S = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
+    S = S || { settings: { weekStart: "", weekEnd: "", first: "", full: "" }, patients: [], cur: null, tab: "admission" };
+    const taken = $("taken").value ? new Date($("taken").value) : new Date();
+    const iso = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const admitOf = (r) => { if (r.los == null || isNaN(r.los)) return ""; const d = new Date(taken); d.setDate(d.getDate() - Math.floor(r.los)); return iso(d); };
+    const norm = (n) => String(n || "").toLowerCase().replace(/[^a-z]/g, "");
+    let add = 0, upd = 0;
+    rows.filter((r) => r.include && !r.discharged && (r.name || r.mrn)).forEach((r) => {
+      const room = PList.roomOf(r.location || "") || r.location || "";
+      let pt = S.patients.find((x) => (r.mrn && x.mrn && x.mrn === r.mrn) || (!(r.mrn && x.mrn) && norm(x.name) && norm(x.name) === norm(r.name)));
+      if (!pt) {
+        pt = { id: Math.random().toString(36).slice(2, 9), name: r.name || "", room, mrn: r.mrn || "", age: r.age ? String(r.age) : "", sex: r.sex === "U" ? "" : (r.sex || ""),
+               admitDate: admitOf(r) || iso(new Date()), reason: r.reason || "", status: "active", basics: { fp: r.pcp || "" } };
+        S.patients.push(pt); add++;
+      } else {
+        if (room) pt.room = room; pt.status = "active";
+        ["mrn", "reason"].forEach((k) => { if (!pt[k] && r[k]) pt[k] = r[k]; });
+        if (!pt.age && r.age) pt.age = String(r.age); if (!pt.sex && r.sex && r.sex !== "U") pt.sex = r.sex;
+        if (!pt.admitDate && admitOf(r)) pt.admitDate = admitOf(r);
+        pt.basics = pt.basics || {}; if (!pt.basics.fp && r.pcp) pt.basics.fp = r.pcp; upd++;
+      }
+    });
+    if (!add && !upd) { m.className = "small err"; m.textContent = "No ticked patients to send."; return; }
+    if (!S.cur && S.patients.length) S.cur = S.patients[0].id;
+    try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { m.className = "small err"; m.textContent = "Could not save to the Rounding notebook in this browser."; return; }
+    m.className = "small ok"; m.innerHTML = `Rounding notebook: <b>${add}</b> new patient(s) added, ${upd} already there (room updated, nothing you typed was changed).` +
+      (typeof window.parent.show === "function" && window.parent !== window ? ` <a href="#" id="goRound">Open it</a>` : "");
+    const g = $("goRound"); if (g) g.onclick = (e) => { e.preventDefault(); window.parent.show("round"); };
+  };
+
   $("dl").onclick = async () => {
     const msg = $("dlmsg"); msg.className = "small muted"; msg.textContent = "Making the file…";
     try {
