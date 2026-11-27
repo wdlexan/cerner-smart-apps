@@ -4,7 +4,7 @@
    A tab is only loaded the first time you open it, and stays loaded when you switch away. */
 
 // To add a tool: put its files in tools/<folder>/ and add a line here.
-const TOOL_V = "20261127c"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
+const TOOL_V = "20261127d"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
 const TOOLS = [
   { key: "today", label: "Today (what changed)", tags: "what changed daily trends vitals overnight summary", path: "tools/today/index.html" },
   { key: "plist", label: "Patient list (screenshot)", tags: "patient list screenshot excel spreadsheet rounding list census floor ward ocr", path: "tools/plist/index.html" },
@@ -236,7 +236,10 @@ window.showAt = function (key, id, sub) {
   if (go()) return;
   let n = 0; const t = setInterval(() => { if (go() || ++n > 60) { clearInterval(t); setTimeout(go, 1200); } }, 250); // first visit: wait for the tab to load, then once more after the chart fills in
 };
+// Tabs that keep their own list of patients (Rounding notebook, Patient list): the Cerner/test patient in the header does not apply, so hide it there
+const OWN_PATIENTS = ["round", "plist"];
 function show(key) {
+  document.body.classList.toggle("own-pts", OWN_PATIENTS.includes(key));
   const tool = TOOLS.find((t) => t.key === key);
   window.__tkTab = key;
   let f = document.querySelector(`#frames iframe[data-k="${key}"]`);
