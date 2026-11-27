@@ -779,13 +779,24 @@ function dischargeText(p){const d=p.discharge,b=p.basics,dc=d.edd||todayStr(),o=
   const labA=labGroups(p).filter(x=>x.vals.some(isAbn));if(labA.length){H('Key lab results');labA.forEach(x=>o.push('- '+labLine(x,true)));}
   const pe=p.pending.filter(x=>x.status!=='Reviewed');
   if(pe.length){H('Results pending at discharge — please follow up');pe.forEach(x=>o.push(`- ${x.test}${x.expected?' (expected '+x.expected+')':''}${x.result?': '+x.result:''}`));}
-  H('Follow-up needed');
+  // --- the three bold sections ---
+  H('Disposition');
+  o.push(`Discharged to: ${d.dispo||'not documented'} on ${dc}`);
+  if(b.mobility||b.mobilityNote)o.push(`Mobility: ${b.mobility||''}${b.mobilityNote?(b.mobility?' — ':'')+b.mobilityNote:''}`);
+  const sup=(d.custom||[]).filter(x=>x.done&&x.text).map(x=>x.text);const ck=d.checklist||{};
+  if(ck.equip)sup.push('Equipment and mobility aids arranged');if(ck.family)sup.push('Family / SDM informed');if(ck.transport)sup.push('Transport arranged');
+  if(sup.length)o.push('Arranged: '+sup.join('; '));
+  if(b.lines.length)b.lines.forEach(l=>o.push(`Going home with: ${l.type} (inserted ${l.inserted})${l.plan?' — '+l.plan:''}`));
+  if(b.diet)o.push('Diet: '+b.diet);
+  H('Follow up');
   const fu=d.followup.map(x=>`- ${x.type}: ${x.what}${x.when?' — '+x.when:''}${x.status?' ['+x.status+']':''}`);
   p.abx.forEach(a=>{const i=abxInfo(a,dc);if(i&&i.left>0)fu.push(`- Complete ${a.drug} — last dose ${i.last}`);});
-  if(pe.length)fu.push('- Review the pending results listed above');
+  if(pe.length)fu.push('- Family physician: review the pending results listed above');
+  if(b.fp)fu.unshift(`- Family physician: ${b.fp}`);
   o.push(...(fu.length?fu:['- None documented']));
-  if(b.lines.length){H('Lines / devices still in place');b.lines.forEach(l=>o.push(`- ${l.type} (inserted ${l.inserted})${l.plan?': '+l.plan:''}`));}
-  H('What the patient should watch for');o.push(...(d.ptWatch.length?d.ptWatch.map(x=>'- '+x.text):['- None documented']));
+  H('Watch out for (seek medical attention)');
+  if(d.ptWatch.length)o.push(...d.ptWatch.map(x=>'- '+x.text));
+  else{const cs=detectConds(p);if(cs.length){cs.forEach(c=>c.pt.forEach(t=>o.push('- '+t)));}else o.push('- None documented');}
   H('Code status');o.push(b.code||'Not documented');
   if(b.allergies)o.push('Allergies: '+b.allergies);
   return o.join('\n');}
@@ -794,11 +805,16 @@ function dischargeText(p){const d=p.discharge,b=p.basics,dc=d.edd||todayStr(),o=
 function openModal(title,text,aiPrefix){document.getElementById('mtitle').textContent=title;document.getElementById('mtext').value=text;modalAI=aiPrefix;document.getElementById('mmsg').textContent='';
   document.querySelector('.mbtns button:nth-child(2)').style.display=aiPrefix?'':'none';document.getElementById('modal').classList.remove('hidden');}
 function closeModal(){document.getElementById('modal').classList.add('hidden');}
+const BOLD_H=/^(DISPOSITION|FOLLOW UP|WATCH OUT FOR \(SEEK MEDICAL ATTENTION\))$/;
 async function copyOut(ai){const t=document.getElementById('mtext').value;const txt=ai?modalAI+'\n\n'+t:t;
+  if(!ai&&t.split('\n').some(l=>BOLD_H.test(l.trim()))&&window.ClipboardItem){ // plain text + a formatted copy with the three headings in bold
+    const html='<div style="font-family:Arial,sans-serif;font-size:11pt">'+t.split('\n').map(l=>BOLD_H.test(l.trim())?'<b>'+esc(l)+'</b>':esc(l)).join('<br>')+'</div>';
+    try{await navigator.clipboard.write([new ClipboardItem({'text/plain':new Blob([txt],{type:'text/plain'}),'text/html':new Blob([html],{type:'text/html'})})]);
+      document.getElementById('mmsg').textContent='Copied — DISPOSITION, FOLLOW UP and WATCH OUT FOR paste in bold where the note keeps formatting.';return;}catch(e){}}
   try{await navigator.clipboard.writeText(txt);}catch(e){const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');}catch(_){}ta.remove();}
   document.getElementById('mmsg').textContent=ai?'Copied with AI instructions.':'Copied.';}
 const AI_HO='Rewrite the hospitalist handover notes below into a concise, accurate verbal-handover style summary for the next hospitalist. Keep every pending test, to-do, antibiotic day count, code status and if/then contingency. Do not add any fact that is not in the notes. Flag anything that looks inconsistent.';
-const AI_DC='Rewrite the notes below into a concise discharge summary for the family physician (headings: diagnosis, course by problem, medication changes, pending results, follow-up, what to watch for). Keep every pending result, follow-up item, antibiotic stop date and medication change. Keep the patient warning signs condition-specific and plain-language. Do not add any fact that is not in the notes.';
+const AI_DC='Rewrite the notes below into a concise discharge summary for the family physician (headings: diagnosis, course by problem, medication changes, pending results, then three headings in bold capitals exactly as written — **DISPOSITION** (where the patient is going, with whom/what supports, mobility and equipment, devices or lines going home), **FOLLOW UP** (each appointment, referral, lab or imaging with who and when, antibiotic stop dates, and who reviews pending results), and **WATCH OUT FOR (SEEK MEDICAL ATTENTION)** (condition-specific warning signs for this patient and whether to call the family doctor, go to the ER or call 911)). Keep every pending result, follow-up item, antibiotic stop date and medication change. Keep the patient warning signs condition-specific and plain-language. Do not add any fact that is not in the notes.';
 function showHandover(){const p=curP();openModal('Handover — '+(p.name||p.room||'patient'),handoverText(p),AI_HO);}
 function handoverAll(){const act=S.patients.filter(p=>p.status==='active').sort((a,b)=>(a.room||'~').localeCompare(b.room||'~',undefined,{numeric:true}));
   if(!act.length){toast('No active patients.');return;}
