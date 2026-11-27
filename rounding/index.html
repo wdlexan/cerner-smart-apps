@@ -535,6 +535,37 @@ window.consultPatient=function(){const p=curP();if(!p)return null;let n=String(p
   const act=p.admission.problems.filter(x=>x.text&&x.status!=='Resolved').map(x=>x.text);
   let hx=p.admission.oneLiner||p.reason||'';hx=hx.replace(/^This is an? /i,'').replace(/^\d+[- ]?(year|yr|y)[- ]?old\s+(male|female|man|woman|M|F)\b[,]?\s*(with\s+)?(an?\s+)?/i,'').replace(/\s+/g,' ').trim();hx=hx.charAt(0).toUpperCase()+hx.slice(1);const w=hx.split(' ');if(w.length>28)hx=w.slice(0,28).join(' ')+'…';
   return {key:p.id,name:n,age:p.age||'',sex:/^f/i.test(p.sex||'')?'female':/^m/i.test(p.sex||'')?'male':'',mrn:p.mrn||'',problem:act[0]||trunc(p.reason,60),hx,problems:act};};
+/* ---- Hospital at Home admission note: eligibility criteria, with or without a caregiver ---- */
+const HAH_CRIT=[['Demographics',['At least 17 years old','Not from Long Term Care','Living within the geographic catchment area','Safe Home Environment']],
+ ['Clinical Characteristics',['Requiring acute care for a known, reversible condition','Clinically stable','Adequate ADL and IADL support','Low falls risk','Expected length of stay is less than 14 days','Unlikely to require multiple in-hospital tests, treatments or consultations','IV access obtained','No pain crisis','No advanced cirrhosis','No unstable psychiatric disorder or violence','Consenting to abstain from substance abuse']],
+ ['Consent',['Patient Consent','Caregiver Consent']]];
+const hahItems=cg=>HAH_CRIT.map(([h,xs])=>[h,xs.filter(x=>cg||x!=='Caregiver Consent')]);
+function hahToggle(){const p=curP();p.hah=p.hah||{caregiver:'',ans:{}};p.hah.open=!p.hah.open;save();renderMain();}
+function hahSet(k,v){const p=curP();p.hah=p.hah||{caregiver:'',ans:{}};if(k==='caregiver')p.hah.caregiver=v;else p.hah.ans[k]=v;save();renderMain();}
+function hahPanel(p){const h=p.hah;if(!h||!h.open)return '';
+  const cg=h.caregiver;let body=`<div class="mcmp" style="background:#eef6ff;border-color:#b9d4f0;margin-top:8px"><b>Hospital at Home admission note</b>
+    <div style="margin:6px 0">Is a caregiver involved? <button class="sm ${cg==='yes'?'pri':''}" onclick="hahSet('caregiver','yes')">Yes — with caregiver</button> <button class="sm ${cg==='no'?'pri':''}" onclick="hahSet('caregiver','no')">No caregiver</button></div>`;
+  if(cg){body+=hahItems(cg==='yes').map(([hd,xs])=>`<div class="msub">${esc(hd)}</div>`+xs.map(x=>{const v=h.ans[x]||'Yes';
+      return `<div style="font-size:13px;display:flex;gap:6px;align-items:center;padding:1px 0"><select onchange="hahSet(${esc(JSON.stringify(x))},this.value)">${opt(['Yes','No','N/A'],v)}</select>${esc(x)}</div>`;}).join('')).join('')
+    +`<div class="actions"><button class="pri" onclick="showHah()">Make Hospital at Home note</button><span class="mut">All criteria start at Yes — change any that are not met. Uses the admission summary and problem list.</span></div>`;}
+  return body+'</div>';}
+function hahText(p){const h=p.hah||{ans:{}},cg=h.caregiver==='yes',o=[];
+  o.push('HOSPITAL AT HOME ADMISSION NOTE');
+  o.push(`Patient: ${p.name||'—'}${p.age?', '+p.age+(p.sex||''):''}${p.dob?' | DOB '+p.dob:''}${p.phn?' | PHN '+p.phn:''}${p.mrn?' | MRN '+p.mrn:''}`);
+  o.push(`Date: ${todayStr()}${S.settings.full?' | Physician: '+S.settings.full:''}`);
+  if(p.reason){o.push('');o.push('Reason for admission: '+p.reason);}
+  if(p.admission.oneLiner){o.push('');o.push(p.admission.oneLiner);}
+  const pr=p.admission.problems.filter(x=>x.text&&x.status!=='Resolved');
+  if(pr.length){o.push('');o.push('ASSESSMENT AND PLAN');pr.forEach((x,i)=>o.push(`${i+1}. ${x.text}${x.plan?': '+x.plan.replace(/^[-–\s]+/,''):''}`));}
+  if(p.abx.length){o.push('');o.push('Antibiotics: '+p.abx.map(a=>`${a.drug}${a.route?' '+a.route:''}${a.start?' from '+a.start:''}${a.days?' for '+a.days+' days':''}`).join('; '));}
+  if(p.basics.code)o.push('Code status: '+p.basics.code);if(p.basics.allergies)o.push('Allergies: '+p.basics.allergies);
+  o.push('');o.push(`Hospital at Home Eligibility Criteria - ${cg?'With':'Without'} Caregiver Involvement`);
+  hahItems(cg).forEach(([hd,xs])=>{o.push('');o.push(hd+': ');xs.forEach(x=>o.push(`${h.ans[x]||'Yes'}- ${x}`));});
+  const no=hahItems(cg).flatMap(([,xs])=>xs).filter(x=>(h.ans[x]||'Yes')==='No');
+  if(no.length){o.push('');o.push('Criteria not met: '+no.join('; ')+' — discussed / plan: ___');}
+  return o.join('\n');}
+function showHah(){const p=curP();if(!p.hah||!p.hah.caregiver){toast('Answer: is a caregiver involved?');return;}
+  openModal('Hospital at Home admission note — '+(p.name||p.room||'patient'),hahText(p),'Tidy this Hospital at Home admission note for the chart. Keep the eligibility criteria block exactly as written (each line "Yes-" or "No-"). Keep every problem and plan. Do not add any fact that is not in the notes.');}
 function clearAdmission(){const p=curP();if(!p)return;if(!confirmArm('adm')){toast('Press "Clear admission info" again to erase the note, summary, problems and medications for this patient.');return;}
   const a=p.admission;a.raw='';a.oneLiner='';a.summary='';a.problems=[];a.detected=null;a.meds=[];a.medsRaw='';save();render();
   toast('Admission info cleared.'+(p.labs.length?' Labs read from the note are still on the Labs tab — use "Clear all labs" there if they belong to another patient.':''));}
@@ -636,7 +667,7 @@ function renderMain(){
 const VIEWS={
 admission(p){const d=p.admission.detected;const conds=detectConds(p);
   return sec('Paste admission note',`<textarea data-b="admission.raw" rows="9" placeholder="Paste the admission H&P / consult note here">${esc(p.admission.raw)}</textarea>
-     <div class="actions"><button class="pri" onclick="summarizeAdmission()">Summarize admission</button><button onclick="aiAdmission()">Copy as AI prompt</button><button onclick="clearAdmission()" title="Wrong chart? Erase the pasted note, summary, problems and medications for this patient">Clear admission info</button><span class="mut">Summarize runs in this browser only — nothing is sent anywhere.</span></div>`,!p.admission.summary)
+     <div class="actions"><button class="pri" onclick="summarizeAdmission()">Summarize admission</button><button onclick="aiAdmission()">Copy as AI prompt</button><button onclick="clearAdmission()" title="Wrong chart? Erase the pasted note, summary, problems and medications for this patient">Clear admission info</button><button onclick="hahToggle()" title="Hospital at Home admission note with the eligibility criteria (asks: caregiver or not)">🏠 Hospital at Home note</button><span class="mut">Summarize runs in this browser only — nothing is sent anywhere.</span></div>${hahPanel(p)}`,!p.admission.summary||!!(p.hah&&p.hah.open))
   +sec('Admission summary (edit freely)',`<label class="f">One-liner ${B('admission.oneLiner',p.admission.oneLiner,'e.g. 84M with CHF and CKD3 admitted with RLL pneumonia','text','','style="width:100%"')}</label>
      <label class="f" style="margin-top:6px">Summary<textarea data-b="admission.summary" rows="10">${esc(p.admission.summary)}</textarea></label>`)
   +sec('Active problems',p.admission.problems.map((x,i)=>`<div class="row">${LS('admission.problems',i,'status',['Active','Improving','Watching','Resolved'],x.status)}
