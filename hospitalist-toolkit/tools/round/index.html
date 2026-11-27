@@ -361,6 +361,9 @@ function medCompareText(r){const o=[];
   if(r.changed.length){o.push('Changed in hospital:');r.changed.forEach(x=>o.push('- '+mname(x.h)+': home '+mdesc(x.h)+' → hospital '+(x.swap?mname(x.i)+' ':'')+mdesc(x.i)+' — '+kdesc(x)));}
   if(r.heldPrn.length)o.push('Home PRN meds not ordered: '+r.heldPrn.map(mname).join(', '));
   if(r.newIn.length)o.push('New in hospital: '+r.newIn.map(m=>mname(m)+' '+mdesc(m)).join('; '));return o.join('\n');}
+function refreshMedCompare(){const a=document.activeElement;if(a&&a.dataset&&a.dataset.l)a.dispatchEvent(new Event('change',{bubbles:true})); // saves a box still being typed in
+  setTimeout(()=>{const p=curP();tidyMeds(p);p.admission.meds.forEach(m=>{if(m.name)m.cls=medClass(m.name);});save();renderMain();
+    const r=compareMeds(p.admission.meds);toast(r?`Compared again: ${r.held.length} held, ${r.changed.length} changed, ${r.same.length} same, ${r.newIn.length} new.`:'Need both a Home and an Inpatient list.');},0);}
 function copyMedCompare(){const r=compareMeds(curP().admission.meds);if(!r)return;openModal('Home vs inpatient medications',medCompareText(r),'');}
 function markHeldMeds(){const p=curP();const r=compareMeds(p.admission.meds);if(!r)return;let n=0;
   r.held.forEach(h=>{if(!h.dc||h.dc==='Continue'){h.dc='Held — restart later';h.why=h.why||'Not ordered in hospital';n++;}});save();renderMain();toast(n+' home meds marked Held.');}
@@ -696,7 +699,7 @@ meds(p){tidyMeds(p);const ms=p.admission.meds;const groups=[...new Set(ms.map(m=
       ${cr.same.length?`<div class="mut" style="font-size:12.5px;margin-top:4px">Same dose at home and in hospital (${cr.same.length}): ${esc(cr.same.map(m=>mname(m).replace(/\s*\(.*$/,'')).join(', '))}</div>`:''}
       ${cr.heldPrn.length?`<h4>Home PRN meds not ordered (${cr.heldPrn.length})</h4><div style="font-size:13px">${esc(cr.heldPrn.map(mname).join(', '))}</div>`:''}
       ${cr.newIn.length?`<h4>New in hospital (${cr.newIn.length})</h4><div style="font-size:13px">${esc(cr.newIn.map(mname).join(', '))}</div>`:''}
-      <div class="actions"><button class="sm" onclick="copyMedCompare()">Copy list</button>${cr.held.length?' <button class="sm" onclick="markHeldMeds()">Mark held home meds as "Held" for discharge</button>':''}
+      <div class="actions"><button class="sm pri" onmousedown="event.preventDefault()" onclick="refreshMedCompare()" title="Compare the Home and Inpatient lists again after your changes">↻ Refresh comparison</button><button class="sm" onclick="copyMedCompare()">Copy list</button>${cr.held.length?' <button class="sm" onclick="markHeldMeds()">Mark held home meds as "Held" for discharge</button>':''}
       <span class="mut">Matching is by drug name — check combination products and brand names.</span></div></div>`:'';
   return sec(`Medications (${ms.length})`,ms.length?cmp+groups.map(block).join('')
       +`<div class="mut" style="margin-top:6px">Click a dose, route or frequency to correct it (the comparison updates when you leave the box). Set "At discharge" for any med you stop, change, hold or start — it goes into the discharge summary's medication changes.</div>`
