@@ -43,6 +43,10 @@
     .plan h3 { font-size:14px; margin:12px 0 4px; } .plan ul { margin:4px 0 8px 18px; padding:0; } .plan li { margin:3px 0; }
     .plan .urgent h3 { color:var(--r-ink); } .plan .action h3 { color:var(--a-ink); }
     .chip { display:inline-block; padding:1px 8px; border-radius:10px; font-size:12px; font-weight:600; }
+    table.wk { font-size:12.5px; line-height:1.25; } table.wk th, table.wk td { padding:2px 6px; vertical-align:middle; }
+    table.wk td:first-child { width:46%; } table.wk td .muted { font-size:11.5px; } table.wk .chip { padding:0 6px; font-size:11px; }
+    table.wk select.ovr { font-size:11.5px; padding:1px 2px; height:22px; } table.wk th:last-child, table.wk td:last-child { width:1%; }
+    .hidedone { display:inline-flex; gap:4px; align-items:center; font-size:12.5px; margin:0 0 4px; color:var(--muted); } .hidedone input { margin:0; }
     .c-yes { background:var(--g-bg); color:var(--g-ink); } .c-no { background:var(--r-bg); color:var(--r-ink); } .c-unknown { background:var(--a-bg); color:var(--a-ink); }
     .src { font-size:12px; color:var(--muted); margin-top:8px; }
     svg text { fill:var(--muted); font-size:11px; }
@@ -142,7 +146,7 @@
   <script src="rules.js?v=20261123a"></script>
   <script src="chart.js?v=20261123a"></script>
   <script src="samples.js?v=20261123a"></script>
-  <script src="app.js?v=20261123a"></script>
+  <script src="app.js?v=20261126b"></script>
   <script src="../../subtabs.js?v=20261121f"></script>
   <script>SubTabs.mount({ store: "fuo", top: ["Chart alerts", "#tiles"], dotSel: ".alert.urgent, .tile.t3, .plan .urgent", tabs: [
       {"key": "assess", "label": "Assess", "match": ["Patient and situation", "Plan now", "Does this meet FUO"]},

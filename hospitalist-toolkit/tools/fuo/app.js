@@ -7,7 +7,7 @@ const ago = (t) => { const h = (Date.now() - t) / HR; return h < 1 ? Math.max(1,
 const when = (t) => new Date(t).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 const ul = (a) => "<ul>" + a.filter(Boolean).map((t) => "<li>" + t + "</li>").join("") + "</ul>";
 const num = (id) => { const v = parseFloat($(id).value); return isFinite(v) ? v : null; };
-const state = { f: null, override: {} };
+const state = { f: null, override: {}, hideDone: {} };
 const has = (k) => !!(state.f && state.f.cls[k] && state.f.cls[k].length);
 const prob = (k) => !!(state.f && state.f.prob[k]);
 
@@ -273,10 +273,13 @@ const CLUE_NAME = { posBC: "positive blood culture", valve: "valve disease/prost
 
 function drawWorkup(x) {
   const stat = (w) => w.status === "done" ? '<span class="chip c-yes">done</span>' : w.status === "pending" ? '<span class="chip c-unknown">pending</span>' : w.status === "partial" ? '<span class="chip c-unknown">partial</span>' : w.status === "na" ? '<span class="chip">not needed</span>' : '<span class="chip c-no">not done</span>';
-  const sel = (w) => `<select class="ovr" data-id="${w.id}"><option value="">auto</option><option value="done" ${state.override[w.id] === "done" ? "selected" : ""}>done</option><option value="pending" ${state.override[w.id] === "pending" ? "selected" : ""}>pending</option><option value="na" ${state.override[w.id] === "na" ? "selected" : ""}>not needed</option></select>`;
+  const sel = (w) => `<select class="ovr" title="Mark: fix what the chart reader missed" data-id="${w.id}"><option value="">auto</option><option value="done" ${state.override[w.id] === "done" ? "selected" : ""}>done</option><option value="pending" ${state.override[w.id] === "pending" ? "selected" : ""}>pending</option><option value="na" ${state.override[w.id] === "na" ? "selected" : ""}>not needed</option></select>`;
   const table = (stage, onlyIndicated) => {
-    const rows = x.wu.filter((w) => w.stage === stage).map((w) => `<tr class="${!w.indicated ? "dim" : ""}"><td class="wrap"><b>${esc(w.t)}</b>${w.why ? `<div class="muted">${esc(w.why)}</div>` : ""}${stage > 1 && !w.indicated ? '<div class="muted">not triggered by a clue yet</div>' : ""}</td><td>${stat(w)}</td><td class="wrap">${esc(w.text)}${w.rt ? ` <span class="muted">${ago(w.rt)}</span>` : ""}</td><td class="noprint">${sel(w)}</td></tr>`).join("");
-    return `<div class="scroll"><table><tr><th>Test</th><th>Status</th><th>Result / report</th><th class="noprint">Mark</th></tr>${rows}</table></div>`;
+    const all = x.wu.filter((w) => w.stage === stage), isDone = (w) => w.status === "done" || w.status === "na";
+    const hide = !!state.hideDone[stage], nDone = all.filter(isDone).length;
+    const rows = all.filter((w) => !(hide && isDone(w))).map((w) => `<tr class="${!w.indicated ? "dim" : ""}"><td class="wrap"><b>${esc(w.t)}</b>${w.why ? ` <span class="muted">· ${esc(w.why)}</span>` : ""}${stage > 1 && !w.indicated ? ' <span class="muted">· not triggered yet</span>' : ""}</td><td class="wrap">${stat(w)} ${esc(w.text)}${w.rt ? ` <span class="muted">${ago(w.rt)}</span>` : ""}</td><td class="noprint">${sel(w)}</td></tr>`).join("");
+    const tog = nDone ? `<label class="hidedone noprint"><input type="checkbox" class="hd" data-stage="${stage}" ${hide ? "checked" : ""}> Hide done (${nDone})</label>` : "";
+    return `${tog}<div class="scroll"><table class="wk"><tr><th>Test</th><th>Status and result</th><th class="noprint">Mark</th></tr>${rows || '<tr><td colspan="3" class="muted">All done. Untick "Hide done" to see results.</td></tr>'}</table></div>`;
   };
   const n2 = x.wu.filter((w) => w.stage === 2 && w.indicated), n2d = n2.filter((w) => w.status === "done" || w.status === "na").length;
   $("w1sum").textContent = `${x.s1done}/${x.s1.length} done`; $("w2sum").textContent = `${n2.length} triggered, ${n2d} done`;
@@ -285,6 +288,7 @@ function drawWorkup(x) {
   $("w3").innerHTML = table(3) + `<div style="margin-top:8px">${ul(["<b>FDG PET-CT</b> after a negative stage 1 (and CT): finds the cause or a biopsy target in about half to two-thirds of classic FUO; best yield with raised ESR/CRP, before steroids and in older patients. A normal PET-CT predicts a good outcome.",
     "<b>Biopsy</b> the most accessible abnormal site: excisional node (not FNA) for lymphoma; temporal artery for GCA; marrow with cultures for cytopenias, HLH or miliary TB; liver for granulomas when ALP is high and imaging is unhelpful.",
     "<b>Not recommended</b> routinely: blind liver biopsy, ACE level, 'fever panels' of many serologies without a clue, tagged-WBC scan when PET-CT is available."])}</div>`;
+  $$(".hd").forEach((c) => (c.onchange = () => { state.hideDone[c.dataset.stage] = c.checked; draw(); }));
   $$(".ovr").forEach((s) => (s.onchange = () => { if (s.value) state.override[s.dataset.id] = s.value; else delete state.override[s.dataset.id]; draw(); }));
 }
 
