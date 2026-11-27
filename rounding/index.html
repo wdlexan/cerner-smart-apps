@@ -116,7 +116,7 @@ table.mt tr.mchg td{background:#fdecea}
 <div id="modal" class="hidden"><div class="mbox">
   <div class="mhead"><b id="mtitle"></b><button class="x" onclick="closeModal()">✕</button></div>
   <textarea id="mtext"></textarea>
-  <div class="mbtns"><button class="pri" onclick="copyOut(false)">Copy</button><button onclick="copyOut(true)">Copy as AI prompt</button><button onclick="window.print()">Print</button><span id="mmsg" class="mut"></span></div>
+  <div class="mbtns"><button class="pri" onclick="copyOut(false)">Copy</button><button onclick="copyOut(true)">Copy as AI prompt</button><button onclick="openGemini()" title="Copies the AI prompt and opens Gemini in a new tab — press Ctrl+V there, then Enter">Open in Gemini ↗</button><button onclick="window.print()">Print</button><span id="mmsg" class="mut"></span></div>
   <p class="warn">You can edit the text above before copying. "Copy as AI prompt" adds rewrite instructions. Paste it only into an AI tool Island Health has approved for patient data, or use made-up patients.</p>
 </div></div>
 
@@ -815,9 +815,13 @@ function dischargeText(p){const d=p.discharge,b=p.basics,dc=d.edd||todayStr(),o=
 
 /* ============ modal ============ */
 function openModal(title,text,aiPrefix){document.getElementById('mtitle').textContent=title;document.getElementById('mtext').value=text;modalAI=aiPrefix;document.getElementById('mmsg').textContent='';
-  document.querySelector('.mbtns button:nth-child(2)').style.display=aiPrefix?'':'none';document.getElementById('modal').classList.remove('hidden');}
+  document.querySelector('.mbtns button:nth-child(2)').style.display=aiPrefix?'':'none';document.querySelector('.mbtns button:nth-child(3)').style.display=aiPrefix?'':'none';document.getElementById('modal').classList.remove('hidden');}
 function closeModal(){document.getElementById('modal').classList.add('hidden');}
 const BOLD_H=/^(DISPOSITION|FOLLOW UP|WATCH OUT FOR \(SEEK MEDICAL ATTENTION\))$/;
+// Gemini has no supported way to receive a prompt in the link (and patient text in a link would sit in browser history),
+// so: copy the prompt, open Gemini, and the user presses Ctrl+V (Cmd+V on a Mac) and Enter.
+async function openGemini(){const w=window.open('https://gemini.google.com/app','_blank'); // open first, inside the click, so pop-up blockers allow it
+  await copyOut(true);document.getElementById('mmsg').textContent='Copied with AI instructions — in the Gemini tab, click the message box, press Ctrl+V, then Enter.'+(w?'':' (Pop-up blocked: open gemini.google.com yourself.)');}
 async function copyOut(ai){const t=document.getElementById('mtext').value;const txt=ai?modalAI+'\n\n'+t:t;
   if(!ai&&t.split('\n').some(l=>BOLD_H.test(l.trim()))&&window.ClipboardItem){ // plain text + a formatted copy with the three headings in bold
     const html='<div style="font-family:Arial,sans-serif;font-size:11pt">'+t.split('\n').map(l=>BOLD_H.test(l.trim())?'<b>'+esc(l)+'</b>':esc(l)).join('<br>')+'</div>';
