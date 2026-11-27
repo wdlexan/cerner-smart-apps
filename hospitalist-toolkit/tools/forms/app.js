@@ -123,9 +123,11 @@ function renderBanner() {
     if (PT.dob) parts.push(`DOB ${fmtDate(PT.dob, "dmon")}`);
     if (PT.sexLabel) parts.push(PT.sexLabel);
     if (PT.fromNotebook) {
-        if (PT.age) parts.push(PT.age + " y");
+        if (PT.age && !PT.dob) parts.push(PT.age + " y");
         parts.push(PT.mrn ? `MRN ${PT.mrn}` : "no MRN in notebook");
-        b.textContent = parts.join(" · ") + " — from the Rounding notebook: type DOB, PHN and address on the form";
+        const miss = [!PT.dob && "DOB", !PT.phn && "PHN", !PT.street && "address"].filter(Boolean);
+        if (PT.phn) parts.push(`PHN ${PT.phn}`);
+        b.textContent = parts.join(" · ") + " — from the Rounding notebook" + (miss.length ? ": type " + miss.join(", ") + " on the form, or add them in the notebook" : "");
         return;
     }
     parts.push(PT.phn ? `PHN ${PT.phn}` : "PHN not in chart");
@@ -149,8 +151,21 @@ function notebookPt() {
     first = cap(first); last = cap(last);
     const sex = /^f/i.test(p.sex || "") ? "female" : /^m/i.test(p.sex || "") ? "male" : "";
     return { id: p.id, fromNotebook: true, age: p.age || "", room: p.room || "",
-        fullName: [first, last].filter(Boolean).join(" "), first, last, initial: "", dob: "", sex, sexLabel: { male: "Male", female: "Female" }[sex] || "",
-        phn: "", mrn: p.mrn || "", street: "", city: "", province: "", postal: "", addressOneLine: "", homePhone: "", workPhone: "", mobile: "", email: "" };
+        fullName: [first, last].filter(Boolean).join(" "), first, last, initial: "", dob: p.dob || "", sex, sexLabel: { male: "Male", female: "Female" }[sex] || "",
+        phn: String(p.phn || "").replace(/\D/g, ""), mrn: p.mrn || "", ...splitAddress(p.address), homePhone: "", workPhone: "", mobile: "", email: "" };
+}
+// "1234 Fort St, Victoria, BC V8R 1H4" -> street / city / province / postal
+function splitAddress(a) {
+    a = String(a || "").replace(/\s+/g, " ").trim();
+    if (!a) return { street: "", city: "", province: "", postal: "", addressOneLine: "" };
+    const pm = a.match(/\b([A-Z]\d[A-Z])\s?(\d[A-Z]\d)\b/i), postal = pm ? (pm[1] + " " + pm[2]).toUpperCase() : "";
+    let rest = pm ? a.replace(pm[0], "") : a;
+    const pv = rest.match(/\b(BC|AB|SK|MB|ON|QC|NB|NS|PE|NL|YT|NT|NU|British Columbia)\b/i);
+    const province = pv ? (/british/i.test(pv[1]) ? "BC" : pv[1].toUpperCase()) : (/^V/.test(postal) ? "BC" : "");
+    if (pv) rest = rest.replace(pv[0], "");
+    const parts = rest.split(",").map(x => x.trim()).filter(Boolean);
+    const street = parts.length > 1 ? parts.slice(0, -1).join(", ") : parts[0] || "", city = parts.length > 1 ? parts[parts.length - 1] : "";
+    return { street, city, province, postal, addressOneLine: [street, city, [province, postal].filter(Boolean).join(" ")].filter(Boolean).join(", ") };
 }
 function defaultSrc() {
     let saved = ""; try { saved = localStorage.getItem(SRC_KEY) || ""; } catch (e) {}

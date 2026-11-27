@@ -194,7 +194,7 @@ function toast(m){let t=document.getElementById('toast');if(!t){t=document.creat
 function firstSentence(t,max=220){t=String(t||'').replace(/^\s*(S|O|A|P|A\/P|A&P)\s*:\s*/i,'').replace(/\s+/g,' ').trim();if(!t)return '';const m=t.match(/^.*?[.!?](\s|$)/);let s=(m?m[0]:t).trim();if(s.length>max)s=s.slice(0,max-1)+'…';return s;}
 function trunc(t,n){t=String(t||'').replace(/\s+/g,' ').trim();return t.length>n?t.slice(0,n-1)+'…':t;}
 
-function template(){return {id:uid(),name:'',room:'',mrn:'',age:'',sex:'',admitDate:todayStr(),reason:'',status:'active',
+function template(){return {id:uid(),name:'',room:'',mrn:'',age:'',sex:'',dob:'',phn:'',address:'',admitDate:todayStr(),reason:'',status:'active',
   admission:{raw:'',oneLiner:'',summary:'',problems:[],detected:null,meds:[],medsRaw:''},labs:[],labsRaw:'',labsAbnOnly:false,
   basics:{code:'',allergies:'',vte:'',diet:'',mobility:'',mobilityNote:'',isolation:'',contacts:'',fp:'',consultants:'',lines:[]},
   notes:[],noteDraft:{date:todayStr(),text:'',course:''},tasks:[],pending:[],abx:[],watch:[],
@@ -496,13 +496,27 @@ function addItem(path,preset){const p=curP();const arr=getP(p,path);const it=Obj
 function delItem(path,i){const p=curP();getP(p,path).splice(i,1);save();renderMain();}
 function moveTo(path,i,to){/* reserved */}
 
+function ageFrom(dob){const d=new Date(dob+'T00:00');if(isNaN(d))return '';const n=new Date();let a=n.getFullYear()-d.getFullYear();if(n<new Date(n.getFullYear(),d.getMonth(),d.getDate()))a--;return a>=0&&a<125?String(a):'';}
+function parseDemo(t){t=String(t||'');const o={};const MON={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,sept:9,oct:10,nov:11,dec:12};const pad=n=>String(n).padStart(2,'0');
+  const m=t.match(/\b(?:DOB|D\.O\.B\.?|Date of Birth|Birth\s*Date)\s*[:#-]?\s*([0-9]{4}-[0-9]{1,2}-[0-9]{1,2}|[0-9]{1,2}[-\/ .][A-Za-z]{3,9}[-\/ .,]+[0-9]{4}|[A-Za-z]{3,9}\.? [0-9]{1,2},? [0-9]{4}|[0-9]{1,2}[\/.-][0-9]{1,2}[\/.-][0-9]{4})/i);
+  if(m){const v=m[1];let y,mo,d,x;
+    if(x=v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/))[y,mo,d]=[x[1],x[2],x[3]];
+    else if(x=v.match(/^(\d{1,2})[-\/ .]([A-Za-z]{3,9})[-\/ .,]+(\d{4})$/))[d,mo,y]=[x[1],MON[x[2].slice(0,4).toLowerCase()]||MON[x[2].slice(0,3).toLowerCase()],x[3]];
+    else if(x=v.match(/^([A-Za-z]{3,9})\.? (\d{1,2}),? (\d{4})$/))[mo,d,y]=[MON[x[1].slice(0,4).toLowerCase()]||MON[x[1].slice(0,3).toLowerCase()],x[2],x[3]];
+    else if(x=v.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/)){let a=+x[1],b=+x[2];if(b>12&&a<=12)[a,b]=[b,a];[d,mo,y]=[a,b,x[3]];} // dd/mm/yyyy unless impossible
+    if(y&&mo&&d&&+mo<=12&&+d<=31)o.dob=`${y}-${pad(mo)}-${pad(d)}`;}
+  const ph=t.match(/\b(?:BC\s*)?(?:PHN|Personal Health (?:Number|No\.?|#))\s*[:#-]?\s*(9[\d\s-]{9,13})/i);if(ph){const dg=ph[1].replace(/\D/g,'').slice(0,10);if(/^9\d{9}$/.test(dg))o.phn=dg;}
+  const mr=t.match(/\b(?:MRN|Medical Record (?:Number|No\.?|#))\s*[:#-]?\s*([A-Z]{0,2}\d{5,10})\b/i);if(mr)o.mrn=mr[1];
+  const ad=t.match(/\b(?:Home\s+)?Address\s*[:#-]\s*([^\n]{6,140})/i);if(ad)o.address=ad[1].replace(/\s+/g,' ').replace(/\s*(Phone|Tel|Home Phone|Cell)\b.*$/i,'').trim().replace(/[,;]$/,'');
+  return o;}
 function summarizeAdmission(){const p=curP();const raw=p.admission.raw;if(!raw.trim()){toast('Paste the admission note first.');return;}
   const r=parseNote(raw);p.admission.oneLiner=r.oneLiner;p.admission.summary=r.summary;
   if(!p.admission.problems.length)p.admission.problems=r.problems;
+  const dm=parseDemo(raw);['dob','phn','mrn','address'].forEach(k=>{if(!p[k]&&dm[k])p[k]=dm[k];});if(!p.age&&p.dob)p.age=ageFrom(p.dob);
   if(!p.age&&r.age)p.age=r.age;if(!p.sex&&r.sex)p.sex=r.sex;if(!p.reason&&r.cc)p.reason=r.cc;
   if(!p.basics.code&&r.code)p.basics.code=r.code;if(!p.basics.allergies&&r.allergies)p.basics.allergies=r.allergies;
   if(r.meds.length)p.admission.meds=r.meds;const nl=mergeLabs(p,r.labs);
-  p.admission.detected={abx:r.abx,found:r.found};save();render();toast(`Summary made — ${r.meds.length} meds, ${nl} lab results read. Edit anything that is wrong.`);}
+  p.admission.detected={abx:r.abx,found:r.found};save();render();toast(`Summary made — ${r.meds.length} meds, ${nl} lab results read`+(Object.keys(dm).length?', '+Object.keys(dm).map(k=>k.toUpperCase()).join('/')+' found':'')+'. Edit anything that is wrong.');}
 function parseMedsBox(){const p=curP();const m=parseMeds(p.admission.medsRaw);if(!m.length){toast('No medications found in the pasted text.');return;}p.admission.meds=m;p.admission.medsRaw='';save();renderMain();toast(m.length+' medications read.');}
 function readLabsBox(){const p=curP();const l=parseLabs(p.labsRaw);if(!l.length){toast('No lab results with dates found — paste rows like "Sodium 128 mmol/L Low 23/11/26 04:25".');return;}const n=mergeLabs(p,l);p.labsRaw='';save();renderMain();toast(`${l.length} results read, ${n} new.`);}
 function clearDcMeds(){const p=curP();if(!confirmArm('dcmeds'))return;p.discharge.medChanges=[];save();renderMain();}
@@ -597,7 +611,9 @@ function renderMain(){
      ${B('mrn',p.mrn,'MRN','text','','size="10"')} ${B('age',p.age,'Age','text','','size="3"')}
      <select data-b="sex">${opt([['','Sex'],'M','F','X'],p.sex)}</select>
      <label class="mut">Admitted ${B('admitDate',p.admitDate,'','date','','data-side="1"')}</label>
-     ${hd!=null?`<span class="flag grn">Hospital day ${hd}</span>`:''}${p.status!=='active'?'<span class="flag amb">Discharged</span>':''}
+     ${hd!=null?`<span class="flag grn">Hospital day ${hd}</span>`:''}</div><div class="phead" style="margin-top:6px">
+     <label class="mut">DOB ${B('dob',p.dob,'','date','','data-r="1"')}</label> ${B('phn',p.phn,'PHN (10 digits)','text','','size="13" inputmode="numeric"')}
+     ${B('address',p.address,'Address: street, city, BC postal code','text','grow','style="flex:1;min-width:280px"')}${p.phn&&!/^9\d{9}$/.test(String(p.phn).replace(/\D/g,''))?'<span class="flag amb">PHN should be 10 digits starting with 9</span>':''}${p.status!=='active'?'<span class="flag amb">Discharged</span>':''}
    </div>
    <div style="margin-top:6px">${B('reason',p.reason,'Reason for admission / working diagnosis','text','','style="width:100%"')}</div>
    <div class="actions"><button class="pri" onclick="showHandover()">Handover summary</button><button class="pri" onclick="showDischarge()">Discharge summary</button>
@@ -774,7 +790,7 @@ function handoverText(p){const t=todayStr(),we=S.settings.weekEnd,b=p.basics,o=[
   return o.join('\n');}
 function dischargeText(p){const d=p.discharge,b=p.basics,dc=d.edd||todayStr(),o=[];const H=s=>{o.push('');o.push(s.toUpperCase());};
   o.push('DISCHARGE SUMMARY');
-  o.push(`Patient: ${p.name||'—'}${p.age?', '+p.age+(p.sex||''):''}${p.mrn?' | MRN '+p.mrn:''}`);
+  o.push(`Patient: ${p.name||'—'}${p.age?', '+p.age+(p.sex||''):''}${p.dob?' | DOB '+p.dob:''}${p.phn?' | PHN '+p.phn:''}${p.mrn?' | MRN '+p.mrn:''}`);
   o.push(`Admitted: ${p.admitDate||'—'} | Discharged: ${dc}${p.admitDate?' | Length of stay: '+diff(p.admitDate,dc)+' days':''}${S.settings.full?' | Physician: '+S.settings.full:''}`);
   o.push(`Discharged to: ${d.dispo||'—'}`);
   H('Reason for admission');o.push(p.reason||'—');
@@ -884,6 +900,7 @@ function onEdit(e,isChange){const t=e.target;if(!t.closest('#main'))return;const
   else return;
   if(t.dataset.l==='admission.meds'){const it=p.admission.meds[+t.dataset.i];if(it){if(/dose|route|freq|prn/.test(t.dataset.k)&&!it.added)it.edited=true;
     if(t.dataset.k==='name'){it.cls=medClass(it.name);if(it.name.trim())it.nameSet=true;}}}
+  if(t.dataset.b==='dob'&&p.dob){const a=ageFrom(p.dob);if(a)p.age=a;}
   if(t.dataset.l==='notes'){const it=p.notes[+t.dataset.i];if(it)it.edited=Date.now();}
   if(t.dataset.l==='tasks'&&t.dataset.k==='done'){const it=p.tasks[+t.dataset.i];if(it&&it.done&&it.cat==='Order test'&&!it.moved){
     p.pending.push({test:it.text||'Test',ordered:todayStr(),expected:'',status:'Pending',result:''});it.moved=true;toast('Ordered — moved to Tests to review.');}}
