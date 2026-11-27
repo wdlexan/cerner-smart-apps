@@ -318,7 +318,7 @@ const MEDCLASS=[['Anticoagulant',/apixaban|rivaroxaban|edoxaban|dabigatran|warfa
  ['BP / heart',/pril\b|sartan\b|olol\b|dipine\b|diltiazem|verapamil|digoxin|amiodarone|hydralazine|nitrate|isosorbide|sacubitril/i],
  ['Anticholinergic',/oxybutynin|tolterodine|diphenhydramine|dimenhydrinate|hydroxyzine|amitriptyline|nortriptyline|benztropine|scopolamine|paroxetine/i]];
 const medClass=n=>MEDCLASS.filter(c=>c[1].test(n)).map(c=>c[0]);
-const NOTMED=/^(Medications Based on|Date BPMH|BPMH\b|Best Possible Medication)/i;
+const NOTMED=/^(Medications Based on|Date BPMH|BPMH\b|Best Possible Medication|Compliance\b|Comments?\s*:|Last dose|Self-directed|Patient (is )?(taking|not taking)|Info(rmation)? source|Source\s*:|Pharmacy\s*:|Notes?\s*:)/i;
 /* ---- home vs inpatient comparison ---- */
 const MALIAS={'acetylsalicylic':'aspirin','asa':'aspirin','lasix':'furosemide','tylenol':'acetaminophen','gravol':'dimenhydrinate','senokot':'senna','glysennid':'senna','synthroid':'levothyroxine','eltroxin':'levothyroxine','coumadin':'warfarin','eliquis':'apixaban','xarelto':'rivaroxaban','lipitor':'atorvastatin','crestor':'rosuvastatin','norvasc':'amlodipine','altace':'ramipril','lopresor':'metoprolol','glucophage':'metformin','diamicron':'gliclazide','zyloprim':'allopurinol','pantoloc':'pantoprazole','tecta':'pantoprazole','losec':'omeprazole','prevacid':'lansoprazole','neurontin':'gabapentin','lyrica':'pregabalin','lax-a-day':'polyethylene','restoralax':'polyethylene','peg':'polyethylene','colace':'docusate','lantus':'insulin glargine','basaglar':'insulin glargine','toujeo':'insulin glargine','tresiba':'insulin degludec','levemir':'insulin detemir','novorapid':'insulin aspart','humalog':'insulin lispro','jardiance':'empagliflozin','forxiga':'dapagliflozin','ozempic':'semaglutide','januvia':'sitagliptin','entresto':'sacubitril'};
 const BADW=/^(tab|tabs|tablet|cap|capsule|ec|er|sr|xl|cr|la|inj|injection|oral|topical|rectal|range|dose|adult|extra|strength|micro|kwikpen|pen|solution|susp|liquid|suppository|patch|gel|cream|ointment)$/i;
@@ -366,8 +366,13 @@ function markHeldMeds(){const p=curP();const r=compareMeds(p.admission.meds);if(
   r.held.forEach(h=>{if(!h.dc||h.dc==='Continue'){h.dc='Held — restart later';h.why=h.why||'Not ordered in hospital';n++;}});save();renderMain();toast(n+' home meds marked Held.');}
 function fillDischargeMeds(){const p=curP();const r=compareMeds(p.admission.meds);
   if(!r){toast('Need both a Home and an Inpatient medication list on the Meds tab (paste them there first).');return;}
+  // Refresh: drop lines this button made before (and blank rows), keep lines you typed yourself, then compare again
+  const AUTO=/Home med not ordered in hospital|vs home:|dose than home|Same daily total|different from home|formulary swap|New in hospital — continue/i;
+  const before=p.discharge.medChanges.length;
+  p.discharge.medChanges=p.discharge.medChanges.filter(x=>!x.auto&&!AUTO.test(x.reason||'')&&!NOTMED.test(x.med||'')&&(x.med||'').trim());
+  const kept=p.discharge.medChanges.length;
   const L=p.discharge.medChanges;const have=new Set(L.map(x=>(x.type+'|'+x.med).toLowerCase()));let n=0;
-  const add=(type,med,reason)=>{const k=(type+'|'+med).toLowerCase();if(have.has(k))return;have.add(k);L.push({type,med,reason});n++;};
+  const add=(type,med,reason)=>{const k=(type+'|'+med).toLowerCase();if(have.has(k))return;have.add(k);L.push({type,med,reason,auto:true});n++;};
   const skip=h=>h.dc&&h.dc!=='Continue';
   r.held.forEach(h=>{if(!skip(h))add('Stopped',mname(h)+' '+mdesc(h),'Home med not ordered in hospital — confirm stop vs restart');});
   r.changed.forEach(x=>{if(skip(x.h))return;
@@ -376,7 +381,7 @@ function fillDischargeMeds(){const p=curP();const r=compareMeds(p.admission.meds
     const why=(x.kind==='lower'?'Lower':x.kind==='higher'?'Higher':'Changed')+' vs home: '+kdesc(x)+' (home '+mdesc(x.h)+')';
     add('Dose changed',mname(x.i)+' '+mdesc(x.i),why);});
   r.newIn.forEach(m=>add('Started',mname(m)+' '+mdesc(m),'New in hospital — continue at discharge?'));
-  save();renderMain();toast(n?n+' medication changes added — review each line.':'No new changes found (already listed or lists match).');}
+  save();renderMain();toast(`Refreshed: ${n} change${n===1?'':'s'} from the med lists${kept?`, ${kept} line${kept===1?'':'s'} you typed kept`:''}.`+(n?' Review each line.':' Home and inpatient lists match.'));}
 let MOPEN={};
 const MEDGROUP=/^(Inpatient|Home|Prescriptions?|Documented|Outpatient|Continued|Discontinued|PRN medications|Scheduled|Continuous)\b[:\s]*/i;
 function parseMeds(text){const out=[];let group='';
@@ -697,7 +702,7 @@ discharge(p){const conds=detectConds(p);const pend=p.pending.filter(x=>x.status!
   +sec(`Discharge checklist (${counts(p).ckDone}/${DCHK.length})`,DCHK.map(c=>`<label class="row" style="cursor:pointer"><input type="checkbox" data-b="discharge.checklist.${c[0]}" ${p.discharge.checklist[c[0]]?'checked':''}><span class="${p.discharge.checklist[c[0]]?'done':''}">${c[1]}</span></label>`).join('')
       +p.discharge.custom.map((x,i)=>`<div class="row"><input type="checkbox" data-l="discharge.custom" data-i="${i}" data-k="done" ${x.done?'checked':''}>${L('discharge.custom',i,'text',x.text,'Other discharge item','text','grow')}${X('discharge.custom',i)}</div>`).join('')
       +`<button class="sm" onclick="addItem('discharge.custom')">+ Item</button>`)
-  +sec('Medication changes',p.discharge.medChanges.map((x,i)=>`<div class="row">${LS('discharge.medChanges',i,'type',['Started','Stopped','Dose changed','Held — restart later'],x.type)}${L('discharge.medChanges',i,'med',x.med,'Medication and dose','text','grow')}${L('discharge.medChanges',i,'reason',x.reason,'Reason','text','grow')}${X('discharge.medChanges',i)}</div>`).join('')+`<button class="sm" onclick="addItem('discharge.medChanges')">+ Medication change</button> <button class="sm pri" onclick="fillDischargeMeds()">Compare home vs inpatient meds</button> ${p.discharge.medChanges.length?`<button class="sm" onclick="clearDcMeds()">Clear list</button>`:''}<div class="mut" style="margin-top:4px">Compares the Home and Inpatient lists on the Meds tab and adds what is new, stopped (home med not ordered), or at a lower/higher dose. Inpatient orders are not discharge orders — edit or delete lines that will not apply at discharge. Hospital PRNs are left out.</div>`)
+  +sec('Medication changes',p.discharge.medChanges.map((x,i)=>`<div class="row">${LS('discharge.medChanges',i,'type',['Started','Stopped','Dose changed','Held — restart later'],x.type)}${L('discharge.medChanges',i,'med',x.med,'Medication and dose','text','grow')}${L('discharge.medChanges',i,'reason',x.reason,'Reason','text','grow')}${X('discharge.medChanges',i)}</div>`).join('')+`<button class="sm" onclick="addItem('discharge.medChanges')">+ Medication change</button> <button class="sm pri" onclick="fillDischargeMeds()">↻ Compare / refresh from med lists</button> ${p.discharge.medChanges.length?`<button class="sm" onclick="clearDcMeds()">Clear list</button>`:''}<div class="mut" style="margin-top:4px">Compares the Home and Inpatient lists on the Meds tab and lists what is new, stopped (home med not ordered), or at a lower/higher dose. Inpatient orders are not discharge orders — edit or delete lines that will not apply at discharge. Hospital PRNs are left out. After you paste a new med list, press refresh: it rebuilds the lines it made and keeps lines you typed yourself.</div>`)
   +sec('Follow-up the patient needs',p.discharge.followup.map((x,i)=>`<div class="row">${LS('discharge.followup',i,'type',['Family physician','Specialist','Clinic','Lab test','Imaging','Home care / community','Other'],x.type)}
       ${L('discharge.followup',i,'what',x.what,'Who / what','text','grow')}${L('discharge.followup',i,'when',x.when,'When','text','','size="14"')}${LS('discharge.followup',i,'status',['To book','Referral sent','Booked','Patient to book'],x.status)}${X('discharge.followup',i)}</div>`).join('')
       +`<button class="sm" onclick="addItem('discharge.followup')">+ Follow-up</button> <button class="sm" onclick="addItem('discharge.followup',{type:'Clinic',what:'South Island Discharge Clinic (RJH) referral',when:'Within 1–2 weeks'})">+ South Island Discharge Clinic</button>
