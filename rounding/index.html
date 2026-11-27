@@ -595,6 +595,7 @@ function renderSide(){
     <input id="np_room" placeholder="Room (e.g. 7B-12)"><input id="np_name" placeholder="Name or initials"><label class="mut">Admit date <input id="np_admit" type="date" value="${todayStr()}"></label><button class="pri" onclick="addPatient()">Add patient</button></div>
     <button class="sm" id="cloudSide" style="margin-bottom:6px;display:block" onclick="cloudClick()">☁ OneDrive file</button>
     <button class="sm" style="margin-bottom:10px" onclick="openListReader()" title="Read a PowerChart patient-list screenshot, then press Send to Rounding notebook">📷 Add patients from a list screenshot</button>
+    <button class="sm" style="margin-bottom:10px" onclick="exportList()" title="Save all patients on My list as an Excel file in your VGH list format (room, age, patient, admit, MOST, allergy, GFR, VTE, FP, issues, IV, Foley, lab, to do, MRN, sex)">📄 Save my list as Excel (VGH format)</button>
     <div class="mut" style="margin-bottom:4px">My patients (${act.length})</div>${act.map(item).join('')||'<div class="mut">No patients yet.</div>'}
     ${dc.length?`<details style="margin-top:10px"><summary>Discharged (${dc.length})</summary><div class="db">${dc.map(item).join('')}</div></details>`:''}
     <div style="margin-top:12px"><button class="sm" onclick="loadDemo()">Load made-up demo patient</button></div>`;
@@ -914,6 +915,34 @@ function render(){renderSide();renderMain();if(typeof cloudUI==='function')try{c
 window.addEventListener('storage',e=>{if(e.key===KEY){load();syncSettings();render();cloudInit();toast('Patient list updated.');}});
 function openHfHandout(){try{if(window.parent!==window&&typeof window.parent.showAt==='function'){window.parent.showAt('chf','handout-card','dc');return;}}catch(e){}
   window.open((location.pathname.includes('/tools/round/')?'../chf/index.html':'../hospitalist-toolkit/tools/chf/index.html')+'#handout','_blank','noopener');}
+/* ---- My list -> Excel in the VGH list format, using the Patient list tab's template and writer (tools/plist) ---- */
+const PLIST_DIR=location.pathname.includes('/tools/round/')?'../plist/':'../hospitalist-toolkit/tools/plist/';
+function loadScript(src,test){return test()?Promise.resolve():new Promise((ok,bad)=>{const sc=document.createElement('script');sc.src=src;sc.onload=()=>test()?ok():bad(new Error('did not load: '+src));sc.onerror=()=>bad(new Error('could not load '+src+' (network blocked?)'));document.head.appendChild(sc);});}
+const yn=(t,noRe)=>{t=String(t||'').trim();if(!t)return '';return noRe.test(t)?'n':'y';};
+function listRow(p){const b=p.basics||{},lab=labGroups(p);const gfr=lab.find(x=>/gfr/i.test(x.name));
+  const sumPm=(p.admission.summary||'').split('\n').find(l=>/^PMHx:/i.test(l));const pmhx=sumPm?sumPm.replace(/^PMHx:\s*/i,''):'';
+  const md=d=>{const x=new Date(d+'T00:00');return isNaN(x)?'':x.getDate()+'-'+x.toLocaleString('en-CA',{month:'short'}).replace('.','');};
+  const issues=p.admission.problems.filter(x=>x.text&&x.status!=='Resolved').map(x=>x.text+(x.plan?': '+trunc(x.plan.replace(/^[-–\s]+/,''),60):''));
+  p.abx.forEach(a=>{const i=abxInfo(a);issues.push(`${a.drug}${a.start?' ('+md(a.start)+(i?' – '+md(i.last):'')+')':''}`);});
+  const ln=(b.lines||[]).map(l=>l.type||'');
+  return {name:p.name||'',location:p.room||'',age:p.age||'',mrn:p.mrn||'',sex:p.sex==='X'?'':p.sex||'',admit:md(p.admitDate),reason:p.reason||p.admission.oneLiner||'',pmhx,
+    contact:trunc(b.contacts,30),most:String(b.code||'').replace(/^MOST\s*/i,'').toLowerCase().slice(0,4),allergy:yn(b.allergies,/^(nka|nkda|no known|none|nil|n)\b/i),
+    gfr:gfr?gfr.latest.value:'',vtep:yn(b.vte,/^(none|no|not|n\b|nil|held|contraind)/i),fp:yn(b.fp,/^(none|no|unattached|n\b|nil)/i),isolation:b.isolation||'',
+    issues,iv:ln.some(t=>/PIV|PICC|IV\b|CVC|central|midline/i.test(t))?'y':'',foley:ln.some(t=>/foley|catheter/i.test(t))?'y':'',
+    lab:p.pending.filter(x=>x.status!=='Reviewed').map(x=>x.test).slice(0,2).join(', '),todo:p.tasks.filter(x=>!x.done).map(x=>x.text)};}
+async function exportList(){const act=S.patients.filter(p=>p.status==='active');if(!act.length){toast('No patients on My list.');return;}
+  try{toast('Making the Excel file…');
+    await loadScript('https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js',()=>window.JSZip);
+    await loadScript(PLIST_DIR+'xlsx.js?v=20261127a',()=>window.PListXlsx);
+    const tpl=await (await fetch(PLIST_DIR+'template.xlsx?v=20261122j')).arrayBuffer();
+    const fl=r=>{const m=String(r||'').match(/^\s*([A-Za-z0-9]+?)\s*[-\s]\s*\d+[A-Za-z]?\s*$/);return m?m[1].toUpperCase():'VGH';};
+    const by={};act.slice().sort((a,b)=>(a.room||'~').localeCompare(b.room||'~',undefined,{numeric:true})).forEach(p=>{const f=fl(p.room);(by[f]=by[f]||[]).push(listRow(p));});
+    const groups=Object.keys(by).map(f=>({floor:f,patients:by[f]}));
+    const blob=await PListXlsx.build(JSZip,tpl,groups,{type:'blob',spare:3});
+    const d=new Date(),pad=n=>String(n).padStart(2,'0'),a=document.createElement('a');a.href=URL.createObjectURL(blob);
+    a.download=`VGH_patient_list_${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}.xlsx`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+    toast(`Saved ${a.download} (${act.length} patients) to Downloads.`);}
+  catch(e){toast('Could not make the Excel file: '+(e.message||e));}}
 function openListReader(){try{if(window.parent!==window&&typeof window.parent.show==='function'){window.parent.show('plist');return;}}catch(e){}
   window.open(/\/tools\/round\//.test(location.pathname)?'../plist/index.html':'../hospitalist-toolkit/tools/plist/index.html','_blank');}
 load();syncSettings();render();
