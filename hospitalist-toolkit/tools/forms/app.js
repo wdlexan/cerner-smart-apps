@@ -122,10 +122,76 @@ function renderBanner() {
     const parts = [PT.fullName || "(no name)"];
     if (PT.dob) parts.push(`DOB ${fmtDate(PT.dob, "dmon")}`);
     if (PT.sexLabel) parts.push(PT.sexLabel);
+    if (PT.fromNotebook) {
+        if (PT.age) parts.push(PT.age + " y");
+        parts.push(PT.mrn ? `MRN ${PT.mrn}` : "no MRN in notebook");
+        b.textContent = parts.join(" · ") + " — from the Rounding notebook: type DOB, PHN and address on the form";
+        return;
+    }
     parts.push(PT.phn ? `PHN ${PT.phn}` : "PHN not in chart");
     if (PT.mrn) parts.push(`MRN ${PT.mrn}`);
     b.textContent = parts.join(" · ");
 }
+
+// ---------- whose details go on the form: Rounding notebook patient, Cerner chart patient, or blank ----------
+// The notebook keeps its list in this browser (localStorage, same site), so the form can use whichever patient is open there.
+const NB_KEY = "rounding-notebook-v1", SRC_KEY = "forms-pt-src";
+const TEST_MODE = (() => { try { return sessionStorage.getItem("toolkit-test") === "1"; } catch (e) { return false; } })();
+let SRC = "", NB_ID = null;
+function notebookPt() {
+    let S = null; try { S = JSON.parse(localStorage.getItem(NB_KEY) || "null"); } catch (e) {}
+    const p = S && (S.patients || []).find(x => x.id === S.cur);
+    if (!p || !String(p.name || "").trim()) return null;
+    const raw = String(p.name).trim();
+    let first = "", last = "";
+    if (raw.includes(",")) { [last, first] = raw.split(",").map(x => x.trim()); } else { const w = raw.split(/\s+/); last = w.length > 1 ? w.pop() : w[0]; first = w.length ? w.join(" ") : ""; }
+    const cap = x => x.replace(/\b([a-z])/g, c => c.toUpperCase());
+    first = cap(first); last = cap(last);
+    const sex = /^f/i.test(p.sex || "") ? "female" : /^m/i.test(p.sex || "") ? "male" : "";
+    return { id: p.id, fromNotebook: true, age: p.age || "", room: p.room || "",
+        fullName: [first, last].filter(Boolean).join(" "), first, last, initial: "", dob: "", sex, sexLabel: { male: "Male", female: "Female" }[sex] || "",
+        phn: "", mrn: p.mrn || "", street: "", city: "", province: "", postal: "", addressOneLine: "", homePhone: "", workPhone: "", mobile: "", email: "" };
+}
+function defaultSrc() {
+    let saved = ""; try { saved = localStorage.getItem(SRC_KEY) || ""; } catch (e) {}
+    const nb = notebookPt();
+    if (new URLSearchParams(location.search).get("blank") === "1") return "blank";
+    if (saved === "note" && nb) return "note";
+    if (saved === "chart" && CHART_PT && !TEST_MODE) return "chart";
+    if (saved === "blank") return "blank";
+    if (nb && (TEST_MODE || !CHART_PT)) return "note";   // test mode: never default to the sandbox test patient
+    return CHART_PT ? "chart" : nb ? "note" : "blank";
+}
+function useSource(src, remember) {
+    SRC = src; if (remember) { try { localStorage.setItem(SRC_KEY, src); } catch (e) {} }
+    BLANK = src === "blank";
+    const nb = src === "note" ? notebookPt() : null; NB_ID = nb ? nb.id : null;
+    PT = src === "note" ? nb : src === "chart" ? CHART_PT : null;
+    const open = FORMS.find(f => { const p = el(`panel__${f.id}`); return p && !p.hidden; }); // stay on the open form, refilled for the new patient
+    el("forms").innerHTML = "";
+    for (const k of Object.keys(built)) delete built[k];
+    renderBanner(); renderSrc(); renderModeBtn();
+    if (open) openForm(open.id); else showHome();
+}
+function renderSrc() {
+    let sel = el("ptSrc");
+    if (!sel) {
+        sel = document.createElement("select"); sel.id = "ptSrc"; sel.className = "modeBtn"; sel.title = "Whose details go on the form";
+        el("modeBtn").after(sel); sel.addEventListener("change", () => useSource(sel.value, true));
+    }
+    const nb = notebookPt();
+    const opts = [];
+    if (nb) opts.push(["note", "Rounding notebook: " + nb.fullName + (nb.room ? " (" + nb.room + ")" : "")]);
+    if (CHART_PT) opts.push(["chart", (TEST_MODE ? "Sandbox test patient: " : "Cerner chart: ") + (CHART_PT.fullName || "patient")]);
+    opts.push(["blank", "Blank form (no patient)"]);
+    sel.innerHTML = opts.map(([v, t]) => `<option value="${v}"${v === SRC ? " selected" : ""}>${t.replace(/</g, "&lt;")}</option>`).join("");
+    el("modeBtn").hidden = true;
+}
+window.addEventListener("storage", e => { // a different patient opened in the Rounding notebook
+    if (e.key !== NB_KEY) return;
+    const nb = notebookPt();
+    if (SRC === "note" && (!nb || nb.id !== NB_ID)) useSource(nb ? "note" : defaultSrc(), false); else renderSrc();
+});
 
 // ---------- home screen ----------
 function renderHome() {
@@ -524,12 +590,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function patientLoaded(p) {
     CHART_PT = normalizePatient(p);
-    if (!BLANK) {
-        PT = CHART_PT;
-        renderBanner();
-        for (const form of FORMS) if (built[form.id]) prefill(form);
-    }
-    renderModeBtn();
+    useSource(defaultSrc(), false);
 }
 
 (typeof FHIR === "undefined" ? Promise.reject(new Error("FHIR client library not loaded")) : FHIR.oauth2.ready())
@@ -537,7 +598,7 @@ function patientLoaded(p) {
     .then(p => { console.log("FHIR Patient Resource:", p); patientLoaded(p); })
     .catch(err => {
         console.warn("No SMART session:", err);
-        if (BLANK) { renderModeBtn(); return; } // blank mode needs no patient
+        if (BLANK || notebookPt()) { useSource(defaultSrc(), false); return; } // blank mode / notebook patient need no chart
         const isLocal = ["localhost", "127.0.0.1"].includes(location.hostname);
         if (isLocal) {
             // Test data ONLY when running locally — never silently on a real launch
@@ -547,8 +608,9 @@ function patientLoaded(p) {
                 birthDate: "1990-01-02",
                 identifier: [{ type: { text: "PHN" }, value: "9876543210" }, { type: { text: "MRN" }, value: "123456" }]
             });
-            el("ptBanner").textContent += "   (TEST DATA – no EHR session)";
+            if (SRC === "chart") el("ptBanner").textContent += "   (TEST DATA – no EHR session)";
         } else {
+            useSource("blank", false);
             el("ptBanner").textContent = "Could not load the patient from Cerner. Enter details manually.";
         }
         renderModeBtn();

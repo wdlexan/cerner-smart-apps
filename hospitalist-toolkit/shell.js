@@ -4,7 +4,7 @@
    A tab is only loaded the first time you open it, and stays loaded when you switch away. */
 
 // To add a tool: put its files in tools/<folder>/ and add a line here.
-const TOOL_V = "20261127i"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
+const TOOL_V = "20261127j"; // bump this whenever a tool changes, so browsers do not show a stale cached tab
 const TOOLS = [
   { key: "today", label: "Today (what changed)", tags: "what changed daily trends vitals overnight summary", path: "tools/today/index.html" },
   { key: "plist", label: "Patient list (screenshot)", tags: "patient list screenshot excel spreadsheet rounding list census floor ward ocr", path: "tools/plist/index.html" },
@@ -119,14 +119,18 @@ async function start(client) {
   try { sessionStorage.removeItem("toolkit-target"); } catch (e) {}
 
   // Consult button (consult-widget.js): patient from this client, topic and usual service from the open tab
-  window.CONSULT_CTX = { client, override: () => { const f = document.querySelector(`#frames iframe.on[data-k="${window.__tkTab}"]`); try { return f && f.contentWindow.consultPatient ? f.contentWindow.consultPatient() : null; } catch (e) { return null; } }, tabKey: () => window.__tkTab || "", topic: () => { const t = TOOLS.find((x) => x.key === window.__tkTab); return t ? t.label.replace(/\s*\(.*?\)/, "") : ""; } };
+  window.CONSULT_CTX = { client, override: () => { const f = document.querySelector(`#frames iframe.on[data-k="${window.__tkTab}"]`); try { if (f && f.contentWindow.consultPatient) return f.contentWindow.consultPatient(); } catch (e) {}
+      // test mode: use the patient open in the Rounding notebook rather than the sandbox test patient
+      try { if (sessionStorage.getItem("toolkit-test") === "1") { const r = document.querySelector('#frames iframe[data-k="round"]'); if (r && r.contentWindow.consultPatient) return r.contentWindow.consultPatient(); return notebookConsultPt(); } } catch (e) {}
+      return null; }, tabKey: () => window.__tkTab || "", topic: () => { const t = TOOLS.find((x) => x.key === window.__tkTab); return t ? t.label.replace(/\s*\(.*?\)/, "") : ""; } };
   window.TK = { patientId: client.patient.id, isPdfPatient: /^pdfpt-/.test(client.patient.id), switchPatient, backToCerner }; // used by the PDF import button
   try { $("patient").textContent = describe(await client.patient.read()); }
   catch (e) { $("patient").textContent = "Patient " + client.patient.id; }
   if (POCKET) pocketChip();
   else if (window.TK.isPdfPatient) pdfPatientChip();
   let testMode = false; try { testMode = sessionStorage.getItem("toolkit-test") === "1"; } catch (e) {}
-  if (testMode) $("patient").innerHTML = `<span style="background:#fff3cd;color:#7a4b00;border-radius:10px;padding:1px 8px;font-weight:700;margin-right:6px">TEST MODE · open sandbox, no login</span>${esc($("patient").textContent)}`;
+  // Test mode: the sandbox test patient is only there so the tabs can load; do not show its name (Forms and Consult use the Rounding notebook patient instead)
+  if (testMode) $("patient").innerHTML = `<span style="background:#fff3cd;color:#7a4b00;border-radius:10px;padding:1px 8px;font-weight:700;margin-right:6px">TEST MODE · open sandbox, no login</span>`;
   $("msg").remove();
 
   buildNav();
@@ -238,6 +242,16 @@ window.showAt = function (key, id, sub) {
 };
 // Tabs that keep their own list of patients (Rounding notebook, Patient list): the Cerner/test patient in the header does not apply, so hide it there
 const OWN_PATIENTS = ["round", "plist"];
+// Rounding notebook's open patient, read straight from its saved list (for Consult in test mode before the notebook tab is opened)
+function notebookConsultPt() {
+  let S = null; try { S = JSON.parse(localStorage.getItem("rounding-notebook-v1") || "null"); } catch (e) {}
+  const p = S && (S.patients || []).find((x) => x.id === S.cur); if (!p) return null;
+  let n = String(p.name || "").trim(); if (/,/.test(n)) n = n.split(",").map((x) => x.trim()).filter(Boolean).reverse().join(" ");
+  const act = ((p.admission && p.admission.problems) || []).filter((x) => x.text && x.status !== "Resolved").map((x) => x.text);
+  let hx = (p.admission && p.admission.oneLiner) || p.reason || ""; hx = hx.replace(/^This is an? /i, "").replace(/^\d+[- ]?(year|yr|y)[- ]?old\s+(male|female|man|woman|M|F)\b[,]?\s*(with\s+)?(an?\s+)?/i, "").replace(/\s+/g, " ").trim();
+  hx = hx.charAt(0).toUpperCase() + hx.slice(1); const w = hx.split(" "); if (w.length > 28) hx = w.slice(0, 28).join(" ") + "…";
+  return { key: p.id, name: n, age: p.age || "", sex: /^f/i.test(p.sex || "") ? "female" : /^m/i.test(p.sex || "") ? "male" : "", mrn: p.mrn || "", problem: act[0] || String(p.reason || "").slice(0, 60), hx, problems: act };
+}
 function show(key) {
   document.body.classList.toggle("own-pts", OWN_PATIENTS.includes(key));
   const tool = TOOLS.find((t) => t.key === key);
