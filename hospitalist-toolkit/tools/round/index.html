@@ -302,7 +302,7 @@ function addSuggestion(kind,ci,ii){const c=COND.find(x=>x.id===ci);if(!c)return;
   if(kind==='fu'){const f=c.fu[ii];addItem('discharge.followup',{type:f[0],what:f[1],when:f[2]});}
   toast('Added.');}
 function addNote(){const p=curP();const d=p.noteDraft;if(!d.text.trim()){toast('Write the note first.');return;}
-  p.notes.push({id:uid(),date:d.date||todayStr(),text:d.text,course:d.course});p.noteDraft={date:todayStr(),text:'',course:''};save();renderMain();toast('Note saved.');}
+  p.notes.push({id:uid(),date:d.date||todayStr(),text:d.text,course:d.course});p.noteDraft={date:todayStr(),text:'',course:''};save();renderMain();const f=testsInNotes(p).length;toast(f?'Note saved — '+f+' ordered test'+(f>1?'s':'')+' found: add them on Tests to review.':'Note saved.');}
 function carryForward(){const p=curP();const last=[...p.notes].sort((a,b)=>a.date<b.date?1:-1)[0];if(!last){toast('No previous note to carry forward.');return;}
   p.noteDraft.text=last.text;save();renderMain();toast('Last note copied into today’s draft — edit what changed.');}
 function soapTemplate(){const p=curP();const hd=p.admitDate?diff(p.admitDate,p.noteDraft.date||todayStr())+1:'';
@@ -313,6 +313,14 @@ function consultMsg(i){const p=curP();const t=p.tasks[i];const first=S.settings.
   const msg=`Hello Dr. ___, This is ${first}, hospitalist. I have ${p.name||'[name]'}, ${p.age||'[age]'}${p.sex||''}, MRN ${p.mrn||'[MRN]'}${p.room?' in '+p.room:''}. ${brief}${brief&&!/[.!?]$/.test(brief)?'.':''} ${t.text?t.text+(/[.!?]$/.test(t.text)?'':'.'):''} Your help is much appreciated. Thanks, ${first}`.replace(/\s+/g,' ');
   openModal('Consult message',msg,'');}
 function untrackedAbx(p){const txt=[p.admission.raw,...p.notes.map(n=>n.text+' '+n.course)].join('\n');return ABX.filter(a=>a[1].test(txt)&&!p.abx.some(x=>a[1].test(x.drug))).map(a=>a[0]);}
+const TESTRE=/\b(CT\b[\w\/ -]{0,25}|MRI\b[\w\/ -]{0,20}|ultrasound[\w\/ -]{0,20}|\bUS\b[\w\/ -]{0,15}|x-?ray[\w\/ -]{0,15}|CXR|AXR|echo(cardiogram)?|TTE|TEE|blood cultures?|urine cultures?|sputum cultures?|cultures?|CBC|lytes|electrolytes|creatinine|troponin|INR|TSH|B12|ferritin|lactate|blood work|bloodwork|bloods|labs?|biopsy|EEG|EMG|Holter|endoscopy|colonoscopy|gastroscopy|scope|PFTs?|swab|C\.? ?diff(icile)? (toxin|test|stool)|stool (test|culture|sample))\b/i;
+const ORDRE=/\b(order(ed|ing)?|sent|send|requested|request|booked|book|arranged|pending|awaiting|await|will get|to get|repeat|recheck|follow up|f\/u|check)\b/i;
+function testsInNotes(p){const have=p.pending.map(x=>(x.test||'').toLowerCase());const out=[];
+  p.notes.forEach(n=>String(n.text+'\n'+n.course).split(/[\n.;]+/).forEach(cl=>{cl=cl.replace(/^\s*[-•*]+\s*/,'').trim();if(!cl||VITALRE.test(cl))return;
+    const m=cl.match(TESTRE);if(!m||!ORDRE.test(cl))return;if(/\b(back|resulted|showed|shows|negative|positive|normal|unremarkable|sens|sensitive|resistant)\b/i.test(cl))return;
+    const name=trunc(cl.slice(m.index).split(/\s+(?:to|for|in|on|at|by|tomorrow|today|tonight|this|r\/o|rule|if|when|before|after|since)\b|,/i)[0].trim(),40);if(have.some(h=>h.includes(name.toLowerCase().split(' ')[0]))||out.some(o=>o.name===name))return;out.push({name,clause:trunc(cl,90),date:n.date});}));
+  return out;}
+function addTestFromNote(i){const p=curP();const f=testsInNotes(p)[i];if(!f)return;addItem('pending',{test:f.name,ordered:f.date||todayStr()});toast(f.name+' added to Tests to review.');}
 function abxInfo(a,ref){if(!a.start||!a.days)return null;ref=ref||todayStr();const day=diff(a.start,ref)+1;const last=addDays(a.start,Number(a.days)-1);return {day,last,left:Number(a.days)-day,pct:Math.max(0,Math.min(100,day/Number(a.days)*100))};}
 
 /* ============ rendering ============ */
@@ -339,7 +347,7 @@ function renderSide(){
   const dc=S.patients.filter(p=>p.status!=='active');
   const item=p=>{const c=counts(p);return `<div class="pitem ${p.id===S.cur?'on':''}" onclick="selectP('${p.id}')">
     <div class="nm">${esc(p.room||'—')} · ${esc(p.name||'Unnamed')}</div>
-    <div>${c.openTasks?`<span class="badge ${c.overdueTasks?'red':''}">${c.openTasks} to-do</span>`:''}${c.toReview?`<span class="badge red">${c.toReview} result to review</span>`:''}${c.pendAfter?`<span class="badge amb">${c.pendAfter} pending after week</span>`:''}${c.abxA.map(o=>`<span class="badge ${o.i.left<=0?'grn':''}">${esc(o.a.drug||'abx')} d${o.i.day}/${o.a.days}</span>`).join('')}${p.discharge.edd?`<span class="badge">EDD ${fmt(p.discharge.edd)}</span>`:''}</div></div>`;};
+    <div>${c.openTasks?`<span class="badge ${c.overdueTasks?'red':''}">${c.openTasks} to-do</span>`:''}${c.toReview?`<span class="badge red">${c.toReview} result to review</span>`:''}${c.pendAfter?`<span class="badge amb">${c.pendAfter} test due after week</span>`:''}${c.abxA.map(o=>`<span class="badge ${o.i.left<=0?'grn':''}">${esc(o.a.drug||'abx')} d${o.i.day}/${o.a.days}</span>`).join('')}${p.discharge.edd?`<span class="badge">EDD ${fmt(p.discharge.edd)}</span>`:''}</div></div>`;};
   document.getElementById('side').innerHTML=`<div class="addp"><b>Add patient</b>
     <input id="np_room" placeholder="Room (e.g. 7B-12)"><input id="np_name" placeholder="Name or initials"><label class="mut">Admit date <input id="np_admit" type="date" value="${todayStr()}"></label><button class="pri" onclick="addPatient()">Add patient</button></div>
     <div class="mut" style="margin-bottom:4px">My patients (${act.length})</div>${act.map(item).join('')||'<div class="mut">No patients yet.</div>'}
@@ -352,7 +360,7 @@ function renderMain(){
   if(!p){M.innerHTML=`<div class="card"><h2 style="margin-top:0">Rounding Notebook</h2><p>Add a patient on the left, paste the admission note, and press <b>Summarize admission</b>. Chart a short note each day; when you are done, press <b>Handover summary</b> or <b>Discharge summary</b> to compile everything.</p><p class="mut">Set your working week in the bar at the top so pending tests and antibiotic stop dates that fall after your week are flagged for handover.</p></div>`;return;}
   const c=counts(p);const hd=p.admitDate?diff(p.admitDate,todayStr())+1:null;
   const tabs=[['admission','Admission'],['basics','Basics'],['notes',`Daily notes${p.notes.length?' ('+p.notes.length+')':''}`],['tasks',`To-do${c.openTasks?' ('+c.openTasks+')':''}`],
-    ['pending',`Pending tests${c.pend?' ('+c.pend+')':''}`],['abx',`Antibiotics${c.abxA.length?' ('+c.abxA.length+')':''}`],['watch',`Watch for${p.watch.length?' ('+p.watch.length+')':''}`],['discharge','Discharge']];
+    ['pending',`Tests to review${c.pend?' ('+c.pend+')':''}`],['abx',`Antibiotics${c.abxA.length?' ('+c.abxA.length+')':''}`],['watch',`Watch for${p.watch.length?' ('+p.watch.length+')':''}`],['discharge','Discharge']];
   M.innerHTML=`<div class="card"><div class="phead">
      ${B('room',p.room,'Room','text','','size="7" data-side="1"')} ${B('name',p.name,'Name','text','','size="18" data-side="1"')}
      ${B('mrn',p.mrn,'MRN','text','','size="10"')} ${B('age',p.age,'Age','text','','size="3"')}
@@ -407,7 +415,7 @@ notes(p){const d=p.noteDraft;const sorted=p.notes.map((n,i)=>({n,i})).sort((a,b)
 },
 tasks(p){const t=todayStr();const cats=['Consult','Call family','Order test','Review result','Med change','Goals of care','Forms / paperwork','Discharge planning','Other'];
   const row=({x,i})=>`<div class="row ${x.done?'done':''}"><input type="checkbox" data-l="tasks" data-i="${i}" data-k="done" ${x.done?'checked':''}>${LS('tasks',i,'cat',cats,x.cat)}
-     ${L('tasks',i,'text',x.text,x.cat==='Call family'?'Who / what to discuss':'What needs doing','text','grow')}<label class="mut">Due ${L('tasks',i,'due',x.due,'','date')}</label>
+     ${L('tasks',i,'text',x.text,x.cat==='Call family'?'Who / what to discuss':x.cat==='Order test'?'Test to order (tick when ordered → goes to Tests to review)':'What needs doing','text','grow')}${x.cat==='Order test'&&x.moved?'<span class="flag grn">In Tests to review</span>':''}<label class="mut">Due ${L('tasks',i,'due',x.due,'','date')}</label>
      ${!x.done&&x.due&&x.due<t?'<span class="flag red">Overdue</span>':''}${!x.done&&x.due===t?'<span class="flag amb">Today</span>':''}
      ${x.cat==='Consult'?`<button class="sm" onclick="consultMsg(${i})">Consult message</button>`:''}${x.cat==='Call family'&&p.basics.contacts?`<span class="mut">📞 ${esc(trunc(p.basics.contacts,60))}</span>`:''}${X('tasks',i)}</div>`;
   const all=p.tasks.map((x,i)=>({x,i}));const open=all.filter(o=>!o.x.done).sort((a,b)=>(a.x.due||'9')<(b.x.due||'9')?-1:1);const done=all.filter(o=>o.x.done);
@@ -416,12 +424,13 @@ tasks(p){const t=todayStr();const cats=['Consult','Call family','Order test','Re
 },
 pending(p){const t=todayStr(),we=S.settings.weekEnd;
   const st=['Pending','Resulted – needs review','Reviewed','Follow up after discharge'];
-  return sec('Pending tests',`${!we?'<div class="flag amb" style="display:inline-block;margin-bottom:6px">Set "My week" at the top to flag tests due after your week</div>':''}`+p.pending.map((x,i)=>{
+  return sec('Tests to review',`${!we?'<div class="flag amb" style="display:inline-block;margin-bottom:6px">Set "My week" at the top to flag tests due after your week</div>':''}`+p.pending.map((x,i)=>{
      let f='';if(x.status==='Pending'){if(we&&x.expected&&x.expected>we)f='<span class="flag amb">After your week — hand over</span>';else if(x.expected&&x.expected<t)f='<span class="flag red">Overdue — chase</span>';}
      if(x.status==='Resulted – needs review')f='<span class="flag red">Review</span>';
      return `<div class="row ${x.status==='Reviewed'?'done':''}">${L('pending',i,'test',x.test,'Test (e.g. CT chest, blood cultures, biopsy)','text','grow')}
        <label class="mut">Ordered ${L('pending',i,'ordered',x.ordered,'','date')}</label><label class="mut">Expected ${L('pending',i,'expected',x.expected,'','date')}</label>
        ${LS('pending',i,'status',st,x.status)}${f}${L('pending',i,'result',x.result,'Result / action','text','grow')}${X('pending',i)}</div>`;}).join('')
+     +(()=>{const f=testsInNotes(p);return f.length?`<div style="margin-top:10px" class="mut">Found in your daily notes — click to add:</div><div class="chips">${f.map((x,i)=>`<button class="chip" title="${esc(x.clause)}" onclick="addTestFromNote(${i})">+ ${esc(x.name)} <span class="mut">(${fmt(x.date)}: ${esc(trunc(x.clause,50))})</span></button>`).join('')}</div>`:'';})()
      +`<div class="chips" style="margin-top:8px"><button class="chip" onclick="addItem('pending')">+ Test</button>${['Blood cultures','Urine culture','CT','MRI','Echo','Pathology / biopsy','Send-out lab'].map(s=>`<button class="chip" onclick="addItem('pending',{test:'${s}'})">+ ${s}</button>`).join('')}</div>`);
 },
 abx(p){const we=S.settings.weekEnd,edd=p.discharge.edd;const un=untrackedAbx(p);
@@ -487,7 +496,7 @@ function handoverText(p){const t=todayStr(),we=S.settings.weekEnd,b=p.basics,o=[
   const ab=p.abx.map(a=>({a,i:abxInfo(a)})).filter(x=>x.i&&x.i.left>=0);
   if(ab.length){o.push('Antibiotics:');ab.forEach(({a,i})=>o.push(`- ${a.drug} ${a.route}${a.indication?' for '+a.indication:''}: day ${i.day} of ${a.days}, last dose ${i.last}${we&&i.last>we?'  <-- ends after my week':''}${a.route==='IV'&&a.ivpo?' (IV→PO review '+a.ivpo+')':''}`));}
   const pe=p.pending.filter(x=>x.status!=='Reviewed');
-  if(pe.length){o.push('Pending:');pe.forEach(x=>o.push(`- ${x.test}${x.expected?' (expected '+x.expected+')':''}${x.status!=='Pending'?' ['+x.status+']':''}${x.status==='Pending'&&we&&x.expected>we?'  <-- after my week':''}${x.status==='Pending'&&x.expected&&x.expected<t?'  <-- overdue':''}${x.result?': '+x.result:''}`));}
+  if(pe.length){o.push('Tests to review:');pe.forEach(x=>o.push(`- ${x.test}${x.expected?' (expected '+x.expected+')':''}${x.status!=='Pending'?' ['+x.status+']':''}${x.status==='Pending'&&we&&x.expected>we?'  <-- after my week':''}${x.status==='Pending'&&x.expected&&x.expected<t?'  <-- overdue':''}${x.result?': '+x.result:''}`));}
   const td=p.tasks.filter(x=>!x.done);if(td.length){o.push('To do:');td.forEach(x=>o.push(`- [${x.cat}] ${x.text}${x.due?' (due '+x.due+')':''}`));}
   if(p.watch.length){o.push('Watch for:');[...p.watch].sort((a,b)=>'HML'.indexOf(a.level[0])-'HML'.indexOf(b.level[0])).forEach(x=>o.push(`- [${x.level}] ${x.item}${x.plan?' → '+x.plan:''}`));}
   const d=p.discharge;const left=DCHK.length-counts(p).ckDone;
@@ -583,6 +592,8 @@ function onEdit(e,isChange){const t=e.target;if(!t.closest('#main'))return;const
   if(t.dataset.b)setP(p,t.dataset.b,v);
   else if(t.dataset.l){const arr=getP(p,t.dataset.l);const it=arr&&arr[+t.dataset.i];if(!it)return;it[t.dataset.k]=t.type==='number'?(v===''?'':Number(v)):v;}
   else return;
+  if(t.dataset.l==='tasks'&&t.dataset.k==='done'){const it=p.tasks[+t.dataset.i];if(it&&it.done&&it.cat==='Order test'&&!it.moved){
+    p.pending.push({test:it.text||'Test',ordered:todayStr(),expected:'',status:'Pending',result:''});it.moved=true;toast('Ordered — moved to Tests to review.');}}
   save();if(rer)render();else if(t.dataset.side)renderSide();}
 document.addEventListener('input',e=>onEdit(e,false));
 document.addEventListener('change',e=>onEdit(e,true));
