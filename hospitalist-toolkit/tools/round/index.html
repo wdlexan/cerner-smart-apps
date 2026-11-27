@@ -122,7 +122,7 @@ function firstSentence(t,max=220){t=String(t||'').replace(/^\s*(S|O|A|P|A\/P|A&P
 function trunc(t,n){t=String(t||'').replace(/\s+/g,' ').trim();return t.length>n?t.slice(0,n-1)+'…':t;}
 
 function template(){return {id:uid(),name:'',room:'',mrn:'',age:'',sex:'',admitDate:todayStr(),reason:'',status:'active',
-  admission:{raw:'',oneLiner:'',summary:'',problems:[],detected:null},
+  admission:{raw:'',oneLiner:'',summary:'',problems:[],detected:null,meds:[],medsRaw:''},labs:[],labsRaw:'',labsAbnOnly:false,
   basics:{code:'',allergies:'',vte:'',diet:'',mobility:'',mobilityNote:'',isolation:'',contacts:'',fp:'',consultants:'',lines:[]},
   notes:[],noteDraft:{date:todayStr(),text:'',course:''},tasks:[],pending:[],abx:[],watch:[],
   discharge:{edd:'',dispo:'',barriers:'',diagnosis:'',checklist:{},custom:[],medChanges:[],followup:[],ptWatch:[]}};}
@@ -232,13 +232,75 @@ const HEAD={cc:['chief complaint','cc','reason for admission','reason for referr
  ap:['assessment and plan','assessment & plan','impression and plan','impression & plan','impression','assessment','a/p','a&p','plan','assessment/plan'],
  code:['code status','goals of care','most','goc']};
 const HMAP={};for(const k in HEAD)HEAD[k].forEach(h=>HMAP[h]=k);
+/* ---- medication list parser (Cerner style: "name (brand), dose, route, frequency, PRN" one after another) ---- */
+const MEDCLASS=[['Anticoagulant',/apixaban|rivaroxaban|edoxaban|dabigatran|warfarin|enoxaparin|dalteparin|tinzaparin|heparin|fondaparinux/i],
+ ['Antiplatelet',/aspirin|\bASA\b|clopidogrel|ticagrelor|prasugrel/i],['Opioid',/morphine|hydromorphone|oxycodone|fentanyl|codeine|tramadol|methadone|buprenorphine|tapentadol/i],
+ ['Benzodiazepine',/azepam|azolam|clonazepam|lorazepam|diazepam|oxazepam|temazepam|alprazolam|midazolam|clobazam/i],['Sedative',/zopiclone|zolpidem|trazodone|quetiapine/i],
+ ['Antipsychotic',/quetiapine|olanzapine|risperidone|haloperidol|aripiprazole|clozapine|paliperidone/i],
+ ['Antiseizure',/levetiracetam|brivaracetam|lacosamide|phenytoin|valpro|carbamazepine|lamotrigine|topiramate|clobazam|gabapentin|pregabalin|oxcarbazepine/i],
+ ['Insulin / glucose-lowering',/insulin|glargine|detemir|degludec|lispro|aspart|glulisine|NPH|metformin|gliclazide|glyburide|sitagliptin|linagliptin|empagliflozin|dapagliflozin|canagliflozin|semaglutide|liraglutide|dulaglutide/i],
+ ['Steroid',/prednisone|prednisolone|dexamethasone|methylprednisolone|hydrocortisone|fludrocortisone/i],
+ ['Antibiotic',/cillin|cef|ceph|penem|mycin|floxacin|cycline|metronidazole|sulfamethoxazole|trimethoprim|nitrofurantoin|fosfomycin|linezolid|daptomycin|vancomycin|tazobactam|clavulan/i],
+ ['Diuretic',/furosemide|hydrochlorothiazide|chlorthalidone|indapamide|spironolactone|eplerenone|metolazone|bumetanide/i],
+ ['BP / heart',/pril\b|sartan\b|olol\b|dipine\b|diltiazem|verapamil|digoxin|amiodarone|hydralazine|nitrate|isosorbide|sacubitril/i],
+ ['Anticholinergic',/oxybutynin|tolterodine|diphenhydramine|dimenhydrinate|hydroxyzine|amitriptyline|nortriptyline|benztropine|scopolamine|paroxetine/i]];
+const medClass=n=>MEDCLASS.filter(c=>c[1].test(n)).map(c=>c[0]);
+const MEDGROUP=/^(Inpatient|Home|Prescriptions?|Documented|Outpatient|Continued|Discontinued|PRN medications|Scheduled|Continuous)\b[:\s]*/i;
+function parseMeds(text){const out=[];let group='';
+  const SPLIT=/\s+(?=[a-z][A-Za-z\-]+(?:\s[a-zA-Z][A-Za-z\-]+){0,3}\s*(?:\([^)]*\))?\s*,\s*[<>]?[\d.]+)/;
+  const glue=arr=>{const o=[];let carry='';arr.forEach(f=>{const g=f.match(MEDGROUP);const body=g?f.slice(g[0].length):f;
+      if(/^[a-z][A-Za-z\-]*$/.test(body.trim())){carry+=(g?g[0]:'')+body.trim()+' ';return;}o.push(carry+f);carry='';});if(carry)o.push(carry.trim());
+      return o.map(x=>{const g=x.match(/^(.*?)\b(Inpatient|Home|Prescriptions?|Documented|Outpatient)\s+(.*)$/);return g&&!g[1].trim()?x:x;});};
+  String(text||'').split(/\r?\n/).forEach(line=>glue(line.split(SPLIT)).forEach(e=>{e=e.replace(/^\s*[-•*\d.)]+\s+/,'').trim();if(!e)return;
+    const g=e.match(MEDGROUP);if(g){group=g[1];e=e.slice(g[0].length).trim();}if(!e)return;
+    if(!/\d/.test(e)&&!/,/.test(e)){if(e.length<40&&!/[a-z]{3,}\s+[a-z]{3,}\s+[a-z]{3,}/.test(e))group=e.replace(/:$/,'');else if(e.length<60)out.push({name:e,dose:'',route:'',freq:'',prn:false,group,cls:medClass(e),dc:'Continue'});return;}
+    const parts=e.split(/\s*,\s*/);let name=parts[0],dose=parts[1]||'',route=parts[2]||'',freq=parts.slice(3).join(', ');
+    if(parts.length===1){const m=e.match(/^(.+?)\s+([<>]?[\d.]+\s*(?:mg|mcg|g|units?|IntUnit|mL|mmol|mEq|%|puffs?|tabs?|drops?)\b)\s*(.*)$/i);if(m){name=m[1];dose=m[2];freq=m[3];}}
+    out.push({name:name.trim(),dose:dose.trim(),route:route.trim(),freq:freq.trim(),prn:/\bPRN\b/i.test(e),group,cls:medClass(name),dc:'Continue'});}));
+  return out;}
+/* ---- lab parser (Cerner "Event Name  Result  Date/Time" rows, and similar) ---- */
+function labDate(d,t){const m=d.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})$/);if(!m)return {iso:'',t:t||''};let [_,a,b,y]=m;if(y.length===2)y='20'+y;
+  let day=+a,mon=+b;if(mon>12&&day<=12){const x=day;day=mon;mon=x;} // assumes dd/mm/yy unless impossible
+  return {iso:`${y}-${String(mon).padStart(2,'0')}-${String(day).padStart(2,'0')}`,t:(t||'').slice(0,5)};}
+function parseLabs(text){const out=[];
+  let t=String(text||'').replace(/Labs\s*\(Last[^)]*\)|Event Name|Event Result|Result Date\/Time|Date\/Time|Normal Low|Normal High|Reference Range/gi,' ').replace(/\s+/g,' ');
+  const RE=/([A-Za-z][A-Za-z0-9\-\/%()+.]*(?:\s[A-Za-z(][A-Za-z0-9\-\/%()+.,]*){0,4}?)\s+([<>]?\d+(?:\.\d+)?|Positive|Negative|Detected|Not Detected|Pending)\s*((?:x?10\*\d+\/L|[A-Za-zµ%\/\*\d.]+(?:\/[A-Za-z\d.]+)?)?)\s*(Critical High|Critical Low|Critical|High|Low|Abnormal|HH|LL|H|L|A)?\s*(\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4})\s*(\d{1,2}:\d{2}(?::\d{2})?)?/g;
+  let m;while((m=RE.exec(t))){let name=m[1].trim().replace(/^(and|the|of|with|on)\s+/i,'');let unit=(m[3]||'').trim();let flag=(m[4]||'').trim();
+    if(/^(Critical High|Critical Low|Critical|High|Low|Abnormal|HH|LL|H|L|A)$/.test(unit)&&!flag){flag=unit;unit='';}
+    const d=labDate(m[5],m[6]);if(!d.iso)continue;
+    flag={H:'High',L:'Low',HH:'Critical High',LL:'Critical Low',A:'Abnormal'}[flag]||flag;
+    out.push({name,value:m[2],unit,flag,date:d.iso,time:d.t});}
+  return out;}
+function mergeLabs(p,list){let n=0;list.forEach(l=>{if(!p.labs.some(x=>x.name.toLowerCase()===l.name.toLowerCase()&&x.date===l.date&&x.time===l.time&&x.value===l.value)){p.labs.push(l);n++;}});return n;}
+function labGroups(p){const g={};p.labs.forEach(l=>{const k=l.name.toLowerCase();(g[k]=g[k]||{name:l.name,unit:l.unit,vals:[]}).vals.push(l);});
+  return Object.values(g).map(x=>{x.vals.sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time));x.latest=x.vals[0];x.first=x.vals[x.vals.length-1];return x;});}
+const isAbn=l=>!!l.flag&&!/^normal$/i.test(l.flag);
+function labLine(x,withFirst){const l=x.latest;const f=l.flag?' '+(/Critical/.test(l.flag)?l.flag.toUpperCase():l.flag[0]):'';
+  return `${x.name} ${l.value}${x.unit?' '+x.unit:''}${f} (${fmt(l.date)})${withFirst&&x.vals.length>1?' — was '+x.first.value+' on '+fmt(x.first.date):''}`;}
+function medShort(m){return m.name.replace(/\s*\(.*?\)\s*/g,' ').trim()+(m.dose?' '+m.dose:'')+(m.freq?' '+m.freq.replace(/,?\s*Start:.*$/i,''):'');}
+
+/* Problems: in the plan, each block after a blank line is one problem — its first few words are the problem, the rest is the plan.
+   With no blank lines, fall back to one problem per #/numbered/bulleted line. */
+function problemFromBlock(lines){lines=lines.map(l=>l.replace(/^\s*(?:#\s*\d*[.)]?|\d+[.)]|[-•*])\s*/,'').trim()).filter(Boolean);if(!lines.length)return null;
+  const head=lines[0];let text=head,rest='';const BR=/[.;:]\s+|\s[-–—]\s+|:$/g;let mm;
+  while((mm=BR.exec(head))){const before=head.slice(0,mm.index);if(mm[0][0]==='.'&&/(?:\b(?:Dr|Mr|Mrs|Ms|St|vs|approx|e\.g|i\.e|Hx|Pt|pt|No)|\b[A-Z])$/.test(before))continue;text=before;rest=head.slice(mm.index+mm[0].length);break;}
+  const w=text.split(/\s+/);if(w.length>12){rest=w.slice(10).join(' ')+(rest?' '+rest:'');text=w.slice(0,10).join(' ')+'…';}
+  const plan=[rest,...lines.slice(1)].filter(Boolean).join('; ');return {text:text.replace(/[,.]$/,''),status:'Active',plan:trunc(plan,600)};}
+function problemsFromAP(apLines,joined){const blocks=[];let cur=[];apLines.forEach(l=>{if(!l.trim()){if(cur.length)blocks.push(cur);cur=[];}else cur.push(l);});if(cur.length)blocks.push(cur);
+  let out;
+  if(blocks.length>=2)out=blocks.map(problemFromBlock);
+  else{const ls=apLines.filter(l=>/^\s*(?:#|\d+[.)]|[-•*])/.test(l));out=(ls.length?ls:String(joined||'').split(/(?<=[.;])\s+/).filter(x=>x.length>3).slice(0,8)).map(l=>problemFromBlock([l]));}
+  return out.filter(Boolean).slice(0,15);}
+function rebuildProblems(){const p=curP();if(!p.admission.raw.trim()){toast('No admission note pasted.');return;}if(p.admission.problems.length&&!confirmArm('prob'))return;
+  const r=parseNote(p.admission.raw);p.admission.problems=r.problems;p.admission.summary=r.summary;save();renderMain();toast(r.problems.length+' problems made from the note.');}
 function parseNote(text){
   const sec={};let curK='pre';sec.pre=[];
   String(text||'').split(/\r?\n/).forEach(line=>{
-    const L=line.trim();if(!L){return;}
+    const L=line.trim();if(!L){(sec[curK]=sec[curK]||[]).push('');return;}
     const m=L.match(/^([A-Za-z][A-Za-z &\/]{0,45}?)\s*(?::|-{1,2}|–)\s*(.*)$/);
     const whole=L.replace(/[:\s]+$/,'').toLowerCase();
     if(HMAP[whole]){curK=HMAP[whole];sec[curK]=sec[curK]||[];return;}
+    const lm=L.match(/^(Labs?|Lab results|Laboratory|Investigations|Results)\s*(\([^)]*\))\s*(.*)$/i);if(lm){curK='inv';(sec.inv=sec.inv||[]).push(L);return;}
     if(m&&HMAP[m[1].trim().toLowerCase()]){curK=HMAP[m[1].trim().toLowerCase()];sec[curK]=sec[curK]||[];if(m[2])sec[curK].push(m[2]);return;}
     (sec[curK]=sec[curK]||[]).push(L);
   });
@@ -251,23 +313,21 @@ function parseNote(text){
   const oneLiner=trunc((hpi.match(/^.*?[.!?](\s|$).*?[.!?](\s|$)/)||[hpi])[0],350);
   const pmhxLines=(sec.pmhx||[]).map(x=>x.replace(/^[-•*\d.)\s]+/,'').trim()).filter(Boolean);
   const apLines=(sec.ap||[]);
-  let problems=[];
-  apLines.forEach(l=>{const mm=l.match(/^\s*(?:#\s*\d*|\d+[.)]|[-•*])\s*(.+)$/);if(mm)problems.push(mm[1].trim());});
-  if(!problems.length&&apLines.length)problems=j('ap').split(/(?<=[.;])\s+/).filter(s=>s.length>3).slice(0,8);
-  problems=problems.slice(0,12).map(t=>{const parts=t.split(/\s*(?:[:–—]|\s-\s)\s*/);return {text:trunc(parts[0],250),status:'Active',plan:trunc(parts.slice(1).join(' — '),400)};});
+  const problems=problemsFromAP(apLines,j('ap'));
   const abx=ABX.filter(a=>a[1].test(all)).map(a=>a[0]);
+  const meds=parseMeds((sec.meds||[]).join('\n'));let labs=parseLabs((sec.inv||[]).join('\n'));if(!labs.length)labs=parseLabs(all);
   const summary=[
     j('cc')&&('Reason for admission: '+trunc(j('cc'),200)),
     hpi&&('HPI: '+trunc(hpi,700)),
     pmhxLines.length&&('PMHx: '+trunc(pmhxLines.join('; '),500)),
-    j('meds')&&('Home meds: '+trunc(j('meds'),400)),
+    meds.length?('Medications ('+meds.length+'): '+meds.map(m=>m.name.replace(/\s*\(.*?\)\s*/g,' ').trim()+(m.prn?' PRN':'')).join(', ')):(j('meds')&&('Home meds: '+trunc(j('meds'),400))),
     j('allergies')&&('Allergies: '+trunc(j('allergies'),150)),
     (j('social')||j('func'))&&('Social / function: '+trunc([j('social'),j('func')].filter(Boolean).join(' '),300)),
-    j('inv')&&('Key results: '+trunc(j('inv'),400)),
+    labs.length?(()=>{const tmp={labs:labs};const ab=labGroups(tmp).filter(x=>isAbn(x.latest));return 'Abnormal results: '+(ab.length?ab.map(x=>labLine(x)).join('; '):'none flagged')+' (full table on Labs tab)';})():(j('inv')&&('Key results: '+trunc(j('inv'),400))),
     code&&('Code status: '+code),
     problems.length&&('Impression / plan:\n'+problems.map(p=>'- '+p.text+(p.plan?' — '+p.plan:'')).join('\n'))
   ].filter(Boolean).join('\n');
-  return {age,sex,code,oneLiner,summary,problems,abx,allergies:trunc(j('allergies'),150),cc:trunc(j('cc'),150),found:Object.keys(sec).filter(k=>k!=='pre'&&sec[k].length)};
+  return {age,sex,code,oneLiner,summary,problems,abx,meds,labs,allergies:trunc(j('allergies'),150),cc:trunc(j('cc'),150),found:Object.keys(sec).filter(k=>k!=='pre'&&sec[k].length)};
 }
 
 /* ============ actions ============ */
@@ -294,7 +354,12 @@ function summarizeAdmission(){const p=curP();const raw=p.admission.raw;if(!raw.t
   if(!p.admission.problems.length)p.admission.problems=r.problems;
   if(!p.age&&r.age)p.age=r.age;if(!p.sex&&r.sex)p.sex=r.sex;if(!p.reason&&r.cc)p.reason=r.cc;
   if(!p.basics.code&&r.code)p.basics.code=r.code;if(!p.basics.allergies&&r.allergies)p.basics.allergies=r.allergies;
-  p.admission.detected={abx:r.abx,found:r.found};save();render();toast('Summary made — edit anything that is wrong.');}
+  if(r.meds.length)p.admission.meds=r.meds;const nl=mergeLabs(p,r.labs);
+  p.admission.detected={abx:r.abx,found:r.found};save();render();toast(`Summary made — ${r.meds.length} meds, ${nl} lab results read. Edit anything that is wrong.`);}
+function parseMedsBox(){const p=curP();const m=parseMeds(p.admission.medsRaw);if(!m.length){toast('No medications found in the pasted text.');return;}p.admission.meds=m;p.admission.medsRaw='';save();renderMain();toast(m.length+' medications read.');}
+function readLabsBox(){const p=curP();const l=parseLabs(p.labsRaw);if(!l.length){toast('No lab results with dates found — paste rows like "Sodium 128 mmol/L Low 23/11/26 04:25".');return;}const n=mergeLabs(p,l);p.labsRaw='';save();renderMain();toast(`${l.length} results read, ${n} new.`);}
+function clearLabs(){const p=curP();if(!confirmArm('labs'))return;p.labs=[];save();renderMain();}
+let armKey=null;function confirmArm(k){if(armKey===k){armKey=null;return true;}armKey=k;toast('Press again to confirm.');setTimeout(()=>{if(armKey===k)armKey=null;},4000);return false;}
 function addAbx(name){addItem('abx',{drug:name,route:IVONLY.test(name)?'IV':'PO',start:curP().admitDate||todayStr()});toast(name+' added to the antibiotic tracker.');}
 function addSuggestion(kind,ci,ii){const c=COND.find(x=>x.id===ci);if(!c)return;
   if(kind==='watch'){const w=c.watch[ii];addItem('watch',{level:'High',item:w[0],plan:w[1]});}
@@ -359,7 +424,7 @@ function renderMain(){
   const p=curP();const M=document.getElementById('main');
   if(!p){M.innerHTML=`<div class="card"><h2 style="margin-top:0">Rounding Notebook</h2><p>Add a patient on the left, paste the admission note, and press <b>Summarize admission</b>. Chart a short note each day; when you are done, press <b>Handover summary</b> or <b>Discharge summary</b> to compile everything.</p><p class="mut">Set your working week in the bar at the top so pending tests and antibiotic stop dates that fall after your week are flagged for handover.</p></div>`;return;}
   const c=counts(p);const hd=p.admitDate?diff(p.admitDate,todayStr())+1:null;
-  const tabs=[['admission','Admission'],['basics','Basics'],['notes',`Daily notes${p.notes.length?' ('+p.notes.length+')':''}`],['tasks',`To-do${c.openTasks?' ('+c.openTasks+')':''}`],
+  const tabs=[['admission','Admission'],['meds',`Meds${p.admission.meds.length?' ('+p.admission.meds.length+')':''}`],['labs',`Labs${p.labs.length?' ('+labGroups(p).filter(x=>isAbn(x.latest)).length+' abnormal)':''}`],['basics','Basics'],['notes',`Daily notes${p.notes.length?' ('+p.notes.length+')':''}`],['tasks',`To-do${c.openTasks?' ('+c.openTasks+')':''}`],
     ['pending',`Tests to review${c.pend?' ('+c.pend+')':''}`],['abx',`Antibiotics${c.abxA.length?' ('+c.abxA.length+')':''}`],['watch',`Watch for${p.watch.length?' ('+p.watch.length+')':''}`],['discharge','Discharge']];
   M.innerHTML=`<div class="card"><div class="phead">
      ${B('room',p.room,'Room','text','','size="7" data-side="1"')} ${B('name',p.name,'Name','text','','size="18" data-side="1"')}
@@ -383,10 +448,30 @@ admission(p){const d=p.admission.detected;const conds=detectConds(p);
      <label class="f" style="margin-top:6px">Summary<textarea data-b="admission.summary" rows="10">${esc(p.admission.summary)}</textarea></label>`)
   +sec('Active problems',p.admission.problems.map((x,i)=>`<div class="row">${LS('admission.problems',i,'status',['Active','Improving','Watching','Resolved'],x.status)}
       ${L('admission.problems',i,'text',x.text,'Problem','text','grow',x.status==='Resolved'?'style="opacity:.6"':'')}${L('admission.problems',i,'plan',x.plan,'Plan / status','text','grow')}${X('admission.problems',i)}</div>`).join('')
-      +`<button class="sm" onclick="addItem('admission.problems')">+ Problem</button>`)
+      +`<button class="sm" onclick="addItem('admission.problems')">+ Problem</button> <button class="sm" onclick="rebuildProblems()">Rebuild problems from note</button><div class="mut" style="margin-top:4px">Each block after a blank line in the plan becomes a problem: its first words are the problem, the lines under it are the plan.</div>`)
   +sec('Found in the note',`${d&&d.abx.length?`<div class="mut">Antibiotics mentioned — add to the countdown:</div><div class="chips" style="margin:4px 0 10px">${d.abx.map(a=>`<button class="chip" onclick="addAbx('${a}')">+ ${esc(a)}</button>`).join('')}</div>`:''}
       ${conds.length?`<div class="mut">Conditions recognized: ${conds.map(c=>esc(c.label)).join(', ')}. Suggestions are on the Watch for and Discharge tabs.</div>`:'<div class="mut">Nothing recognized yet — press Summarize admission.</div>'}
       ${d&&d.found.length?`<div class="mut" style="margin-top:6px">Note sections read: ${d.found.join(', ')}</div>`:''}`,!!d);
+},
+meds(p){const ms=p.admission.meds;const groups=[...new Set(ms.map(m=>m.group||''))];
+  const DCO=['Continue','Stopped','Dose changed','Held — restart later','New this admission'];
+  const row=(m,i)=>`<div class="row"><div class="grow" style="min-width:220px"><b>${esc(m.name)}</b>${m.prn?' <span class="flag amb">PRN</span>':''}${(m.cls||[]).map(c=>` <span class="badge ${/Anticoag|Opioid|Benzo|Insulin|Antipsych/.test(c)?'red':''}">${esc(c)}</span>`).join('')}
+      <div class="mut">${esc([m.dose,m.route,m.freq].filter(Boolean).join(' · '))}</div></div>
+      <label class="mut">At discharge ${LS('admission.meds',i,'dc',DCO,m.dc||'Continue')}</label>${m.dc&&m.dc!=='Continue'?L('admission.meds',i,'why',m.why||'','Reason','text','','size="18"'):''}${X('admission.meds',i)}</div>`;
+  return sec(`Medications (${ms.length})`,ms.length?groups.map(g=>`${g?`<div class="mut" style="margin-top:6px;font-weight:600">${esc(g)}</div>`:''}${ms.map((m,i)=>({m,i})).filter(o=>(o.m.group||'')===g).map(o=>row(o.m,o.i)).join('')}`).join('')
+      +`<div class="mut" style="margin-top:6px">Set "At discharge" for any med you stop, change, hold or start — it goes into the discharge summary's medication changes.</div>`
+      :'<div class="mut">No medications yet. Press Summarize admission on the Admission tab, or paste a med list below.</div>')
+  +sec('Paste a medication list',`<textarea data-b="admission.medsRaw" rows="5" placeholder="Paste the med list (PowerChart Medications / admission med rec)">${esc(p.admission.medsRaw)}</textarea><div class="actions"><button class="pri" onclick="parseMedsBox()">Read medications</button><span class="mut">Replaces the list above.</span></div>`,!ms.length);
+},
+labs(p){const gs=labGroups(p);const show=p.labsAbnOnly?gs.filter(x=>x.vals.some(isAbn)):gs;
+  const cell=l=>`<span class="${isAbn(l)?(/Critical/.test(l.flag)?'flag red':'flag amb'):''}">${esc(l.value)}${l.flag?' '+esc(/Critical/.test(l.flag)?l.flag:l.flag[0]):''}</span>`;
+  const arrow=x=>{if(x.vals.length<2)return '';const a=parseFloat(x.vals[1].value),b=parseFloat(x.latest.value);if(isNaN(a)||isNaN(b)||a===b)return '→';return b>a?'↑':'↓';};
+  return sec(`Lab results (${gs.length} tests)`,gs.length?`<label class="mut"><input type="checkbox" data-b="labsAbnOnly" ${p.labsAbnOnly?'checked':''}> Abnormal only</label>
+      <div style="overflow:auto"><table style="border-collapse:collapse;width:100%;margin-top:6px;font-size:13px"><tr style="text-align:left;color:var(--mut)"><th style="padding:4px">Test</th><th>Latest</th><th></th><th>Date</th><th>Earlier values (newest first)</th></tr>
+      ${show.map(x=>`<tr style="border-top:1px solid var(--line)"><td style="padding:4px"><b>${esc(x.name)}</b> <span class="mut">${esc(x.unit||'')}</span></td><td>${cell(x.latest)}</td><td>${arrow(x)}</td><td class="mut">${fmt(x.latest.date)} ${esc(x.latest.time)}</td>
+        <td>${x.vals.slice(1,6).map(l=>`${cell(l)} <span class="mut">${fmt(l.date)}</span>`).join(' · ')}</td></tr>`).join('')}</table></div>
+      <div class="actions"><button class="sm" onclick="clearLabs()">Clear all labs</button></div>`:'<div class="mut">No lab results yet. Labs in the admission note are read when you press Summarize admission, or paste more below.</div>')
+  +sec('Paste lab results',`<textarea data-b="labsRaw" rows="5" placeholder="Paste results, e.g. from Results Review or a note: Sodium 128 mmol/L Low 23/11/26 04:25:00">${esc(p.labsRaw)}</textarea><div class="actions"><button class="pri" onclick="readLabsBox()">Read labs</button><span class="mut">Adds to the table; duplicates are skipped. Dates read as day/month/year.</span></div>`,!gs.length);
 },
 basics(p){const b='basics.';
   return sec('Code status, allergies, safety',`<div class="grid2">
@@ -493,6 +578,7 @@ function handoverText(p){const t=todayStr(),we=S.settings.weekEnd,b=p.basics,o=[
   if(b.lines.length)o.push('Lines/tubes: '+b.lines.map(l=>`${l.type} day ${diff(l.inserted,t)+1}${l.plan?' ('+l.plan+')':''}`).join('; '));
   const pr=p.admission.problems.filter(x=>x.status!=='Resolved');if(pr.length){o.push('Problems:');pr.forEach(x=>o.push(`- ${x.text}${x.plan?' — '+x.plan:''}${x.status!=='Active'?' ['+x.status+']':''}`));}
   const cl=courseLines(p,3,400);if(cl.length){o.push('Recent course:');o.push(...cl);}
+  const ab0=labGroups(p).filter(x=>isAbn(x.latest));if(ab0.length)o.push('Abnormal labs (latest): '+ab0.map(x=>labLine(x)).join('; '));
   const ab=p.abx.map(a=>({a,i:abxInfo(a)})).filter(x=>x.i&&x.i.left>=0);
   if(ab.length){o.push('Antibiotics:');ab.forEach(({a,i})=>o.push(`- ${a.drug} ${a.route}${a.indication?' for '+a.indication:''}: day ${i.day} of ${a.days}, last dose ${i.last}${we&&i.last>we?'  <-- ends after my week':''}${a.route==='IV'&&a.ivpo?' (IV→PO review '+a.ivpo+')':''}`));}
   const pe=p.pending.filter(x=>x.status!=='Reviewed');
@@ -518,7 +604,9 @@ function dischargeText(p){const d=p.discharge,b=p.basics,dc=d.edd||todayStr(),o=
   if(p.abx.length){H('Antibiotics');p.abx.forEach(a=>{const i=abxInfo(a,dc);if(!i){o.push('- '+a.drug);return;}
      o.push(`- ${a.drug} ${a.route}${a.indication?' for '+a.indication:''}: started ${a.start}, ${a.days}-day course. `+(i.left>0?`CONTINUE at home — last dose ${i.last} (${i.left} more day${i.left>1?'s':''} after discharge).`:`Completed${i.last?' '+i.last:''}.`));});}
   const un=untrackedAbx(p);if(un.length){if(!p.abx.length)H('Antibiotics');o.push('Also mentioned in notes (not in the countdown — check dates/stop date): '+un.join(', '));}
-  if(d.medChanges.length){H('Medication changes');d.medChanges.forEach(x=>o.push(`- ${x.type}: ${x.med}${x.reason?' — '+x.reason:''}`));}
+  const mc=p.admission.meds.filter(m=>m.dc&&m.dc!=='Continue');
+  if(d.medChanges.length||mc.length){H('Medication changes');mc.forEach(m=>o.push(`- ${m.dc}: ${medShort(m)}${m.why?' — '+m.why:''}`));d.medChanges.forEach(x=>o.push(`- ${x.type}: ${x.med}${x.reason?' — '+x.reason:''}`));}
+  const labA=labGroups(p).filter(x=>x.vals.some(isAbn));if(labA.length){H('Key lab results');labA.forEach(x=>o.push('- '+labLine(x,true)));}
   const pe=p.pending.filter(x=>x.status!=='Reviewed');
   if(pe.length){H('Results pending at discharge — please follow up');pe.forEach(x=>o.push(`- ${x.test}${x.expected?' (expected '+x.expected+')':''}${x.result?': '+x.result:''}`));}
   H('Follow-up needed');
