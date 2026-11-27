@@ -138,7 +138,13 @@ function cloudUI(msg,warn){const b=document.getElementById('cloudBtn'),bar=docum
   const sd=document.getElementById('cloudSide');if(sd)sd.textContent=b.textContent;
   if(m)m.textContent=fh?(fhOK?'Linked: '+fh.name:'Linked to '+fh.name+' — needs reconnecting'):'Not linked';
   if(msg){bar.innerHTML=msg;bar.classList.remove('hidden');bar.style.background=warn?'#fff4d6':'#e6f4ea';bar.style.color=warn?'#8a5a00':'#1e6b3a';}else bar.classList.add('hidden');}
-function cloudClick(){if(!fh){toggleData();return;}if(!fhOK)cloudReconnect();else toast('Saving to '+fh.name+' in your OneDrive folder.');}
+function cloudClick(){
+  if(!CAN_FILE){cloudUI('Saving to a OneDrive file needs <b>Microsoft Edge or Google Chrome</b>. In this browser, use Settings / backup → Export backup and save the file to OneDrive instead.',true);return;}
+  if(fh&&!fhOK){cloudReconnect();return;}
+  const st=fh?`Now saving to <b>${esc(fh.name)}</b>. `:'';
+  cloudUI(`${st}<b>OneDrive notebook file:</b> &nbsp;<button class="pri" onclick="cloudCreate()">Create a new file in OneDrive…</button> <button onclick="cloudOpen()">Open my existing file…</button>${fh?' <button onclick="cloudUnlink()">Unlink</button>':''} <button class="x" onclick="cloudUI()" title="Close">✕</button>
+    <div style="margin-top:4px;font-size:12px">First computer: <b>Create</b> → in the Save window click <b>OneDrive – Island Health</b> (left side) → Documents → Save. Other computers: <b>Open my existing file</b> → pick the same file → Open → Allow.</div>`,true);}
+function cloudErr(what,e){if(e&&e.name==='AbortError')return;cloudUI(`Could not ${what}: <b>${esc(e&&(e.message||e.name)||e)}</b>. If this keeps happening, open the Rounding notebook on its own page (outside the toolkit) and try again, or use Settings / backup → Export backup. <button class="x" onclick="cloudUI()">✕</button>`,true);}
 function wrap(){return JSON.stringify({app:'rounding-notebook',version:1,savedAt:S.savedAt||Date.now(),data:S});}
 function unwrap(txt){const o=JSON.parse(txt);const d=o&&o.app==='rounding-notebook'?o.data:o;if(!d||!Array.isArray(d.patients))throw new Error('not a Rounding notebook file');d.savedAt=d.savedAt||o.savedAt||0;return d;}
 function cloudSchedule(){if(!fh||!fhOK)return;clearTimeout(fTimer);fTimer=setTimeout(cloudWrite,1200);}
@@ -152,15 +158,15 @@ async function cloudSync(){const r=await cloudRead();if(r&&(r.d.savedAt||0)>(S.s
 async function cloudCreate(){if(!CAN_FILE){toast('Use Edge or Chrome for OneDrive saving, or Export backup.');return;}
   try{const h=await window.showSaveFilePicker({suggestedName:'rounding-notebook.json',types:[{description:'Rounding notebook',accept:{'application/json':['.json']}}]});
     fh=h;fhOK=true;await kv('fh',h);if(!S.savedAt)S.savedAt=Date.now();await cloudWrite();cloudUI('Linked to <b>'+esc(h.name)+'</b>. Every change is now saved there. Make sure you saved it inside your OneDrive folder.');}
-  catch(e){if(e.name!=='AbortError')toast('Could not create the file: '+(e.message||e));}}
+  catch(e){cloudErr('create the file',e);}}
 async function cloudOpen(){if(!CAN_FILE){toast('Use Edge or Chrome for OneDrive saving, or Import backup.');return;}
   try{const [h]=await window.showOpenFilePicker({types:[{description:'Rounding notebook',accept:{'application/json':['.json']}}]});
-    if((await h.requestPermission({mode:'readwrite'}))!=='granted'){toast('Saving to that file was not allowed.');return;}
+    if((await h.requestPermission({mode:'readwrite'}))!=='granted'){cloudUI('Saving to that file was not allowed — click Open again and choose <b>Allow</b> / <b>Edit files</b>.',true);return;}
     fh=h;fhOK=true;await kv('fh',h);const r=await cloudRead();
     if(r){try{localStorage.setItem(KEY+'-before-open',JSON.stringify(S));}catch(e){}adopt(r.d,'Opened '+h.name+' ('+r.d.patients.length+' patients).');}else await cloudWrite();
     fLastWrite=Date.now();cloudUI();}
-  catch(e){if(e.name!=='AbortError')toast('Could not open: '+(e.message||e));}}
-async function cloudReconnect(){if(!fh)return;try{if((await fh.requestPermission({mode:'readwrite'}))==='granted'){fhOK=true;await cloudSync();cloudUI();}}catch(e){toast('Could not reconnect: '+(e.message||e));}}
+  catch(e){cloudErr('open the file',e);}}
+async function cloudReconnect(){if(!fh)return;try{if((await fh.requestPermission({mode:'readwrite'}))==='granted'){fhOK=true;await cloudSync();cloudUI();}}catch(e){cloudErr('reconnect',e);}}
 async function cloudUnlink(){fh=null;fhOK=false;await kv('fh',null);cloudUI();toast('Unlinked. The notebook stays in this browser; the OneDrive file is unchanged.');}
 async function cloudInit(){cloudUI();if(!CAN_FILE)return;const h=await kv('fh');if(!h)return;fh=h;
   let perm='prompt';try{perm=await h.queryPermission({mode:'readwrite'});}catch(e){}
