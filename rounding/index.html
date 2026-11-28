@@ -445,6 +445,27 @@ function problemsFromAP(apLines,joined){const blocks=[];let cur=[];apLines.forEa
   return out.filter(Boolean).slice(0,15);}
 function rebuildProblems(){const p=curP();if(!p.admission.raw.trim()){toast('No admission note pasted.');return;}if(p.admission.problems.length&&!confirmArm('prob'))return;
   const r=parseNote(p.admission.raw);p.admission.problems=r.problems;p.admission.summary=r.summary;save();renderMain();toast(r.problems.length+' problems made from the note.');}
+/* Reads the MOST level from pasted chart text. Handles PowerChart's
+   "MOST / Intervention Level: M3 – ... (13/06/20) / MOST Ordered By: ..." block
+   as well as "MOST: M2", "MOST M3", "code status C1", "GOC: M1". Uses the LAST match (most recent). */
+function findMOST(text){text=String(text||'');let best=null;
+  const res=[/Intervention\s*Level\s*[:\-]?\s*\b(M[123]|C[012])\b([^\n]*)/gi,
+             /\b(?:MOST|code\s*status|goals\s*of\s*care|GOC)\b[\s:\-–]{0,6}(?:[^\n]{0,40}?\n?[^\n]{0,40}?)\b(M[123]|C[012])\b([^\n]*)/gi];
+  res.forEach(re=>{let m;while((m=re.exec(text))){if(!best||m.index>best.index)best={index:m.index,level:m[1].toUpperCase(),rest:m[2]||''};}});
+  if(!best)return null;
+  const desc=(best.rest.match(/^\s*[-–—:]\s*([^()\n]+)/)||[])[1]||'';
+  const date=(best.rest.match(/\((\d{1,2}\/\d{1,2}\/\d{2,4}|\d{4}-\d{2}-\d{2})\)/)||[])[1]||'';
+  const by=(text.slice(best.index).match(/MOST\s*Ordered\s*By\s*:\s*([^\n(]+)/i)||[])[1]||'';
+  const detail=[best.level+(desc?' – '+desc.trim():''),date&&'ordered '+date,by&&'by '+by.trim()].filter(Boolean).join(', ');
+  return {level:best.level,detail};}
+/* Fill MOST from text. Returns a message if something changed. */
+function applyMOST(p,text){const mo=findMOST(text);if(!mo)return '';const old=p.basics.code||'';
+  p.basics.codeDetail=mo.detail;if(old===mo.level)return '';p.basics.code=mo.level;
+  return old?`MOST changed ${old} → ${mo.level}`:`MOST ${mo.level} read`;}
+function readMOSTNow(){const p=curP();const texts=[p.admission.raw||''].concat((p.notes||[]).slice().sort((a,b)=>String(a.date).localeCompare(String(b.date))).map(n=>n.text||''));
+  let msg='';texts.forEach(t=>{const r=applyMOST(p,t);if(r)msg=r;});
+  if(!findMOST(texts.join('\n'))){toast('No MOST level found in the admission note or daily notes.');return;}
+  save();renderMain();toast(msg||('MOST '+p.basics.code+' — already up to date.'));}
 function parseNote(text){
   const sec={};let curK='pre';sec.pre=[];
   String(text||'').split(/\r?\n/).forEach(line=>{
@@ -460,7 +481,7 @@ function parseNote(text){
   const all=String(text||'');
   const ageM=all.match(/\b(\d{1,3})\s*(?:-|\s)?\s*(?:years?[- ]old|yo\b|y\/o|y\.o\.|yr[- ]old)\s*(male|female|man|woman|gentleman|lady|m\b|f\b)?/i);
   let age='',sex='';if(ageM){age=ageM[1];const s=(ageM[2]||'').toLowerCase();sex=/^(m|male|man|gentleman)$/.test(s)?'M':/^(f|female|woman|lady)$/.test(s)?'F':'';}
-  let code='';const cm=all.match(/(?:MOST|code status|goals of care|GOC)[^\n]{0,40}?\b(M[123]|C[012])\b/i);if(cm)code=cm[1].toUpperCase();else if(/full code/i.test(all))code='Full code (MOST not documented)';else if(/\bDNR\b|do not resuscitate/i.test(all))code='DNR (confirm MOST level)';
+  const mo=findMOST(all);let code=mo?mo.level:'';if(!code){if(/full code/i.test(all))code='Full code (MOST not documented)';else if(/\bDNR\b|do not resuscitate/i.test(all))code='DNR (confirm MOST level)';}
   const hpi=j('hpi')||j('pre');
   const oneLiner=trunc((hpi.match(/^.*?[.!?](\s|$).*?[.!?](\s|$)/)||[hpi])[0],350);
   const pmhxLines=(sec.pmhx||[]).map(x=>x.replace(/^[-•*\d.)\s]+/,'').trim()).filter(Boolean);
@@ -529,7 +550,7 @@ function summarizeAdmission(){const p=curP();const raw=p.admission.raw;if(!raw.t
   if(!p.admission.problems.length)p.admission.problems=r.problems;
   const dm=parseDemo(raw);['dob','phn','mrn','address','phone','cell'].forEach(k=>{if(dm[k]&&(!p[k]||(k==='address'&&dm[k].startsWith(p[k])&&dm[k].length>p[k].length)))p[k]=dm[k];});if(!p.age&&p.dob)p.age=ageFrom(p.dob);
   if(!p.age&&r.age)p.age=r.age;if(!p.sex&&r.sex)p.sex=r.sex;if(!p.reason&&r.cc)p.reason=r.cc;
-  if(!p.basics.code&&r.code)p.basics.code=r.code;if(!p.basics.allergies&&r.allergies)p.basics.allergies=r.allergies;
+  const mm=applyMOST(p,raw);if(!p.basics.code&&r.code)p.basics.code=r.code;if(!p.basics.allergies&&r.allergies)p.basics.allergies=r.allergies;
   if(r.meds.length)p.admission.meds=r.meds;const nl=mergeLabs(p,r.labs);
   p.admission.detected={abx:r.abx,found:r.found};save();render();toast(`Summary made — ${r.meds.length} meds, ${nl} lab results read`+(Object.keys(dm).length?', '+Object.keys(dm).map(k=>k.toUpperCase()).join('/')+' found':'')+'. Edit anything that is wrong.');}
 function parseMedsBox(){const p=curP();const m=parseMeds(p.admission.medsRaw);if(!m.length){toast('No medications found in the pasted text.');return;}p.admission.meds=m;p.admission.medsRaw='';save();renderMain();toast(m.length+' medications read.');}
@@ -586,7 +607,7 @@ function addSuggestion(kind,ci,ii){const c=COND.find(x=>x.id===ci);if(!c)return;
 function addNote(){const p=curP();const d=p.noteDraft;if(!d.text.trim()){toast('Write the note first.');return;}
   const ei=d.editId?p.notes.findIndex(n=>n.id===d.editId):-1;
   if(ei>=0)Object.assign(p.notes[ei],{date:d.date||p.notes[ei].date,text:d.text,course:d.course,edited:Date.now()});else p.notes.push({id:uid(),date:d.date||todayStr(),text:d.text,course:d.course});
-  p.noteDraft={date:todayStr(),text:'',course:''};save();renderMain();const f=testsInNotes(p).length;toast((ei>=0?'Note updated':'Note saved')+(f?' — '+f+' ordered test'+(f>1?'s':'')+' found: add them on Tests to review.':'.'));}
+  const mm=applyMOST(p,d.text);p.noteDraft={date:todayStr(),text:'',course:''};save();renderMain();const f=testsInNotes(p).length;toast((ei>=0?'Note updated':'Note saved')+(mm?' — '+mm:'')+(f?' — '+f+' ordered test'+(f>1?'s':'')+' found: add them on Tests to review.':'.'));}
 function editNote(i){const p=curP();const n=p.notes[i];if(!n)return;if(!n.id)n.id=uid();
   if(p.noteDraft.text.trim()&&p.noteDraft.editId!==n.id&&!confirmArm('editnote')){toast('Today’s note has unsaved text — press Edit again to replace it with this note.');return;}
   p.noteDraft={date:n.date,text:n.text,course:n.course||'',editId:n.id};save();renderMain();
@@ -720,7 +741,7 @@ labs(p){const gs=labGroups(p);const show=p.labsAbnOnly?gs.filter(x=>x.vals.some(
 },
 basics(p){const b='basics.';
   return sec('Code status, allergies, safety',`<div class="grid2">
-     <label class="f">Code status (MOST)<select data-b="basics.code">${opt([['','Not documented'],'M1','M2','M3','C0','C1','C2',p.basics.code&&!['M1','M2','M3','C0','C1','C2'].includes(p.basics.code)?p.basics.code:null].filter(Boolean),p.basics.code)}</select></label>
+     <label class="f">Code status (MOST)<select data-b="basics.code">${opt([['','Not documented'],'M1','M2','M3','C0','C1','C2',p.basics.code&&!['M1','M2','M3','C0','C1','C2'].includes(p.basics.code)?p.basics.code:null].filter(Boolean),p.basics.code)}</select>${p.basics.codeDetail?`<span class="mut" style="font-size:11px;display:block">From chart: ${esc(p.basics.codeDetail)}</span>`:''}<button class="sm" type="button" style="margin-top:4px" onclick="readMOSTNow()" title="Read the MOST level from the admission note and daily notes">Read MOST from notes</button></label>
      <label class="f">Allergies ${B(b+'allergies',p.basics.allergies,'NKDA / list')}</label>
      <label class="f">VTE prophylaxis<select data-b="basics.vte">${opt([['','Not yet addressed'],'LMWH','UFH','DOAC (therapeutic)','Warfarin','Mechanical only','Contraindicated (bleeding)','Not needed — ambulating'],p.basics.vte)}</select></label>
      <label class="f">Isolation<select data-b="basics.isolation">${opt([['','None'],'Contact','Droplet','Droplet/contact','Airborne','Contact plus (C. diff)'],p.basics.isolation)}</select></label>
