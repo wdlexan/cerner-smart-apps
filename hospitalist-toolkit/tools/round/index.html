@@ -510,21 +510,51 @@ const TESS_URL='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.j
 function loadTess(){return window.Tesseract?Promise.resolve():new Promise((ok,bad)=>{const sc=document.createElement('script');sc.src=TESS_URL;sc.onload=ok;sc.onerror=()=>bad(new Error('Could not load the screenshot reader (needs internet access to cdn.jsdelivr.net).'));document.head.appendChild(sc);});}
 async function labShotFiles(files){files=[...(files||[])].filter(f=>/^image\//.test(f.type));if(!files.length){toast('No image found — copy a screenshot first (Win+Shift+S).');return;}
   const p=curP();if(!p)return;toast('Reading '+files.length+' screenshot'+(files.length>1?'s':'')+'… (first time takes ~10 s)');
-  try{await loadTess();let txt='';for(const f of files){const r=await Tesseract.recognize(f,'eng');txt+=(txt?'\n':'')+fixOCR(r.data.text);}
+  try{await loadTess();let txt='';for(const f of files){txt+=(txt?'\n':'')+await ocrImage(f);}
     p.labsRaw=((p.labsRaw||'').trim()?p.labsRaw.trim()+'\n':'')+txt.trim();save();renderMain();
     labCtx(p);const n=parseLabs(txt).length+flowsheetLabs(txt).length;
     toast(n?`Screenshot read — ${n} results found. Check the numbers in the box, then press Read labs.`:'Screenshot read, but no dated results recognized — check the text in the box (each result needs a date).');}
   catch(e){toast(e.message||'Could not read the screenshot.');}}
 function fixOCR(t){return String(t||'').replace(/[|¦]/g,' ').replace(/(\d)[oO](?=\d|\b)/g,'$10').replace(/\b[oO](?=\.\d)/g,'0').replace(/(\d),(\d)(?!\d{2})/g,'$1.$2').replace(/[ \t]+/g,' ');}
-/* Flowsheet layout: a header line of dates, then rows "Name  v1  v2  v3" — value i belongs to date i. */
-function flowsheetLabs(text){const out=[];const lines=String(text||'').split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
-  const DR=/(\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4})(?:\s+(\d{1,2}:\d{2}))?/g;let hdr=null;
-  lines.forEach(l=>{const ds=[...l.matchAll(DR)];
-    if(ds.length>=1&&l.replace(DR,'').replace(/[^A-Za-z]/g,'').length<12){hdr=ds.map(d=>labDate(d[1],d[2]||''));return;}
-    if(!hdr)return;const m=l.match(/^([A-Za-z][A-Za-z0-9 ,\-\/()%+.]*?)\s+((?:[<>]?\d+(?:\.\d+)?\s*(?:HH|LL|H|L|A|C)?\s*)+)$/);if(!m)return;
-    const vals=[...m[2].matchAll(/([<>]?\d+(?:\.\d+)?)\s*(HH|LL|H|L|A|C)?/g)];if(!vals.length||vals.length>hdr.length)return;
-    vals.forEach((v,i)=>{const d=hdr[i];if(!d||!d.iso)return;out.push({name:m[1].trim(),value:v[1],unit:'',flag:{H:'High',L:'Low',HH:'Critical High',LL:'Critical Low',A:'Abnormal',C:'Critical'}[v[2]]||'',date:d.iso,time:d.t});});});
+/* Flowsheet layout (PowerChart Lab View): a header row of dates, then rows "Name  v1  v2  v3" — value i belongs to date i.
+   Tab-separated text (copied, or built from a screenshot) keeps empty cells, so values stay under the right date. */
+const MONS='jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec';
+const FS_DATE=new RegExp(`(\\d{4}-\\d{2}-\\d{2}|\\d{1,2}[\\/-]\\d{1,2}[\\/-]\\d{2,4}|\\d{1,2}[- ](?:${MONS})[a-z]*[- ]\\d{2,4})(?:\\s+(\\d{1,2}:\\d{2}))?`,'i');
+function fsDate(d,t){d=String(d||'').trim();let m=d.match(/^(\d{4})-(\d{2})-(\d{2})$/);if(m)return {iso:d,t:(t||'').slice(0,5)};
+  m=d.match(new RegExp(`^(\\d{1,2})[- ](${MONS})[a-z]*[- ](\\d{2,4})$`,'i'));if(m){let y=m[3];if(y.length===2)y='20'+y;return {iso:`${y}-${String(MON3[m[2].toLowerCase()]).padStart(2,'0')}-${m[1].padStart(2,'0')}`,t:(t||'').slice(0,5)};}
+  return labDate(d,t);}
+const FS_VAL=/^([<>]?\d+(?:\.\d+)?)\s*(?:\(?\s*(HH|LL|H|L|A|C)\s*\)?)?/;
+const FS_FLAG={H:'High',L:'Low',HH:'Critical High',LL:'Critical Low',A:'Abnormal',C:'Critical'};
+function flowsheetLabs(text){const out=[];let hdr=null;
+  String(text||'').split(/\r?\n/).forEach(raw=>{const line=raw.replace(/\s+$/,'');if(!line.trim())return;
+    if(line.includes('\t')){const cells=line.split('\t').map(c=>c.trim());
+      const ds=cells.map(c=>{const m=c.match(FS_DATE);return m&&m[0].length>=c.length-2?fsDate(m[1],m[2]||''):null;});
+      if(ds.filter(Boolean).length>=1&&ds.slice(1).every((d,k)=>d||!cells[k+1])){hdr=ds;return;}
+      if(!hdr)return;const name=(cells[0]||'').replace(/\s+Level$/i,'');if(!/[A-Za-z]/.test(name))return;
+      cells.slice(1).forEach((c,k)=>{const d=hdr[k+1];const m=c.match(FS_VAL);if(!d||!d.iso||!m)return;out.push({name,value:m[1],unit:'',flag:FS_FLAG[m[2]]||'',date:d.iso,time:d.t});});
+      return;}
+    const all=[...line.matchAll(new RegExp(FS_DATE.source,'gi'))];
+    if(all.length>=1&&line.replace(new RegExp(FS_DATE.source,'gi'),'').replace(/[^A-Za-z]/g,'').length<12){hdr=[null].concat(all.map(d=>fsDate(d[1],d[2]||'')));return;}
+    if(!hdr)return;const m=line.match(/^([A-Za-z][A-Za-z0-9 ,\-\/()%+.]*?)\s+((?:[<>]?\d+(?:\.\d+)?\s*(?:\(?(?:HH|LL|H|L|A|C)\)?)?\s*\*?\s*)+)$/);if(!m)return;
+    const vals=[...m[2].matchAll(/([<>]?\d+(?:\.\d+)?)\s*\(?(HH|LL|H|L|A|C)?\)?/g)];if(!vals.length||vals.length>hdr.length-1)return;
+    vals.forEach((v,k)=>{const d=hdr[k+1];if(!d||!d.iso)return;out.push({name:m[1].trim(),value:v[1],unit:'',flag:FS_FLAG[v[2]]||'',date:d.iso,time:d.t});});});
   return out;}
+/* OCR words → tab-separated rows, using each word's position: a value goes under the date column it sits beneath. */
+function ocrTable(data){const lines=(data&&data.lines)||[];const DW=new RegExp(`^(\\d{1,2}-(?:${MONS})[a-z]*-\\d{2,4}|\\d{4}-\\d{2}-\\d{2}|\\d{1,2}\\/\\d{1,2}\\/\\d{2,4})$`,'i');
+  let hi=-1,cols=null;for(let i=0;i<lines.length;i++){const ws=(lines[i].words||[]).filter(w=>DW.test(w.text.trim()));if(ws.length>=2){hi=i;cols=ws;break;}}
+  if(!cols)return null;
+  const hw=lines[hi].words,col=cols.map(w=>{const k=hw.indexOf(w);const nx=hw[k+1];return {x:w.bbox.x0,label:w.text.trim()+(nx&&/^\d{1,2}:\d{2}$/.test(nx.text.trim())?' '+nx.text.trim():'')};});
+  const tol=Math.max(8,(col[1].x-col[0].x)*0.15);
+  const rows=['Lab\t'+col.map(c=>c.label).join('\t')];
+  lines.slice(hi+1).forEach(l=>{const name=[],cells=col.map(()=>[]);
+    (l.words||[]).forEach(w=>{const t=w.text.trim();if(!t)return;if(w.bbox.x1<col[0].x-tol/2){name.push(t);return;}
+      let k=-1;col.forEach((c,ci)=>{if(w.bbox.x0>=c.x-tol)k=ci;});if(k<0)name.push(t);else cells[k].push(t);});
+    const nm=name.join(' ').replace(/^[^A-Za-z]+/,'').trim();if(!nm)return;
+    rows.push(nm+'\t'+cells.map(c=>c.join(' ')).join('\t'));});
+  return rows.join('\n');}
+async function ocrImage(f){let src=f;try{const bm=await createImageBitmap(f);const sc=bm.width<1600?2:1;const cv=document.createElement('canvas');cv.width=bm.width*sc;cv.height=bm.height*sc;
+    const cx=cv.getContext('2d');cx.imageSmoothingQuality='high';cx.drawImage(bm,0,0,cv.width,cv.height);src=cv;}catch(e){}
+  const r=await Tesseract.recognize(src,'eng');return ocrTable(r.data)||fixOCR(r.data.text);}
 document.addEventListener('paste',e=>{if(S.tab!=='labs'||!curP())return;const items=[...((e.clipboardData||{}).items||[])].filter(i=>/^image\//.test(i.type));
   if(!items.length)return;e.preventDefault();labShotFiles(items.map(i=>i.getAsFile()));});
 function parseNote(text){
@@ -622,7 +652,7 @@ function summarizeAdmission(){const p=curP();labCtx(p);const raw=p.admission.raw
   if(r.meds.length)p.admission.meds=r.meds;const nl=mergeLabs(p,r.labs);applyVTE(p,raw);const ab=abxFromOrders(p);if(ab.length)setTimeout(()=>toast('Antibiotics recorded from the orders: '+ab.join(', ')),2600);
   p.admission.detected={abx:r.abx,found:r.found};save();render();toast(`Summary made — ${r.meds.length} meds, ${nl} lab results read`+(Object.keys(dm).length?', '+Object.keys(dm).map(k=>k.toUpperCase()).join('/')+' found':'')+'. Edit anything that is wrong.');}
 function parseMedsBox(){const p=curP();const m=parseMeds(p.admission.medsRaw);if(!m.length){toast('No medications found in the pasted text.');return;}p.admission.meds=m;p.admission.medsRaw='';const ab=abxFromOrders(p);applyVTE(p,'');save();renderMain();renderSide();toast(m.length+' medications read.'+(ab.length?' Antibiotics recorded: '+ab.join(', ')+'.':''));}
-function readLabsBox(){const p=curP();labCtx(p);let l=parseLabs(p.labsRaw);if(!l.length)l=flowsheetLabs(p.labsRaw);if(!l.length){toast('No lab results with dates found — paste rows like "Sodium 128 mmol/L Low 23/11/26 04:25".');return;}const n=mergeLabs(p,l);p.labsRaw='';save();renderMain();toast(`${l.length} results read, ${n} new.`);}
+function readLabsBox(){const p=curP();labCtx(p);let l=parseLabs(p.labsRaw);const fl=flowsheetLabs(p.labsRaw);if(fl.length>l.length)l=fl;if(!l.length){toast('No lab results with dates found — paste rows like "Sodium 128 mmol/L Low 23/11/26 04:25".');return;}const n=mergeLabs(p,l);p.labsRaw='';save();renderMain();toast(`${l.length} results read, ${n} new.`);}
 function clearDcMeds(){const p=curP();if(!confirmArm('dcmeds'))return;p.discharge.medChanges=[];save();renderMain();}
 /* The toolkit's Consult button asks the open tab for its patient: give it the Rounding notebook's current patient, not the Cerner one */
 window.consultPatient=function(){const p=curP();if(!p)return null;let n=String(p.name||'').trim();if(/,/.test(n))n=n.split(',').map(x=>x.trim()).filter(Boolean).reverse().join(' ');
