@@ -738,9 +738,9 @@ function renderSide(){
 
 /* Fill empty address / phone / DOB / PHN / MOST from the pasted admission note when a patient is opened,
    so older patients pick up new reading rules without pressing Summarize again. Never overwrites. */
-function backfill(p){if(!p||!p.admission||!(p.admission.raw||'').trim()||p._bf===BF_VER)return;
+function backfill(p){if(!p||!p.admission||!(p.admission.raw||'').trim()||(p._fillV||0)>=BF_VER)return;
   try{const dm=parseDemo(p.admission.raw);['dob','phn','mrn','address','phone','cell'].forEach(k=>{if(dm[k]&&!p[k])p[k]=dm[k];});
-    if(!p.basics.code)applyMOST(p,p.admission.raw);applyVTE(p,[p.admission.raw].concat((p.notes||[]).map(n=>n.text||'')).join('\n'));abxFromOrders(p);p.labs=(p.labs||[]).filter(l=>!/^(?:[munpµ]?(?:mol|g|L|mL|U|IU)\b|mmol|umol|mL\/|g\/L|mg\/L|ng\/L|U\/L|x?10\*)/i.test(l.name||''));p._bf=BF_VER;save();}catch(e){}}
+    if(!p.basics.code)applyMOST(p,p.admission.raw);applyVTE(p,[p.admission.raw].concat((p.notes||[]).map(n=>n.text||'')).join('\n'));abxFromOrders(p);p.labs=(p.labs||[]).filter(l=>!/^(?:[munpµ]?(?:mol|g|L|mL|U|IU)\b|mmol|umol|mL\/|g\/L|mg\/L|ng\/L|U\/L|x?10\*)/i.test(l.name||''));p._fillV=BF_VER;save();}catch(e){}}
 const BF_VER=5;
 function renderMain(){
   const p=curP();const M=document.getElementById('main');backfill(p);
@@ -1057,7 +1057,7 @@ document.addEventListener('change',e=>onEdit(e,true));
 ['setFirst','setFull'].forEach(id=>document.getElementById(id).addEventListener('input',e=>{S.settings[id==='setFirst'?'first':'full']=e.target.value;save();}));
 document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal();});
 function render(){renderSide();renderMain();if(typeof cloudUI==='function')try{const sd=document.getElementById('cloudSide');if(sd)sd.textContent=document.getElementById('cloudBtn').textContent;}catch(e){}}
-window.addEventListener('storage',e=>{if(e.key===KEY){load();syncSettings();render();cloudInit();toast('Patient list updated.');}});
+let stoT=null;window.addEventListener('storage',e=>{if(e.key!==KEY||e.newValue===e.oldValue)return;clearTimeout(stoT);stoT=setTimeout(()=>{load();syncSettings();render();cloudInit();toast('Patient list updated.');},400);});
 function openHfHandout(){try{if(window.parent!==window&&typeof window.parent.showAt==='function'){window.parent.showAt('chf','handout-card','dc');return;}}catch(e){}
   window.open((location.pathname.includes('/tools/round/')?'../chf/index.html':'../hospitalist-toolkit/tools/chf/index.html')+'#handout','_blank','noopener');}
 /* ---- My list -> Excel in the VGH list format, using the Patient list tab's template and writer (tools/plist) ---- */
