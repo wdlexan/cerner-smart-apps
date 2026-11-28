@@ -512,8 +512,8 @@ async function labShotFiles(files){files=[...(files||[])].filter(f=>/^image\//.t
   const p=curP();if(!p)return;toast('Reading '+files.length+' screenshot'+(files.length>1?'s':'')+'… (first time takes ~10 s)');
   try{await loadTess();let txt='';for(const f of files){txt+=(txt?'\n':'')+await ocrImage(f);}
     p.labsRaw=((p.labsRaw||'').trim()?p.labsRaw.trim()+'\n':'')+txt.trim();save();renderMain();
-    labCtx(p);const n=parseLabs(txt).length+flowsheetLabs(txt).length;
-    toast(n?`Screenshot read — ${n} results found. Check the numbers in the box, then press Read labs.`:'Screenshot read, but no dated results recognized — check the text in the box (each result needs a date).');}
+    labCtx(p);const n=Math.max(parseLabs(txt).length,flowsheetLabs(txt).length),nchk=(txt.match(/⚠check/g)||[]).length;
+    toast(n?`Screenshot read — ${n} results found.${nchk?` ${nchk} look out of line with the rest of their row (marked ⚠check) — fix or confirm them.`:''} Check the numbers in the box, then press Read labs.`:'Screenshot read, but no dated results recognized — check the text in the box (each result needs a date).');}
   catch(e){toast(e.message||'Could not read the screenshot.');}}
 function fixOCR(t){return String(t||'').replace(/[|¦]/g,' ').replace(/(\d)[oO](?=\d|\b)/g,'$10').replace(/\b[oO](?=\.\d)/g,'0').replace(/(\d),(\d)(?!\d{2})/g,'$1.$2').replace(/[ \t]+/g,' ');}
 /* Flowsheet layout (PowerChart Lab View): a header row of dates, then rows "Name  v1  v2  v3" — value i belongs to date i.
@@ -539,22 +539,47 @@ function flowsheetLabs(text){const out=[];let hdr=null;
     const vals=[...m[2].matchAll(/([<>]?\d+(?:\.\d+)?)\s*\(?(HH|LL|H|L|A|C)?\)?/g)];if(!vals.length||vals.length>hdr.length-1)return;
     vals.forEach((v,k)=>{const d=hdr[k+1];if(!d||!d.iso)return;out.push({name:m[1].trim(),value:v[1],unit:'',flag:FS_FLAG[v[2]]||'',date:d.iso,time:d.t});});});
   return out;}
-/* OCR words → tab-separated rows, using each word's position: a value goes under the date column it sits beneath. */
-function ocrTable(data){const lines=(data&&data.lines)||[];const DW=new RegExp(`^(\\d{1,2}-(?:${MONS})[a-z]*-\\d{2,4}|\\d{4}-\\d{2}-\\d{2}|\\d{1,2}\\/\\d{1,2}\\/\\d{2,4})$`,'i');
+/* OCR words → tab-separated rows, using each word's position: a value goes under the date column it sits beneath.
+   Flags come from the text colour on screen (PowerChart: blue = low, orange = high, red = critical), which is far more reliable than
+   reading "(L)" in small print. colorAt(bbox) returns 'L' | 'H' | 'C' | ''. */
+function ocrLines(data){if(data.lines&&data.lines.length)return data.lines;const ws=(data.words||[]).slice().sort((a,b)=>a.bbox.y0-b.bbox.y0),out=[];
+  ws.forEach(w=>{const l=out.find(x=>Math.abs(x.y-w.bbox.y0)<(w.bbox.y1-w.bbox.y0)*0.6);if(l)l.words.push(w);else out.push({y:w.bbox.y0,words:[w]});});
+  out.forEach(l=>l.words.sort((a,b)=>a.bbox.x0-b.bbox.x0));return out;}
+function ocrTable(data,colorAt){const lines=ocrLines(data||{});
+  const DW=new RegExp(`^[^0-9]*(\\d{1,2}-(?:${MONS})[a-z]*-\\d{4}|\\d{4}-\\d{2}-\\d{2}|\\d{1,2}\\/\\d{1,2}\\/\\d{2,4})(\\d{1,2}:\\d{2})?\\W*$`,'i');
   let hi=-1,cols=null;for(let i=0;i<lines.length;i++){const ws=(lines[i].words||[]).filter(w=>DW.test(w.text.trim()));if(ws.length>=2){hi=i;cols=ws;break;}}
   if(!cols)return null;
-  const hw=lines[hi].words,col=cols.map(w=>{const k=hw.indexOf(w);const nx=hw[k+1];return {x:w.bbox.x0,label:w.text.trim()+(nx&&/^\d{1,2}:\d{2}$/.test(nx.text.trim())?' '+nx.text.trim():'')};});
+  const hw=lines[hi].words,col=cols.map(w=>{const m=w.text.trim().match(DW);const k=hw.indexOf(w);const nx=hw[k+1];
+    const tm=m[2]||(nx&&/^\d{1,2}:\d{2}$/.test(nx.text.trim())?nx.text.trim():'');return {x:w.bbox.x0,label:m[1]+(tm?' '+tm:'')};});
   const tol=Math.max(8,(col[1].x-col[0].x)*0.15);
   const rows=['Lab\t'+col.map(c=>c.label).join('\t')];
   lines.slice(hi+1).forEach(l=>{const name=[],cells=col.map(()=>[]);
     (l.words||[]).forEach(w=>{const t=w.text.trim();if(!t)return;if(w.bbox.x1<col[0].x-tol/2){name.push(t);return;}
-      let k=-1;col.forEach((c,ci)=>{if(w.bbox.x0>=c.x-tol)k=ci;});if(k<0)name.push(t);else cells[k].push(t);});
-    const nm=name.join(' ').replace(/^[^A-Za-z]+/,'').trim();if(!nm)return;
-    rows.push(nm+'\t'+cells.map(c=>c.join(' ')).join('\t'));});
+      let k=-1;col.forEach((c,ci)=>{if(w.bbox.x0>=c.x-tol)k=ci;});if(k<0)name.push(t);else cells[k].push(w);});
+    const nm=name.join(' ').replace(/^[^A-Za-z]+/,'').replace(/[\[\]|]+/g,'').trim();if(!nm)return;
+    const vals=cells.map(ws=>{const v=ws.find(w=>/\d/.test(w.text));if(!v)return null;
+      const num=(v.text.replace(/,/g,'.').match(/[<>]?\d+(?:\.\d+)?/)||[])[0];if(!num)return null;
+      let flag=colorAt?colorAt(v.bbox):'';if(!flag){const pf=ws.map(w=>w.text).join(' ').match(/\((HH|LL|H|L|C)\)/);if(pf)flag=pf[1];}
+      return {num,flag};});
+    // a lost decimal point ("41" for 4.1): when the row's other results have decimals and this one is ~10× bigger, put it back
+    const dec=vals.filter(v=>v&&/\.\d/.test(v.num)).map(v=>parseFloat(v.num.replace(/[<>]/,'')));
+    if(dec.length){const lo=Math.min(...dec),hi2=Math.max(...dec),d=(vals.find(v=>v&&/\.\d/.test(v.num)).num.split('.')[1]||'').length;
+      vals.forEach(v=>{if(!v||/\./.test(v.num))return;const n=+v.num.replace(/[<>]/,'');const f=n/Math.pow(10,d);if(n>hi2*4&&f>=lo/3&&f<=hi2*3)v.num=f.toFixed(d);});}
+    // a digit dropped or added ("17" for 117): mark results far from the rest of the row so they get checked
+    const ns=vals.filter(Boolean).map(v=>+v.num.replace(/[<>]/,'')).sort((a,b)=>a-b);
+    if(ns.length>=3){const med=ns[ns.length>>1];vals.forEach(v=>{if(!v)return;const n=+v.num.replace(/[<>]/,'');if(med>0&&(n<med/4||n>med*4))v.chk=1;});}
+    const nm2=nm.replace(/^l(?=[a-z])/,'L').replace(/\blon/g,'Ion').replace(/^./,c=>c.toUpperCase()).replace(/Monogytes/,'Monocytes');
+    rows.push(nm2+'\t'+vals.map(v=>v?v.num+(v.flag?' ('+v.flag+')':'')+(v.chk?' ⚠check':''):'').join('\t'));});
   return rows.join('\n');}
-async function ocrImage(f){let src=f;try{const bm=await createImageBitmap(f);const sc=bm.width<1600?2:1;const cv=document.createElement('canvas');cv.width=bm.width*sc;cv.height=bm.height*sc;
-    const cx=cv.getContext('2d');cx.imageSmoothingQuality='high';cx.drawImage(bm,0,0,cv.width,cv.height);src=cv;}catch(e){}
-  const r=await Tesseract.recognize(src,'eng');return ocrTable(r.data)||fixOCR(r.data.text);}
+async function ocrImage(f){const bm=await createImageBitmap(f);const sc=bm.width<1400?3:bm.width<2400?2:1;
+  const cv=document.createElement('canvas');cv.width=bm.width*sc;cv.height=bm.height*sc;const cx=cv.getContext('2d',{willReadFrequently:true});cx.imageSmoothingQuality='high';cx.drawImage(bm,0,0,cv.width,cv.height);
+  const img=cx.getImageData(0,0,cv.width,cv.height),px=img.data;
+  const gray=document.createElement('canvas');gray.width=cv.width;gray.height=cv.height;const gx=gray.getContext('2d');const gi=gx.createImageData(cv.width,cv.height);
+  for(let i=0;i<px.length;i+=4){const y=0.299*px[i]+0.587*px[i+1]+0.114*px[i+2];gi.data[i]=gi.data[i+1]=gi.data[i+2]=y;gi.data[i+3]=255;}gx.putImageData(gi,0,0);
+  const colorAt=b=>{let R=0,G=0,B=0,n=0;for(let y=Math.max(0,b.y0|0);y<Math.min(cv.height,b.y1|0);y++)for(let x=Math.max(0,b.x0|0);x<Math.min(cv.width,b.x1|0);x++){const k=(y*cv.width+x)*4;if(px[k]+px[k+1]+px[k+2]<600){R+=px[k];G+=px[k+1];B+=px[k+2];n++;}}
+    if(n<4)return '';R/=n;G/=n;B/=n;if(B>R+50&&B>G+40)return 'L';if(R>B+60&&R>G+60&&G<110)return 'C';if(R>B+60&&R>=G)return 'H';return '';};
+  const w=await Tesseract.createWorker('eng');try{await w.setParameters({tessedit_pageseg_mode:'6',preserve_interword_spaces:'1'});const r=await w.recognize(gray);
+    return ocrTable(r.data,colorAt)||fixOCR(r.data.text);}finally{try{await w.terminate();}catch(e){}}}
 document.addEventListener('paste',e=>{if(S.tab!=='labs'||!curP())return;const items=[...((e.clipboardData||{}).items||[])].filter(i=>/^image\//.test(i.type));
   if(!items.length)return;e.preventDefault();labShotFiles(items.map(i=>i.getAsFile()));});
 /* ---- Tools for this patient: find a toolkit tool, keep it pinned for this patient, open it filled with this patient's labs/meds/notes ---- */
@@ -860,7 +885,7 @@ labs(p){const gs=labGroups(p);const show=p.labsAbnOnly?gs.filter(x=>x.vals.some(
       ${show.map(x=>`<tr style="border-top:1px solid var(--line)"><td style="padding:4px"><b>${esc(x.name)}</b> <span class="mut">${esc(x.unit||'')}</span></td><td>${cell(x.latest)}</td><td>${arrow(x)}</td><td class="mut">${fmt(x.latest.date)} ${esc(x.latest.time)}</td>
         <td>${x.vals.slice(1,6).map(l=>`${cell(l)} <span class="mut">${fmt(l.date)}</span>`).join(' · ')}</td></tr>`).join('')}</table></div>
       <div class="actions"><button class="sm" onclick="clearLabs()">Clear all labs</button></div>`:'<div class="mut">No lab results yet. Labs in the admission note are read when you press Summarize admission, or paste more below.</div>')
-  +sec('Paste lab results',`<textarea data-b="labsRaw" rows="5" placeholder="Paste results, e.g. from Results Review or a note: Sodium 128 mmol/L Low 23/11/26 04:25:00">${esc(p.labsRaw)}</textarea><div class="actions"><button class="pri" onclick="readLabsBox()">Read labs</button><button onclick="document.getElementById('labShotFile').click()">📷 Read a screenshot</button><input type="file" id="labShotFile" accept="image/*" multiple style="display:none" onchange="labShotFiles(this.files);this.value=''"><span class="mut">Adds to the table; duplicates are skipped. Day/month order is checked against the admission dates.</span></div>
+  +sec('Paste lab results',`<textarea data-b="labsRaw" rows="5" placeholder="Paste results, e.g. from Results Review or a note: Sodium 128 mmol/L Low 23/11/26 04:25:00">${esc(p.labsRaw)}</textarea><div class="actions"><button class="pri" onclick="readLabsBox()">Read labs</button><button onclick="document.getElementById('labShotFile').click()">📷 Read a screenshot</button><button onclick="curP().labsRaw='';save();renderMain();">Clear box</button><input type="file" id="labShotFile" accept="image/*" multiple style="display:none" onchange="labShotFiles(this.files);this.value=''"><span class="mut">Adds to the table; duplicates are skipped. Day/month order is checked against the admission dates.</span></div>
      <div id="labShotZone" class="mut" style="border:2px dashed var(--line);border-radius:8px;padding:12px;text-align:center;margin-top:8px" ondragover="event.preventDefault()" ondrop="event.preventDefault();labShotFiles(event.dataTransfer.files)">📷 Or press <b>Ctrl+V</b> on this tab to paste a lab screenshot (Results Review, flowsheet or a note), or drop image files here. It's read in this browser and nothing is sent anywhere. The text goes into the box above so you can check the numbers before pressing <b>Read labs</b>.</div>`,!gs.length);
 },
 basics(p){const b='basics.';
