@@ -486,6 +486,19 @@ function vteRenalWarn(p){const lmwh=p.basics.vte==='LMWH'||(p.admission.meds||[]
 function readVTENow(){const p=curP();const old=p.basics.vte;p.basics.vte='';const txt=[p.admission.raw||''].concat((p.notes||[]).map(n=>n.text||'')).join('\n');
   const v=findVTE(p,txt);if(!v){p.basics.vte=old;toast('No VTE prophylaxis found in the orders or notes.');return;}
   p.basics.vte=v.level;p.basics.vteDetail=v.detail;save();renderMain();renderSide();toast('VTE prophylaxis: '+v.level+(vteRenalWarn(p)?' — eGFR below 30, needs changing':''));}
+/* ---- Antibiotics on the hospital orders → antibiotic tracker (kept as a record, with start date) ---- */
+const MON3={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+function medStart(m){const t=[m.name,m.dose,m.route,m.freq].join(' ');let x=t.match(/Start\s*:?\s*(\d{1,2})[\/\- ]([A-Za-z]{3})[A-Za-z]*[\/\- ](\d{4})/i);
+  if(x&&MON3[x[2].toLowerCase()])return `${x[3]}-${String(MON3[x[2].toLowerCase()]).padStart(2,'0')}-${x[1].padStart(2,'0')}`;
+  x=t.match(/Start\s*:?\s*(\d{4})-(\d{2})-(\d{2})/i);if(x)return `${x[1]}-${x[2]}-${x[3]}`;return '';}
+function abxFromOrders(p){const out=[];if(!p.abxSeen)p.abxSeen=[];
+  (p.admission.meds||[]).filter(m=>!isHomeG(m.group)&&!/discontinued/i.test(m.group||'')).forEach(m=>{const hit=ABX.find(a=>a[1].test(m.name||''));if(!hit)return;
+    const drug=hit[0];if(p.abxSeen.includes(drug)||p.abx.some(a=>hit[1].test(a.drug||'')))return;
+    const st=medStart(m);const route=/\bIV\b|intraven/i.test(m.route+' '+m.freq)?'IV':/oral|\bPO\b/i.test(m.route+' '+m.freq)?'PO':(IVONLY.test(drug)?'IV':'PO');
+    p.abx.push(Object.assign(TPL.abx(),{drug,route,start:st||p.admitDate||todayStr(),
+      note:'From admission orders: '+medShort(m)+(st?'':' — start date assumed = admit date, check'),auto:true,recorded:todayStr()}));
+    p.abxSeen.push(drug);out.push(drug);});
+  return out;}
 function parseNote(text){
   const sec={};let curK='pre';sec.pre=[];
   String(text||'').split(/\r?\n/).forEach(line=>{
@@ -578,9 +591,9 @@ function summarizeAdmission(){const p=curP();const raw=p.admission.raw;if(!raw.t
   const dm=parseDemo(raw);['dob','phn','mrn','address','phone','cell'].forEach(k=>{if(dm[k]&&(!p[k]||(k==='address'&&dm[k].startsWith(p[k])&&dm[k].length>p[k].length)))p[k]=dm[k];});if(!p.age&&p.dob)p.age=ageFrom(p.dob);
   if(!p.age&&r.age)p.age=r.age;if(!p.sex&&r.sex)p.sex=r.sex;if(!p.reason&&r.cc)p.reason=r.cc;
   const mm=applyMOST(p,raw);if(!p.basics.code&&r.code)p.basics.code=r.code;if(!p.basics.allergies&&r.allergies)p.basics.allergies=r.allergies;
-  if(r.meds.length)p.admission.meds=r.meds;const nl=mergeLabs(p,r.labs);applyVTE(p,raw);
+  if(r.meds.length)p.admission.meds=r.meds;const nl=mergeLabs(p,r.labs);applyVTE(p,raw);const ab=abxFromOrders(p);if(ab.length)setTimeout(()=>toast('Antibiotics recorded from the orders: '+ab.join(', ')),2600);
   p.admission.detected={abx:r.abx,found:r.found};save();render();toast(`Summary made — ${r.meds.length} meds, ${nl} lab results read`+(Object.keys(dm).length?', '+Object.keys(dm).map(k=>k.toUpperCase()).join('/')+' found':'')+'. Edit anything that is wrong.');}
-function parseMedsBox(){const p=curP();const m=parseMeds(p.admission.medsRaw);if(!m.length){toast('No medications found in the pasted text.');return;}p.admission.meds=m;p.admission.medsRaw='';save();renderMain();toast(m.length+' medications read.');}
+function parseMedsBox(){const p=curP();const m=parseMeds(p.admission.medsRaw);if(!m.length){toast('No medications found in the pasted text.');return;}p.admission.meds=m;p.admission.medsRaw='';const ab=abxFromOrders(p);applyVTE(p,'');save();renderMain();renderSide();toast(m.length+' medications read.'+(ab.length?' Antibiotics recorded: '+ab.join(', ')+'.':''));}
 function readLabsBox(){const p=curP();const l=parseLabs(p.labsRaw);if(!l.length){toast('No lab results with dates found — paste rows like "Sodium 128 mmol/L Low 23/11/26 04:25".');return;}const n=mergeLabs(p,l);p.labsRaw='';save();renderMain();toast(`${l.length} results read, ${n} new.`);}
 function clearDcMeds(){const p=curP();if(!confirmArm('dcmeds'))return;p.discharge.medChanges=[];save();renderMain();}
 /* The toolkit's Consult button asks the open tab for its patient: give it the Rounding notebook's current patient, not the Cerner one */
@@ -699,8 +712,8 @@ function renderSide(){
    so older patients pick up new reading rules without pressing Summarize again. Never overwrites. */
 function backfill(p){if(!p||!p.admission||!(p.admission.raw||'').trim()||p._bf===BF_VER)return;
   try{const dm=parseDemo(p.admission.raw);['dob','phn','mrn','address','phone','cell'].forEach(k=>{if(dm[k]&&!p[k])p[k]=dm[k];});
-    if(!p.basics.code)applyMOST(p,p.admission.raw);applyVTE(p,[p.admission.raw].concat((p.notes||[]).map(n=>n.text||'')).join('\n'));p._bf=BF_VER;save();}catch(e){}}
-const BF_VER=3;
+    if(!p.basics.code)applyMOST(p,p.admission.raw);applyVTE(p,[p.admission.raw].concat((p.notes||[]).map(n=>n.text||'')).join('\n'));abxFromOrders(p);p._bf=BF_VER;save();}catch(e){}}
+const BF_VER=4;
 function renderMain(){
   const p=curP();const M=document.getElementById('main');backfill(p);
   if(!p){M.innerHTML=`<div class="card"><h2 style="margin-top:0">Rounding Notebook</h2><p>Add a patient on the left, paste the admission note, and press <b>Summarize admission</b>. Chart a short note each day; when you are done, press <b>Handover summary</b> or <b>Discharge summary</b> to compile everything.</p><p class="mut">Set your working week in the bar at the top so pending tests and antibiotic stop dates that fall after your week are flagged for handover.</p></div>`;return;}
@@ -818,7 +831,10 @@ pending(p){const t=todayStr(),we=S.settings.weekEnd;
      +`<div class="chips" style="margin-top:8px"><button class="chip" onclick="addItem('pending')">+ Test already ordered</button></div><div class="mut" style="margin-top:4px">To order a new test, use the To-do tab — it moves here when you tick it as ordered.</div>`);
 },
 abx(p){const we=S.settings.weekEnd,edd=p.discharge.edd;const un=untrackedAbx(p);
-  return (un.length?`<div class="card"><span class="mut">Mentioned in your notes but not in the countdown:</span> <span class="chips" style="display:inline-flex">${un.map(a=>`<button class="chip" onclick="addAbx('${a}')">+ ${esc(a)}</button>`).join('')}</span></div>`:'')+sec('Antibiotic countdown',p.abx.map((a,i)=>{const inf=abxInfo(a);let f='';
+  return (un.length?`<div class="card"><span class="mut">Mentioned in your notes but not in the countdown:</span> <span class="chips" style="display:inline-flex">${un.map(a=>`<button class="chip" onclick="addAbx('${a}')">+ ${esc(a)}</button>`).join('')}</span></div>`:'')+(p.abx.length?sec('Antibiotic record this admission',`<table class="mt" style="width:100%"><tr><th align="left">Antibiotic</th><th align="left">Route</th><th align="left">Day 1</th><th align="left">Last dose</th><th align="left">Status</th><th align="left">Source</th></tr>${p.abx.slice().sort((a,b)=>String(a.start).localeCompare(String(b.start))).map(a=>{const i=abxInfo(a);
+       const st=!i?'—':i.day<1?'Not started':i.left<0?'Completed':'Day '+i.day+' of '+a.days;
+       return `<tr><td>${esc(a.drug||'?')}</td><td>${esc(a.route||'')}</td><td>${fmt(a.start)}</td><td>${i?fmt(i.last):''}</td><td>${st}</td><td class="mut">${a.auto?'Admission orders':'Added by you'}</td></tr>`;}).join('')}</table>`):'')
+  +sec('Antibiotic countdown',p.abx.map((a,i)=>{const inf=abxInfo(a);let f='';
      if(inf){if(inf.day<1)f='<span class="flag amb">Not started</span>';else if(inf.left<0)f='<span class="flag grn">Course complete</span>';else if(inf.left===0)f='<span class="flag amb">Last day today</span>';
        if(inf.left>0&&we&&inf.last>we)f+=' <span class="flag amb">Ends after your week</span>';if(inf.left>0&&edd&&inf.last>edd)f+=' <span class="flag amb">Ends after EDD — stop date on Rx</span>';}
      const ivpoDue=a.route==='IV'&&a.ivpo&&a.ivpo<=todayStr();
