@@ -466,6 +466,26 @@ function readMOSTNow(){const p=curP();const texts=[p.admission.raw||''].concat((
   let msg='';texts.forEach(t=>{const r=applyMOST(p,t);if(r)msg=r;});
   if(!findMOST(texts.join('\n'))){toast('No MOST level found in the admission note or daily notes.');return;}
   save();renderMain();toast(msg||('MOST '+p.basics.code+' — already up to date.'));}
+/* ---- VTE prophylaxis: read it from the chart, and flag LMWH with eGFR < 30 ---- */
+const VTE_DRUGS=[['LMWH',/\b(enox\w*|lovenox|dalteparin|fragmin|tinzaparin|innohep|LMWH)\b/i],['UFH',/\b(?<!low[- ]molecular[- ]weight\s)(heparin|UFH)\b/i],
+  ['DOAC (therapeutic)',/\b(apixaban|eliquis|rivaroxaban|xarelto|dabigatran|pradaxa|edoxaban|lixiana)\b/i],['Warfarin',/\b(warfarin|coumadin)\b/i]];
+function findVTE(p,text){ // 1) hospital (non-home) medication orders, 2) a VTE / VTEP / DVT prophylaxis line in the notes
+  const ms=(p.admission.meds||[]).filter(m=>!isHomeG(m.group)&&!/discontinued/i.test(m.group||''));
+  for(const [lv,re] of VTE_DRUGS){const m=ms.find(x=>re.test(x.name||''));if(m)return {level:lv,detail:'On orders: '+medShort(m)};}
+  const lines=String(text||'').split(/\r?\n/).filter(l=>/\b(VTEP?|DVT\s*(ppx|prophylaxis|proph)|VTE\s*(ppx|prophylaxis|proph)|thromboprophylaxis|anticoag\w*)\b/i.test(l));
+  let best=null;lines.forEach(l=>{let first=null;VTE_DRUGS.forEach(([lv,re])=>{const m=l.match(re);if(m&&(!first||m.index<first.i))first={i:m.index,level:lv};});if(first)best={level:first.level,detail:'Note: '+l.trim().slice(0,80)};});
+  if(best)return best;
+  const none=lines.find(l=>/\b(contraindicated|hold|held|bleed)/i.test(l));if(none)return {level:'Contraindicated (bleeding)',detail:'Note: '+none.trim().slice(0,80)};
+  return null;}
+function applyVTE(p,text){if(p.basics.vte)return '';const v=findVTE(p,text);if(!v)return '';p.basics.vte=v.level;p.basics.vteDetail=v.detail;return 'VTE prophylaxis: '+v.level;}
+function latestGFR(p){const g=labGroups(p).filter(x=>/gfr/i.test(x.name)).sort((a,b)=>(b.latest.date+b.latest.time).localeCompare(a.latest.date+a.latest.time))[0];
+  if(!g)return null;const v=parseFloat(String(g.latest.value).replace(/[^\d.]/g,''));return isNaN(v)?null:{v,raw:g.latest.value,date:g.latest.date};}
+function vteRenalWarn(p){const lmwh=p.basics.vte==='LMWH'||(p.admission.meds||[]).some(m=>!isHomeG(m.group)&&!/discontinued/i.test(m.group||'')&&VTE_DRUGS[0][1].test(m.name||''));
+  if(!lmwh)return '';const g=latestGFR(p);if(!g||g.v>=30)return '';
+  return `LMWH with eGFR ${g.raw} (${fmt(g.date)}) — below 30: change VTE prophylaxis (heparin 5,000 units SC q8–12h, or enoxaparin 30 mg SC daily per local protocol).`;}
+function readVTENow(){const p=curP();const old=p.basics.vte;p.basics.vte='';const txt=[p.admission.raw||''].concat((p.notes||[]).map(n=>n.text||'')).join('\n');
+  const v=findVTE(p,txt);if(!v){p.basics.vte=old;toast('No VTE prophylaxis found in the orders or notes.');return;}
+  p.basics.vte=v.level;p.basics.vteDetail=v.detail;save();renderMain();renderSide();toast('VTE prophylaxis: '+v.level+(vteRenalWarn(p)?' — eGFR below 30, needs changing':''));}
 function parseNote(text){
   const sec={};let curK='pre';sec.pre=[];
   String(text||'').split(/\r?\n/).forEach(line=>{
@@ -558,7 +578,7 @@ function summarizeAdmission(){const p=curP();const raw=p.admission.raw;if(!raw.t
   const dm=parseDemo(raw);['dob','phn','mrn','address','phone','cell'].forEach(k=>{if(dm[k]&&(!p[k]||(k==='address'&&dm[k].startsWith(p[k])&&dm[k].length>p[k].length)))p[k]=dm[k];});if(!p.age&&p.dob)p.age=ageFrom(p.dob);
   if(!p.age&&r.age)p.age=r.age;if(!p.sex&&r.sex)p.sex=r.sex;if(!p.reason&&r.cc)p.reason=r.cc;
   const mm=applyMOST(p,raw);if(!p.basics.code&&r.code)p.basics.code=r.code;if(!p.basics.allergies&&r.allergies)p.basics.allergies=r.allergies;
-  if(r.meds.length)p.admission.meds=r.meds;const nl=mergeLabs(p,r.labs);
+  if(r.meds.length)p.admission.meds=r.meds;const nl=mergeLabs(p,r.labs);applyVTE(p,raw);
   p.admission.detected={abx:r.abx,found:r.found};save();render();toast(`Summary made — ${r.meds.length} meds, ${nl} lab results read`+(Object.keys(dm).length?', '+Object.keys(dm).map(k=>k.toUpperCase()).join('/')+' found':'')+'. Edit anything that is wrong.');}
 function parseMedsBox(){const p=curP();const m=parseMeds(p.admission.medsRaw);if(!m.length){toast('No medications found in the pasted text.');return;}p.admission.meds=m;p.admission.medsRaw='';save();renderMain();toast(m.length+' medications read.');}
 function readLabsBox(){const p=curP();const l=parseLabs(p.labsRaw);if(!l.length){toast('No lab results with dates found — paste rows like "Sodium 128 mmol/L Low 23/11/26 04:25".');return;}const n=mergeLabs(p,l);p.labsRaw='';save();renderMain();toast(`${l.length} results read, ${n} new.`);}
@@ -614,7 +634,7 @@ function addSuggestion(kind,ci,ii){const c=COND.find(x=>x.id===ci);if(!c)return;
 function addNote(){const p=curP();const d=p.noteDraft;if(!d.text.trim()){toast('Write the note first.');return;}
   const ei=d.editId?p.notes.findIndex(n=>n.id===d.editId):-1;
   if(ei>=0)Object.assign(p.notes[ei],{date:d.date||p.notes[ei].date,text:d.text,course:d.course,edited:Date.now()});else p.notes.push({id:uid(),date:d.date||todayStr(),text:d.text,course:d.course});
-  const mm=applyMOST(p,d.text);p.noteDraft={date:todayStr(),text:'',course:''};save();renderMain();const f=testsInNotes(p).length;toast((ei>=0?'Note updated':'Note saved')+(mm?' — '+mm:'')+(f?' — '+f+' ordered test'+(f>1?'s':'')+' found: add them on Tests to review.':'.'));}
+  const mm=[applyMOST(p,d.text),applyVTE(p,d.text)].filter(Boolean).join('; ');p.noteDraft={date:todayStr(),text:'',course:''};save();renderMain();const f=testsInNotes(p).length;toast((ei>=0?'Note updated':'Note saved')+(mm?' — '+mm:'')+(f?' — '+f+' ordered test'+(f>1?'s':'')+' found: add them on Tests to review.':'.'));}
 function editNote(i){const p=curP();const n=p.notes[i];if(!n)return;if(!n.id)n.id=uid();
   if(p.noteDraft.text.trim()&&p.noteDraft.editId!==n.id&&!confirmArm('editnote')){toast('Today’s note has unsaved text — press Edit again to replace it with this note.');return;}
   p.noteDraft={date:n.date,text:n.text,course:n.course||'',editId:n.id};save();renderMain();
@@ -664,7 +684,7 @@ function renderSide(){
   const dc=S.patients.filter(p=>p.status!=='active');
   const item=p=>{const c=counts(p);return `<div class="pitem ${p.id===S.cur?'on':''}" onclick="selectP('${p.id}')">
     <div class="nm" title="${esc((p.room||'—')+' · '+(p.name||'Unnamed'))}">${esc(p.room||'—')} · ${esc(p.name||'Unnamed')}</div>
-    <div>${c.openTasks?`<span class="badge ${c.overdueTasks?'red':''}">${c.openTasks} to-do</span>`:''}${c.pend-c.toReview>0?`<span class="badge" title="Tests ordered, result not back yet">${c.pend-c.toReview} test${c.pend-c.toReview>1?'s':''} pending</span>`:''}${c.toReview?`<span class="badge red">${c.toReview} result to review</span>`:''}${c.pendAfter?`<span class="badge amb">${c.pendAfter} test due after week</span>`:''}${c.abxA.map(o=>`<span class="badge ${o.i.left<=0?'grn':''}">${esc(o.a.drug||'abx')} d${o.i.day}/${o.a.days}</span>`).join('')}${p.discharge.edd?`<span class="badge">EDD ${fmt(p.discharge.edd)}</span>`:''}</div></div>`;};
+    <div>${c.openTasks?`<span class="badge ${c.overdueTasks?'red':''}">${c.openTasks} to-do</span>`:''}${vteRenalWarn(p)?`<span class="badge red" title="${esc(vteRenalWarn(p))}">LMWH + eGFR &lt;30</span>`:''}${c.pend-c.toReview>0?`<span class="badge" title="Tests ordered, result not back yet">${c.pend-c.toReview} test${c.pend-c.toReview>1?'s':''} pending</span>`:''}${c.toReview?`<span class="badge red">${c.toReview} result to review</span>`:''}${c.pendAfter?`<span class="badge amb">${c.pendAfter} test due after week</span>`:''}${c.abxA.map(o=>`<span class="badge ${o.i.left<=0?'grn':''}">${esc(o.a.drug||'abx')} d${o.i.day}/${o.a.days}</span>`).join('')}${p.discharge.edd?`<span class="badge">EDD ${fmt(p.discharge.edd)}</span>`:''}</div></div>`;};
   document.getElementById('side').innerHTML=`<div class="addp"><b>Add patient</b>
     <input id="np_room" placeholder="Room (e.g. 7B-12)"><input id="np_name" placeholder="Name or initials"><label class="mut">Admit date <input id="np_admit" type="date" value="${todayStr()}"></label><button class="pri" onclick="addPatient()">Add patient</button></div>
     <button class="sm" id="cloudSide" style="margin-bottom:6px;display:block" onclick="cloudClick()">☁ OneDrive file</button>
@@ -679,8 +699,8 @@ function renderSide(){
    so older patients pick up new reading rules without pressing Summarize again. Never overwrites. */
 function backfill(p){if(!p||!p.admission||!(p.admission.raw||'').trim()||p._bf===BF_VER)return;
   try{const dm=parseDemo(p.admission.raw);['dob','phn','mrn','address','phone','cell'].forEach(k=>{if(dm[k]&&!p[k])p[k]=dm[k];});
-    if(!p.basics.code)applyMOST(p,p.admission.raw);p._bf=BF_VER;save();}catch(e){}}
-const BF_VER=2;
+    if(!p.basics.code)applyMOST(p,p.admission.raw);applyVTE(p,[p.admission.raw].concat((p.notes||[]).map(n=>n.text||'')).join('\n'));p._bf=BF_VER;save();}catch(e){}}
+const BF_VER=3;
 function renderMain(){
   const p=curP();const M=document.getElementById('main');backfill(p);
   if(!p){M.innerHTML=`<div class="card"><h2 style="margin-top:0">Rounding Notebook</h2><p>Add a patient on the left, paste the admission note, and press <b>Summarize admission</b>. Chart a short note each day; when you are done, press <b>Handover summary</b> or <b>Discharge summary</b> to compile everything.</p><p class="mut">Set your working week in the bar at the top so pending tests and antibiotic stop dates that fall after your week are flagged for handover.</p></div>`;return;}
@@ -756,7 +776,7 @@ basics(p){const b='basics.';
   return sec('Code status, allergies, safety',`<div class="grid2">
      <label class="f">Code status (MOST)<select data-b="basics.code">${opt([['','Not documented'],'M1','M2','M3','C0','C1','C2',p.basics.code&&!['M1','M2','M3','C0','C1','C2'].includes(p.basics.code)?p.basics.code:null].filter(Boolean),p.basics.code)}</select>${p.basics.codeDetail?`<span class="mut" style="font-size:11px;display:block">From chart: ${esc(p.basics.codeDetail)}</span>`:''}<button class="sm" type="button" style="margin-top:4px" onclick="readMOSTNow()" title="Read the MOST level from the admission note and daily notes">Read MOST from notes</button></label>
      <label class="f">Allergies ${B(b+'allergies',p.basics.allergies,'NKDA / list')}</label>
-     <label class="f">VTE prophylaxis<select data-b="basics.vte">${opt([['','Not yet addressed'],'LMWH','UFH','DOAC (therapeutic)','Warfarin','Mechanical only','Contraindicated (bleeding)','Not needed — ambulating'],p.basics.vte)}</select></label>
+     <label class="f">VTE prophylaxis<select data-b="basics.vte">${opt([['','Not yet addressed'],'LMWH','UFH','DOAC (therapeutic)','Warfarin','Mechanical only','Contraindicated (bleeding)','Not needed — ambulating'],p.basics.vte)}</select>${p.basics.vteDetail?`<span class="mut" style="font-size:11px;display:block">From chart: ${esc(p.basics.vteDetail)}</span>`:''}${vteRenalWarn(p)?`<span class="flag red" style="display:block;margin-top:4px;white-space:normal">⚠ ${esc(vteRenalWarn(p))}</span>`:''}<button class="sm" type="button" style="margin-top:4px" onclick="readVTENow()" title="Read VTE prophylaxis from the hospital orders and the notes">Read VTE from chart</button></label>
      <label class="f">Isolation<select data-b="basics.isolation">${opt([['','None'],'Contact','Droplet','Droplet/contact','Airborne','Contact plus (C. diff)'],p.basics.isolation)}</select></label>
      <label class="f">Diet / swallow ${B(b+'diet',p.basics.diet,'e.g. Minced, mildly thick; NPO')}</label>
      <label class="f">Mobility<select data-b="basics.mobility">${opt([['','Not assessed'],'Independent','Walker / cane','1 assist','2 assist','Lift / bed-bound','PT assessing'],p.basics.mobility)}</select></label>
@@ -853,7 +873,7 @@ function handoverText(p){const t=todayStr(),we=S.settings.weekEnd,b=p.basics,o=[
   if(p.reason)o.push('Admitted for: '+p.reason);
   if(p.admission.oneLiner)o.push('Summary: '+p.admission.oneLiner);
   o.push(`Code status: ${b.code||'NOT DOCUMENTED'} | Allergies: ${b.allergies||'not recorded'}${b.isolation?' | Isolation: '+b.isolation:''}`);
-  const misc=[b.vte?'VTE: '+b.vte:'VTE: not addressed',b.mobility&&'Mobility: '+b.mobility+(b.mobilityNote?' ('+b.mobilityNote+')':''),b.diet&&'Diet: '+b.diet].filter(Boolean);o.push(misc.join(' | '));
+  if(vteRenalWarn(p))o.push('⚠ '+vteRenalWarn(p));const misc=[b.vte?'VTE: '+b.vte:'VTE: not addressed',b.mobility&&'Mobility: '+b.mobility+(b.mobilityNote?' ('+b.mobilityNote+')':''),b.diet&&'Diet: '+b.diet].filter(Boolean);o.push(misc.join(' | '));
   if(b.lines.length)o.push('Lines/tubes: '+b.lines.map(l=>`${l.type} day ${diff(l.inserted,t)+1}${l.plan?' ('+l.plan+')':''}`).join('; '));
   const pr=p.admission.problems.filter(x=>x.status!=='Resolved');if(pr.length){o.push('Problems:');pr.forEach(x=>o.push(`- ${x.text}${x.plan?' — '+x.plan:''}${x.status!=='Active'?' ['+x.status+']':''}`));}
   const cl=courseLines(p,3,400);if(cl.length){o.push('Recent course:');o.push(...cl);}
