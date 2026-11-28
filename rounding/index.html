@@ -539,7 +539,14 @@ function parseDemo(t){t=String(t||'');const o={};const MON={jan:1,feb:2,mar:3,ap
     o.address=a1.replace(/\s+/g,' ').replace(/,?\s*British Columbia\b/i,', BC').replace(/,\s*,/g,',');}
   if(!o.address){ // no "Address:" label: a line with a street number and a postal code (not the hospital's own address)
     const pc=t.split('\n').map(l=>l.trim()).find(l=>/\b\d+[A-Za-z]?\s+\S[^\n]{2,90}?\b[A-Z]\d[A-Z]\s?\d[A-Z]\d\b/i.test(l)&&!/hospital way|V8Z\s?6R5|V8R\s?1J8|1952 Bay St|Fax|Tel\b/i.test(l));
-    if(pc){const m=pc.match(/(\d+[A-Za-z]?\s+\S[^\n]{2,90}?\b[A-Z]\d[A-Z]\s?\d[A-Z]\d)\b/i);if(m)o.address=m[1].replace(/\s+/g,' ').trim();}}
+    if(pc){const m=pc.match(/(\d+[A-Za-z]?\s+\S[^\n]{2,90}?\b[A-Z]\d[A-Z]\s?\d[A-Z]\d)\b/i);if(m)o.address=m[1].replace(/\s+/g,' ').trim();}
+  if(!o.address){ // no label, two lines: "101-662 Main St" then "Victoria, British Columbia V9B 0N8"
+    const ls=t.split('\n').map(l=>l.trim());const PC=/\b[A-Z]\d[A-Z]\s?\d[A-Z]\d\b/i,BAD=/hospital way|V8Z\s?6R5|V8R\s?1J8|1952 Bay St|Fax|Tel\b|:/i;
+    for(let i=1;i<ls.length&&!o.address;i++){if(!PC.test(ls[i])||BAD.test(ls[i])||ls[i].length>90)continue;
+      let j=i-1;while(j>=0&&!ls[j])j--;const st=ls[j]||'';
+      if(/^(?:#?\d+[A-Za-z]?\s*[-–]\s*)?\d+[A-Za-z]?\s+[A-Za-z]/.test(st)&&st.length<80&&!BAD.test(st))
+        o.address=(st.replace(/[,;]$/,'')+', '+ls[i]).replace(/\s+/g,' ').replace(/,?\s*British Columbia\b/i,', BC').replace(/,\s*,/g,',');}}
+  if(o.address)o.address=o.address.replace(/,?\s*British Columbia\b/i,', BC').replace(/,\s*,/g,',');}
   const tel=re=>{const m=t.match(re);return m?m[1].replace(/[^\d]/g,'').replace(/^1(?=\d{10}$)/,'').replace(/^(\d{3})(\d{3})(\d{4})$/,'$1-$2-$3'):'';};
   const P='(\\(?\\d{3}\\)?[\\s.-]?\\d{3}[\\s.-]?\\d{4})';
   const hp=tel(new RegExp('\\b(?:Home\\s*Phone|Phone\\s*\\(home\\)|Phone|Tel(?:ephone)?|Home)\\s*(?:#|No\\.?)?\\s*[:#-]\\s*'+P,'i'));if(hp)o.phone=hp;
