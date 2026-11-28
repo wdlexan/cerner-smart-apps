@@ -675,8 +675,14 @@ function renderSide(){
     <div style="margin-top:12px"><button class="sm" onclick="loadDemo()">Load made-up demo patient</button></div>`;
 }
 
+/* Fill empty address / phone / DOB / PHN / MOST from the pasted admission note when a patient is opened,
+   so older patients pick up new reading rules without pressing Summarize again. Never overwrites. */
+function backfill(p){if(!p||!p.admission||!(p.admission.raw||'').trim()||p._bf===BF_VER)return;
+  try{const dm=parseDemo(p.admission.raw);['dob','phn','mrn','address','phone','cell'].forEach(k=>{if(dm[k]&&!p[k])p[k]=dm[k];});
+    if(!p.basics.code)applyMOST(p,p.admission.raw);p._bf=BF_VER;save();}catch(e){}}
+const BF_VER=2;
 function renderMain(){
-  const p=curP();const M=document.getElementById('main');
+  const p=curP();const M=document.getElementById('main');backfill(p);
   if(!p){M.innerHTML=`<div class="card"><h2 style="margin-top:0">Rounding Notebook</h2><p>Add a patient on the left, paste the admission note, and press <b>Summarize admission</b>. Chart a short note each day; when you are done, press <b>Handover summary</b> or <b>Discharge summary</b> to compile everything.</p><p class="mut">Set your working week in the bar at the top so pending tests and antibiotic stop dates that fall after your week are flagged for handover.</p></div>`;return;}
   const c=counts(p);const hd=p.admitDate?diff(p.admitDate,todayStr())+1:null;
   const tabs=[['admission','Admission'],['meds',`Meds${p.admission.meds.length?' ('+p.admission.meds.length+')':''}`],['labs',`Labs${p.labs.length?' ('+labGroups(p).filter(x=>isAbn(x.latest)).length+' abnormal)':''}`],['basics','Basics'],['notes',`Daily notes${p.notes.length?' ('+p.notes.length+')':''}`],['tasks',`To-do${c.openTasks?' ('+c.openTasks+')':''}`],
