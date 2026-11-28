@@ -198,7 +198,7 @@ function trunc(t,n){t=String(t||'').replace(/\s+/g,' ').trim();return t.length>n
 function template(){return {id:uid(),name:'',room:'',mrn:'',age:'',sex:'',dob:'',phn:'',address:'',phone:'',cell:'',admitDate:todayStr(),reason:'',status:'active',
   admission:{raw:'',oneLiner:'',summary:'',problems:[],detected:null,meds:[],medsRaw:''},labs:[],labsRaw:'',labsAbnOnly:false,
   basics:{code:'',allergies:'',vte:'',diet:'',mobility:'',mobilityNote:'',isolation:'',contacts:'',fp:'',consultants:'',lines:[]},
-  notes:[],noteDraft:{date:todayStr(),text:'',course:''},tasks:[],pending:[],abx:[],watch:[],
+  tools:[],notes:[],noteDraft:{date:todayStr(),text:'',course:''},tasks:[],pending:[],abx:[],watch:[],
   discharge:{edd:'',dispo:'',barriers:'',diagnosis:'',checklist:{},custom:[],medChanges:[],followup:[],ptWatch:[]}};}
 function ensure(p){const t=template();(function merge(a,b){for(const k in b){if(a[k]===undefined)a[k]=b[k];else if(b[k]&&typeof b[k]==='object'&&!Array.isArray(b[k])&&a[k]&&typeof a[k]==='object')merge(a[k],b[k]);}})(p,t);return p;}
 const curP=()=>S.patients.find(p=>p.id===S.cur);
@@ -557,6 +557,25 @@ async function ocrImage(f){let src=f;try{const bm=await createImageBitmap(f);con
   const r=await Tesseract.recognize(src,'eng');return ocrTable(r.data)||fixOCR(r.data.text);}
 document.addEventListener('paste',e=>{if(S.tab!=='labs'||!curP())return;const items=[...((e.clipboardData||{}).items||[])].filter(i=>/^image\//.test(i.type));
   if(!items.length)return;e.preventDefault();labShotFiles(items.map(i=>i.getAsFile()));});
+/* ---- Tools for this patient: find a toolkit tool, keep it pinned for this patient, open it filled with this patient's labs/meds/notes ---- */
+function tkParent(){try{if(window.parent!==window&&typeof window.parent.TKOpenForNotebook==='function')return window.parent;}catch(e){}return null;}
+function tkTools(){const w=tkParent();try{return w?w.TKToolList():[];}catch(e){return [];}}
+function toolBar(p){const list=tkTools();if(!list.length)return '';const pins=(p.tools||[]).map(k=>list.find(t=>t.key===k)).filter(Boolean);
+  return `<span class="ptools" style="display:inline-flex;flex-wrap:wrap;gap:5px;align-items:center;margin-left:10px;position:relative">
+    ${pins.map(t=>`<span class="chip" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer" title="Open ${esc(t.label)} with this patient's labs, meds and notes"><span onclick="openTool('${t.key}')">🔧 ${esc(t.label.replace(/\s*\(.*?\)\s*/g,' ').trim())}</span><span onclick="unpinTool('${t.key}')" title="Remove from this patient" style="opacity:.6">✕</span></span>`).join('')}
+    <input id="ptoolq" type="search" placeholder="🔍 Find a tool for this patient" autocomplete="off" style="width:220px" oninput="toolMatches()" onkeydown="if(event.key==='Enter'){const b=document.querySelector('#ptoolres button');if(b)b.click();}else if(event.key==='Escape'){this.value='';toolMatches();}" onblur="setTimeout(()=>{const r=document.getElementById('ptoolres');if(r)r.hidden=true;},200)">
+    <div id="ptoolres" hidden style="position:absolute;top:100%;right:0;z-index:30;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.15);min-width:280px;max-height:320px;overflow:auto"></div></span>`;}
+function toolMatches(){const q=document.getElementById('ptoolq'),res=document.getElementById('ptoolres');if(!q||!res)return;
+  const norm=x=>String(x||'').toLowerCase().replace(/[^a-z0-9]+/g,' ');const words=norm(q.value).split(' ').filter(Boolean);
+  if(!words.length){res.hidden=true;return;}
+  const hits=tkTools().filter(t=>{const h=' '+norm(t.label+' '+t.tags)+' ';return words.every(w=>h.includes(' '+w));}).slice(0,10);
+  res.innerHTML=hits.length?hits.map(t=>`<button type="button" style="display:block;width:100%;text-align:left;border:0;background:none;padding:6px 10px;cursor:pointer" onmousedown="event.preventDefault();pinTool('${t.key}')">${esc(t.label)}</button>`).join(''):'<div class="mut" style="padding:6px 10px">No tool matches.</div>';
+  res.hidden=false;}
+function pinTool(k){const p=curP();if(!p.tools)p.tools=[];if(!p.tools.includes(k))p.tools.push(k);save();renderMain();openTool(k);}
+function unpinTool(k){const p=curP();p.tools=(p.tools||[]).filter(x=>x!==k);save();renderMain();}
+function openTool(k){const w=tkParent();if(!w){toast('Open the Rounding notebook inside the Hospitalist Toolkit to use tools.');return;}
+  const p=curP();toast('Opening with '+(p.labs||[]).length+' lab results, meds and notes from this patient…');
+  let msg='';try{msg=w.TKOpenForNotebook(JSON.parse(JSON.stringify(p)),k);}catch(e){msg=e.message;}if(msg)toast(msg);}
 function parseNote(text){
   const sec={};let curK='pre';sec.pre=[];
   String(text||'').split(/\r?\n/).forEach(line=>{
@@ -789,7 +808,7 @@ function renderMain(){
    </div>
    <div style="margin-top:6px">${B('reason',p.reason,'Reason for admission / working diagnosis','text','','style="width:100%"')}</div>
    <div class="actions"><button class="pri" onclick="showHandover()">Handover summary</button><button class="pri" onclick="showDischarge()">Discharge summary</button>
-     <button onclick="toggleDischarged()">${p.status==='active'?'Mark discharged':'Move back to my list'}</button><button onclick="delPatient()">Delete</button></div></div>
+     <button onclick="toggleDischarged()">${p.status==='active'?'Mark discharged':'Move back to my list'}</button><button onclick="delPatient()">Delete</button>${toolBar(p)}</div></div>
    <div class="tabs">${tabs.map(t=>`<button class="tab ${S.tab===t[0]?'on':''}" onclick="setTab('${t[0]}')">${t[1]}</button>`).join('')}</div>
    <div id="tabbody">${(VIEWS[S.tab]||VIEWS.admission)(p)}</div>`;
 }
